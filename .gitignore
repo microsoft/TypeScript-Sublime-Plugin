@@ -1,4 +1,4 @@
 node_modules/
 built/*
 ~*.docx
-
+src/ed.d.ts
