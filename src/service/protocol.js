@@ -14,6 +14,7 @@ var path = require('path');
 var ts = require('typescript');
 var Editor;
 (function (Editor) {
+    var gloError = false;
     var lineCollectionCapacity = 4;
     var indentStrings = [];
     var indentBase = "    ";
@@ -26,6 +27,13 @@ var Editor;
         }
         return indentStrings[indentAmt];
     }
+    function editFlat(s, dl, nt, source) {
+        return source.substring(0, s) + nt + source.substring(s + dl, source.length);
+    }
+    function printLine(s) {
+        ts.sys.write(s + '\n');
+    }
+    Editor.printLine = printLine;
     function showLines(s) {
         var strBuilder = "";
         for (var i = 0, len = s.length; i < len; i++) {
@@ -41,6 +49,931 @@ var Editor;
         }
         return strBuilder;
     }
+    function recordError() {
+        gloError = true;
+    }
+    function tstTest() {
+        var fname = 'tst.ts';
+        var content = ts.sys.readFile(fname);
+        var lm = LineIndex.linesFromText(content);
+        var lines = lm.lines;
+        if (lines.length == 0) {
+            return;
+        }
+        var lineMap = lm.lineMap;
+        var lineIndex = new LineIndex();
+        lineIndex.load(lines);
+        var editedText = lineIndex.getText(0, content.length);
+        var snapshot;
+        var checkText;
+        var insertString;
+        // change 9 1 0 1 {"y"}
+        var pos = lineColToPosition(lineIndex, 9, 1);
+        insertString = "y";
+        checkText = editFlat(pos, 0, insertString, content);
+        snapshot = lineIndex.edit(pos, 0, insertString);
+        editedText = snapshot.getText(0, checkText.length);
+        if (editedText != checkText) {
+            recordError();
+            return;
+        }
+        // change 9 2 0 1 {"."}
+        var pos = lineColToPosition(snapshot, 9, 2);
+        insertString = ".";
+        checkText = editFlat(pos, 0, insertString, checkText);
+        snapshot = snapshot.edit(pos, 0, insertString);
+        editedText = snapshot.getText(0, checkText.length);
+        if (editedText != checkText) {
+            recordError();
+            return;
+        }
+        // change 9 3 0 1 {"\n"}
+        var pos = lineColToPosition(snapshot, 9, 3);
+        insertString = "\n";
+        checkText = editFlat(pos, 0, insertString, checkText);
+        snapshot = snapshot.edit(pos, 0, insertString);
+        editedText = snapshot.getText(0, checkText.length);
+        if (editedText != checkText) {
+            recordError();
+            return;
+        }
+        // change 10 1 0 10 {"\n\n\n\n\n\n\n\n\n\n"}
+        pos = lineColToPosition(snapshot, 10, 1);
+        insertString = "\n\n\n\n\n\n\n\n\n\n";
+        checkText = editFlat(pos, 0, insertString, checkText);
+        snapshot = snapshot.edit(pos, 0, insertString);
+        editedText = snapshot.getText(0, checkText.length);
+        if (editedText != checkText) {
+            recordError();
+            return;
+        }
+        // change 19 1 1 0
+        pos = lineColToPosition(snapshot, 19, 1);
+        checkText = editFlat(pos, 1, "", checkText);
+        snapshot = snapshot.edit(pos, 1);
+        editedText = snapshot.getText(0, checkText.length);
+        if (editedText != checkText) {
+            recordError();
+            return;
+        }
+        // change 18 1 1 0
+        pos = lineColToPosition(snapshot, 18, 1);
+        checkText = editFlat(pos, 1, "", checkText);
+        snapshot = snapshot.edit(pos, 1);
+        editedText = snapshot.getText(0, checkText.length);
+        if (editedText != checkText) {
+            recordError();
+            return;
+        }
+        function lineColToPosition(lineIndex, line, col) {
+            var lineInfo = lineIndex.lineNumberToInfo(line);
+            return (lineInfo.offset + col - 1);
+        }
+    }
+    function editTest() {
+        var fname = 'editme';
+        var content = ts.sys.readFile(fname);
+        var lm = LineIndex.linesFromText(content);
+        var lines = lm.lines;
+        if (lines.length == 0) {
+            return;
+        }
+        var lineMap = lm.lineMap;
+        var lineIndex = new LineIndex();
+        lineIndex.load(lines);
+        var editedText = lineIndex.getText(0, content.length);
+        var snapshot;
+        var checkText;
+        var insertString;
+        // Case VII: insert at end of file
+        insertString = "hmmmm...\r\n";
+        checkText = editFlat(content.length, 0, insertString, content);
+        snapshot = lineIndex.edit(content.length, 0, insertString);
+        editedText = snapshot.getText(0, checkText.length);
+        if (editedText != checkText) {
+            recordError();
+            return;
+        }
+        // Case IV: unusual line endings merge
+        snapshot = lineIndex.edit(lines[0].length - 1, lines[1].length, "");
+        editedText = snapshot.getText(0, content.length - lines[1].length);
+        checkText = editFlat(lines[0].length - 1, lines[1].length, "", content);
+        if (editedText != checkText) {
+            recordError();
+            return;
+        }
+        // Case VIIa: delete whole line and nothing but line (last line)
+        var llpos = lm.lineMap[lm.lineMap.length - 2];
+        snapshot = lineIndex.edit(llpos, lines[lines.length - 1].length, "");
+        checkText = editFlat(llpos, lines[lines.length - 1].length, "", content);
+        editedText = snapshot.getText(0, checkText.length);
+        if (editedText != checkText) {
+            recordError();
+            return;
+        }
+        // Case VIIb: delete whole line and nothing but line (first line)
+        snapshot = lineIndex.edit(0, lines[0].length, "");
+        editedText = snapshot.getText(0, content.length - lines[0].length);
+        checkText = editFlat(0, lines[0].length, "", content);
+        if (editedText != checkText) {
+            recordError();
+            return;
+        }
+        // and insert with no line breaks
+        insertString = "moo, moo, moo! ";
+        snapshot = lineIndex.edit(0, lines[0].length, insertString);
+        editedText = snapshot.getText(0, content.length - lines[0].length + insertString.length);
+        checkText = editFlat(0, lines[0].length, insertString, content);
+        if (editedText != checkText) {
+            recordError();
+            return;
+        }
+        // and insert with multiple line breaks
+        insertString = "moo, \r\nmoo, \r\nmoo! ";
+        snapshot = lineIndex.edit(0, lines[0].length, insertString);
+        editedText = snapshot.getText(0, content.length - lines[0].length + insertString.length);
+        checkText = editFlat(0, lines[0].length, insertString, content);
+        if (editedText != checkText) {
+            recordError();
+            return;
+        }
+        snapshot = lineIndex.edit(0, lines[0].length + lines[1].length, "");
+        editedText = snapshot.getText(0, content.length - (lines[0].length + lines[1].length));
+        checkText = editFlat(0, lines[0].length + lines[1].length, "", content);
+        if (editedText != checkText) {
+            recordError();
+            return;
+        }
+        snapshot = lineIndex.edit(lines[0].length, lines[1].length + lines[2].length, "");
+        editedText = snapshot.getText(0, content.length - (lines[1].length + lines[2].length));
+        checkText = editFlat(lines[0].length, lines[1].length + lines[2].length, "", content);
+        if (editedText != checkText) {
+            recordError();
+            return;
+        }
+        // Case VI: insert multiple line breaks
+        insertString = "cr...\r\ncr...\r\ncr...\r\ncr...\r\ncr...\r\ncr...\r\ncr...\r\ncr...\r\ncr...\r\ncr...\r\ncr...\r\ncr";
+        snapshot = lineIndex.edit(21, 1, insertString);
+        editedText = snapshot.getText(0, content.length + insertString.length - 1);
+        checkText = editFlat(21, 1, insertString, content);
+        if (editedText != checkText) {
+            recordError();
+            return;
+        }
+        insertString = "cr...\r\ncr...\r\ncr";
+        snapshot = lineIndex.edit(21, 1, insertString);
+        editedText = snapshot.getText(0, content.length + insertString.length - 1);
+        checkText = editFlat(21, 1, insertString, content);
+        if (editedText != checkText) {
+            recordError();
+            return;
+        }
+        // leading '\n'
+        insertString = "\ncr...\r\ncr...\r\ncr";
+        snapshot = lineIndex.edit(21, 1, insertString);
+        editedText = snapshot.getText(0, content.length + insertString.length - 1);
+        checkText = editFlat(21, 1, insertString, content);
+        if (editedText != checkText) {
+            recordError();
+            return;
+        }
+        // Case I: single line no line breaks deleted or inserted
+        // delete 1 char
+        snapshot = lineIndex.edit(21, 1);
+        editedText = snapshot.getText(0, content.length - 1);
+        checkText = editFlat(21, 1, "", content);
+        if (editedText != checkText) {
+            recordError();
+            return;
+        }
+        // insert 1 char
+        snapshot = lineIndex.edit(21, 0, "b");
+        editedText = snapshot.getText(0, content.length + 1);
+        checkText = editFlat(21, 0, "b", content);
+        if (editedText != checkText) {
+            recordError();
+            return;
+        }
+        // delete 1, insert 2
+        snapshot = lineIndex.edit(21, 1, "cr");
+        editedText = snapshot.getText(0, content.length + 1);
+        checkText = editFlat(21, 1, "cr", content);
+        if (editedText != checkText) {
+            recordError();
+            return;
+        }
+        // Case II: delete across line break
+        snapshot = lineIndex.edit(21, 22);
+        editedText = snapshot.getText(0, content.length - 22);
+        checkText = editFlat(21, 22, "", content);
+        if (editedText != checkText) {
+            recordError();
+            return;
+        }
+        snapshot = lineIndex.edit(21, 32);
+        editedText = snapshot.getText(0, content.length - 32);
+        checkText = editFlat(21, 32, "", content);
+        if (editedText != checkText) {
+            recordError();
+            return;
+        }
+        // Case III: delete across multiple line breaks and insert no line breaks
+        snapshot = lineIndex.edit(21, 42);
+        editedText = snapshot.getText(0, content.length - 42);
+        checkText = editFlat(21, 42, "", content);
+        if (editedText != checkText) {
+            recordError();
+            return;
+        }
+        snapshot = lineIndex.edit(21, 42, "slithery ");
+        editedText = snapshot.getText(0, content.length - 33);
+        checkText = editFlat(21, 42, "slithery ", content);
+        if (editedText != checkText) {
+            recordError();
+            return;
+        }
+    }
+    function editStress(fname, timing) {
+        var content = ts.sys.readFile(fname);
+        var lm = LineIndex.linesFromText(content);
+        var lines = lm.lines;
+        if (lines.length == 0) {
+            return;
+        }
+        var lineMap = lm.lineMap;
+        var lineIndex = new LineIndex();
+        lineIndex.load(lines);
+        var totalChars = content.length;
+        var rsa = [];
+        var la = [];
+        var las = [];
+        var elas = [];
+        var ersa = [];
+        var ela = [];
+        var etotalChars = totalChars;
+        var j;
+        var startTime;
+        for (j = 0; j < 100000; j++) {
+            rsa[j] = Math.floor(Math.random() * totalChars);
+            la[j] = Math.floor(Math.random() * (totalChars - rsa[j]));
+            if (la[j] > 4) {
+                las[j] = 4;
+            }
+            else {
+                las[j] = la[j];
+            }
+            if (j < 4000) {
+                ersa[j] = Math.floor(Math.random() * etotalChars);
+                ela[j] = Math.floor(Math.random() * (etotalChars - ersa[j]));
+                if (ela[j] > 4) {
+                    elas[j] = 4;
+                }
+                else {
+                    elas[j] = ela[j];
+                }
+                etotalChars += (las[j] - elas[j]);
+            }
+        }
+        if (timing) {
+            startTime = Date.now();
+        }
+        for (j = 0; j < 2000; j++) {
+            var s2 = lineIndex.getText(rsa[j], la[j]);
+            if (!timing) {
+                var s1 = content.substring(rsa[j], rsa[j] + la[j]);
+                if (s1 != s2) {
+                    recordError();
+                    return;
+                }
+            }
+        }
+        if (timing) {
+            printLine("range (average length 1/4 file size): " + ((Date.now() - startTime) / 2).toFixed(3) + " us");
+        }
+        //        printLine("check1");
+        if (timing) {
+            startTime = Date.now();
+        }
+        for (j = 0; j < 10000; j++) {
+            var s2 = lineIndex.getText(rsa[j], las[j]);
+            if (!timing) {
+                var s1 = content.substring(rsa[j], rsa[j] + las[j]);
+                if (s1 != s2) {
+                    recordError();
+                    return;
+                }
+            }
+        }
+        //        printLine("check2");
+        if (timing) {
+            printLine("range (average length 4 chars): " + ((Date.now() - startTime) / 10).toFixed(3) + " us");
+        }
+        if (timing) {
+            startTime = Date.now();
+        }
+        var snapshot;
+        for (j = 0; j < 2000; j++) {
+            var insertString = content.substring(rsa[100000 - j], rsa[100000 - j] + las[100000 - j]);
+            snapshot = lineIndex.edit(rsa[j], las[j], insertString);
+            if (!timing) {
+                var checkText = editFlat(rsa[j], las[j], insertString, content);
+                var snapText = snapshot.getText(0, checkText.length);
+                if (checkText != snapText) {
+                    if (s1 != s2) {
+                        recordError();
+                        return;
+                    }
+                }
+            }
+        }
+        //        printLine("check3");
+        if (timing) {
+            printLine("edit (average length 4): " + ((Date.now() - startTime) / 2).toFixed(3) + " us");
+        }
+        var svc = ScriptVersionCache.fromString(content);
+        checkText = content;
+        if (timing) {
+            startTime = Date.now();
+        }
+        for (j = 0; j < 2000; j++) {
+            insertString = content.substring(rsa[j], rsa[j] + las[j]);
+            svc.edit(ersa[j], elas[j], insertString);
+            if (!timing) {
+                checkText = editFlat(ersa[j], elas[j], insertString, checkText);
+            }
+            if (0 == (j % 4)) {
+                var snap = svc.getSnapshot();
+                if (!timing) {
+                    snapText = snap.getText(0, checkText.length);
+                    if (checkText != snapText) {
+                        if (s1 != s2) {
+                            recordError();
+                            return;
+                        }
+                    }
+                }
+            }
+        }
+        if (timing) {
+            printLine("edit ScriptVersionCache: " + ((Date.now() - startTime) / 2).toFixed(3) + " us");
+        }
+        //        printLine("check4");
+        if (timing) {
+            startTime = Date.now();
+        }
+        for (j = 0; j < 5000; j++) {
+            insertString = content.substring(rsa[100000 - j], rsa[100000 - j] + la[100000 - j]);
+            snapshot = lineIndex.edit(rsa[j], la[j], insertString);
+            if (!timing) {
+                checkText = editFlat(rsa[j], la[j], insertString, content);
+                snapText = snapshot.getText(0, checkText.length);
+                if (checkText != snapText) {
+                    if (s1 != s2) {
+                        recordError();
+                        return;
+                    }
+                }
+            }
+        }
+        if (timing) {
+            printLine("edit (average length 1/4th file size): " + ((Date.now() - startTime) / 5).toFixed(3) + " us");
+        }
+        var t;
+        var errorCount = 0;
+        if (timing) {
+            startTime = Date.now();
+        }
+        for (j = 0; j < 100000; j++) {
+            var lp = lineIndex.charOffsetToLineNumberAndPos(rsa[j]);
+            if (!timing) {
+                var lac = ts.getLineAndCharacterOfPosition(lineMap, rsa[j]);
+                if (lac.line != lp.line) {
+                    recordError();
+                    printLine("arrgh " + lac.line + " " + lp.line + " " + j);
+                    return;
+                }
+                if (lac.character != (lp.offset + 1)) {
+                    recordError();
+                    printLine("arrgh ch... " + lac.character + " " + (lp.offset + 1) + " " + j);
+                    return;
+                }
+            }
+        }
+        //        printLine("check6");
+        if (timing) {
+            printLine("line/offset from pos: " + ((Date.now() - startTime) / 100).toFixed(3) + " us");
+        }
+        if (timing) {
+            startTime = Date.now();
+        }
+        var outer = 1;
+        if (timing) {
+            outer = 100;
+        }
+        for (var ko = 0; ko < outer; ko++) {
+            for (var k = 0, llen = lines.length; k < llen; k++) {
+                var lineInfo = lineIndex.lineNumberToInfo(k + 1);
+                var lineIndexOffset = lineInfo.offset;
+                if (!timing) {
+                    var lineMapOffset = lineMap[k];
+                    if (lineIndexOffset != lineMapOffset) {
+                        recordError();
+                        return;
+                    }
+                }
+            }
+        }
+        if (timing) {
+            printLine("start pos from line: " + (((Date.now() - startTime) / lines.length) * 10).toFixed(3) + " us");
+        }
+    }
+    var ScriptInfo = (function () {
+        function ScriptInfo(filename, content, isOpen) {
+            if (isOpen === void 0) { isOpen = true; }
+            this.filename = filename;
+            this.content = content;
+            this.isOpen = isOpen;
+            this.isRoot = false;
+            this.children = [];
+            this.svc = ScriptVersionCache.fromString(content);
+        }
+        ScriptInfo.prototype.addChild = function (childInfo) {
+            this.children.push(childInfo);
+        };
+        ScriptInfo.prototype.snap = function () {
+            return this.svc.getSnapshot();
+        };
+        ScriptInfo.prototype.editContent = function (minChar, limChar, newText) {
+            this.svc.edit(minChar, limChar - minChar, newText);
+        };
+        ScriptInfo.prototype.getTextChangeRangeBetweenVersions = function (startVersion, endVersion) {
+            return this.svc.getTextChangesBetweenVersions(startVersion, endVersion);
+        };
+        ScriptInfo.prototype.getChangeRange = function (oldSnapshot) {
+            return this.snap().getChangeRange(oldSnapshot);
+        };
+        return ScriptInfo;
+    })();
+    Editor.ScriptInfo = ScriptInfo;
+    var CancellationToken = (function () {
+        function CancellationToken() {
+            this.requestPending = false;
+        }
+        CancellationToken.prototype.cancel = function () {
+            this.requestPending = true;
+        };
+        CancellationToken.prototype.reset = function () {
+            this.requestPending = false;
+        };
+        CancellationToken.prototype.isCancellationRequested = function () {
+            var temp = this.requestPending;
+            return temp;
+        };
+        CancellationToken.None = new CancellationToken();
+        return CancellationToken;
+    })();
+    Editor.CancellationToken = CancellationToken;
+    // TODO: make this a parameter of the service or in service environment
+    var defaultLibDir = "/home/steve/src/TypeScript-Service/node_modules/typescript/bin/lib.core.d.ts";
+    var LSHost = (function () {
+        function LSHost(cancellationToken) {
+            if (cancellationToken === void 0) { cancellationToken = CancellationToken.None; }
+            this.cancellationToken = cancellationToken;
+            this.ls = null;
+            this.compilationSettings = null;
+            this.filenameToScript = {};
+            this.logger = this;
+            this.addDefaultLibrary();
+        }
+        LSHost.prototype.trace = function (str) {
+        };
+        LSHost.prototype.error = function (str) {
+        };
+        LSHost.prototype.cancel = function () {
+            this.cancellationToken.cancel();
+        };
+        LSHost.prototype.reset = function () {
+            this.cancellationToken.reset();
+        };
+        LSHost.prototype.addDefaultLibrary = function () {
+            this.addFile(defaultLibDir);
+        };
+        LSHost.prototype.getScriptSnapshot = function (filename) {
+            return this.getScriptInfo(filename).snap();
+        };
+        LSHost.prototype.getCompilationSettings = function () {
+            return this.compilationSettings;
+        };
+        LSHost.prototype.getScriptFileNames = function () {
+            var filenames = [];
+            for (var filename in this.filenameToScript) {
+                filenames.push(filename);
+            }
+            return filenames;
+        };
+        LSHost.prototype.getScriptVersion = function (filename) {
+            return this.getScriptInfo(filename).svc.latestVersion().toString();
+        };
+        LSHost.prototype.getLocalizedDiagnosticMessages = function () {
+            return "";
+        };
+        LSHost.prototype.getCancellationToken = function () {
+            return this.cancellationToken;
+        };
+        LSHost.prototype.getCurrentDirectory = function () {
+            return "";
+        };
+        LSHost.prototype.getDefaultLibFilename = function () {
+            return "";
+        };
+        LSHost.prototype.getScriptIsOpen = function (filename) {
+            return this.getScriptInfo(filename).isOpen;
+        };
+        LSHost.prototype.addFile = function (name) {
+            var content = ts.sys.readFile(name);
+            this.addScript(name, content);
+        };
+        LSHost.prototype.getScriptInfo = function (filename) {
+            return ts.lookUp(this.filenameToScript, filename);
+        };
+        LSHost.prototype.addScriptInfo = function (info) {
+            if (!this.getScriptInfo(info.filename)) {
+                this.filenameToScript[info.filename] = info;
+                return info;
+            }
+        };
+        LSHost.prototype.addScript = function (filename, content) {
+            var script = new ScriptInfo(filename, content);
+            this.filenameToScript[filename] = script;
+            return script;
+        };
+        LSHost.prototype.editScript = function (filename, minChar, limChar, newText) {
+            var script = this.getScriptInfo(filename);
+            if (script) {
+                script.editContent(minChar, limChar, newText);
+                return;
+            }
+            throw new Error("No script with name '" + filename + "'");
+        };
+        LSHost.prototype.resolvePath = function (path) {
+            var start = new Date().getTime();
+            var result = ts.sys.resolvePath(path);
+            return result;
+        };
+        LSHost.prototype.fileExists = function (path) {
+            var start = new Date().getTime();
+            var result = ts.sys.fileExists(path);
+            return result;
+        };
+        LSHost.prototype.directoryExists = function (path) {
+            return ts.sys.directoryExists(path);
+        };
+        LSHost.prototype.log = function (s) {
+            // For debugging...
+            //printLine("TypeScriptLS:" + s);
+        };
+        /**
+         * @param line 1 based index
+         * @param col 1 based index
+        */
+        LSHost.prototype.lineColToPosition = function (filename, line, col) {
+            var script = this.filenameToScript[filename];
+            var index = script.snap().index;
+            var lineInfo = index.lineNumberToInfo(line);
+            return (lineInfo.offset + col - 1);
+        };
+        /**
+         * @param line 0 based index
+         * @param offset 0 based index
+        */
+        LSHost.prototype.positionToZeroBasedLineCol = function (filename, position) {
+            var script = this.filenameToScript[filename];
+            var index = script.snap().index;
+            var lineCol = index.charOffsetToLineNumberAndPos(position);
+            return { line: lineCol.line - 1, offset: lineCol.offset };
+        };
+        return LSHost;
+    })();
+    Editor.LSHost = LSHost;
+    function getCanonicalFileName(filename) {
+        if (ts.sys.useCaseSensitiveFileNames) {
+            return filename;
+        }
+        else {
+            return filename.toLowerCase();
+        }
+    }
+    // assumes normalized paths
+    function getAbsolutePath(filename, directory) {
+        var rootLength = ts.getRootLength(filename);
+        if (rootLength > 0) {
+            return filename;
+        }
+        else {
+            var splitFilename = filename.split('/');
+            var splitDir = directory.split('/');
+            var i = 0;
+            var dirTail = 0;
+            var sflen = splitFilename.length;
+            while ((i < sflen) && (splitFilename[i].charAt(0) == '.')) {
+                var dots = splitFilename[i];
+                if (dots == '..') {
+                    dirTail++;
+                }
+                else if (dots != '.') {
+                    return undefined;
+                }
+                i++;
+            }
+            return splitDir.slice(0, splitDir.length - dirTail).concat(splitFilename.slice(i)).join('/');
+        }
+    }
+    var Project = (function () {
+        function Project(root) {
+            this.root = root;
+            this.compilerService = new CompilerService();
+            this.addGraph(root);
+            this.compilerService.languageService.getNavigateToItems(".*");
+        }
+        Project.prototype.addGraph = function (scriptInfo) {
+            if (this.addScript(scriptInfo)) {
+                for (var i = 0, clen = scriptInfo.children.length; i < clen; i++) {
+                    this.addGraph(scriptInfo.children[i]);
+                }
+            }
+        };
+        Project.prototype.addScript = function (info) {
+            info.activeProject = this;
+            return this.compilerService.host.addScriptInfo(info);
+        };
+        Project.prototype.printFiles = function () {
+            var filenames = this.compilerService.host.getScriptFileNames();
+            filenames.map(function (filename) {
+                console.log(filename);
+            });
+        };
+        return Project;
+    })();
+    Editor.Project = Project;
+    var ProjectService = (function () {
+        function ProjectService() {
+            this.filenameToScriptInfo = {};
+            this.roots = [];
+            this.projects = [];
+            this.rootsChanged = false;
+            this.newRootDisjoint = true;
+        }
+        ProjectService.prototype.getProjectForFile = function (filename) {
+            var scriptInfo = ts.lookUp(this.filenameToScriptInfo, filename);
+            if (scriptInfo) {
+                return scriptInfo.activeProject;
+            }
+        };
+        ProjectService.prototype.printProjects = function () {
+            for (var i = 0, len = this.projects.length; i < len; i++) {
+                var project = this.projects[i];
+                console.log("Project " + i.toString());
+                project.printFiles();
+                console.log("-----------------------------------------------");
+            }
+        };
+        ProjectService.prototype.removeRoot = function (info) {
+            var len = this.roots.length;
+            for (var i = 0; i < len; i++) {
+                if (this.roots[i] == info) {
+                    if (i < (len - 1)) {
+                        this.roots[i] = this.roots[len - 1];
+                    }
+                    this.roots.length--;
+                    this.rootsChanged = true;
+                    info.isRoot = false;
+                    return true;
+                }
+            }
+            return false;
+        };
+        ProjectService.prototype.openSpecifiedFile = function (filename) {
+            this.rootsChanged = false;
+            this.newRootDisjoint = true;
+            var info = this.openFile(filename, true);
+            if (this.rootsChanged) {
+                var i = 0;
+                var len = this.roots.length;
+                if (this.newRootDisjoint) {
+                    i = len - 1;
+                }
+                for (; i < len; i++) {
+                    var root = this.roots[i];
+                    root.isRoot = true;
+                    this.projects[i] = new Project(root);
+                }
+            }
+            return info;
+        };
+        /**
+         * @param filename is absolute pathname
+        */
+        ProjectService.prototype.openFile = function (filename, possibleRoot) {
+            if (possibleRoot === void 0) { possibleRoot = false; }
+            //console.log("opening "+filename+"...");
+            filename = ts.normalizePath(filename);
+            var dirPath = ts.getDirectoryPath(filename);
+            //console.log("normalized as "+filename+" with dir path "+dirPath);
+            var info = ts.lookUp(this.filenameToScriptInfo, filename);
+            if (!info) {
+                var content = ts.sys.readFile(filename);
+                if (content) {
+                    info = new ScriptInfo(filename, content);
+                    this.filenameToScriptInfo[filename] = info;
+                    if (possibleRoot) {
+                        this.roots.push(info);
+                        this.rootsChanged = true;
+                    }
+                    var preProcessedInfo = ts.preProcessFile(content, false);
+                    if (preProcessedInfo.referencedFiles.length > 0) {
+                        for (var i = 0, len = preProcessedInfo.referencedFiles.length; i < len; i++) {
+                            var refFilename = ts.normalizePath(preProcessedInfo.referencedFiles[i].filename);
+                            refFilename = getAbsolutePath(refFilename, dirPath);
+                            var refInfo = this.openFile(refFilename);
+                            if (refInfo) {
+                                info.addChild(refInfo);
+                            }
+                        }
+                    }
+                }
+                else {
+                }
+            }
+            if ((!possibleRoot) && (info) && (info.isRoot)) {
+                if (this.removeRoot(info)) {
+                    this.rootsChanged = true;
+                    this.newRootDisjoint = false;
+                }
+            }
+            return info;
+        };
+        return ProjectService;
+    })();
+    Editor.ProjectService = ProjectService;
+    var CompilerService = (function () {
+        function CompilerService() {
+            // TODO: add usable cancellation token
+            this.cancellationToken = new CancellationToken();
+            this.host = new LSHost(this.cancellationToken);
+            this.settings = ts.getDefaultCompilerOptions();
+            this.documentRegistry = ts.createDocumentRegistry();
+            this.formatCodeOptions = {
+                IndentSize: 4,
+                TabSize: 4,
+                NewLineCharacter: ts.sys.newLine,
+                ConvertTabsToSpaces: true,
+                InsertSpaceAfterCommaDelimiter: true,
+                InsertSpaceAfterSemicolonInForStatements: true,
+                InsertSpaceBeforeAndAfterBinaryOperators: true,
+                InsertSpaceAfterKeywordsInControlFlowStatements: true,
+                InsertSpaceAfterFunctionKeywordForAnonymousFunctions: false,
+                InsertSpaceAfterOpeningAndBeforeClosingNonemptyParenthesis: false,
+                PlaceOpenBraceOnNewLineForFunctions: false,
+                PlaceOpenBraceOnNewLineForControlBlocks: false
+            };
+            this.languageService = ts.createLanguageService(this.host, this.documentRegistry);
+            this.classifier = ts.createClassifier(this.host);
+        }
+        /**
+         * @param filename is absolute pathname
+        */
+        CompilerService.prototype.openFile = function (filename) {
+            //console.log("opening "+filename+"...");
+            filename = ts.normalizePath(filename);
+            var dirPath = ts.getDirectoryPath(filename);
+            //console.log("normalized as "+filename+" with dir path "+dirPath);
+            var info = this.host.getScriptInfo(filename);
+            if (info == null) {
+                var content = ts.sys.readFile(filename);
+                if (content) {
+                    info = this.host.addScript(filename, content);
+                    var preProcessedInfo = ts.preProcessFile(content, false);
+                    if (preProcessedInfo.referencedFiles.length > 0) {
+                        for (var i = 0, len = preProcessedInfo.referencedFiles.length; i < len; i++) {
+                            var refFilename = ts.normalizePath(preProcessedInfo.referencedFiles[i].filename);
+                            refFilename = getAbsolutePath(refFilename, dirPath);
+                            this.openFile(refFilename);
+                        }
+                    }
+                    console.log("opened " + filename);
+                }
+                else {
+                }
+            }
+            return info;
+        };
+        return CompilerService;
+    })();
+    Editor.CompilerService = CompilerService;
+    var homePrefix = "/home/steve/src/ts/versionCache/";
+    var compPrefix = "/home/steve/src/TypeScript/src/compiler/";
+    function bigProjTest(projectService) {
+        var cfile = homePrefix + "client.ts";
+        var innerFile = compPrefix + "core.ts";
+        projectService.openSpecifiedFile(innerFile);
+        var scriptInfo = projectService.openSpecifiedFile(cfile);
+        var project = scriptInfo.activeProject;
+        var compilerService = project.compilerService;
+        var pos = compilerService.host.lineColToPosition(cfile, 824, 61);
+        var typeInfo = compilerService.languageService.getQuickInfoAtPosition(cfile, pos);
+        if (typeInfo) {
+            printLine(ts.displayPartsToString(typeInfo.displayParts));
+            projectService.printProjects();
+        }
+    }
+    function lsProjTest(tstname, projectService, goBig) {
+        if (goBig === void 0) { goBig = false; }
+        var tfile = homePrefix + tstname;
+        var zfile = homePrefix + "z.ts";
+        var scriptInfo = projectService.openSpecifiedFile(tfile);
+        var project = scriptInfo.activeProject;
+        var compilerService = project.compilerService;
+        var typeInfo = compilerService.languageService.getQuickInfoAtPosition(zfile, 0);
+        printLine(ts.displayPartsToString(typeInfo.displayParts));
+        compilerService.host.editScript(zfile, 2, 9, "zebra");
+        typeInfo = compilerService.languageService.getQuickInfoAtPosition(zfile, 2);
+        printLine(ts.displayPartsToString(typeInfo.displayParts));
+        compilerService.host.editScript(zfile, 2, 7, "giraffe");
+        typeInfo = compilerService.languageService.getQuickInfoAtPosition(zfile, 2);
+        printLine(ts.displayPartsToString(typeInfo.displayParts));
+        var snapshot = compilerService.host.getScriptSnapshot(zfile);
+        var text = snapshot.getText(0, snapshot.getLength());
+        var tinsertString = "class Manimal {\r\n    location: Point;\r\n}\r\n";
+        compilerService.host.editScript(tfile, 0, 0, tinsertString);
+        var insertString = ";\r\nvar m = new Manimal();\r\nm.location";
+        compilerService.host.editScript(zfile, text.length - 1, text.length - 1, insertString);
+        var offset = text.length + 28;
+        typeInfo = compilerService.languageService.getQuickInfoAtPosition(zfile, offset);
+        printLine(ts.displayPartsToString(typeInfo.displayParts));
+        if (goBig) {
+            bigProjTest(projectService);
+        }
+    }
+    Editor.lsProjTest = lsProjTest;
+    function lsTest() {
+        var compilerService = new CompilerService();
+        var tfile = homePrefix + "tst.ts";
+        var zfile = homePrefix + "z.ts";
+        var info = compilerService.openFile(tfile);
+        var typeInfo = compilerService.languageService.getQuickInfoAtPosition(zfile, 0);
+        printLine(ts.displayPartsToString(typeInfo.displayParts));
+        compilerService.host.editScript(zfile, 2, 9, "zebra");
+        typeInfo = compilerService.languageService.getQuickInfoAtPosition(zfile, 2);
+        printLine(ts.displayPartsToString(typeInfo.displayParts));
+        compilerService.host.editScript(zfile, 2, 7, "giraffe");
+        typeInfo = compilerService.languageService.getQuickInfoAtPosition(zfile, 2);
+        printLine(ts.displayPartsToString(typeInfo.displayParts));
+        var snapshot = compilerService.host.getScriptSnapshot(zfile);
+        var text = snapshot.getText(0, snapshot.getLength());
+        var tinsertString = "class Manimal {\r\n    location: Point;\r\n}\r\n";
+        compilerService.host.editScript(tfile, 0, 0, tinsertString);
+        var insertString = ";\r\nvar m = new Manimal();\r\nm.location";
+        compilerService.host.editScript(zfile, text.length - 1, text.length - 1, insertString);
+        var offset = text.length + 28;
+        typeInfo = compilerService.languageService.getQuickInfoAtPosition(zfile, offset);
+        printLine(ts.displayPartsToString(typeInfo.displayParts));
+        /*
+        if (typeInfo.memberName.toString()!="Point") {
+            recordError();
+            return;
+        }
+        */
+    }
+    Editor.lsTest = lsTest;
+    function bigTest() {
+        //        editStress("../../TypeScript/src/lib/dom.generated.d.ts", false);
+        editStress("../../TypeScript/src/compiler/types.ts", false);
+        editStress("tst.ts", false);
+        editStress("client.ts", false);
+        //        editStress("..\\..\\TypeScript\\src\\lib\\dom.generated.d.ts", false);
+    }
+    function edTest() {
+        editTest();
+        tstTest();
+        if (!gloError) {
+            lsTest();
+        }
+        if (!gloError) {
+            var projectService = new ProjectService();
+            lsProjTest("tst.ts", projectService);
+            lsProjTest("auxtst.ts", projectService, true);
+        }
+        if (!gloError) {
+            bigTest();
+        }
+        if (gloError) {
+            printLine(" ! Fail: versionCache");
+        }
+        else {
+            printLine("Pass");
+        }
+    }
+    Editor.edTest = edTest;
     (function (CharRangeSection) {
         CharRangeSection[CharRangeSection["PreStart"] = 0] = "PreStart";
         CharRangeSection[CharRangeSection["Start"] = 1] = "Start";
@@ -830,967 +1763,6 @@ var Editor;
     })();
     Editor.LineLeaf = LineLeaf;
 })(Editor || (Editor = {}));
-var Editor;
-(function (Editor) {
-    var gloError = false;
-    var lineCollectionCapacity = 4;
-    var indentStrings = [];
-    var indentBase = "    ";
-    function getIndent(indentAmt) {
-        if (!indentStrings[indentAmt]) {
-            indentStrings[indentAmt] = "";
-            for (var i = 0; i < indentAmt; i++) {
-                indentStrings[indentAmt] += indentBase;
-            }
-        }
-        return indentStrings[indentAmt];
-    }
-    function editFlat(s, dl, nt, source) {
-        return source.substring(0, s) + nt + source.substring(s + dl, source.length);
-    }
-    function printLine(s) {
-        ts.sys.write(s + '\n');
-    }
-    Editor.printLine = printLine;
-    function showLines(s) {
-        var strBuilder = "";
-        for (var i = 0, len = s.length; i < len; i++) {
-            if (s.charCodeAt(i) == 10) {
-                strBuilder += '\\n';
-            }
-            else if (s.charCodeAt(i) == 13) {
-                strBuilder += '\\r';
-            }
-            else {
-                strBuilder += s.charAt(i);
-            }
-        }
-        return strBuilder;
-    }
-    function recordError() {
-        gloError = true;
-    }
-    function tstTest() {
-        var fname = 'tst.ts';
-        var content = ts.sys.readFile(fname);
-        var lm = Editor.LineIndex.linesFromText(content);
-        var lines = lm.lines;
-        if (lines.length == 0) {
-            return;
-        }
-        var lineMap = lm.lineMap;
-        var lineIndex = new Editor.LineIndex();
-        lineIndex.load(lines);
-        var editedText = lineIndex.getText(0, content.length);
-        var snapshot;
-        var checkText;
-        var insertString;
-        // change 9 1 0 1 {"y"}
-        var pos = lineColToPosition(lineIndex, 9, 1);
-        insertString = "y";
-        checkText = editFlat(pos, 0, insertString, content);
-        snapshot = lineIndex.edit(pos, 0, insertString);
-        editedText = snapshot.getText(0, checkText.length);
-        if (editedText != checkText) {
-            recordError();
-            return;
-        }
-        // change 9 2 0 1 {"."}
-        var pos = lineColToPosition(snapshot, 9, 2);
-        insertString = ".";
-        checkText = editFlat(pos, 0, insertString, checkText);
-        snapshot = snapshot.edit(pos, 0, insertString);
-        editedText = snapshot.getText(0, checkText.length);
-        if (editedText != checkText) {
-            recordError();
-            return;
-        }
-        // change 9 3 0 1 {"\n"}
-        var pos = lineColToPosition(snapshot, 9, 3);
-        insertString = "\n";
-        checkText = editFlat(pos, 0, insertString, checkText);
-        snapshot = snapshot.edit(pos, 0, insertString);
-        editedText = snapshot.getText(0, checkText.length);
-        if (editedText != checkText) {
-            recordError();
-            return;
-        }
-        // change 10 1 0 10 {"\n\n\n\n\n\n\n\n\n\n"}
-        pos = lineColToPosition(snapshot, 10, 1);
-        insertString = "\n\n\n\n\n\n\n\n\n\n";
-        checkText = editFlat(pos, 0, insertString, checkText);
-        snapshot = snapshot.edit(pos, 0, insertString);
-        editedText = snapshot.getText(0, checkText.length);
-        if (editedText != checkText) {
-            recordError();
-            return;
-        }
-        // change 19 1 1 0
-        pos = lineColToPosition(snapshot, 19, 1);
-        checkText = editFlat(pos, 1, "", checkText);
-        snapshot = snapshot.edit(pos, 1);
-        editedText = snapshot.getText(0, checkText.length);
-        if (editedText != checkText) {
-            recordError();
-            return;
-        }
-        // change 18 1 1 0
-        pos = lineColToPosition(snapshot, 18, 1);
-        checkText = editFlat(pos, 1, "", checkText);
-        snapshot = snapshot.edit(pos, 1);
-        editedText = snapshot.getText(0, checkText.length);
-        if (editedText != checkText) {
-            recordError();
-            return;
-        }
-        function lineColToPosition(lineIndex, line, col) {
-            var lineInfo = lineIndex.lineNumberToInfo(line);
-            return (lineInfo.offset + col - 1);
-        }
-    }
-    function editTest() {
-        var fname = 'editme';
-        var content = ts.sys.readFile(fname);
-        var lm = Editor.LineIndex.linesFromText(content);
-        var lines = lm.lines;
-        if (lines.length == 0) {
-            return;
-        }
-        var lineMap = lm.lineMap;
-        var lineIndex = new Editor.LineIndex();
-        lineIndex.load(lines);
-        var editedText = lineIndex.getText(0, content.length);
-        var snapshot;
-        var checkText;
-        var insertString;
-        // Case VII: insert at end of file
-        insertString = "hmmmm...\r\n";
-        checkText = editFlat(content.length, 0, insertString, content);
-        snapshot = lineIndex.edit(content.length, 0, insertString);
-        editedText = snapshot.getText(0, checkText.length);
-        if (editedText != checkText) {
-            recordError();
-            return;
-        }
-        // Case IV: unusual line endings merge
-        snapshot = lineIndex.edit(lines[0].length - 1, lines[1].length, "");
-        editedText = snapshot.getText(0, content.length - lines[1].length);
-        checkText = editFlat(lines[0].length - 1, lines[1].length, "", content);
-        if (editedText != checkText) {
-            recordError();
-            return;
-        }
-        // Case VIIa: delete whole line and nothing but line (last line)
-        var llpos = lm.lineMap[lm.lineMap.length - 2];
-        snapshot = lineIndex.edit(llpos, lines[lines.length - 1].length, "");
-        checkText = editFlat(llpos, lines[lines.length - 1].length, "", content);
-        editedText = snapshot.getText(0, checkText.length);
-        if (editedText != checkText) {
-            recordError();
-            return;
-        }
-        // Case VIIb: delete whole line and nothing but line (first line)
-        snapshot = lineIndex.edit(0, lines[0].length, "");
-        editedText = snapshot.getText(0, content.length - lines[0].length);
-        checkText = editFlat(0, lines[0].length, "", content);
-        if (editedText != checkText) {
-            recordError();
-            return;
-        }
-        // and insert with no line breaks
-        insertString = "moo, moo, moo! ";
-        snapshot = lineIndex.edit(0, lines[0].length, insertString);
-        editedText = snapshot.getText(0, content.length - lines[0].length + insertString.length);
-        checkText = editFlat(0, lines[0].length, insertString, content);
-        if (editedText != checkText) {
-            recordError();
-            return;
-        }
-        // and insert with multiple line breaks
-        insertString = "moo, \r\nmoo, \r\nmoo! ";
-        snapshot = lineIndex.edit(0, lines[0].length, insertString);
-        editedText = snapshot.getText(0, content.length - lines[0].length + insertString.length);
-        checkText = editFlat(0, lines[0].length, insertString, content);
-        if (editedText != checkText) {
-            recordError();
-            return;
-        }
-        snapshot = lineIndex.edit(0, lines[0].length + lines[1].length, "");
-        editedText = snapshot.getText(0, content.length - (lines[0].length + lines[1].length));
-        checkText = editFlat(0, lines[0].length + lines[1].length, "", content);
-        if (editedText != checkText) {
-            recordError();
-            return;
-        }
-        snapshot = lineIndex.edit(lines[0].length, lines[1].length + lines[2].length, "");
-        editedText = snapshot.getText(0, content.length - (lines[1].length + lines[2].length));
-        checkText = editFlat(lines[0].length, lines[1].length + lines[2].length, "", content);
-        if (editedText != checkText) {
-            recordError();
-            return;
-        }
-        // Case VI: insert multiple line breaks
-        insertString = "cr...\r\ncr...\r\ncr...\r\ncr...\r\ncr...\r\ncr...\r\ncr...\r\ncr...\r\ncr...\r\ncr...\r\ncr...\r\ncr";
-        snapshot = lineIndex.edit(21, 1, insertString);
-        editedText = snapshot.getText(0, content.length + insertString.length - 1);
-        checkText = editFlat(21, 1, insertString, content);
-        if (editedText != checkText) {
-            recordError();
-            return;
-        }
-        insertString = "cr...\r\ncr...\r\ncr";
-        snapshot = lineIndex.edit(21, 1, insertString);
-        editedText = snapshot.getText(0, content.length + insertString.length - 1);
-        checkText = editFlat(21, 1, insertString, content);
-        if (editedText != checkText) {
-            recordError();
-            return;
-        }
-        // leading '\n'
-        insertString = "\ncr...\r\ncr...\r\ncr";
-        snapshot = lineIndex.edit(21, 1, insertString);
-        editedText = snapshot.getText(0, content.length + insertString.length - 1);
-        checkText = editFlat(21, 1, insertString, content);
-        if (editedText != checkText) {
-            recordError();
-            return;
-        }
-        // Case I: single line no line breaks deleted or inserted
-        // delete 1 char
-        snapshot = lineIndex.edit(21, 1);
-        editedText = snapshot.getText(0, content.length - 1);
-        checkText = editFlat(21, 1, "", content);
-        if (editedText != checkText) {
-            recordError();
-            return;
-        }
-        // insert 1 char
-        snapshot = lineIndex.edit(21, 0, "b");
-        editedText = snapshot.getText(0, content.length + 1);
-        checkText = editFlat(21, 0, "b", content);
-        if (editedText != checkText) {
-            recordError();
-            return;
-        }
-        // delete 1, insert 2
-        snapshot = lineIndex.edit(21, 1, "cr");
-        editedText = snapshot.getText(0, content.length + 1);
-        checkText = editFlat(21, 1, "cr", content);
-        if (editedText != checkText) {
-            recordError();
-            return;
-        }
-        // Case II: delete across line break
-        snapshot = lineIndex.edit(21, 22);
-        editedText = snapshot.getText(0, content.length - 22);
-        checkText = editFlat(21, 22, "", content);
-        if (editedText != checkText) {
-            recordError();
-            return;
-        }
-        snapshot = lineIndex.edit(21, 32);
-        editedText = snapshot.getText(0, content.length - 32);
-        checkText = editFlat(21, 32, "", content);
-        if (editedText != checkText) {
-            recordError();
-            return;
-        }
-        // Case III: delete across multiple line breaks and insert no line breaks
-        snapshot = lineIndex.edit(21, 42);
-        editedText = snapshot.getText(0, content.length - 42);
-        checkText = editFlat(21, 42, "", content);
-        if (editedText != checkText) {
-            recordError();
-            return;
-        }
-        snapshot = lineIndex.edit(21, 42, "slithery ");
-        editedText = snapshot.getText(0, content.length - 33);
-        checkText = editFlat(21, 42, "slithery ", content);
-        if (editedText != checkText) {
-            recordError();
-            return;
-        }
-    }
-    function editStress(fname, timing) {
-        var content = ts.sys.readFile(fname);
-        var lm = Editor.LineIndex.linesFromText(content);
-        var lines = lm.lines;
-        if (lines.length == 0) {
-            return;
-        }
-        var lineMap = lm.lineMap;
-        var lineIndex = new Editor.LineIndex();
-        lineIndex.load(lines);
-        var totalChars = content.length;
-        var rsa = [];
-        var la = [];
-        var las = [];
-        var elas = [];
-        var ersa = [];
-        var ela = [];
-        var etotalChars = totalChars;
-        var j;
-        var startTime;
-        for (j = 0; j < 100000; j++) {
-            rsa[j] = Math.floor(Math.random() * totalChars);
-            la[j] = Math.floor(Math.random() * (totalChars - rsa[j]));
-            if (la[j] > 4) {
-                las[j] = 4;
-            }
-            else {
-                las[j] = la[j];
-            }
-            if (j < 4000) {
-                ersa[j] = Math.floor(Math.random() * etotalChars);
-                ela[j] = Math.floor(Math.random() * (etotalChars - ersa[j]));
-                if (ela[j] > 4) {
-                    elas[j] = 4;
-                }
-                else {
-                    elas[j] = ela[j];
-                }
-                etotalChars += (las[j] - elas[j]);
-            }
-        }
-        if (timing) {
-            startTime = Date.now();
-        }
-        for (j = 0; j < 2000; j++) {
-            var s2 = lineIndex.getText(rsa[j], la[j]);
-            if (!timing) {
-                var s1 = content.substring(rsa[j], rsa[j] + la[j]);
-                if (s1 != s2) {
-                    recordError();
-                    return;
-                }
-            }
-        }
-        if (timing) {
-            printLine("range (average length 1/4 file size): " + ((Date.now() - startTime) / 2).toFixed(3) + " us");
-        }
-        //        printLine("check1");
-        if (timing) {
-            startTime = Date.now();
-        }
-        for (j = 0; j < 10000; j++) {
-            var s2 = lineIndex.getText(rsa[j], las[j]);
-            if (!timing) {
-                var s1 = content.substring(rsa[j], rsa[j] + las[j]);
-                if (s1 != s2) {
-                    recordError();
-                    return;
-                }
-            }
-        }
-        //        printLine("check2");
-        if (timing) {
-            printLine("range (average length 4 chars): " + ((Date.now() - startTime) / 10).toFixed(3) + " us");
-        }
-        if (timing) {
-            startTime = Date.now();
-        }
-        var snapshot;
-        for (j = 0; j < 2000; j++) {
-            var insertString = content.substring(rsa[100000 - j], rsa[100000 - j] + las[100000 - j]);
-            snapshot = lineIndex.edit(rsa[j], las[j], insertString);
-            if (!timing) {
-                var checkText = editFlat(rsa[j], las[j], insertString, content);
-                var snapText = snapshot.getText(0, checkText.length);
-                if (checkText != snapText) {
-                    if (s1 != s2) {
-                        recordError();
-                        return;
-                    }
-                }
-            }
-        }
-        //        printLine("check3");
-        if (timing) {
-            printLine("edit (average length 4): " + ((Date.now() - startTime) / 2).toFixed(3) + " us");
-        }
-        var svc = Editor.ScriptVersionCache.fromString(content);
-        checkText = content;
-        if (timing) {
-            startTime = Date.now();
-        }
-        for (j = 0; j < 2000; j++) {
-            insertString = content.substring(rsa[j], rsa[j] + las[j]);
-            svc.edit(ersa[j], elas[j], insertString);
-            if (!timing) {
-                checkText = editFlat(ersa[j], elas[j], insertString, checkText);
-            }
-            if (0 == (j % 4)) {
-                var snap = svc.getSnapshot();
-                if (!timing) {
-                    snapText = snap.getText(0, checkText.length);
-                    if (checkText != snapText) {
-                        if (s1 != s2) {
-                            recordError();
-                            return;
-                        }
-                    }
-                }
-            }
-        }
-        if (timing) {
-            printLine("edit ScriptVersionCache: " + ((Date.now() - startTime) / 2).toFixed(3) + " us");
-        }
-        //        printLine("check4");
-        if (timing) {
-            startTime = Date.now();
-        }
-        for (j = 0; j < 5000; j++) {
-            insertString = content.substring(rsa[100000 - j], rsa[100000 - j] + la[100000 - j]);
-            snapshot = lineIndex.edit(rsa[j], la[j], insertString);
-            if (!timing) {
-                checkText = editFlat(rsa[j], la[j], insertString, content);
-                snapText = snapshot.getText(0, checkText.length);
-                if (checkText != snapText) {
-                    if (s1 != s2) {
-                        recordError();
-                        return;
-                    }
-                }
-            }
-        }
-        if (timing) {
-            printLine("edit (average length 1/4th file size): " + ((Date.now() - startTime) / 5).toFixed(3) + " us");
-        }
-        var t;
-        var errorCount = 0;
-        if (timing) {
-            startTime = Date.now();
-        }
-        for (j = 0; j < 100000; j++) {
-            var lp = lineIndex.charOffsetToLineNumberAndPos(rsa[j]);
-            if (!timing) {
-                var lac = ts.getLineAndCharacterOfPosition(lineMap, rsa[j]);
-                if (lac.line != lp.line) {
-                    recordError();
-                    printLine("arrgh " + lac.line + " " + lp.line + " " + j);
-                    return;
-                }
-                if (lac.character != (lp.offset + 1)) {
-                    recordError();
-                    printLine("arrgh ch... " + lac.character + " " + (lp.offset + 1) + " " + j);
-                    return;
-                }
-            }
-        }
-        //        printLine("check6");
-        if (timing) {
-            printLine("line/offset from pos: " + ((Date.now() - startTime) / 100).toFixed(3) + " us");
-        }
-        if (timing) {
-            startTime = Date.now();
-        }
-        var outer = 1;
-        if (timing) {
-            outer = 100;
-        }
-        for (var ko = 0; ko < outer; ko++) {
-            for (var k = 0, llen = lines.length; k < llen; k++) {
-                var lineInfo = lineIndex.lineNumberToInfo(k + 1);
-                var lineIndexOffset = lineInfo.offset;
-                if (!timing) {
-                    var lineMapOffset = lineMap[k];
-                    if (lineIndexOffset != lineMapOffset) {
-                        recordError();
-                        return;
-                    }
-                }
-            }
-        }
-        if (timing) {
-            printLine("start pos from line: " + (((Date.now() - startTime) / lines.length) * 10).toFixed(3) + " us");
-        }
-    }
-    var ScriptInfo = (function () {
-        function ScriptInfo(filename, content, isOpen) {
-            if (isOpen === void 0) { isOpen = true; }
-            this.filename = filename;
-            this.content = content;
-            this.isOpen = isOpen;
-            this.isRoot = false;
-            this.children = [];
-            this.svc = Editor.ScriptVersionCache.fromString(content);
-        }
-        ScriptInfo.prototype.addChild = function (childInfo) {
-            this.children.push(childInfo);
-        };
-        ScriptInfo.prototype.snap = function () {
-            return this.svc.getSnapshot();
-        };
-        ScriptInfo.prototype.editContent = function (minChar, limChar, newText) {
-            this.svc.edit(minChar, limChar - minChar, newText);
-        };
-        ScriptInfo.prototype.getTextChangeRangeBetweenVersions = function (startVersion, endVersion) {
-            return this.svc.getTextChangesBetweenVersions(startVersion, endVersion);
-        };
-        ScriptInfo.prototype.getChangeRange = function (oldSnapshot) {
-            return this.snap().getChangeRange(oldSnapshot);
-        };
-        return ScriptInfo;
-    })();
-    Editor.ScriptInfo = ScriptInfo;
-    var CancellationToken = (function () {
-        function CancellationToken() {
-            this.requestPending = false;
-        }
-        CancellationToken.prototype.cancel = function () {
-            this.requestPending = true;
-        };
-        CancellationToken.prototype.reset = function () {
-            this.requestPending = false;
-        };
-        CancellationToken.prototype.isCancellationRequested = function () {
-            var temp = this.requestPending;
-            return temp;
-        };
-        CancellationToken.None = new CancellationToken();
-        return CancellationToken;
-    })();
-    Editor.CancellationToken = CancellationToken;
-    var LSHost = (function () {
-        function LSHost(cancellationToken) {
-            if (cancellationToken === void 0) { cancellationToken = CancellationToken.None; }
-            this.cancellationToken = cancellationToken;
-            this.ls = null;
-            this.compilationSettings = null;
-            this.filenameToScript = {};
-            this.logger = this;
-            this.addDefaultLibrary();
-        }
-        LSHost.prototype.cancel = function () {
-            this.cancellationToken.cancel();
-        };
-        LSHost.prototype.trace = function (str) {
-        };
-        LSHost.prototype.error = function (str) {
-        };
-        LSHost.prototype.reset = function () {
-            this.cancellationToken.reset();
-        };
-        LSHost.prototype.addDefaultLibrary = function () {
-            this.addFile("/home/steve/src/TypeScript/built/local/lib.core.d.ts");
-        };
-        LSHost.prototype.getScriptSnapshot = function (filename) {
-            return this.getScriptInfo(filename).snap();
-        };
-        LSHost.prototype.getCompilationSettings = function () {
-            return this.compilationSettings;
-        };
-        LSHost.prototype.getScriptFileNames = function () {
-            var filenames = [];
-            for (var filename in this.filenameToScript) {
-                filenames.push(filename);
-            }
-            return filenames;
-        };
-        LSHost.prototype.getScriptVersion = function (filename) {
-            return this.getScriptInfo(filename).svc.latestVersion().toString();
-        };
-        LSHost.prototype.getLocalizedDiagnosticMessages = function () {
-            return "";
-        };
-        LSHost.prototype.getCancellationToken = function () {
-            return this.cancellationToken;
-        };
-        LSHost.prototype.getCurrentDirectory = function () {
-            return "";
-        };
-        LSHost.prototype.getDefaultLibFilename = function () {
-            return "";
-        };
-        LSHost.prototype.getScriptIsOpen = function (filename) {
-            return this.getScriptInfo(filename).isOpen;
-        };
-        LSHost.prototype.addFile = function (name) {
-            var content = ts.sys.readFile(name);
-            this.addScript(name, content);
-        };
-        LSHost.prototype.getScriptInfo = function (filename) {
-            return ts.lookUp(this.filenameToScript, filename);
-        };
-        LSHost.prototype.addScriptInfo = function (info) {
-            if (!this.getScriptInfo(info.filename)) {
-                this.filenameToScript[info.filename] = info;
-                return info;
-            }
-        };
-        LSHost.prototype.addScript = function (filename, content) {
-            var script = new ScriptInfo(filename, content);
-            this.filenameToScript[filename] = script;
-            return script;
-        };
-        LSHost.prototype.editScript = function (filename, minChar, limChar, newText) {
-            var script = this.getScriptInfo(filename);
-            if (script) {
-                script.editContent(minChar, limChar, newText);
-                return;
-            }
-            throw new Error("No script with name '" + filename + "'");
-        };
-        LSHost.prototype.resolvePath = function (path) {
-            var start = new Date().getTime();
-            var result = ts.sys.resolvePath(path);
-            return result;
-        };
-        LSHost.prototype.fileExists = function (path) {
-            var start = new Date().getTime();
-            var result = ts.sys.fileExists(path);
-            return result;
-        };
-        LSHost.prototype.directoryExists = function (path) {
-            return ts.sys.directoryExists(path);
-        };
-        LSHost.prototype.log = function (s) {
-            // For debugging...
-            //printLine("TypeScriptLS:" + s);
-        };
-        /**
-         * @param line 1 based index
-         * @param col 1 based index
-        */
-        LSHost.prototype.lineColToPosition = function (filename, line, col) {
-            var script = this.filenameToScript[filename];
-            var index = script.snap().index;
-            var lineInfo = index.lineNumberToInfo(line);
-            return (lineInfo.offset + col - 1);
-        };
-        /**
-         * @param line 0 based index
-         * @param offset 0 based index
-        */
-        LSHost.prototype.positionToZeroBasedLineCol = function (filename, position) {
-            var script = this.filenameToScript[filename];
-            var index = script.snap().index;
-            var lineCol = index.charOffsetToLineNumberAndPos(position);
-            return { line: lineCol.line - 1, offset: lineCol.offset };
-        };
-        return LSHost;
-    })();
-    Editor.LSHost = LSHost;
-    function getCanonicalFileName(filename) {
-        if (ts.sys.useCaseSensitiveFileNames) {
-            return filename;
-        }
-        else {
-            return filename.toLowerCase();
-        }
-    }
-    // assumes normalized paths
-    function getAbsolutePath(filename, directory) {
-        var rootLength = ts.getRootLength(filename);
-        if (rootLength > 0) {
-            return filename;
-        }
-        else {
-            var splitFilename = filename.split('/');
-            var splitDir = directory.split('/');
-            var i = 0;
-            var dirTail = 0;
-            var sflen = splitFilename.length;
-            while ((i < sflen) && (splitFilename[i].charAt(0) == '.')) {
-                var dots = splitFilename[i];
-                if (dots == '..') {
-                    dirTail++;
-                }
-                else if (dots != '.') {
-                    return undefined;
-                }
-                i++;
-            }
-            return splitDir.slice(0, splitDir.length - dirTail).concat(splitFilename.slice(i)).join('/');
-        }
-    }
-    var Project = (function () {
-        function Project(root) {
-            this.root = root;
-            this.compilerService = new CompilerService();
-            this.addGraph(root);
-            this.compilerService.languageService.getNavigateToItems(".*");
-        }
-        Project.prototype.addGraph = function (scriptInfo) {
-            if (this.addScript(scriptInfo)) {
-                for (var i = 0, clen = scriptInfo.children.length; i < clen; i++) {
-                    this.addGraph(scriptInfo.children[i]);
-                }
-            }
-        };
-        Project.prototype.addScript = function (info) {
-            info.activeProject = this;
-            return this.compilerService.host.addScriptInfo(info);
-        };
-        Project.prototype.printFiles = function () {
-            var filenames = this.compilerService.host.getScriptFileNames();
-            filenames.map(function (filename) {
-                console.log(filename);
-            });
-        };
-        return Project;
-    })();
-    Editor.Project = Project;
-    var ProjectService = (function () {
-        function ProjectService() {
-            this.filenameToScriptInfo = {};
-            this.roots = [];
-            this.projects = [];
-            this.rootsChanged = false;
-            this.newRootDisjoint = true;
-        }
-        ProjectService.prototype.getProjectForFile = function (filename) {
-            var scriptInfo = ts.lookUp(this.filenameToScriptInfo, filename);
-            if (scriptInfo) {
-                return scriptInfo.activeProject;
-            }
-        };
-        ProjectService.prototype.printProjects = function () {
-            for (var i = 0, len = this.projects.length; i < len; i++) {
-                var project = this.projects[i];
-                console.log("Project " + i.toString());
-                project.printFiles();
-                console.log("-----------------------------------------------");
-            }
-        };
-        ProjectService.prototype.removeRoot = function (info) {
-            var len = this.roots.length;
-            for (var i = 0; i < len; i++) {
-                if (this.roots[i] == info) {
-                    if (i < (len - 1)) {
-                        this.roots[i] = this.roots[len - 1];
-                    }
-                    this.roots.length--;
-                    this.rootsChanged = true;
-                    info.isRoot = false;
-                    return true;
-                }
-            }
-            return false;
-        };
-        ProjectService.prototype.openSpecifiedFile = function (filename) {
-            this.rootsChanged = false;
-            this.newRootDisjoint = true;
-            var info = this.openFile(filename, true);
-            if (this.rootsChanged) {
-                var i = 0;
-                var len = this.roots.length;
-                if (this.newRootDisjoint) {
-                    i = len - 1;
-                }
-                for (; i < len; i++) {
-                    var root = this.roots[i];
-                    root.isRoot = true;
-                    this.projects[i] = new Project(root);
-                }
-            }
-            return info;
-        };
-        /**
-         * @param filename is absolute pathname
-        */
-        ProjectService.prototype.openFile = function (filename, possibleRoot) {
-            if (possibleRoot === void 0) { possibleRoot = false; }
-            //console.log("opening "+filename+"...");
-            filename = ts.normalizePath(filename);
-            var dirPath = ts.getDirectoryPath(filename);
-            //console.log("normalized as "+filename+" with dir path "+dirPath);
-            var info = ts.lookUp(this.filenameToScriptInfo, filename);
-            if (!info) {
-                var content = ts.sys.readFile(filename);
-                if (content) {
-                    info = new ScriptInfo(filename, content);
-                    this.filenameToScriptInfo[filename] = info;
-                    if (possibleRoot) {
-                        this.roots.push(info);
-                        this.rootsChanged = true;
-                    }
-                    var preProcessedInfo = ts.preProcessFile(content, false);
-                    if (preProcessedInfo.referencedFiles.length > 0) {
-                        for (var i = 0, len = preProcessedInfo.referencedFiles.length; i < len; i++) {
-                            var refFilename = ts.normalizePath(preProcessedInfo.referencedFiles[i].filename);
-                            refFilename = getAbsolutePath(refFilename, dirPath);
-                            var refInfo = this.openFile(refFilename);
-                            if (refInfo) {
-                                info.addChild(refInfo);
-                            }
-                        }
-                    }
-                }
-                else {
-                }
-            }
-            if ((!possibleRoot) && (info) && (info.isRoot)) {
-                if (this.removeRoot(info)) {
-                    this.rootsChanged = true;
-                    this.newRootDisjoint = false;
-                }
-            }
-            return info;
-        };
-        return ProjectService;
-    })();
-    Editor.ProjectService = ProjectService;
-    var CompilerService = (function () {
-        function CompilerService() {
-            // TODO: add usable cancellation token
-            this.cancellationToken = new CancellationToken();
-            this.host = new LSHost(this.cancellationToken);
-            this.settings = ts.getDefaultCompilerOptions();
-            this.documentRegistry = ts.createDocumentRegistry();
-            this.formatCodeOptions = {
-                IndentSize: 4,
-                TabSize: 4,
-                NewLineCharacter: ts.sys.newLine,
-                ConvertTabsToSpaces: true,
-                InsertSpaceAfterCommaDelimiter: true,
-                InsertSpaceAfterSemicolonInForStatements: true,
-                InsertSpaceBeforeAndAfterBinaryOperators: true,
-                InsertSpaceAfterKeywordsInControlFlowStatements: true,
-                InsertSpaceAfterFunctionKeywordForAnonymousFunctions: false,
-                InsertSpaceAfterOpeningAndBeforeClosingNonemptyParenthesis: false,
-                PlaceOpenBraceOnNewLineForFunctions: false,
-                PlaceOpenBraceOnNewLineForControlBlocks: false
-            };
-            this.languageService = ts.createLanguageService(this.host, this.documentRegistry);
-            this.classifier = ts.createClassifier(this.host);
-        }
-        /**
-         * @param filename is absolute pathname
-        */
-        CompilerService.prototype.openFile = function (filename) {
-            //console.log("opening "+filename+"...");
-            filename = ts.normalizePath(filename);
-            var dirPath = ts.getDirectoryPath(filename);
-            //console.log("normalized as "+filename+" with dir path "+dirPath);
-            var info = this.host.getScriptInfo(filename);
-            if (info == null) {
-                var content = ts.sys.readFile(filename);
-                if (content) {
-                    info = this.host.addScript(filename, content);
-                    var preProcessedInfo = ts.preProcessFile(content, false);
-                    if (preProcessedInfo.referencedFiles.length > 0) {
-                        for (var i = 0, len = preProcessedInfo.referencedFiles.length; i < len; i++) {
-                            var refFilename = ts.normalizePath(preProcessedInfo.referencedFiles[i].filename);
-                            refFilename = getAbsolutePath(refFilename, dirPath);
-                            this.openFile(refFilename);
-                        }
-                    }
-                    console.log("opened " + filename);
-                }
-                else {
-                }
-            }
-            return info;
-        };
-        return CompilerService;
-    })();
-    Editor.CompilerService = CompilerService;
-    var homePrefix = "/home/steve/src/ts/versionCache/";
-    var compPrefix = "/home/steve/src/TypeScript/src/compiler/";
-    function bigProjTest(projectService) {
-        var cfile = homePrefix + "client.ts";
-        var innerFile = compPrefix + "core.ts";
-        projectService.openSpecifiedFile(innerFile);
-        var scriptInfo = projectService.openSpecifiedFile(cfile);
-        var project = scriptInfo.activeProject;
-        var compilerService = project.compilerService;
-        var pos = compilerService.host.lineColToPosition(cfile, 824, 61);
-        var typeInfo = compilerService.languageService.getQuickInfoAtPosition(cfile, pos);
-        if (typeInfo) {
-            printLine(ts.displayPartsToString(typeInfo.displayParts));
-            projectService.printProjects();
-        }
-    }
-    function lsProjTest(tstname, projectService, goBig) {
-        if (goBig === void 0) { goBig = false; }
-        var tfile = homePrefix + tstname;
-        var zfile = homePrefix + "z.ts";
-        var scriptInfo = projectService.openSpecifiedFile(tfile);
-        var project = scriptInfo.activeProject;
-        var compilerService = project.compilerService;
-        var typeInfo = compilerService.languageService.getQuickInfoAtPosition(zfile, 0);
-        printLine(ts.displayPartsToString(typeInfo.displayParts));
-        compilerService.host.editScript(zfile, 2, 9, "zebra");
-        typeInfo = compilerService.languageService.getQuickInfoAtPosition(zfile, 2);
-        printLine(ts.displayPartsToString(typeInfo.displayParts));
-        compilerService.host.editScript(zfile, 2, 7, "giraffe");
-        typeInfo = compilerService.languageService.getQuickInfoAtPosition(zfile, 2);
-        printLine(ts.displayPartsToString(typeInfo.displayParts));
-        var snapshot = compilerService.host.getScriptSnapshot(zfile);
-        var text = snapshot.getText(0, snapshot.getLength());
-        var tinsertString = "class Manimal {\r\n    location: Point;\r\n}\r\n";
-        compilerService.host.editScript(tfile, 0, 0, tinsertString);
-        var insertString = ";\r\nvar m = new Manimal();\r\nm.location";
-        compilerService.host.editScript(zfile, text.length - 1, text.length - 1, insertString);
-        var offset = text.length + 28;
-        typeInfo = compilerService.languageService.getQuickInfoAtPosition(zfile, offset);
-        printLine(ts.displayPartsToString(typeInfo.displayParts));
-        if (goBig) {
-            bigProjTest(projectService);
-        }
-    }
-    Editor.lsProjTest = lsProjTest;
-    function lsTest() {
-        var compilerService = new CompilerService();
-        var tfile = homePrefix + "tst.ts";
-        var zfile = homePrefix + "z.ts";
-        var info = compilerService.openFile(tfile);
-        var typeInfo = compilerService.languageService.getQuickInfoAtPosition(zfile, 0);
-        printLine(ts.displayPartsToString(typeInfo.displayParts));
-        compilerService.host.editScript(zfile, 2, 9, "zebra");
-        typeInfo = compilerService.languageService.getQuickInfoAtPosition(zfile, 2);
-        printLine(ts.displayPartsToString(typeInfo.displayParts));
-        compilerService.host.editScript(zfile, 2, 7, "giraffe");
-        typeInfo = compilerService.languageService.getQuickInfoAtPosition(zfile, 2);
-        printLine(ts.displayPartsToString(typeInfo.displayParts));
-        var snapshot = compilerService.host.getScriptSnapshot(zfile);
-        var text = snapshot.getText(0, snapshot.getLength());
-        var tinsertString = "class Manimal {\r\n    location: Point;\r\n}\r\n";
-        compilerService.host.editScript(tfile, 0, 0, tinsertString);
-        var insertString = ";\r\nvar m = new Manimal();\r\nm.location";
-        compilerService.host.editScript(zfile, text.length - 1, text.length - 1, insertString);
-        var offset = text.length + 28;
-        typeInfo = compilerService.languageService.getQuickInfoAtPosition(zfile, offset);
-        printLine(ts.displayPartsToString(typeInfo.displayParts));
-        /*
-        if (typeInfo.memberName.toString()!="Point") {
-            recordError();
-            return;
-        }
-        */
-    }
-    Editor.lsTest = lsTest;
-    function bigTest() {
-        //        editStress("../../TypeScript/src/lib/dom.generated.d.ts", false);
-        editStress("../../TypeScript/src/compiler/types.ts", false);
-        editStress("tst.ts", false);
-        editStress("client.ts", false);
-        //        editStress("..\\..\\TypeScript\\src\\lib\\dom.generated.d.ts", false);
-    }
-    function edTest() {
-        editTest();
-        tstTest();
-        if (!gloError) {
-            lsTest();
-        }
-        if (!gloError) {
-            var projectService = new ProjectService();
-            lsProjTest("tst.ts", projectService);
-            lsProjTest("auxtst.ts", projectService, true);
-        }
-        if (!gloError) {
-            bigTest();
-        }
-        if (gloError) {
-            printLine(" ! Fail: versionCache");
-        }
-        else {
-            printLine("Pass");
-        }
-    }
-    Editor.edTest = edTest;
-})(Editor || (Editor = {}));
 var rl = readline.createInterface({
     input: process.stdin,
     output: process.stdout,
@@ -2013,6 +1985,13 @@ var JsDebugSession = (function () {
     };
     return JsDebugSession;
 })();
+function formatDiag(file, project, diag) {
+    return {
+        min: project.compilerService.host.positionToZeroBasedLineCol(file, diag.start),
+        len: diag.length,
+        text: diag.messageText
+    };
+}
 var Session = (function () {
     function Session(useProtocol) {
         if (useProtocol === void 0) { useProtocol = false; }
@@ -2142,22 +2121,30 @@ var Session = (function () {
             }
         }
     };
+    Session.prototype.semanticCheck = function (file, project) {
+        var diags = project.compilerService.languageService.getSemanticDiagnostics(file);
+        if (diags) {
+            var bakedDiags = diags.map(function (diag) { return formatDiag(file, project, diag); });
+            this.event({ fileName: file, diagnostics: bakedDiags }, "semanticDiag");
+        }
+    };
     Session.prototype.updateErrorCheck = function (file, project) {
         var _this = this;
         if (this.errorTimer) {
             clearTimeout(this.errorTimer);
         }
+        if (this.immediateId) {
+            clearImmediate(this.immediateId);
+            this.immediateId = undefined;
+        }
         this.errorTimer = setTimeout(function () {
             var diags = project.compilerService.languageService.getSyntacticDiagnostics(file);
             if (diags) {
-                var bakedDiags = diags.map(function (diag) { return ({
-                    min: project.compilerService.host.positionToZeroBasedLineCol(file, diag.start),
-                    len: diag.length,
-                    text: diag.messageText
-                }); });
+                var bakedDiags = diags.map(function (diag) { return formatDiag(file, project, diag); });
                 _this.event({ fileName: file, diagnostics: bakedDiags }, "syntaxDiag");
             }
             _this.errorTimer = undefined;
+            _this.immediateId = setImmediate(function () { return _this.semanticCheck(file, project); });
         }, 1500);
     };
     Session.prototype.listen = function () {
