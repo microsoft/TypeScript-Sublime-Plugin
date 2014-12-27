@@ -59,12 +59,12 @@ export declare class LSHost implements ts.LanguageServiceHost {
     /**
      * @param line 1 based index
      * @param col 1 based index
-    */
+     */
     lineColToPosition(filename: string, line: number, col: number): number;
     /**
      * @param line 0 based index
      * @param offset 0 based index
-    */
+     */
     positionToZeroBasedLineCol(filename: string, position: number): ILineInfo;
 }
 export declare class Project {
@@ -87,7 +87,7 @@ export declare class ProjectService {
     openSpecifiedFile(filename: string): ScriptInfo;
     /**
      * @param filename is absolute pathname
-    */
+     */
     openFile(filename: string, possibleRoot?: boolean): ScriptInfo;
 }
 export declare class CompilerService {
@@ -99,10 +99,7 @@ export declare class CompilerService {
     documentRegistry: ts.DocumentRegistry;
     formatCodeOptions: ts.FormatCodeOptions;
     constructor();
-    /**
-     * @param filename is absolute pathname
-    */
-    openFile(filename: string): ScriptInfo;
+    isExternalModule(filename: string): boolean;
 }
 export interface LineCollection {
     charCount(): number;
