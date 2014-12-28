@@ -701,33 +701,40 @@ class Session {
                     }
                 }
             }
-            else if (m=cmd.match(/^completions (\d+) (\d+) (.*)$/)) {
+            else if (m=cmd.match(/^completions (\d+) (\d+) (\{.*\})?\s*(.*)$/)) {
                 line = parseInt(m[1]);
                 col  = parseInt(m[2]);
-                file = m[3];
+                var prefix="";
+                file = m[4];
+                if (m[3]) {
+                    prefix = m[3].substring(1,m[3].length-1);
+                }
                 project=this.projectService.getProjectForFile(file);
                 if (project) {
-                    compilerService=project.compilerService;
-                    pos=compilerService.host.lineColToPosition(file,line,col);
-                    var completions=compilerService.languageService.getCompletionsAtPosition(file,pos);
+                    compilerService = project.compilerService;
+                    pos = compilerService.host.lineColToPosition(file, line, col);
+                    var completions = compilerService.languageService.getCompletionsAtPosition(file, pos);
                     if (completions) {
-                        var compressedEntries=completions.entries.map((entry)=> {
-                            var protoEntry=<ts.CompletionEntryDetails>{};
-                            protoEntry.name=entry.name;
-                            protoEntry.kind=entry.kind;
-                            if (entry.kindModifiers&&(entry.kindModifiers.length>0)) {
-                                protoEntry.kindModifiers=entry.kindModifiers;
+                        var compressedEntries = completions.entries.reduce((accum: ts.CompletionEntryDetails[], entry: ts.CompletionEntry) => {
+                            if (entry.name.indexOf(prefix) == 0) {
+                                var protoEntry = <ts.CompletionEntryDetails>{};
+                                protoEntry.name = entry.name;
+                                protoEntry.kind = entry.kind;
+                                if (entry.kindModifiers && (entry.kindModifiers.length > 0)) {
+                                    protoEntry.kindModifiers = entry.kindModifiers;
+                                }
+                                var details = compilerService.languageService.getCompletionEntryDetails(file, pos, entry.name);
+                                if (details && (details.documentation) && (details.documentation.length > 0)) {
+                                    protoEntry.documentation = details.documentation;
+                                }
+                                accum.push(protoEntry);
                             }
-                            var details = compilerService.languageService.getCompletionEntryDetails(file,pos,entry.name);
-                            if (details&&(details.documentation)&&(details.documentation.length>0)) {
-                                protoEntry.documentation=details.documentation;
-                            }
-                            return protoEntry;
-                        });
+                            return accum;
+                        }, []);
                         this.output(compressedEntries);
                     }
                     else {
-                        this.output(undefined,"no completions")                        
+                        this.output(undefined, "no completions")
                     }
                 }
             }
