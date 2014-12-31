@@ -51,6 +51,7 @@ export declare class LSHost implements ts.LanguageServiceHost {
     getScriptInfo(filename: string): ScriptInfo;
     addScriptInfo(info: ScriptInfo): ScriptInfo;
     addScript(filename: string, content: string): ScriptInfo;
+    reloadScript(filename: string, tmpfilename: string): void;
     editScript(filename: string, minChar: number, limChar: number, newText: string): void;
     resolvePath(path: string): string;
     fileExists(path: string): boolean;
@@ -81,6 +82,7 @@ export declare class ProjectService {
     projects: Project[];
     rootsChanged: boolean;
     newRootDisjoint: boolean;
+    lastRemovedRoots: ScriptInfo[];
     getProjectForFile(filename: string): Project;
     printProjects(): void;
     removeRoot(info: ScriptInfo): boolean;
@@ -145,6 +147,8 @@ export declare class ScriptVersionCache {
     edit(pos: number, deleteLen: number, insertedText?: string): void;
     latest(): LineIndexSnapshot;
     latestVersion(): number;
+    reloadFromFile(filename: string): void;
+    reload(script: string): void;
     getSnapshot(): LineIndexSnapshot;
     getTextChangesBetweenVersions(oldVersion: number, newVersion: number): ts.TextChangeRange;
     static fromString(script: string): ScriptVersionCache;
@@ -154,6 +158,7 @@ export declare class LineIndexSnapshot implements ts.IScriptSnapshot {
     cache: ScriptVersionCache;
     index: LineIndex;
     changesSincePreviousVersion: TextChange[];
+    reloaded: boolean;
     constructor(version: number, cache: ScriptVersionCache);
     getText(rangeStart: number, rangeEnd: number): string;
     getLength(): number;

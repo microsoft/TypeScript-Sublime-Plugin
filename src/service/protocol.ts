@@ -279,6 +279,11 @@ function formatDiag(file:string, project: ed.Project, diag: ts.Diagnostic) {
     };
 }
 
+interface PendingErrorCheck {
+    filename: string;
+    project: ed.Project;
+}
+
 class Session {
     projectService=new ed.ProjectService();
     prettyJSON=false;
@@ -430,23 +435,45 @@ class Session {
         }
     }
 
-    updateErrorCheck(file: string,project: ed.Project) {
+    syntacticCheck(file: string, project: ed.Project) {
+        var diags = project.compilerService.languageService.getSyntacticDiagnostics(file);
+        if (diags) {
+            var bakedDiags = diags.map((diag)=>formatDiag(file,project,diag));
+            this.event({ fileName: file, diagnostics: bakedDiags }, "syntaxDiag");
+        }
+    }
+
+    errorCheck(file: string, project: ed.Project) {
+        this.syntacticCheck(file,project);
+        this.semanticCheck(file,project);
+    }
+
+    updateErrorCheck(checkList: PendingErrorCheck[], ms = 1500, followMs=200) {
         if (this.errorTimer) {
             clearTimeout(this.errorTimer);
         }
         if (this.immediateId) {
             clearImmediate(this.immediateId);
-            this.immediateId=undefined;
+            this.immediateId = undefined;
         }
-        this.errorTimer = setTimeout(() => {
-            var diags = project.compilerService.languageService.getSyntacticDiagnostics(file);
-            if (diags) {
-                var bakedDiags = diags.map((diag)=>formatDiag(file,project,diag));
-                this.event({ fileName: file, diagnostics: bakedDiags }, "syntaxDiag");
-            }
-            this.errorTimer=undefined;
-            this.immediateId=setImmediate(()=>this.semanticCheck(file,project));
-        },1500);
+        var index = 0;
+        var checkOne = () => {
+            var checkSpec = checkList[index++];
+            this.syntacticCheck(checkSpec.filename, checkSpec.project);
+            this.immediateId = setImmediate(() => {
+                this.semanticCheck(checkSpec.filename, checkSpec.project);
+                this.immediateId = undefined;
+                if (checkList.length > index) {
+                    this.errorTimer = setTimeout(checkOne, followMs);
+                }
+                else {
+                    this.errorTimer = undefined;
+                }
+            });
+        }
+        if (checkList.length > index) {
+            this.errorTimer = setTimeout(checkOne, ms);
+        }
     }
 
     listen() {
@@ -738,6 +765,21 @@ class Session {
                     }
                 }
             }
+            else if (m = cmd.match(/^geterr (\d+) (.*)$/)) {
+                var ms = parseInt(m[1]);
+                var rawFiles=m[2];
+                var files=rawFiles.split(';');
+                var checkList = files.reduce((accum: PendingErrorCheck[], filename: string) => {
+                    project = this.projectService.getProjectForFile(filename);
+                    if (project) {
+                        accum.push({ filename: filename, project: project });
+                    }
+                    return accum;
+                }, []);
+                if (checkList.length > 0) {
+                    this.updateErrorCheck(checkList,ms);
+                }
+            }
             else if (m=cmd.match(/^change (\d+) (\d+) (\d+) (\d+) (\{\".*\"\})?\s*(.*)$/)) {
                 line = parseInt(m[1]);
                 col  = parseInt(m[2]);
@@ -755,8 +797,15 @@ class Session {
                     compilerService=project.compilerService;
                     pos=compilerService.host.lineColToPosition(file,line,col);
                     compilerService.host.editScript(file,pos,pos+deleteLen,insertString);
-                    this.updateErrorCheck(file,project);
                 }
+            }
+            else if (m = cmd.match(/^reload (.*) from (.*)$/)) {
+                file=m[1];
+                var tmpfile=m[2];
+                project=this.projectService.getProjectForFile(file);
+                if (project) {
+                    project.compilerService.host.reloadScript(file,tmpfile); 
+                }                
             }
             else if (m=cmd.match(/^navto (\{.*\}) (.*)$/)) {
                 var searchTerm=m[1];

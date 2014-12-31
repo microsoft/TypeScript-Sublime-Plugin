@@ -186,6 +186,13 @@ export class LSHost implements ts.LanguageServiceHost {
         return script;
     }
 
+    public reloadScript(filename: string, tmpfilename: string) {
+        var script = this.getScriptInfo(filename);
+        if (script) {
+            script.svc.reloadFromFile(tmpfilename);
+        }
+    }
+
     public editScript(filename: string, minChar: number, limChar: number, newText: string) {
         var script = this.getScriptInfo(filename);
         if (script) {
@@ -237,8 +244,7 @@ export class LSHost implements ts.LanguageServiceHost {
         var script: ScriptInfo = this.filenameToScript[filename];
         var index=script.snap().index;
         var lineCol=index.charOffsetToLineNumberAndPos(position);
-
-        return { line: lineCol.line-1, offset: lineCol.offset };
+        return { line: lineCol.line - 1, offset: lineCol.offset };
     }
 }
 
@@ -310,6 +316,7 @@ export class ProjectService {
     projects:Project[]=[];
     rootsChanged=false;
     newRootDisjoint=true;
+    lastRemovedRoots:ScriptInfo[]=[];
 
     getProjectForFile(filename: string) {
         var scriptInfo=ts.lookUp(this.filenameToScriptInfo,filename);
@@ -339,6 +346,7 @@ export class ProjectService {
                 this.roots.length--;
                 this.rootsChanged=true;
                 info.isRoot=false;
+                this.lastRemovedRoots.push(info);
                 return true;
             }
         }
@@ -347,6 +355,7 @@ export class ProjectService {
 
     openSpecifiedFile(filename:string) {
         this.rootsChanged=false;
+        this.lastRemovedRoots=[];
         this.newRootDisjoint=true;
         var info=this.openFile(filename,true);
         if (this.rootsChanged) {
@@ -735,6 +744,23 @@ export class ScriptVersionCache {
         return this.currentVersion;
     }
 
+    reloadFromFile(filename: string) {
+        var content = ts.sys.readFile(filename);
+        this.reload(content);
+    }
+
+    // reload whole script, leaving no change history behind reload
+    reload(script: string) {
+        this.currentVersion++;
+        this.changes=[]; // history wiped out by reload
+        var snap = new LineIndexSnapshot(this.currentVersion, this);
+        snap.reloaded=true;
+        this.versions[this.currentVersion] = snap;
+        snap.index = new LineIndex();
+        var lm = LineIndex.linesFromText(script);
+        snap.index.load(lm.lines);
+    }
+
     getSnapshot() {
         var snap = this.versions[this.currentVersion];
         if (this.changes.length > 0) {
@@ -758,6 +784,9 @@ export class ScriptVersionCache {
             var textChangeRanges: ts.TextChangeRange[] = [];
             for (var i = oldVersion + 1; i <= newVersion; i++) {
                 var snap = this.versions[i];
+                if (snap.reloaded) {
+                    return undefined;
+                }
                 for (var j = 0, len = snap.changesSincePreviousVersion.length; j < len; j++) {
                     var textChange = snap.changesSincePreviousVersion[j];
                     textChangeRanges[textChangeRanges.length] = textChange.getTextChangeRange();
@@ -784,6 +813,7 @@ export class ScriptVersionCache {
 export class LineIndexSnapshot implements ts.IScriptSnapshot {
     index: LineIndex;
     changesSincePreviousVersion: TextChange[] = [];
+    reloaded=false;
 
     constructor(public version: number, public cache: ScriptVersionCache) {
     }
@@ -818,6 +848,9 @@ export class LineIndexSnapshot implements ts.IScriptSnapshot {
     getTextChangeRangeSinceVersion(scriptVersion: number) {
         if (this.version <= scriptVersion) {
             return ts.TextChangeRange.unchanged;
+        }
+        else if (this.reloaded) {
+            return undefined;
         }
         else {
             return this.cache.getTextChangesBetweenVersions(scriptVersion,this.version);
@@ -1113,7 +1146,8 @@ export class LineNode implements LineCollection {
             }
         }
         else {
-            return undefined;
+            var lineInfo=this.lineNumberToInfo(this.lineCount(),0);
+            return { line: this.lineCount(), offset: lineInfo.leaf.charCount() };
         }
     }
 
