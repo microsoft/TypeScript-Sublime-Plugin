@@ -449,6 +449,9 @@ class Session {
     }
 
     updateErrorCheck(checkList: PendingErrorCheck[], ms = 1500, followMs=200) {
+        if (followMs < ms) {
+            followMs=ms;
+        }
         if (this.errorTimer) {
             clearTimeout(this.errorTimer);
         }
