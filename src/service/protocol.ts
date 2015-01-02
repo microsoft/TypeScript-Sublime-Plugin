@@ -449,7 +449,7 @@ class Session {
     }
 
     updateErrorCheck(checkList: PendingErrorCheck[], ms = 1500, followMs=200) {
-        if (followMs < ms) {
+        if (followMs > ms) {
             followMs=ms;
         }
         if (this.errorTimer) {
@@ -797,9 +797,9 @@ class Session {
                 file = m[6];
                 project=this.projectService.getProjectForFile(file);
                 if (project) {
-                    compilerService=project.compilerService;
-                    pos=compilerService.host.lineColToPosition(file,line,col);
-                    compilerService.host.editScript(file,pos,pos+deleteLen,insertString);
+                    compilerService = project.compilerService;
+                    pos = compilerService.host.lineColToPosition(file, line, col);
+                    compilerService.host.editScript(file, pos, pos + deleteLen, insertString);
                 }
             }
             else if (m = cmd.match(/^reload (.*) from (.*)$/)) {
@@ -807,7 +807,10 @@ class Session {
                 var tmpfile=m[2];
                 project=this.projectService.getProjectForFile(file);
                 if (project) {
-                    project.compilerService.host.reloadScript(file,tmpfile); 
+                    // make sure no changes happen before this one is finished
+                    project.compilerService.host.reloadScript(file, tmpfile, () => {
+                        this.output({ ack: true });
+                    }); 
                 }                
             }
             else if (m=cmd.match(/^navto (\{.*\}) (.*)$/)) {

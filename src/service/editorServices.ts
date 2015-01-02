@@ -3,6 +3,7 @@
 /// <reference path='node.d.ts' />
 
 import ts = require('typescript');
+import child_process=require('child_process');
 
 var lineCollectionCapacity = 4;
 var indentStrings: string[] = [];
@@ -186,10 +187,10 @@ export class LSHost implements ts.LanguageServiceHost {
         return script;
     }
 
-    public reloadScript(filename: string, tmpfilename: string) {
+    public reloadScript(filename: string, tmpfilename: string, cb:()=>any) {
         var script = this.getScriptInfo(filename);
         if (script) {
-            script.svc.reloadFromFile(tmpfilename);
+            script.svc.reloadFromFile(tmpfilename,cb);
         }
     }
 
@@ -285,7 +286,7 @@ function getAbsolutePath(filename:string, directory: string) {
 
 export class Project {
     compilerService=new CompilerService();
-    
+
     constructor(public root:ScriptInfo) {
         this.addGraph(root);
         this.compilerService.languageService.getNavigateToItems(".*");
@@ -715,6 +716,12 @@ export class TextChange {
     }
 }
 
+interface EdCmd {
+    cmdName:string;
+    lineStart:number;
+    lineEnd:number;
+}
+
 export class ScriptVersionCache {
     changes: TextChange[] = [];
     versions: LineIndexSnapshot[] = [];
@@ -725,11 +732,95 @@ export class ScriptVersionCache {
 
     // REVIEW: can optimize by coalescing simple edits
     edit(pos: number, deleteLen: number, insertedText?: string) {
+        //console.log("edit at "+pos.toString()+": "+"del: "+deleteLen+(insertedText?" i: "+insertedText:""));
         this.changes[this.changes.length] = new TextChange(pos, deleteLen, insertedText);
         if ((this.changes.length > ScriptVersionCache.changeNumberThreshold) ||
             (deleteLen > ScriptVersionCache.changeLengthThreshold) ||
             (insertedText && (insertedText.length>ScriptVersionCache.changeLengthThreshold))) {
             this.getSnapshot();
+        }
+    }
+
+    applyEdScript(edScript: string) {
+        //console.log("apply edit script");
+        //console.log(edScript);
+        var edLines=edScript.split('\n');
+        // remove trailing empty line
+        edLines.pop();
+        var lineIndex=0;
+        var edLineCount=edLines.length;
+
+        var snap=this.getSnapshot();
+
+        while (lineIndex < edLineCount) {
+            var cmd=parseEdCommand(edLines[lineIndex++]);
+            var pos:number;
+            var deleteLen:number;
+            var insertedText:string;
+            switch (cmd.cmdName) {
+            case 'a':
+                insertedText=gatherInputLines();
+                this.edit(edLineToPos(cmd.lineStart+1),0,insertedText);
+                break;
+            case 'd':
+                deleteLen=edLineToPos(cmd.lineEnd+1)-edLineToPos(cmd.lineStart);
+                this.edit(edLineToPos(cmd.lineStart),deleteLen);
+                break;
+            case 'c':
+                insertedText=gatherInputLines();
+                deleteLen=edLineToPos(cmd.lineEnd+1)-edLineToPos(cmd.lineStart);
+                this.edit(edLineToPos(cmd.lineStart),deleteLen,insertedText);
+                //console.log("after c: "+lineIndex + " " + edLineCount + " "+ edLines[lineIndex]);
+                break;
+            }
+        }
+
+        function parseEdCommand(edCmd: string):EdCmd {
+            var m = edCmd.match(/^(\d+)(,\d+)?([acd])$/);
+            var lineStart=parseInt(m[1]);
+            return {
+                cmdName: m[3],
+                lineStart: lineStart,
+                lineEnd: m[2]?parseInt(m[2].substring(1)):lineStart,
+            }
+        }
+
+        function edLineToPos(line: number) {
+            if (line < snap.index.root.lineCount()) {
+                var lineInfo = snap.index.lineNumberToInfo(line);
+                return lineInfo.offset;
+            }
+            else {
+                return snap.index.root.charCount();
+            }
+        }
+
+        function gatherInputLines() {
+            var inputLines="";
+            while (!isDotTerminator()) {
+                inputLines=inputLines.concat(edLines[lineIndex++]+'\n');
+            }
+            // skip dot terminator
+            lineIndex++;
+            return inputLines;
+        }
+        
+        function isDotTerminator() {
+            var edLine=edLines[lineIndex];
+            if (edLine==".") {
+                if (lineIndex < (edLineCount - 1)) {
+                    var nextEdLine = edLines[lineIndex + 1];
+                    var firstCode=nextEdLine.charCodeAt(0);
+                    // NOTE: this is just a heuristic; we may want to look at other forms
+                    // of diff output that have deterministic termination (but are more
+                    // complex to parse than output using "-e")
+                    return ((firstCode>=ts.CharacterCodes._0)&&(firstCode<=ts.CharacterCodes._9));
+                }
+                else {
+                    return true;
+                }
+            }
+            return false;
         }
     }
 
@@ -744,7 +835,30 @@ export class ScriptVersionCache {
         return this.currentVersion;
     }
 
-    reloadFromFile(filename: string) {
+    editWithDiff(tmpfilename: string,cb:()=>any) {
+        var tmpfile2="/tmp/current";
+        var snap=this.getSnapshot();
+        ts.sys.writeFile(tmpfile2,snap.getText(0,snap.getLength()));
+
+        child_process.exec("diff -e " + tmpfile2 + " " + tmpfilename,
+            (error, stdout, stderr) => {
+                if (error != null) {
+                    // diff found a difference
+                    this.applyEdScript(stdout.toString());
+                }
+                else {
+                    //console.log("files match");
+                }
+                cb();
+            });
+        
+    }
+
+    reloadFromFile(filename: string,cb:()=>any) {
+        this.editWithDiff(filename,cb);
+    }
+
+    reloadNoHistory(filename: string) {
         var content = ts.sys.readFile(filename);
         this.reload(content);
     }

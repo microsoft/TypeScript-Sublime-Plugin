@@ -51,7 +51,7 @@ export declare class LSHost implements ts.LanguageServiceHost {
     getScriptInfo(filename: string): ScriptInfo;
     addScriptInfo(info: ScriptInfo): ScriptInfo;
     addScript(filename: string, content: string): ScriptInfo;
-    reloadScript(filename: string, tmpfilename: string): void;
+    reloadScript(filename: string, tmpfilename: string, cb: () => any): void;
     editScript(filename: string, minChar: number, limChar: number, newText: string): void;
     resolvePath(path: string): string;
     fileExists(path: string): boolean;
@@ -145,9 +145,12 @@ export declare class ScriptVersionCache {
     static changeNumberThreshold: number;
     static changeLengthThreshold: number;
     edit(pos: number, deleteLen: number, insertedText?: string): void;
+    applyEdScript(edScript: string): void;
     latest(): LineIndexSnapshot;
     latestVersion(): number;
-    reloadFromFile(filename: string): void;
+    editWithDiff(tmpfilename: string, cb: () => any): void;
+    reloadFromFile(filename: string, cb: () => any): void;
+    reloadNoHistory(filename: string): void;
     reload(script: string): void;
     getSnapshot(): LineIndexSnapshot;
     getTextChangesBetweenVersions(oldVersion: number, newVersion: number): ts.TextChangeRange;
