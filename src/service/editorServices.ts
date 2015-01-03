@@ -187,6 +187,14 @@ export class LSHost implements ts.LanguageServiceHost {
         return script;
     }
 
+    public saveTo(filename: string, tmpfilename: string) {
+        var script = this.getScriptInfo(filename);
+        if (script) {
+            var snap=script.snap();
+            ts.sys.writeFile(tmpfilename,snap.getText(0,snap.getLength()));
+        }
+    }
+
     public reloadScript(filename: string, tmpfilename: string, cb:()=>any) {
         var script = this.getScriptInfo(filename);
         if (script) {
@@ -234,7 +242,8 @@ export class LSHost implements ts.LanguageServiceHost {
         var index=script.snap().index;
 
         var lineInfo=index.lineNumberToInfo(line);
-        return (lineInfo.offset+col-1);
+        // TODO: assert this column is actually on the line
+        return (lineInfo.offset + col - 1);
     }
 
     /**
@@ -742,9 +751,10 @@ export class ScriptVersionCache {
     }
 
     applyEdScript(edScript: string) {
-        //console.log("apply edit script");
-        //console.log(edScript);
+//        console.log("apply edit script");
+//        console.log(edScript);
         var edLines=edScript.split('\n');
+//        console.log(edLines.toString());
         // remove trailing empty line
         edLines.pop();
         var lineIndex=0;
@@ -795,10 +805,17 @@ export class ScriptVersionCache {
             }
         }
 
+        // TODO: parameterize number of spaces
+        // best strategy is to have the editors avoid inserting tabs
+        function tabToSpace(l:string) {
+            l = l.replace(/\t/g, "    ");
+            return l;
+        }
+
         function gatherInputLines() {
             var inputLines="";
             while (!isDotTerminator()) {
-                inputLines=inputLines.concat(edLines[lineIndex++]+'\n');
+                inputLines=inputLines.concat(tabToSpace(edLines[lineIndex++])+'\n');
             }
             // skip dot terminator
             lineIndex++;
@@ -835,7 +852,7 @@ export class ScriptVersionCache {
         return this.currentVersion;
     }
 
-    editWithDiff(tmpfilename: string,cb:()=>any) {
+    editWithDiff(tmpfilename: string,cb?:()=>any) {
         var tmpfile2="/tmp/current";
         var snap=this.getSnapshot();
         ts.sys.writeFile(tmpfile2,snap.getText(0,snap.getLength()));
@@ -849,7 +866,10 @@ export class ScriptVersionCache {
                 else {
                     //console.log("files match");
                 }
-                cb();
+                if (cb) {
+                    cb();
+                }
+
             });
         
     }
@@ -974,6 +994,8 @@ export class LineIndexSnapshot implements ts.IScriptSnapshot {
     getChangeRange(oldSnapshot: ts.IScriptSnapshot): ts.TextChangeRange {
         var oldSnap=<LineIndexSnapshot>oldSnapshot;
         return this.getTextChangeRangeSinceVersion(oldSnap.version);
+
+        //return undefined;
     }
 }
 
