@@ -808,7 +808,7 @@ export class ScriptVersionCache {
         // TODO: parameterize number of spaces
         // best strategy is to have the editors avoid inserting tabs
         function tabToSpace(l:string) {
-            l = l.replace(/\t/g, "    ");
+            //l = l.replace(/\t/g, "    ");
             return l;
         }
 
