@@ -506,9 +506,9 @@ class Session {
                         var info = locs.map( def => ({
                             file : def && def.fileName,
                             min  : def &&
-                                compilerService.host.positionToZeroBasedLineCol(def.fileName,def.textSpan.start()),
+                                compilerService.host.positionToZeroBasedLineCol(def.fileName,def.textSpan.start),
                             lim  : def &&
-                                compilerService.host.positionToZeroBasedLineCol(def.fileName,def.textSpan.end())
+                                compilerService.host.positionToZeroBasedLineCol(def.fileName,ts.textSpanEnd(def.textSpan))
                         }));
                         this.output(info[0]||null); 
                     }
@@ -562,8 +562,8 @@ class Session {
                             if (renameLocs) {
                                 var bakedRenameLocs = renameLocs.map(loc=> ({
                                     file: loc.fileName,
-                                    min: compilerService.host.positionToZeroBasedLineCol(loc.fileName,loc.textSpan.start()),
-                                    lim: compilerService.host.positionToZeroBasedLineCol(loc.fileName,loc.textSpan.end()),
+                                    min: compilerService.host.positionToZeroBasedLineCol(loc.fileName,loc.textSpan.start),
+                                    lim: compilerService.host.positionToZeroBasedLineCol(loc.fileName,ts.textSpanEnd(loc.textSpan)),
                                 })).sort((a, b) => {
                                     if (a.file < b.file) {
                                         return -1;
@@ -633,7 +633,7 @@ class Session {
                                 typeLoc= {
                                     fileName: navItem.fileName,
                                     min: compilerService.host.positionToZeroBasedLineCol(navItem.fileName,
-                                                                                         navItem.textSpan.start()),
+                                                                                         navItem.textSpan.start),
                                 };
                             }
                         }
@@ -663,13 +663,13 @@ class Session {
                         if (nameInfo) {
                             var nameSpan=nameInfo.textSpan;
                             var nameColStart=
-                                compilerService.host.positionToZeroBasedLineCol(file,nameSpan.start()).offset;
+                                compilerService.host.positionToZeroBasedLineCol(file,nameSpan.start).offset;
                             var nameText=
-                                compilerService.host.getScriptSnapshot(file).getText(nameSpan.start(),nameSpan.end());
+                                compilerService.host.getScriptSnapshot(file).getText(nameSpan.start,ts.textSpanEnd(nameSpan));
                             var bakedRefs=refs.map (ref => ({
                                 file: ref.fileName,
-                                min: compilerService.host.positionToZeroBasedLineCol(ref.fileName,ref.textSpan.start()),
-                                lim: compilerService.host.positionToZeroBasedLineCol(ref.fileName,ref.textSpan.end()),
+                                min: compilerService.host.positionToZeroBasedLineCol(ref.fileName,ref.textSpan.start),
+                                lim: compilerService.host.positionToZeroBasedLineCol(ref.fileName,ts.textSpanEnd(ref.textSpan)),
                             }));
                             this.output([bakedRefs,nameText,nameColStart]);
                         }
@@ -722,9 +722,9 @@ class Session {
                         var bakedEdits=edits.map((edit)=>{
                             return {
                                 min: compilerService.host.positionToZeroBasedLineCol(file,
-                                                                                     edit.span.start()),
+                                                                                     edit.span.start),
                                 lim: compilerService.host.positionToZeroBasedLineCol(file,
-                                                                                     edit.span.end()),
+                                                                                     ts.textSpanEnd(edit.span)),
                                 newText: edit.newText?edit.newText:""
                             };
                         });
@@ -863,7 +863,7 @@ class Session {
                     if (navItems) {
                         var bakedNavItems = navItems.map((navItem)=>{
                             var min =compilerService.host.positionToZeroBasedLineCol(navItem.fileName,
-                                                                                     navItem.textSpan.start());
+                                                                                     navItem.textSpan.start);
                             this.abbreviate(min);
                             var bakedItem:any = {
                                 name: navItem.name,

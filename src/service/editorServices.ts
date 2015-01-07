@@ -733,7 +733,7 @@ export class TextChange {
     }
 
     getTextChangeRange() {
-        return new ts.TextChangeRange(new ts.TextSpan(this.pos, this.deleteLen),
+        return ts.createTextChangeRange(ts.createTextSpan(this.pos, this.deleteLen),
                                       this.insertedText ? this.insertedText.length : 0);
     }
 }
@@ -939,10 +939,10 @@ export class ScriptVersionCache {
                     textChangeRanges[textChangeRanges.length] = textChange.getTextChangeRange();
                 }
             }
-            return ts.TextChangeRange.collapseChangesAcrossMultipleVersions(textChangeRanges);
+            return ts.collapseTextChangeRangesAcrossMultipleVersions(textChangeRanges);
         }
         else {
-            return ts.TextChangeRange.unchanged;
+            return ts.unchangedTextChangeRange;
         }
     }
 
@@ -994,7 +994,7 @@ export class LineIndexSnapshot implements ts.IScriptSnapshot {
 
     getTextChangeRangeSinceVersion(scriptVersion: number) {
         if (this.version <= scriptVersion) {
-            return ts.TextChangeRange.unchanged;
+            return ts.unchangedTextChangeRange;
         }
         else if (this.reloaded) {
             return undefined;
