@@ -87,6 +87,7 @@ export declare class ProjectService {
     getProjectForFile(filename: string): Project;
     printProjects(): void;
     removeRoot(info: ScriptInfo): boolean;
+    openProjectFile(pfilename: string): void;
     openSpecifiedFile(filename: string): ScriptInfo;
     /**
      * @param filename is absolute pathname
@@ -173,6 +174,7 @@ export declare class LineIndexSnapshot implements ts.IScriptSnapshot {
 }
 export declare class LineIndex {
     root: LineNode;
+    checkEdits: boolean;
     charOffsetToLineNumberAndPos(charOffset: number): ILineInfo;
     lineNumberToInfo(lineNumber: number): ILineInfo;
     print(): void;

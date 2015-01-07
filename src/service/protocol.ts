@@ -296,6 +296,7 @@ class Session {
     protocol:nodeproto.Protocol;
     errorTimer: NodeJS.Timer;
     immediateId: any;
+    changeSeq=0;
 
     constructor(useProtocol=false) {
         this.initAbbrevTable();
@@ -447,7 +448,8 @@ class Session {
         this.semanticCheck(file,project);
     }
 
-    updateErrorCheck(checkList: PendingErrorCheck[], ms = 1500, followMs=200) {
+    updateErrorCheck(checkList: PendingErrorCheck[],seq:number,
+                     matchSeq:(seq:number)=>boolean,ms=1500, followMs=200) {
         if (followMs > ms) {
             followMs=ms;
         }
@@ -460,20 +462,22 @@ class Session {
         }
         var index = 0;
         var checkOne = () => {
-            var checkSpec = checkList[index++];
-            this.syntacticCheck(checkSpec.filename, checkSpec.project);
-            this.immediateId = setImmediate(() => {
-                this.semanticCheck(checkSpec.filename, checkSpec.project);
-                this.immediateId = undefined;
-                if (checkList.length > index) {
-                    this.errorTimer = setTimeout(checkOne, followMs);
-                }
-                else {
-                    this.errorTimer = undefined;
-                }
-            });
+            if (matchSeq(seq)) {
+                var checkSpec = checkList[index++];
+                this.syntacticCheck(checkSpec.filename, checkSpec.project);
+                this.immediateId = setImmediate(() => {
+                    this.semanticCheck(checkSpec.filename, checkSpec.project);
+                    this.immediateId = undefined;
+                    if (checkList.length > index) {
+                        this.errorTimer = setTimeout(checkOne, followMs);
+                    }
+                    else {
+                        this.errorTimer = undefined;
+                    }
+                });
+            }
         }
-        if (checkList.length > index) {
+        if ((checkList.length > index) && (matchSeq(seq))) {
             this.errorTimer = setTimeout(checkOne, ms);
         }
     }
@@ -788,7 +792,8 @@ class Session {
                     return accum;
                 }, []);
                 if (checkList.length > 0) {
-                    this.updateErrorCheck(checkList,ms);
+                    this.updateErrorCheck(checkList,this.changeSeq,(n)=>n==this.changeSeq,
+                                          ms)
                 }
             }
             else if (m=cmd.match(/^change (\d+) (\d+) (\d+) (\d+) (\{\".*\"\})?\s*(.*)$/)) {
@@ -809,6 +814,7 @@ class Session {
                     pos = compilerService.host.lineColToPosition(file, line, col);
                     if (pos >= 0) {
                         compilerService.host.editScript(file, pos, pos + deleteLen, insertString);
+                        this.changeSeq++;
                     }
                     // TODO: report async error
                 }
@@ -818,6 +824,7 @@ class Session {
                 tmpfile=m[2];
                 project=this.projectService.getProjectForFile(file);
                 if (project) {
+                    this.changeSeq++;
                     // make sure no changes happen before this one is finished
                     project.compilerService.host.reloadScript(file, tmpfile, () => {
                         this.output({ ack: true });

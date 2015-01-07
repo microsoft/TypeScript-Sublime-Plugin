@@ -130,6 +130,7 @@ export class LSHost implements ts.LanguageServiceHost {
     }
     
     getCompilationSettings() {
+        // change this to return active project settings for file
         return this.compilationSettings;
     }
 
@@ -293,6 +294,10 @@ function getAbsolutePath(filename:string, directory: string) {
     }
 }
 
+interface ProjectOptions {
+    rootFiles:string[];
+}
+
 export class Project {
     compilerService=new CompilerService();
 
@@ -361,6 +366,14 @@ export class ProjectService {
             }
         }
         return false;
+    }
+
+    openProjectFile(pfilename: string) {
+        pfilename=ts.normalizePath(pfilename);
+        // file references will be relative to dirPath
+        var dirPath = ts.getDirectoryPath(pfilename);
+        
+
     }
 
     openSpecifiedFile(filename:string) {
@@ -1002,6 +1015,8 @@ export class LineIndexSnapshot implements ts.IScriptSnapshot {
 
 export class LineIndex {
     root: LineNode;
+    // set this to true to check each edit for accuracy
+    checkEdits=false;
 
     charOffsetToLineNumberAndPos(charOffset: number) {
         return this.root.charOffsetToLineNumberAndPos(1, charOffset);
@@ -1069,7 +1084,13 @@ export class LineIndex {
         return !walkFns.done;
     }
 
-    edit(pos: number, deleteLength: number, newText?: string) {
+    edit(pos: number, deleteLength:number, newText?: string) {
+        function editFlat(source: string, s: number, dl: number, nt="") {
+            return source.substring(0, s) + nt + source.substring(s + dl, source.length);
+        }
+        if (this.checkEdits) {
+            var checkText=editFlat(this.getText(0,this.root.charCount()),pos,deleteLength,newText);
+        }
         var walker = new EditWalker();
         if (deleteLength > 0) {
             // check whether last characters deleted are line break
@@ -1102,6 +1123,12 @@ export class LineIndex {
         }
         this.root.walk(pos, deleteLength, walker);
         walker.insertLines(newText);
+        if (this.checkEdits) {
+            var updatedText=this.getText(0,this.root.charCount());
+            if (checkText != updatedText) {
+                console.log("buffer edit mismatch");
+            }
+        }
         return walker.lineIndex;
     }
 
