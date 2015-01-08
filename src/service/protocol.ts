@@ -692,8 +692,12 @@ class Session {
                     pos=compilerService.host.lineColToPosition(file,line,col);
                     var quickInfo = compilerService.languageService.getQuickInfoAtPosition(file,pos);
                     if (quickInfo) {
-                        var displayString=ts.displayPartsToString(quickInfo.displayParts);
-                        this.output(displayString);
+                        var displayString = ts.displayPartsToString(quickInfo.displayParts);
+                        var docString = ts.displayPartsToString(quickInfo.documentation);
+                        this.output({
+                            info: displayString,
+                            doc: docString,
+                        });
                     }
                     else {
                         this.output(undefined,"no info")

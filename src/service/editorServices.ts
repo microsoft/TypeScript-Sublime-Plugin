@@ -827,30 +827,18 @@ export class ScriptVersionCache {
 
         function gatherInputLines() {
             var inputLines="";
-            while (!isDotTerminator()) {
+            while ((edLines[lineIndex]!=".")&&(lineIndex<edLineCount)) {
                 inputLines=inputLines.concat(tabToSpace(edLines[lineIndex++])+'\n');
             }
             // skip dot terminator
             lineIndex++;
             return inputLines;
         }
-        
+
+        // TODO: switch to diff format that deals with lines containing only "."
         function isDotTerminator() {
             var edLine=edLines[lineIndex];
-            if (edLine==".") {
-                if (lineIndex < (edLineCount - 1)) {
-                    var nextEdLine = edLines[lineIndex + 1];
-                    var firstCode=nextEdLine.charCodeAt(0);
-                    // NOTE: this is just a heuristic; we may want to look at other forms
-                    // of diff output that have deterministic termination (but are more
-                    // complex to parse than output using "-e")
-                    return ((firstCode>=ts.CharacterCodes._0)&&(firstCode<=ts.CharacterCodes._9));
-                }
-                else {
-                    return true;
-                }
-            }
-            return false;
+            return (edLine==".") 
         }
     }
 
