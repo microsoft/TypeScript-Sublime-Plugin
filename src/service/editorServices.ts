@@ -199,7 +199,7 @@ export class LSHost implements ts.LanguageServiceHost {
     public reloadScript(filename: string, tmpfilename: string, cb:()=>any) {
         var script = this.getScriptInfo(filename);
         if (script) {
-            script.svc.reloadFromFile(tmpfilename,cb);
+            script.svc.reloadNoHistory(tmpfilename,cb);
         }
     }
 
@@ -879,9 +879,11 @@ export class ScriptVersionCache {
         this.editWithDiff(filename,cb);
     }
 
-    reloadNoHistory(filename: string) {
+    reloadNoHistory(filename: string,cb?:()=>any) {
         var content = ts.sys.readFile(filename);
         this.reload(content);
+        if (cb)
+            cb();
     }
 
     // reload whole script, leaving no change history behind reload
