@@ -754,7 +754,6 @@ export class ScriptVersionCache {
 
     // REVIEW: can optimize by coalescing simple edits
     edit(pos: number, deleteLen: number, insertedText?: string) {
-        //console.log("edit at "+pos.toString()+": "+"del: "+deleteLen+(insertedText?" i: "+insertedText:""));
         this.changes[this.changes.length] = new TextChange(pos, deleteLen, insertedText);
         if ((this.changes.length > ScriptVersionCache.changeNumberThreshold) ||
             (deleteLen > ScriptVersionCache.changeLengthThreshold) ||
@@ -764,10 +763,7 @@ export class ScriptVersionCache {
     }
 
     applyEdScript(edScript: string) {
-//        console.log("apply edit script");
-//        console.log(edScript);
         var edLines=edScript.split('\n');
-//        console.log(edLines.toString());
         // remove trailing empty line
         edLines.pop();
         var lineIndex=0;
@@ -818,27 +814,14 @@ export class ScriptVersionCache {
             }
         }
 
-        // TODO: parameterize number of spaces
-        // best strategy is to have the editors avoid inserting tabs
-        function tabToSpace(l:string) {
-            //l = l.replace(/\t/g, "    ");
-            return l;
-        }
-
         function gatherInputLines() {
             var inputLines="";
             while ((edLines[lineIndex]!=".")&&(lineIndex<edLineCount)) {
-                inputLines=inputLines.concat(tabToSpace(edLines[lineIndex++])+'\n');
+                inputLines=inputLines.concat(edLines[lineIndex++]+'\n');
             }
             // skip dot terminator
             lineIndex++;
             return inputLines;
-        }
-
-        // TODO: switch to diff format that deals with lines containing only "."
-        function isDotTerminator() {
-            var edLine=edLines[lineIndex];
-            return (edLine==".") 
         }
     }
 

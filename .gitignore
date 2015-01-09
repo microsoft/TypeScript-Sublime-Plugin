@@ -3,5 +3,5 @@ built/*
 ~*.docx
 src/service/*.js
 src/testsrc/*.js
-src/testsrc/editorServices.d.ts
+src/service/editorServices.d.ts
 
