@@ -666,22 +666,6 @@ class Session {
                 file = m[1];
                 this.projectService.openSpecifiedFile(file);
             }
-            else if (m = cmd.match(/^openproj (.*)$/)) {
-                file = m[1];
-                var result=this.projectService.openProjectFile(file);
-                if (result.success) {
-                    // TODO: return list of files in project + command line; display in buffer
-                    // enable developers to pick files to open from project file list;
-                    // keep project file list updated upon references changes (event)
-                    result.project.printFiles();
-                    if (result.project.projectOptions.commandLineOptions) {
-                        console.log(result.project.projectOptions.commandLineOptions);
-                    }
-                }
-                else {
-                    this.output(undefined,result.errorMsg);
-                }
-            }
             else if (m = cmd.match(/^references (\d+) (\d+) (.*)$/)) {
                 line = parseInt(m[1]);
                 col = parseInt(m[2]);
