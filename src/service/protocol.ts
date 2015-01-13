@@ -22,6 +22,19 @@ var paddedLength=8;
 
 var typeNames = ["interface","class","enum","module","alias","type"];
 
+var spaceCache = [" ","  ","   ","    "];
+
+function generateSpaces(n: number): string {
+    if (!spaceCache[n]) {
+        var strBuilder = "";
+        for (var i = 0; i < n; i++) {
+            strBuilder += " ";
+        }
+        spaceCache[n] = strBuilder;
+    }
+    return spaceCache[n];
+}
+
 function printObject(obj: any) {
     for (var p in obj) {
         if (obj.hasOwnProperty(p)) {
@@ -285,20 +298,20 @@ interface PendingErrorCheck {
 }
 
 class Session {
-    projectService=new ed.ProjectService();
-    prettyJSON=false;
-    pendingOperation=false;
-    fileHash:ts.Map<number>={};
-    abbrevTable:ts.Map<string>;
-    fetchedAbbrev=false;
-    nextFileId=1;
+    projectService = new ed.ProjectService();
+    prettyJSON = false;
+    pendingOperation = false;
+    fileHash: ts.Map<number> = {};
+    abbrevTable: ts.Map<string>;
+    fetchedAbbrev = false;
+    nextFileId = 1;
     debugSession: JsDebugSession;
-    protocol:nodeproto.Protocol;
+    protocol: nodeproto.Protocol;
     errorTimer: NodeJS.Timer;
     immediateId: any;
-    changeSeq=0;
+    changeSeq = 0;
 
-    constructor(useProtocol=false) {
+    constructor(useProtocol = false) {
         this.initAbbrevTable();
         if (useProtocol) {
             this.initProtocol();
@@ -306,7 +319,7 @@ class Session {
     }
 
     initProtocol() {
-        this.protocol=new nodeproto.Protocol();
+        this.protocol = new nodeproto.Protocol();
         // note: onResponse was named by nodejs authors; we are re-purposing the Protocol
         // class in this case so that it supports a server instead of a client
         this.protocol.onResponse = (pkt) => {
@@ -319,18 +332,18 @@ class Session {
     }
 
     send(msg: nodeproto.Message) {
-        var json:string;
+        var json: string;
         if (this.prettyJSON) {
             json = JSON.stringify(msg, null, " ");
         }
         else {
             json = JSON.stringify(msg);
         }
-        console.log('Content-Length: ' + (1+Buffer.byteLength(json, 'utf8')) +
-                    '\r\n\r\n' + json);
+        console.log('Content-Length: ' + (1 + Buffer.byteLength(json, 'utf8')) +
+            '\r\n\r\n' + json);
     }
 
-    event(info: any,eventName:string) {
+    event(info: any, eventName: string) {
         var ev: nodeproto.Event = {
             seq: 0,
             type: "event",
@@ -340,7 +353,7 @@ class Session {
         this.send(ev);
     }
 
-    response(info:any,reqSeq=0,errorMsg?: string) {
+    response(info: any, reqSeq = 0, errorMsg?: string) {
         var res: nodeproto.Response = {
             seq: 0,
             type: "response",
@@ -351,13 +364,13 @@ class Session {
             res.body = info;
         }
         else {
-            res.message=errorMsg;
+            res.message = errorMsg;
         }
         this.send(res);
     }
 
     initAbbrevTable() {
-        this.abbrevTable= {
+        this.abbrevTable = {
             name: "n",
             kind: "k",
             fileName: "f",
@@ -367,16 +380,16 @@ class Session {
             line: "l",
             offset: "o",
             "interface": "i",
-            "function" : "fn",
+            "function": "fn",
         };
     }
 
     // TODO: use union type for return type
-    encodeFilename(filename:string):any {
-        var id=ts.lookUp(this.fileHash,filename);
+    encodeFilename(filename: string): any {
+        var id = ts.lookUp(this.fileHash, filename);
         if (!id) {
             id = this.nextFileId++;
-            this.fileHash[filename]=id;
+            this.fileHash[filename] = id;
             return { id: id, fileName: filename };
         }
         else {
@@ -384,23 +397,23 @@ class Session {
         }
     }
 
-    abbreviate(obj:any) {
-        if (this.fetchedAbbrev&&(!this.prettyJSON)) {
+    abbreviate(obj: any) {
+        if (this.fetchedAbbrev && (!this.prettyJSON)) {
             for (var p in obj) {
                 if (obj.hasOwnProperty(p)) {
-                    var sub=ts.lookUp(this.abbrevTable,p);
+                    var sub = ts.lookUp(this.abbrevTable, p);
                     if (sub) {
-                        obj[sub]=obj[p];
-                        obj[p]=undefined;
+                        obj[sub] = obj[p];
+                        obj[p] = undefined;
                     }
                 }
             }
         }
     }
 
-    output(info,errorMsg?:string) {
+    output(info, errorMsg?: string) {
         if (this.protocol) {
-            this.response(info,0,errorMsg);
+            this.response(info, 0, errorMsg);
         }
         else if (this.prettyJSON) {
             if (!errorMsg) {
@@ -422,7 +435,7 @@ class Session {
                 console.log("[" + lenStr + "," + infoStr + "]");
             }
             else {
-                console.log(JSON.stringify("error: "+errorMsg));
+                console.log(JSON.stringify("error: " + errorMsg));
             }
         }
     }
@@ -430,7 +443,7 @@ class Session {
     semanticCheck(file: string, project: ed.Project) {
         var diags = project.compilerService.languageService.getSemanticDiagnostics(file);
         if (diags) {
-            var bakedDiags = diags.map((diag)=>formatDiag(file,project,diag));
+            var bakedDiags = diags.map((diag) => formatDiag(file, project, diag));
             this.event({ fileName: file, diagnostics: bakedDiags }, "semanticDiag");
         }
     }
@@ -438,20 +451,20 @@ class Session {
     syntacticCheck(file: string, project: ed.Project) {
         var diags = project.compilerService.languageService.getSyntacticDiagnostics(file);
         if (diags) {
-            var bakedDiags = diags.map((diag)=>formatDiag(file,project,diag));
+            var bakedDiags = diags.map((diag) => formatDiag(file, project, diag));
             this.event({ fileName: file, diagnostics: bakedDiags }, "syntaxDiag");
         }
     }
 
     errorCheck(file: string, project: ed.Project) {
-        this.syntacticCheck(file,project);
-        this.semanticCheck(file,project);
+        this.syntacticCheck(file, project);
+        this.semanticCheck(file, project);
     }
 
-    updateErrorCheck(checkList: PendingErrorCheck[],seq:number,
-                     matchSeq:(seq:number)=>boolean,ms=1500, followMs=200) {
+    updateErrorCheck(checkList: PendingErrorCheck[], seq: number,
+        matchSeq: (seq: number) => boolean, ms = 1500, followMs = 200) {
         if (followMs > ms) {
-            followMs=ms;
+            followMs = ms;
         }
         if (this.errorTimer) {
             clearTimeout(this.errorTimer);
@@ -484,86 +497,86 @@ class Session {
 
     listen() {
         //console.log("up...");
-        rl.on('line', (input:string) => {
+        rl.on('line', (input: string) => {
             var cmd = input.trim();
-            var line:number,col:number,file:string;
-            var tmpfile:string;
-            var pos:number;
-            var m:string[];
-            var project:ed.Project;
-            var compilerService:ed.CompilerService;
+            var line: number, col: number, file: string;
+            var tmpfile: string;
+            var pos: number;
+            var m: string[];
+            var project: ed.Project;
+            var compilerService: ed.CompilerService;
 
-            if (m=cmd.match(/^definition (\d+) (\d+) (.*)$/)) {
+            if (m = cmd.match(/^definition (\d+) (\d+) (.*)$/)) {
                 line = parseInt(m[1]);
-                col  = parseInt(m[2]);
+                col = parseInt(m[2]);
                 file = m[3];
-                project=this.projectService.getProjectForFile(file);
+                project = this.projectService.getProjectForFile(file);
                 if (project) {
-                    var compilerService=project.compilerService;
-                    pos=compilerService.host.lineColToPosition(file,line,col);
-                    var locs=compilerService.languageService.getDefinitionAtPosition(file,pos);
+                    var compilerService = project.compilerService;
+                    pos = compilerService.host.lineColToPosition(file, line, col);
+                    var locs = compilerService.languageService.getDefinitionAtPosition(file, pos);
                     if (locs) {
-                        var info = locs.map( def => ({
-                            file : def && def.fileName,
-                            min  : def &&
-                                compilerService.host.positionToZeroBasedLineCol(def.fileName,def.textSpan.start),
-                            lim  : def &&
-                                compilerService.host.positionToZeroBasedLineCol(def.fileName,ts.textSpanEnd(def.textSpan))
+                        var info = locs.map(def => ({
+                            file: def && def.fileName,
+                            min: def &&
+                            compilerService.host.positionToZeroBasedLineCol(def.fileName, def.textSpan.start),
+                            lim: def &&
+                            compilerService.host.positionToZeroBasedLineCol(def.fileName, ts.textSpanEnd(def.textSpan))
                         }));
-                        this.output(info[0]||null); 
+                        this.output(info[0] || null);
                     }
                     else {
-                        this.output(undefined,"could not find def");
+                        this.output(undefined, "could not find def");
                     }
                 }
                 else {
-                    this.output(undefined,"no project for "+file);
+                    this.output(undefined, "no project for " + file);
                 }
             }
-            else if (m=cmd.match(/^dbg start$/)) {
-                this.debugSession=new JsDebugSession();
+            else if (m = cmd.match(/^dbg start$/)) {
+                this.debugSession = new JsDebugSession();
             }
-            else if (m=cmd.match(/^dbg cont$/)) {
+            else if (m = cmd.match(/^dbg cont$/)) {
                 if (this.debugSession) {
                     this.debugSession.cont((err, body, res) => {
                     });
                 }
             }
-            else if (m=cmd.match(/^dbg src$/)) {
+            else if (m = cmd.match(/^dbg src$/)) {
                 if (this.debugSession) {
                     this.debugSession.listSrc();
                 }
             }
             else if (m = cmd.match(/^dbg brk (\d+) (.*)$/)) {
-                line = parseInt(m[1]);                
+                line = parseInt(m[1]);
                 file = m[2];
                 if (this.debugSession) {
-                    this.debugSession.setBreakpointOnLine(line,file);
+                    this.debugSession.setBreakpointOnLine(line, file);
                 }
             }
             else if (m = cmd.match(/^dbg eval (.*)$/)) {
-                var code=m[1];
+                var code = m[1];
                 if (this.debugSession) {
                     this.debugSession.evaluate(code);
                 }
             }
-            else if (m=cmd.match(/^rename (\d+) (\d+) (.*)$/)) {
+            else if (m = cmd.match(/^rename (\d+) (\d+) (.*)$/)) {
                 line = parseInt(m[1]);
-                col  = parseInt(m[2]);
+                col = parseInt(m[2]);
                 file = m[3];
-                project=this.projectService.getProjectForFile(file);
+                project = this.projectService.getProjectForFile(file);
                 if (project) {
                     var compilerService = project.compilerService;
                     pos = compilerService.host.lineColToPosition(file, line, col);
-                    var renameInfo=compilerService.languageService.getRenameInfo(file,pos);
+                    var renameInfo = compilerService.languageService.getRenameInfo(file, pos);
                     if (renameInfo) {
                         if (renameInfo.canRename) {
                             var renameLocs = compilerService.languageService.findRenameLocations(file, pos, false, false);
                             if (renameLocs) {
                                 var bakedRenameLocs = renameLocs.map(loc=> ({
                                     file: loc.fileName,
-                                    min: compilerService.host.positionToZeroBasedLineCol(loc.fileName,loc.textSpan.start),
-                                    lim: compilerService.host.positionToZeroBasedLineCol(loc.fileName,ts.textSpanEnd(loc.textSpan)),
+                                    min: compilerService.host.positionToZeroBasedLineCol(loc.fileName, loc.textSpan.start),
+                                    lim: compilerService.host.positionToZeroBasedLineCol(loc.fileName, ts.textSpanEnd(loc.textSpan)),
                                 })).sort((a, b) => {
                                     if (a.file < b.file) {
                                         return -1;
@@ -580,15 +593,15 @@ class Session {
                                             return -1;
                                         }
                                         else {
-                                            return b.min.offset-a.min.offset;
+                                            return b.min.offset - a.min.offset;
                                         }
                                     }
-                                }).reduce<FileRanges[]>((accum:FileRanges[], cur:FileRange) => {
-                                    var curFileAccum:FileRanges;
+                                }).reduce<FileRanges[]>((accum: FileRanges[], cur: FileRange) => {
+                                    var curFileAccum: FileRanges;
                                     if (accum.length > 0) {
-                                        curFileAccum=accum[accum.length-1];
+                                        curFileAccum = accum[accum.length - 1];
                                         if (curFileAccum.file != cur.file) {
-                                            curFileAccum=undefined;
+                                            curFileAccum = undefined;
                                         }
                                     }
                                     if (!curFileAccum) {
@@ -597,7 +610,7 @@ class Session {
                                     }
                                     curFileAccum.locs.push({ min: cur.min, lim: cur.lim });
                                     return accum;
-                                },[]);
+                                }, []);
                                 this.output({ info: renameInfo, locs: bakedRenameLocs });
                             }
                             else {
@@ -609,88 +622,108 @@ class Session {
                         }
                     }
                     else {
-                        this.output(undefined,"no rename information at cursor");
+                        this.output(undefined, "no rename information at cursor");
                     }
                 }
             }
-            else if (m=cmd.match(/^type (\d+) (\d+) (.*)$/)) {
+            else if (m = cmd.match(/^type (\d+) (\d+) (.*)$/)) {
                 line = parseInt(m[1]);
-                col  = parseInt(m[2]);
+                col = parseInt(m[2]);
                 file = m[3];
-                project=this.projectService.getProjectForFile(file);
+                project = this.projectService.getProjectForFile(file);
                 if (project) {
-                    var compilerService=project.compilerService;
-                    pos=compilerService.host.lineColToPosition(file,line,col);
-                    var quickInfo=compilerService.languageService.getQuickInfoAtPosition(file,pos);
-                    var typeLoc:any="no type";
+                    var compilerService = project.compilerService;
+                    pos = compilerService.host.lineColToPosition(file, line, col);
+                    var quickInfo = compilerService.languageService.getQuickInfoAtPosition(file, pos);
+                    var typeLoc:any;
 
-                    if ((quickInfo.kind=="var")||(quickInfo.kind=="local var")) {
+                    if (quickInfo && (quickInfo.kind == "var") || (quickInfo.kind == "local var")) {
                         var typeName = parseTypeName(quickInfo.displayParts);
                         if (typeName) {
                             var navItems = compilerService.languageService.getNavigateToItems(typeName);
-                            var navItem=findExactMatchType(navItems);
+                            var navItem = findExactMatchType(navItems);
                             if (navItem) {
-                                typeLoc= {
+                                typeLoc = {
                                     fileName: navItem.fileName,
                                     min: compilerService.host.positionToZeroBasedLineCol(navItem.fileName,
-                                                                                         navItem.textSpan.start),
+                                        navItem.textSpan.start),
                                 };
                             }
                         }
                     }
-
-                    this.output(typeLoc);
+                    if (typeLoc) {
+                        this.output(typeLoc);
+                    }
+                    else {
+                        this.output(undefined,"no info at this location");
+                    }
                 }
                 else {
-                    this.output(undefined,"no project for "+file);
+                    this.output(undefined, "no project for " + file);
                 }
             }
-            else if (m=cmd.match(/^open (.*)$/)) {
-                file=m[1];
+            else if (m = cmd.match(/^open (.*)$/)) {
+                file = m[1];
                 this.projectService.openSpecifiedFile(file);
             }
-            else if (m=cmd.match(/^references (\d+) (\d+) (.*)$/)) {
+            else if (m = cmd.match(/^openproj (.*)$/)) {
+                file = m[1];
+                var result=this.projectService.openProjectFile(file);
+                if (result.success) {
+                    // TODO: return list of files in project + command line; display in buffer
+                    // enable developers to pick files to open from project file list;
+                    // keep project file list updated upon references changes (event)
+                    result.project.printFiles();
+                    if (result.project.projectOptions.commandLineOptions) {
+                        console.log(result.project.projectOptions.commandLineOptions);
+                    }
+                }
+                else {
+                    this.output(undefined,result.errorMsg);
+                }
+            }
+            else if (m = cmd.match(/^references (\d+) (\d+) (.*)$/)) {
                 line = parseInt(m[1]);
-                col  = parseInt(m[2]);
+                col = parseInt(m[2]);
                 file = m[3];
-                project=this.projectService.getProjectForFile(file);
+                project = this.projectService.getProjectForFile(file);
                 if (project) {
-                    compilerService=project.compilerService;
-                    pos=compilerService.host.lineColToPosition(file,line,col);
-                    var refs = compilerService.languageService.getReferencesAtPosition(file,pos);
+                    compilerService = project.compilerService;
+                    pos = compilerService.host.lineColToPosition(file, line, col);
+                    var refs = compilerService.languageService.getReferencesAtPosition(file, pos);
                     if (refs) {
-                        var nameInfo = compilerService.languageService.getQuickInfoAtPosition(file,pos);
+                        var nameInfo = compilerService.languageService.getQuickInfoAtPosition(file, pos);
                         if (nameInfo) {
-                            var nameSpan=nameInfo.textSpan;
-                            var nameColStart=
-                                compilerService.host.positionToZeroBasedLineCol(file,nameSpan.start).offset;
-                            var nameText=
-                                compilerService.host.getScriptSnapshot(file).getText(nameSpan.start,ts.textSpanEnd(nameSpan));
-                            var bakedRefs=refs.map (ref => ({
+                            var nameSpan = nameInfo.textSpan;
+                            var nameColStart =
+                                compilerService.host.positionToZeroBasedLineCol(file, nameSpan.start).offset;
+                            var nameText =
+                                compilerService.host.getScriptSnapshot(file).getText(nameSpan.start, ts.textSpanEnd(nameSpan));
+                            var bakedRefs = refs.map(ref => ({
                                 file: ref.fileName,
-                                min: compilerService.host.positionToZeroBasedLineCol(ref.fileName,ref.textSpan.start),
-                                lim: compilerService.host.positionToZeroBasedLineCol(ref.fileName,ts.textSpanEnd(ref.textSpan)),
+                                min: compilerService.host.positionToZeroBasedLineCol(ref.fileName, ref.textSpan.start),
+                                lim: compilerService.host.positionToZeroBasedLineCol(ref.fileName, ts.textSpanEnd(ref.textSpan)),
                             }));
-                            this.output([bakedRefs,nameText,nameColStart]);
+                            this.output([bakedRefs, nameText, nameColStart]);
                         }
                         else {
-                            this.output(undefined,"no references at this position");
+                            this.output(undefined, "no references at this position");
                         }
                     }
                     else {
-                        this.output(undefined,"no references at this position");                        
+                        this.output(undefined, "no references at this position");
                     }
                 }
             }
-            else if (m=cmd.match(/^quickinfo (\d+) (\d+) (.*)$/)) {
+            else if (m = cmd.match(/^quickinfo (\d+) (\d+) (.*)$/)) {
                 line = parseInt(m[1]);
-                col  = parseInt(m[2]);
+                col = parseInt(m[2]);
                 file = m[3];
-                project=this.projectService.getProjectForFile(file);
+                project = this.projectService.getProjectForFile(file);
                 if (project) {
-                    compilerService=project.compilerService;
-                    pos=compilerService.host.lineColToPosition(file,line,col);
-                    var quickInfo = compilerService.languageService.getQuickInfoAtPosition(file,pos);
+                    compilerService = project.compilerService;
+                    pos = compilerService.host.lineColToPosition(file, line, col);
+                    var quickInfo = compilerService.languageService.getQuickInfoAtPosition(file, pos);
                     if (quickInfo) {
                         var displayString = ts.displayPartsToString(quickInfo.displayParts);
                         var docString = ts.displayPartsToString(quickInfo.documentation);
@@ -700,24 +733,77 @@ class Session {
                         });
                     }
                     else {
-                        this.output(undefined,"no info")
+                        this.output(undefined, "no info")
                     }
                 }
             }
-            else if (m=cmd.match(/^formatonkey (\d+) (\d+) (\{\".*\"\})\s* (.*)$/)) {
+            else if (m = cmd.match(/^format (\d+) (\d+) (\d+) (\d+) (.*)$/)) {
+                // format line col endLine endCol file
                 line = parseInt(m[1]);
-                col  = parseInt(m[2]);
-                file = m[4];
-                project=this.projectService.getProjectForFile(file);
+                col = parseInt(m[2]);
+                var endLine = parseInt(m[3]);
+                var endCol = parseInt(m[4]);
+                file = m[5];
+
+                project = this.projectService.getProjectForFile(file);
                 if (project) {
-                    compilerService=project.compilerService;
-                    pos=compilerService.host.lineColToPosition(file,line,col);
-                    var key=JSON.parse(m[3].substring(1,m[3].length-1));
-                    
-                    var edits:ts.TextChange[];
+                    compilerService = project.compilerService;
+                    pos = compilerService.host.lineColToPosition(file, line, col);
+                    var endPos = compilerService.host.lineColToPosition(file, endLine, endCol);
+                    var edits: ts.TextChange[];
+                    // TODO: avoid duplicate code (with formatonkey)
+                    try {
+                        edits = compilerService.languageService.getFormattingEditsForRange(file, pos, endPos,
+                            compilerService.formatCodeOptions);
+                    }
+                    catch (err) {
+                        edits=undefined;
+                    }
+                    if (edits) {
+                        var bakedEdits=edits.map((edit)=>{
+                            return {
+                                min: compilerService.host.positionToZeroBasedLineCol(file,
+                                                                                     edit.span.start),
+                                lim: compilerService.host.positionToZeroBasedLineCol(file,
+                                                                                     ts.textSpanEnd(edit.span)),
+                                newText: edit.newText?edit.newText:""
+                            };
+                        });
+                        this.output(bakedEdits);
+                    }
+                    else {
+                        this.output(undefined,"no edits")
+                    }
+                }
+            }
+            else if (m = cmd.match(/^formatonkey (\d+) (\d+) (\{\".*\"\})\s* (.*)$/)) {
+                line = parseInt(m[1]);
+                col = parseInt(m[2]);
+                file = m[4];
+                project = this.projectService.getProjectForFile(file);
+                if (project) {
+                    compilerService = project.compilerService;
+                    pos = compilerService.host.lineColToPosition(file, line, col);
+                    var key = JSON.parse(m[3].substring(1, m[3].length - 1));
+
+                    var edits: ts.TextChange[];
                     try {
                         edits = compilerService.languageService.getFormattingEditsAfterKeystroke(file, pos, key,
                             compilerService.formatCodeOptions);
+                        if (key == "\n") {
+                            // TODO: get this from host
+                            var editorOptions: ts.EditorOptions = {
+                                IndentSize: 4,
+                                TabSize: 4,
+                                NewLineCharacter: "\n",
+                                ConvertTabsToSpaces: true,
+                            };
+                            var indentPosition = compilerService.languageService.getIndentationAtPosition(file, pos, editorOptions);
+                            var spaces = generateSpaces(indentPosition);
+                            if (indentPosition > 0) {
+                                edits.push({ span: ts.createTextSpanFromBounds(pos, pos), newText: spaces });
+                            }
+                        }
                     }
                     catch (err) {
                         edits=undefined;

@@ -42,7 +42,8 @@ export class ScriptInfo {
     svc: ScriptVersionCache;
     isRoot=false;
     children:ScriptInfo[]=[];
-    activeProject: Project;
+    activeProject: Project; // project to use by default for file
+    homeProject: Project;   // project from associated tsconfig
 
     constructor(public filename: string, public content:string, public isOpen = true) {
         this.svc = ScriptVersionCache.fromString(content);
@@ -99,8 +100,8 @@ var defaultLibDir=
 export class LSHost implements ts.LanguageServiceHost {
     private ls: ts.LanguageService = null;
     logger: ts.Logger;
-    private compilationSettings: ts.CompilerOptions = null;
-    private filenameToScript: ts.Map<ScriptInfo> = {};
+    compilationSettings: ts.CompilerOptions;
+    filenameToScript: ts.Map<ScriptInfo> = {};
 
     constructor(private cancellationToken: CancellationToken = CancellationToken.None) {
         this.logger = this;
@@ -128,7 +129,11 @@ export class LSHost implements ts.LanguageServiceHost {
     getScriptSnapshot(filename: string): ts.IScriptSnapshot {
         return this.getScriptInfo(filename).snap();
     }
-    
+
+    setCompilationSettings(opt:ts.CompilerOptions) {
+        this.compilationSettings=opt;
+    }
+
     getCompilationSettings() {
         // change this to return active project settings for file
         return this.compilationSettings;
@@ -144,10 +149,6 @@ export class LSHost implements ts.LanguageServiceHost {
 
     getScriptVersion(filename: string) {
         return this.getScriptInfo(filename).svc.latestVersion().toString();
-    }
-
-    public getLocalizedDiagnosticMessages(): string {
-        return "";
     }
 
     public getCancellationToken(): ts.CancellationToken {
@@ -199,7 +200,7 @@ export class LSHost implements ts.LanguageServiceHost {
     public reloadScript(filename: string, tmpfilename: string, cb:()=>any) {
         var script = this.getScriptInfo(filename);
         if (script) {
-            script.svc.reloadNoHistory(tmpfilename,cb);
+            script.svc.reloadFromFile(tmpfilename,cb);
         }
     }
 
@@ -294,16 +295,24 @@ function getAbsolutePath(filename:string, directory: string) {
     }
 }
 
-interface ProjectOptions {
-    rootFiles:string[];
+export interface ProjectFileOptions {
+    // these fields can be present in the project file
+    rootFiles?:string[];
+    formatCodeOptions?: ts.FormatCodeOptions;
+    commandLineOptions?: string;
+}
+
+export interface ProjectOptions extends ProjectFileOptions {
+    compilerOptions?: ts.CompilerOptions;
 }
 
 export class Project {
     compilerService=new CompilerService();
-
-    constructor(public root:ScriptInfo) {
-        this.addGraph(root);
-        this.compilerService.languageService.getNavigateToItems(".*");
+    projectOptions:ProjectOptions;
+    projectFilename:string;
+    
+    graphFinished() {
+        this.compilerService.languageService.getNavigateToItems(".*");    
     }
 
     addGraph(scriptInfo:ScriptInfo) {
@@ -312,6 +321,10 @@ export class Project {
                 this.addGraph(scriptInfo.children[i]);
             }
         }
+    }
+
+    isExplicitProject() {
+        return this.projectFilename;
     }
 
     addScript(info:ScriptInfo) {
@@ -323,12 +336,43 @@ export class Project {
         var filenames=this.compilerService.host.getScriptFileNames();
         filenames.map(filename=> { console.log(filename); });
     }
+
+    setProjectOptions(projectOptions: ProjectOptions) {
+        this.projectOptions=projectOptions;
+        if (projectOptions.compilerOptions) {
+            this.compilerService.setCompilerOptions(projectOptions.compilerOptions);
+        }
+        if (projectOptions.formatCodeOptions) {
+            this.compilerService.setFormatCodeOptions(projectOptions.formatCodeOptions);
+        }
+        
+    }
+
+    static createProject(projectFilename: string) {
+        var eproj=new Project();
+        eproj.projectFilename=projectFilename;
+        return eproj;
+    }
+
+    static createInferredProject(root: ScriptInfo) {
+        var iproj=new Project();
+        iproj.addGraph(root);
+        iproj.graphFinished();
+
+        return iproj;
+    }
+}
+
+export interface ProjectOpenResult {
+    success?: boolean;
+    errorMsg?: string;
+    project?: Project;
 }
 
 export class ProjectService {
     filenameToScriptInfo: ts.Map<ScriptInfo> = {};
     roots: ScriptInfo[]=[];
-    projects:Project[]=[];
+    inferredProjects:Project[]=[];
     rootsChanged=false;
     newRootDisjoint=true;
     lastRemovedRoots:ScriptInfo[]=[];
@@ -343,8 +387,8 @@ export class ProjectService {
     }
 
     printProjects() {
-        for (var i=0,len=this.projects.length;i<len;i++) {
-            var project=this.projects[i];
+        for (var i=0,len=this.inferredProjects.length;i<len;i++) {
+            var project=this.inferredProjects[i];
             console.log("Project "+i.toString());
             project.printFiles();
             console.log("-----------------------------------------------");
@@ -368,12 +412,42 @@ export class ProjectService {
         return false;
     }
 
-    openProjectFile(pfilename: string) {
+    openProjectFile(pfilename: string): ProjectOpenResult {
         pfilename=ts.normalizePath(pfilename);
-        // file references will be relative to dirPath
+        // file references will be relative to dirPath (or absolute)
         var dirPath = ts.getDirectoryPath(pfilename);
-        
-
+        var projectText=ts.sys.readFile(pfilename);
+        var projectOptions=<ProjectOptions>JSON.parse(projectText);
+        if (projectOptions.commandLineOptions) {
+            var parsedCommandLine=ts.parseCommandLine(projectOptions.commandLineOptions.split(" "));
+            if (parsedCommandLine.errors.length == 0) {
+                projectOptions.compilerOptions = parsedCommandLine.options;
+            }
+            else {
+                return { errorMsg: "syntax error in field 'command line options'" };
+            }
+        }
+        if (projectOptions.rootFiles) {
+            var proj=Project.createProject(pfilename);
+            for (var i = 0, len = projectOptions.rootFiles.length; i < len; i++) {
+                var rootFilename=projectOptions.rootFiles[i];
+                var normRootFilename = ts.normalizePath(rootFilename);
+                normRootFilename=getAbsolutePath(normRootFilename,dirPath);
+                if (ts.sys.fileExists(normRootFilename)) {
+                    var info = this.openFile(normRootFilename, true, true);
+                    info.isRoot = true;
+                    proj.addGraph(info);
+                }
+                else {
+                    return { errorMsg: "specified root file " + rootFilename + " not found" };
+                }
+            }
+            proj.setProjectOptions(projectOptions);
+            return { success: true, project: proj };
+        }
+        else {
+            return { errorMsg: "required field 'rootFiles' not found" };
+        }
     }
 
     openSpecifiedFile(filename:string) {
@@ -381,7 +455,7 @@ export class ProjectService {
         this.lastRemovedRoots=[];
         this.newRootDisjoint=true;
         var info=this.openFile(filename,true);
-        if (this.rootsChanged) {
+        if (info && (this.rootsChanged)) {
             var i=0;
             var len=this.roots.length;
             if (this.newRootDisjoint) {
@@ -390,7 +464,7 @@ export class ProjectService {
             for (;i<len;i++) {
                 var root=this.roots[i];
                 root.isRoot=true;
-                this.projects[i]=new Project(root);
+                this.inferredProjects[i]=Project.createInferredProject(root);
             }
         }
         return info;
@@ -399,40 +473,45 @@ export class ProjectService {
     /**
      * @param filename is absolute pathname
      */
-    openFile(filename: string,possibleRoot=false) {
+    openFile(filename: string,possibleRoot=false,explicitProject=false) {
         //console.log("opening "+filename+"...");
         filename=ts.normalizePath(filename);
         var dirPath = ts.getDirectoryPath(filename);
         //console.log("normalized as "+filename+" with dir path "+dirPath);
         var info = ts.lookUp(this.filenameToScriptInfo,filename);
         if (!info) {
-            var content = ts.sys.readFile(filename);
-            if (content) {
-                info = new ScriptInfo(filename, content);
-                this.filenameToScriptInfo[filename]=info;
-                if (possibleRoot) {
-                    this.roots.push(info);
-                    this.rootsChanged=true;
+            if (ts.sys.fileExists(filename)) {
+                var content = ts.sys.readFile(filename);
+                if (!content) {
+                    content = "";
                 }
-                var preProcessedInfo = ts.preProcessFile(content, false);
-                if (preProcessedInfo.referencedFiles.length > 0) {
-                    for (var i = 0, len = preProcessedInfo.referencedFiles.length; i < len; i++) {
-                        var refFilename = ts.normalizePath(preProcessedInfo.referencedFiles[i].filename);
-                        refFilename=getAbsolutePath(refFilename,dirPath);
-                        var refInfo=this.openFile(refFilename);
-                        if (refInfo) {
-                            info.addChild(refInfo);
+                info = new ScriptInfo(filename, content);
+                this.filenameToScriptInfo[filename] = info;
+                if (possibleRoot && (!explicitProject)) {
+                    this.roots.push(info);
+                    this.rootsChanged = true;
+                }
+                if (content.length > 0) {
+                    var preProcessedInfo = ts.preProcessFile(content, false); 
+                    // TODO: add import references
+                    if (preProcessedInfo.referencedFiles.length > 0) {
+                        for (var i = 0, len = preProcessedInfo.referencedFiles.length; i < len; i++) {
+                            var refFilename = ts.normalizePath(preProcessedInfo.referencedFiles[i].filename);
+                            refFilename = getAbsolutePath(refFilename, dirPath);
+                            var refInfo = this.openFile(refFilename);
+                            if (refInfo) {
+                                info.addChild(refInfo);
+                            }
+
                         }
                     }
                 }
-                //                  console.log("opened "+filename);
             }
             else {
-                //console.log("could not open "+filename);
             }
         }
 
-        if ((!possibleRoot)&&(info)&&(info.isRoot)) {
+        if ((!explicitProject)&&(!possibleRoot)&&(info)&&(info.isRoot)&&(!info.activeProject.isExplicitProject())) {
             if (this.removeRoot(info)) {
                 this.rootsChanged=true;
                 this.newRootDisjoint=false;
@@ -445,14 +524,39 @@ export class ProjectService {
 }
 
 export class CompilerService {
-    // TODO: add usable cancellation token
     cancellationToken = new CancellationToken();
     host = new LSHost(this.cancellationToken);
     languageService: ts.LanguageService;
     classifier: ts.Classifier;
     settings = ts.getDefaultCompilerOptions();
     documentRegistry = ts.createDocumentRegistry();
-    formatCodeOptions: ts.FormatCodeOptions = {
+    formatCodeOptions: ts.FormatCodeOptions = CompilerService.defaultFormatCodeOptions;
+
+    constructor() {
+        this.host.setCompilationSettings(ts.getDefaultCompilerOptions());
+        this.languageService = ts.createLanguageService(this.host, this.documentRegistry);
+        this.classifier = ts.createClassifier(this.host);
+    }
+
+    setCompilerOptions(opt: ts.CompilerOptions) {
+        this.host.setCompilationSettings(opt);
+    }
+
+    setFormatCodeOptions(fco: ts.FormatCodeOptions) {
+        // use this loop to preserve default values
+        for (var p in fco) {
+            if ((<Object>fco).hasOwnProperty(p)) {
+                this.formatCodeOptions[p]=fco[p];
+            }
+        }
+    }
+
+    isExternalModule(filename: string): boolean {
+        var sourceFile = this.languageService.getSourceFile(filename);
+        return ts.isExternalModule(sourceFile);
+    }
+
+    static defaultFormatCodeOptions: ts.FormatCodeOptions = {
         IndentSize: 4,
         TabSize: 4,
         NewLineCharacter: ts.sys.newLine,
@@ -467,15 +571,6 @@ export class CompilerService {
         PlaceOpenBraceOnNewLineForControlBlocks: false,
     }
 
-    constructor() {
-        this.languageService = ts.createLanguageService(this.host, this.documentRegistry);
-        this.classifier = ts.createClassifier(this.host);
-    }
-
-    isExternalModule(filename: string): boolean {
-        var sourceFile = this.languageService.getSourceFile(filename);
-        return ts.isExternalModule(sourceFile);
-    }
 }
 
 export interface LineCollection {
@@ -734,19 +829,14 @@ export class TextChange {
 
     getTextChangeRange() {
         return ts.createTextChangeRange(ts.createTextSpan(this.pos, this.deleteLen),
-                                      this.insertedText ? this.insertedText.length : 0);
+                                        this.insertedText ? this.insertedText.length : 0);
     }
-}
-
-interface EdCmd {
-    cmdName:string;
-    lineStart:number;
-    lineEnd:number;
 }
 
 export class ScriptVersionCache {
     changes: TextChange[] = [];
     versions: LineIndexSnapshot[] = [];
+    minVersion = 0;  // no versions earlier than min version will maintain change history
     private currentVersion = 0;
 
     static changeNumberThreshold = 8;
@@ -762,69 +852,6 @@ export class ScriptVersionCache {
         }
     }
 
-    applyEdScript(edScript: string) {
-        var edLines=edScript.split('\n');
-        // remove trailing empty line
-        edLines.pop();
-        var lineIndex=0;
-        var edLineCount=edLines.length;
-
-        var snap=this.getSnapshot();
-
-        while (lineIndex < edLineCount) {
-            var cmd=parseEdCommand(edLines[lineIndex++]);
-            var pos:number;
-            var deleteLen:number;
-            var insertedText:string;
-            switch (cmd.cmdName) {
-            case 'a':
-                insertedText=gatherInputLines();
-                this.edit(edLineToPos(cmd.lineStart+1),0,insertedText);
-                break;
-            case 'd':
-                deleteLen=edLineToPos(cmd.lineEnd+1)-edLineToPos(cmd.lineStart);
-                this.edit(edLineToPos(cmd.lineStart),deleteLen);
-                break;
-            case 'c':
-                insertedText=gatherInputLines();
-                deleteLen=edLineToPos(cmd.lineEnd+1)-edLineToPos(cmd.lineStart);
-                this.edit(edLineToPos(cmd.lineStart),deleteLen,insertedText);
-                //console.log("after c: "+lineIndex + " " + edLineCount + " "+ edLines[lineIndex]);
-                break;
-            }
-        }
-
-        function parseEdCommand(edCmd: string):EdCmd {
-            var m = edCmd.match(/^(\d+)(,\d+)?([acd])$/);
-            var lineStart=parseInt(m[1]);
-            return {
-                cmdName: m[3],
-                lineStart: lineStart,
-                lineEnd: m[2]?parseInt(m[2].substring(1)):lineStart,
-            }
-        }
-
-        function edLineToPos(line: number) {
-            if (line < snap.index.root.lineCount()) {
-                var lineInfo = snap.index.lineNumberToInfo(line);
-                return lineInfo.offset;
-            }
-            else {
-                return snap.index.root.charCount();
-            }
-        }
-
-        function gatherInputLines() {
-            var inputLines="";
-            while ((edLines[lineIndex]!=".")&&(lineIndex<edLineCount)) {
-                inputLines=inputLines.concat(edLines[lineIndex++]+'\n');
-            }
-            // skip dot terminator
-            lineIndex++;
-            return inputLines;
-        }
-    }
-
     latest() {
         return this.versions[this.currentVersion];
     }
@@ -836,49 +863,28 @@ export class ScriptVersionCache {
         return this.currentVersion;
     }
 
-    editWithDiff(tmpfilename: string,cb?:()=>any) {
-        var tmpfile2="/tmp/current";
-        var snap=this.getSnapshot();
-        ts.sys.writeFile(tmpfile2,snap.getText(0,snap.getLength()));
-
-        child_process.exec("diff -e " + tmpfile2 + " " + tmpfilename,
-            (error, stdout, stderr) => {
-                if (error != null) {
-                    // diff found a difference
-                    this.applyEdScript(stdout.toString());
-                }
-                else {
-                    //console.log("files match");
-                }
-                if (cb) {
-                    cb();
-                }
-
-            });
-        
-    }
-
-    reloadFromFile(filename: string,cb:()=>any) {
-        this.editWithDiff(filename,cb);
-    }
-
-    reloadNoHistory(filename: string,cb?:()=>any) {
+    reloadFromFile(filename: string,cb?:()=>any) {
         var content = ts.sys.readFile(filename);
         this.reload(content);
         if (cb)
             cb();
     }
-
+    
     // reload whole script, leaving no change history behind reload
     reload(script: string) {
         this.currentVersion++;
         this.changes=[]; // history wiped out by reload
         var snap = new LineIndexSnapshot(this.currentVersion, this);
-        snap.reloaded=true;
         this.versions[this.currentVersion] = snap;
         snap.index = new LineIndex();
         var lm = LineIndex.linesFromText(script);
         snap.index.load(lm.lines);
+        // REVIEW: could use linked list 
+        for (var i = this.minVersion; i < this.currentVersion; i++) {
+            this.versions[i]=undefined;
+        }
+        this.minVersion=this.currentVersion;
+
     }
 
     getSnapshot() {
@@ -901,18 +907,20 @@ export class ScriptVersionCache {
 
     getTextChangesBetweenVersions(oldVersion: number, newVersion: number) {
         if (oldVersion < newVersion) {
-            var textChangeRanges: ts.TextChangeRange[] = [];
-            for (var i = oldVersion + 1; i <= newVersion; i++) {
-                var snap = this.versions[i];
-                if (snap.reloaded) {
-                    return undefined;
+            if (oldVersion >= this.minVersion) {
+                var textChangeRanges: ts.TextChangeRange[] = [];
+                for (var i = oldVersion + 1; i <= newVersion; i++) {
+                    var snap = this.versions[i];
+                    for (var j = 0, len = snap.changesSincePreviousVersion.length; j < len; j++) {
+                        var textChange = snap.changesSincePreviousVersion[j];
+                        textChangeRanges[textChangeRanges.length] = textChange.getTextChangeRange();
+                    }
                 }
-                for (var j = 0, len = snap.changesSincePreviousVersion.length; j < len; j++) {
-                    var textChange = snap.changesSincePreviousVersion[j];
-                    textChangeRanges[textChangeRanges.length] = textChange.getTextChangeRange();
-                }
+                return ts.collapseTextChangeRangesAcrossMultipleVersions(textChangeRanges);
             }
-            return ts.collapseTextChangeRangesAcrossMultipleVersions(textChangeRanges);
+            else {
+                return undefined;
+            }
         }
         else {
             return ts.unchangedTextChangeRange;
@@ -933,7 +941,6 @@ export class ScriptVersionCache {
 export class LineIndexSnapshot implements ts.IScriptSnapshot {
     index: LineIndex;
     changesSincePreviousVersion: TextChange[] = [];
-    reloaded=false;
 
     constructor(public version: number, public cache: ScriptVersionCache) {
     }
@@ -969,9 +976,6 @@ export class LineIndexSnapshot implements ts.IScriptSnapshot {
         if (this.version <= scriptVersion) {
             return ts.unchangedTextChangeRange;
         }
-        else if (this.reloaded) {
-            return undefined;
-        }
         else {
             return this.cache.getTextChangesBetweenVersions(scriptVersion,this.version);
         }
@@ -980,8 +984,6 @@ export class LineIndexSnapshot implements ts.IScriptSnapshot {
     getChangeRange(oldSnapshot: ts.IScriptSnapshot): ts.TextChangeRange {
         var oldSnap=<LineIndexSnapshot>oldSnapshot;
         return this.getTextChangeRangeSinceVersion(oldSnap.version);
-
-        //return undefined;
     }
 }
 
