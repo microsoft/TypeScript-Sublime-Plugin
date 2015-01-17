@@ -75,7 +75,38 @@ function findExactMatchType(items: ts.NavigateToItem[]) {
         }
     }
 }
-        
+
+interface FileMin {
+    file: string;
+    min: ed.ILineInfo;
+}
+
+function compareNumber(a: number, b: number) {
+    if (a < b) {
+        return -1;
+    }
+    else if (a == b) {
+        return 0;
+    }
+    else return 1;
+}
+
+function compareFileMin(a: FileMin, b: FileMin) {
+    if (a.file < b.file) {
+        return -1;
+    }
+    else if (a.file == b.file) {
+        var n = compareNumber(a.min.line, b.min.line);
+        if (n == 0) {
+            return compareNumber(a.min.offset, b.min.offset);
+        }
+        else return n;
+    }
+    else {
+        return 1;
+    }
+}
+
 function sortNavItems(items: ts.NavigateToItem[]) {
     return items.sort((a,b)=> {
         if (a.matchKind<b.matchKind) {
@@ -678,6 +709,7 @@ class Session {
                     if (refs) {
                         var nameInfo = compilerService.languageService.getQuickInfoAtPosition(file, pos);
                         if (nameInfo) {
+                            var displayString = ts.displayPartsToString(nameInfo.displayParts);
                             var nameSpan = nameInfo.textSpan;
                             var nameColStart =
                                 compilerService.host.positionToZeroBasedLineCol(file, nameSpan.start).offset;
@@ -687,8 +719,8 @@ class Session {
                                 file: ref.fileName,
                                 min: compilerService.host.positionToZeroBasedLineCol(ref.fileName, ref.textSpan.start),
                                 lim: compilerService.host.positionToZeroBasedLineCol(ref.fileName, ts.textSpanEnd(ref.textSpan)),
-                            }));
-                            this.output([bakedRefs, nameText, nameColStart]);
+                            })).sort(compareFileMin);
+                            this.output([bakedRefs, nameText, nameColStart, displayString]);
                         }
                         else {
                             this.output(undefined, "no references at this position");
