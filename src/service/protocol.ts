@@ -328,6 +328,11 @@ interface PendingErrorCheck {
     project: ed.Project;
 }
 
+interface IdFile {
+    id: number;
+    fileName: string;
+}
+
 class Session {
     projectService = new ed.ProjectService();
     prettyJSON = false;
@@ -415,8 +420,7 @@ class Session {
         };
     }
 
-    // TODO: use union type for return type
-    encodeFilename(filename: string): any {
+    encodeFilename(filename: string): number | IdFile {
         var id = ts.lookUp(this.fileHash, filename);
         if (!id) {
             id = this.nextFileId++;
