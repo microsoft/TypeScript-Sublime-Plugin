@@ -719,11 +719,18 @@ class Session {
                                 compilerService.host.positionToZeroBasedLineCol(file, nameSpan.start).offset;
                             var nameText =
                                 compilerService.host.getScriptSnapshot(file).getText(nameSpan.start, ts.textSpanEnd(nameSpan));
-                            var bakedRefs = refs.map(ref => ({
-                                file: ref.fileName,
-                                min: compilerService.host.positionToZeroBasedLineCol(ref.fileName, ref.textSpan.start),
-                                lim: compilerService.host.positionToZeroBasedLineCol(ref.fileName, ts.textSpanEnd(ref.textSpan)),
-                            })).sort(compareFileMin);
+                            var bakedRefs = refs.map((ref) => {
+                                var min = compilerService.host.positionToZeroBasedLineCol(ref.fileName, ref.textSpan.start);
+                                var refLineSpan=compilerService.host.lineToTextSpan(ref.fileName,min.line);
+                                var snap=compilerService.host.getScriptSnapshot(ref.fileName);
+                                var lineText=snap.getText(refLineSpan.start,ts.textSpanEnd(refLineSpan)).replace(/\r|\n/g,"");
+                                return {
+                                    file: ref.fileName,
+                                    min: min,
+                                    lineText: lineText,
+                                    lim: compilerService.host.positionToZeroBasedLineCol(ref.fileName, ts.textSpanEnd(ref.textSpan)),
+                                };
+                            }).sort(compareFileMin);
                             this.output([bakedRefs, nameText, nameColStart, displayString]);
                         }
                         else {

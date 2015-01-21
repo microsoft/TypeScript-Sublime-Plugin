@@ -236,6 +236,25 @@ export class LSHost implements ts.LanguageServiceHost {
     }
 
     /**
+     *  @param line 1 based index
+     */
+    lineToTextSpan(filename: string, line: number): ts.TextSpan {
+        var script: ScriptInfo = this.filenameToScript[filename];
+        var index=script.snap().index;
+
+        var lineInfo=index.lineNumberToInfo(line+1);
+        var len;
+        if (lineInfo.leaf) {
+            len = lineInfo.leaf.text.length;
+        }
+        else {
+            var nextLineInfo=index.lineNumberToInfo(line+2);
+            len=nextLineInfo.offset-lineInfo.offset;
+        }
+        return ts.createTextSpan(lineInfo.offset,len);
+    }
+
+    /**
      * @param line 1 based index
      * @param col 1 based index
      */
