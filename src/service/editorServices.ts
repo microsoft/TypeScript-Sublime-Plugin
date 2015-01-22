@@ -499,30 +499,28 @@ export class ProjectService {
         //console.log("normalized as "+filename+" with dir path "+dirPath);
         var info = ts.lookUp(this.filenameToScriptInfo,filename);
         if (!info) {
+            var content="";
             if (ts.sys.fileExists(filename)) {
-                var content = ts.sys.readFile(filename);
-                if (!content) {
-                    content = "";
-                }
-                info = new ScriptInfo(filename, content);
-                this.filenameToScriptInfo[filename] = info;
-                if (possibleRoot && (!explicitProject)) {
-                    this.roots.push(info);
-                    this.rootsChanged = true;
-                }
-                if (content.length > 0) {
-                    var preProcessedInfo = ts.preProcessFile(content, false); 
-                    // TODO: add import references
-                    if (preProcessedInfo.referencedFiles.length > 0) {
-                        for (var i = 0, len = preProcessedInfo.referencedFiles.length; i < len; i++) {
-                            var refFilename = ts.normalizePath(preProcessedInfo.referencedFiles[i].filename);
-                            refFilename = getAbsolutePath(refFilename, dirPath);
-                            var refInfo = this.openFile(refFilename);
-                            if (refInfo) {
-                                info.addChild(refInfo);
-                            }
-
+                content = ts.sys.readFile(filename);
+            }
+            info = new ScriptInfo(filename, content);
+            this.filenameToScriptInfo[filename] = info;
+            if (possibleRoot && (!explicitProject)) {
+                this.roots.push(info);
+                this.rootsChanged = true;
+            }
+            if (content.length > 0) {
+                var preProcessedInfo = ts.preProcessFile(content, false); 
+                // TODO: add import references
+                if (preProcessedInfo.referencedFiles.length > 0) {
+                    for (var i = 0, len = preProcessedInfo.referencedFiles.length; i < len; i++) {
+                        var refFilename = ts.normalizePath(preProcessedInfo.referencedFiles[i].filename);
+                        refFilename = getAbsolutePath(refFilename, dirPath);
+                        var refInfo = this.openFile(refFilename);
+                        if (refInfo) {
+                            info.addChild(refInfo);
                         }
+
                     }
                 }
             }
@@ -1038,11 +1036,16 @@ export class LineIndex {
     }
 
     load(lines: string[]) {
-        var leaves: LineLeaf[] = [];
-        for (var i = 0, len = lines.length; i < len; i++) {
-            leaves[i] = new LineLeaf(lines[i]);
+        if (lines.length > 0) {
+            var leaves: LineLeaf[] = [];
+            for (var i = 0, len = lines.length; i < len; i++) {
+                leaves[i] = new LineLeaf(lines[i]);
+            }
+            this.root = LineIndex.buildTreeFromBottom(leaves);
         }
-        this.root = LineIndex.buildTreeFromBottom(leaves);
+        else {
+            this.root=new LineNode();
+        }
     }
 
     walk(rangeStart: number, rangeLength: number, walkFns: ILineIndexWalker) {
@@ -1051,13 +1054,15 @@ export class LineIndex {
 
     getText(rangeStart: number, rangeLength: number) {
         var accum = "";
-        this.walk(rangeStart, rangeLength, {
-            goSubtree: true,
-            done: false,
-            leaf: (relativeStart: number, relativeLength: number, ll: LineLeaf) => {
-                accum = accum.concat(ll.text.substring(relativeStart,relativeStart+relativeLength));
-            }
-        });
+        if (rangeLength > 0) {
+            this.walk(rangeStart, rangeLength, {
+                goSubtree: true,
+                done: false,
+                leaf: (relativeStart: number, relativeLength: number, ll: LineLeaf) => {
+                    accum = accum.concat(ll.text.substring(relativeStart, relativeStart + relativeLength));
+                }
+            });
+        }
         return accum;
     }
 
@@ -1082,48 +1087,57 @@ export class LineIndex {
         function editFlat(source: string, s: number, dl: number, nt="") {
             return source.substring(0, s) + nt + source.substring(s + dl, source.length);
         }
-        if (this.checkEdits) {
-            var checkText=editFlat(this.getText(0,this.root.charCount()),pos,deleteLength,newText);
+        if (this.root.charCount() == 0) {
+            // TODO: assert deleteLength == 0
+            if (newText) {
+                this.load(LineIndex.linesFromText(newText).lines);
+                return this;
+            }
         }
-        var walker = new EditWalker();
-        if (deleteLength > 0) {
-            // check whether last characters deleted are line break
-            var e = pos + deleteLength;
-            var lineInfo = this.charOffsetToLineNumberAndPos(e);
-            if ((lineInfo && (lineInfo.offset == 0))) {
-                // move range end just past line that will merge with previous line
-                deleteLength += lineInfo.text.length;
-                // store text by appending to end of insertedText
+        else {
+            if (this.checkEdits) {
+                var checkText = editFlat(this.getText(0, this.root.charCount()), pos, deleteLength, newText);
+            }
+            var walker = new EditWalker();
+            if (deleteLength > 0) {
+                // check whether last characters deleted are line break
+                var e = pos + deleteLength;
+                var lineInfo = this.charOffsetToLineNumberAndPos(e);
+                if ((lineInfo && (lineInfo.offset == 0))) {
+                    // move range end just past line that will merge with previous line
+                    deleteLength += lineInfo.text.length;
+                    // store text by appending to end of insertedText
+                    if (newText) {
+                        newText = newText + lineInfo.text;
+                    }
+                    else {
+                        newText = lineInfo.text;
+                    }
+                }
+            }
+            else if (pos >= this.root.charCount()) {
+                // insert at end
+                var endString = this.getText(pos - 1, 1);
                 if (newText) {
-                    newText = newText + lineInfo.text;
+                    newText = endString + newText;
                 }
                 else {
-                    newText = lineInfo.text;
+                    newText = endString;
+                }
+                pos = pos - 1;
+                deleteLength = 0;
+                walker.suppressTrailingText = true;
+            }
+            this.root.walk(pos, deleteLength, walker);
+            walker.insertLines(newText);
+            if (this.checkEdits) {
+                var updatedText = this.getText(0, this.root.charCount());
+                if (checkText != updatedText) {
+                    console.log("buffer edit mismatch");
                 }
             }
+            return walker.lineIndex;
         }
-        else if (pos >= this.root.charCount()) {
-            // insert at end
-            var endString = this.getText(pos - 1, 1);
-            if (newText) {
-                newText = endString + newText;
-            }
-            else {
-                newText = endString;
-            }
-            pos = pos - 1;
-            deleteLength = 0;
-            walker.suppressTrailingText = true;
-        }
-        this.root.walk(pos, deleteLength, walker);
-        walker.insertLines(newText);
-        if (this.checkEdits) {
-            var updatedText=this.getText(0,this.root.charCount());
-            if (checkText != updatedText) {
-                console.log("buffer edit mismatch");
-            }
-        }
-        return walker.lineIndex;
     }
 
     static buildTreeFromBottom(nodes: LineCollection[]) : LineNode {
