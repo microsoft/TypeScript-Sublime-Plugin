@@ -544,7 +544,7 @@ class Session {
             if (m = cmd.match(/^definition (\d+) (\d+) (.*)$/)) {
                 line = parseInt(m[1]);
                 col = parseInt(m[2]);
-                file = m[3];
+                file = ts.normalizePath(m[3]);
                 project = this.projectService.getProjectForFile(file);
                 if (project) {
                     var compilerService = project.compilerService;
@@ -584,7 +584,7 @@ class Session {
             }
             else if (m = cmd.match(/^dbg brk (\d+) (.*)$/)) {
                 line = parseInt(m[1]);
-                file = m[2];
+                file = ts.normalizePath(m[2]);
                 if (this.debugSession) {
                     this.debugSession.setBreakpointOnLine(line, file);
                 }
@@ -598,7 +598,7 @@ class Session {
             else if (m = cmd.match(/^rename (\d+) (\d+) (.*)$/)) {
                 line = parseInt(m[1]);
                 col = parseInt(m[2]);
-                file = m[3];
+                file = ts.normalizePath(m[3]);
                 project = this.projectService.getProjectForFile(file);
                 if (project) {
                     var compilerService = project.compilerService;
@@ -664,7 +664,7 @@ class Session {
             else if (m = cmd.match(/^type (\d+) (\d+) (.*)$/)) {
                 line = parseInt(m[1]);
                 col = parseInt(m[2]);
-                file = m[3];
+                file = ts.normalizePath(m[3]);
                 project = this.projectService.getProjectForFile(file);
                 if (project) {
                     var compilerService = project.compilerService;
@@ -698,13 +698,13 @@ class Session {
                 }
             }
             else if (m = cmd.match(/^open (.*)$/)) {
-                file = m[1];
+                file = ts.normalizePath(m[1]);
                 this.projectService.openSpecifiedFile(file);
             }
             else if (m = cmd.match(/^references (\d+) (\d+) (.*)$/)) {
                 line = parseInt(m[1]);
                 col = parseInt(m[2]);
-                file = m[3];
+                file = ts.normalizePath(m[3]);
                 project = this.projectService.getProjectForFile(file);
                 if (project) {
                     compilerService = project.compilerService;
@@ -745,7 +745,7 @@ class Session {
             else if (m = cmd.match(/^quickinfo (\d+) (\d+) (.*)$/)) {
                 line = parseInt(m[1]);
                 col = parseInt(m[2]);
-                file = m[3];
+                file = ts.normalizePath(m[3]);
                 project = this.projectService.getProjectForFile(file);
                 if (project) {
                     compilerService = project.compilerService;
@@ -770,7 +770,7 @@ class Session {
                 col = parseInt(m[2]);
                 var endLine = parseInt(m[3]);
                 var endCol = parseInt(m[4]);
-                file = m[5];
+                file = ts.normalizePath(m[5]);
 
                 project = this.projectService.getProjectForFile(file);
                 if (project) {
@@ -806,7 +806,7 @@ class Session {
             else if (m = cmd.match(/^formatonkey (\d+) (\d+) (\{\".*\"\})\s* (.*)$/)) {
                 line = parseInt(m[1]);
                 col = parseInt(m[2]);
-                file = m[4];
+                file = ts.normalizePath(m[4]);
                 project = this.projectService.getProjectForFile(file);
                 if (project) {
                     compilerService = project.compilerService;
@@ -856,7 +856,7 @@ class Session {
                 line = parseInt(m[1]);
                 col = parseInt(m[2]);
                 var prefix = "";
-                file = m[4];
+                file = ts.normalizePath(m[4]);
                 if (m[3]) {
                     prefix = m[3].substring(1, m[3].length - 1);
                 }
@@ -924,7 +924,7 @@ class Session {
                     insertString=JSON.parse(m[5].substring(1,m[5].length-1));
                 }
 
-                file = m[6];
+                file = ts.normalizePath(m[6]);
                 project=this.projectService.getProjectForFile(file);
                 if (project) {
                     compilerService = project.compilerService;
@@ -949,8 +949,8 @@ class Session {
                 }                
             }
             else if (m = cmd.match(/^save (.*) to (.*)$/)) {
-                file = m[1]
-                tmpfile = m[2]
+                file = ts.normalizePath(m[1])
+                tmpfile = ts.normalizePath(m[2])
                 project=this.projectService.getProjectForFile(file);
                 if (project) {
                     project.compilerService.host.saveTo(file,tmpfile);
@@ -959,7 +959,7 @@ class Session {
             else if (m=cmd.match(/^navto (\{.*\}) (.*)$/)) {
                 var searchTerm=m[1];
                 searchTerm=searchTerm.substring(1,searchTerm.length-1);
-                file = m[2];
+                file = ts.normalizePath(m[2]);
                 project=this.projectService.getProjectForFile(file);
                 if (project) {
                     compilerService=project.compilerService;
