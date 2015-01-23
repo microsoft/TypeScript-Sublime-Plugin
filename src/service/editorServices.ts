@@ -94,7 +94,7 @@ export class CancellationToken {
 // TODO: make this a parameter of the service or in service environment
 
 var defaultLibDir=
-    "/home/steve/src/TypeScript-Service/node_modules/typescript/bin/lib.d.ts";
+    "/Users/yuit/.vim/bundle/vim-typescript/third_party/TypeScript-Service/node_modules/typescript/bin/lib.d.ts";
 
 export class LSHost implements ts.LanguageServiceHost {
     private ls: ts.LanguageService = null;
