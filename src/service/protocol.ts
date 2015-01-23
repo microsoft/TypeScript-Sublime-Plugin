@@ -902,6 +902,7 @@ class Session {
                 var rawFiles=m[2];
                 var files=rawFiles.split(';');
                 var checkList = files.reduce((accum: PendingErrorCheck[], filename: string) => {
+                    filename=ts.normalizePath(filename);
                     project = this.projectService.getProjectForFile(filename);
                     if (project) {
                         accum.push({ filename: filename, project: project });

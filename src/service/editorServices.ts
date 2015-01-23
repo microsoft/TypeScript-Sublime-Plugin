@@ -94,9 +94,6 @@ export class CancellationToken {
 
 // TODO: make this a parameter of the service or in service environment
 
-var defaultLibDir=
-    "/home/steve/src/TypeScript-Service/node_modules/typescript/bin/lib.d.ts";
-
 export class LSHost implements ts.LanguageServiceHost {
     private ls: ts.LanguageService = null;
     logger: ts.Logger;
@@ -123,7 +120,11 @@ export class LSHost implements ts.LanguageServiceHost {
     }
 
     public addDefaultLibrary() {
-        this.addFile(defaultLibDir);
+        var nodeModuleBinDir=ts.getDirectoryPath(ts.sys.getExecutingFilePath());
+        var defaultLib=nodeModuleBinDir+"/lib.d.ts";
+        console.log(defaultLib);
+        // TODO: for now assume no es6 (need to do es6 if explicit project sets option)
+        this.addFile(defaultLib);
     }
 
     getScriptSnapshot(filename: string): ts.IScriptSnapshot {
