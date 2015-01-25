@@ -122,7 +122,6 @@ export class LSHost implements ts.LanguageServiceHost {
     public addDefaultLibrary() {
         var nodeModuleBinDir=ts.getDirectoryPath(ts.normalizePath(ts.sys.getExecutingFilePath()));
         var defaultLib=nodeModuleBinDir+"/lib.d.ts";
-        console.log(defaultLib);
         // TODO: for now assume no es6 (need to do es6 if explicit project sets option)
         this.addFile(defaultLib);
     }

@@ -938,8 +938,8 @@ class Session {
                 }
             }
             else if (m = cmd.match(/^reload (.*) from (.*)$/)) {
-                file=m[1];
-                tmpfile=m[2];
+                file=ts.normalizePath(m[1]);
+                tmpfile=ts.normalizePath(m[2]);
                 project=this.projectService.getProjectForFile(file);
                 if (project) {
                     this.changeSeq++;
