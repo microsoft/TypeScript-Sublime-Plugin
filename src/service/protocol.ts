@@ -705,6 +705,8 @@ class Session {
                 line = parseInt(m[1]);
                 col = parseInt(m[2]);
                 file = ts.normalizePath(m[3]);
+                // TODO: get all projects for this file; report refs for all projects deleting duplicates
+                // can avoid duplicates by eliminating same ref file from subsequent projects
                 project = this.projectService.getProjectForFile(file);
                 if (project) {
                     compilerService = project.compilerService;
@@ -931,7 +933,21 @@ class Session {
                     compilerService = project.compilerService;
                     pos = compilerService.host.lineColToPosition(file, line, col);
                     if (pos >= 0) {
+                        var checkRefs=false;
+                        endLine=compilerService.host.positionToZeroBasedLineCol(file,pos+deleteLen).line+1;
+                        if ((endLine == line) && ((!insertString)||(0>insertString.indexOf('\n')))) {
+                            checkRefs=compilerService.host.lineAffectsRefs(file,line);
+                        }
+                        else {
+                            checkRefs=true;
+                        }
                         compilerService.host.editScript(file, pos, pos + deleteLen, insertString);
+                        if (!checkRefs) {
+                            checkRefs=compilerService.host.lineAffectsRefs(file,line);
+                        }
+                        if (checkRefs) {
+                            // TODO: recompute references for file
+                        }
                         this.changeSeq++;
                     }
                     // TODO: report async error
@@ -1012,6 +1028,13 @@ class Session {
             }
             else if (m = cmd.match(/^pretty/)) {
                 this.prettyJSON=true;
+            }
+            else if (m = cmd.match(/^printproj/)) {
+                this.projectService.printProjects();
+            }
+            else if (m = cmd.match(/^fileproj (.*)$/)) {
+                file = ts.normalizePath(m[1]);
+                this.projectService.printProjectsForFile(file);
             }
             else {
                 this.output(undefined,"Unrecognized command "+cmd);

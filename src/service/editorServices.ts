@@ -40,21 +40,27 @@ function showLines(s: string) {
 
 export class ScriptInfo {
     svc: ScriptVersionCache;
-    isRoot=false;
-    children:ScriptInfo[]=[];
-    activeProject: Project; // project to use by default for file
-    homeProject: Project;   // project from associated tsconfig
+    isInferredRoot=false;         
+    activeProjects:Project[]=[];  // projects referencing this file
+    children:ScriptInfo[]=[];     // files referenced by this file
 
-    constructor(public filename: string, public content:string, public isOpen = true) {
+    defaultProject: Project; // project to use by default for file 
+
+    constructor(public filename: string, public content:string, public isOpen = false) {
         this.svc = ScriptVersionCache.fromString(content);
     }
 
     addChild(childInfo:ScriptInfo) {
         this.children.push(childInfo);
     }
-    
+
     public snap() {
         return this.svc.getSnapshot();
+    }
+
+    getLineInfo(line: number) {
+        var snap=this.snap();
+        return snap.index.lineNumberToInfo(line);
     }
 
     public editContent(minChar: number, limChar: number, newText: string): void {
@@ -102,7 +108,6 @@ export class LSHost implements ts.LanguageServiceHost {
 
     constructor(private cancellationToken: CancellationToken = CancellationToken.None) {
         this.logger = this;
-        this.addDefaultLibrary();
     }
 
     trace(str:string) {
@@ -119,19 +124,21 @@ export class LSHost implements ts.LanguageServiceHost {
         this.cancellationToken.reset();
     }
 
-    public addDefaultLibrary() {
-        var nodeModuleBinDir=ts.getDirectoryPath(ts.normalizePath(ts.sys.getExecutingFilePath()));
-        var defaultLib=nodeModuleBinDir+"/lib.d.ts";
-        // TODO: for now assume no es6 (need to do es6 if explicit project sets option)
-        this.addFile(defaultLib);
-    }
-
     getScriptSnapshot(filename: string): ts.IScriptSnapshot {
         return this.getScriptInfo(filename).snap();
     }
 
     setCompilationSettings(opt:ts.CompilerOptions) {
         this.compilationSettings=opt;
+    }
+
+    lineAffectsRefs(filename: string, line: number) {
+        var info=this.getScriptInfo(filename);
+        var lineInfo=info.getLineInfo(line);
+        if (lineInfo && lineInfo.text) {
+            var regex=/reference|import|\/\*|\*\//;
+            return regex.test(lineInfo.text);
+        }
     }
 
     getCompilationSettings() {
@@ -167,11 +174,6 @@ export class LSHost implements ts.LanguageServiceHost {
         return this.getScriptInfo(filename).isOpen;
     }
 
-    public addFile(name: string) {
-        var content = ts.sys.readFile(name);
-        this.addScript(name, content);
-    }
-
     getScriptInfo(filename: string): ScriptInfo {
         return ts.lookUp(this.filenameToScript,filename);
     }
@@ -181,12 +183,6 @@ export class LSHost implements ts.LanguageServiceHost {
             this.filenameToScript[info.filename]=info;
             return info;
         }
-    }
-
-    public addScript(filename: string, content: string) {
-        var script = new ScriptInfo(filename, content);
-        this.filenameToScript[filename]=script;
-        return script;
     }
 
     public saveTo(filename: string, tmpfilename: string) {
@@ -314,16 +310,13 @@ function getAbsolutePath(filename:string, directory: string) {
     }
 }
 
-export interface ProjectFileOptions {
+export interface ProjectOptions {
     // these fields can be present in the project file
-    rootFiles?:string[];
+    files?:string[];
     formatCodeOptions?: ts.FormatCodeOptions;
-    commandLineOptions?: string;
-}
-
-export interface ProjectOptions extends ProjectFileOptions {
     compilerOptions?: ts.CompilerOptions;
 }
+
 
 export class Project {
     compilerService=new CompilerService();
@@ -342,12 +335,15 @@ export class Project {
         }
     }
 
-    isExplicitProject() {
+    isConfiguredProject() {
         return this.projectFilename;
     }
 
     addScript(info:ScriptInfo) {
-        info.activeProject=this;
+        if ((!info.defaultProject) || (!info.defaultProject.isConfiguredProject())) {
+            info.defaultProject = this;
+        }
+        info.activeProjects.push(this);
         return this.compilerService.host.addScriptInfo(info);
     }
     
@@ -390,19 +386,60 @@ export interface ProjectOpenResult {
 
 export class ProjectService {
     filenameToScriptInfo: ts.Map<ScriptInfo> = {};
-    roots: ScriptInfo[]=[];
+    inferredRoots: ScriptInfo[]=[];
     inferredProjects:Project[]=[];
-    rootsChanged=false;
+    inferredRootsChanged=false;
     newRootDisjoint=true;
-    lastRemovedRoots:ScriptInfo[]=[];
+    defaultLibInfo:ScriptInfo;
+    defaultES6LibInfo:ScriptInfo;
+
+    addDefaultLibraryToProject(proj:Project) {
+        var nodeModuleBinDir:string;
+        var defaultLib:string;
+        if (proj.projectOptions && proj.projectOptions.compilerOptions &&
+            (proj.projectOptions.compilerOptions.target == ts.ScriptTarget.ES6)) {
+            if (!this.defaultES6LibInfo) {
+                nodeModuleBinDir = ts.getDirectoryPath(ts.normalizePath(ts.sys.getExecutingFilePath()));
+                defaultLib = nodeModuleBinDir + "/lib.es6.d.ts";
+                this.defaultES6LibInfo = this.openFile(defaultLib);
+            }
+            proj.addScript(this.defaultES6LibInfo);
+        }
+        else {
+            if (!this.defaultLibInfo) {
+                nodeModuleBinDir = ts.getDirectoryPath(ts.normalizePath(ts.sys.getExecutingFilePath()));
+                defaultLib = nodeModuleBinDir + "/lib.d.ts";
+                this.defaultLibInfo = this.openFile(defaultLib);
+            }
+            proj.addScript(this.defaultLibInfo);
+        }
+    }
+
 
     getProjectForFile(filename: string) {
         var scriptInfo=ts.lookUp(this.filenameToScriptInfo,filename);
         if (!scriptInfo) {
-            scriptInfo = this.openSpecifiedFile(filename);
+            scriptInfo = this.openSpecifiedFile(filename,false,false);
         }
 // TODO: error upon file not found
-        return scriptInfo.activeProject;
+        return scriptInfo.defaultProject;
+    }
+
+    printProjectsForFile(filename: string) {
+        var scriptInfo=ts.lookUp(this.filenameToScriptInfo,filename);
+        if (scriptInfo) {
+            console.log("Projects for "+filename)
+            for (var i = 0, len = scriptInfo.activeProjects.length; i < len; i++) {
+                for (var j = 0, iplen = this.inferredProjects.length; j < iplen; j++) {
+                    if (scriptInfo.activeProjects[i] == this.inferredProjects[j]) {
+                        console.log("Inferred Project "+j.toString());
+                    }
+                }
+            }
+        }
+        else {
+            console.log(filename+" not in any project");
+        }
     }
 
     printProjects() {
@@ -414,76 +451,84 @@ export class ProjectService {
         }
     }
 
-    removeRoot(info:ScriptInfo) {
-        var len=this.roots.length;
+    removeInferredRoot(info:ScriptInfo) {
+        var len=this.inferredRoots.length;
         for (var i=0;i<len;i++) {
-            if (this.roots[i]==info) {
+            if (this.inferredRoots[i]==info) {
                 if (i<(len-1)) {
-                    this.roots[i]=this.roots[len-1];
+                    this.inferredRoots[i]=this.inferredRoots[len-1];
                 }
-                this.roots.length--;
-                this.rootsChanged=true;
-                info.isRoot=false;
-                this.lastRemovedRoots.push(info);
+                this.inferredRoots.length--;
+                this.inferredRootsChanged=true;
+                info.isInferredRoot=false;
                 return true;
             }
         }
         return false;
     }
 
-    openProjectFile(pfilename: string): ProjectOpenResult {
-        pfilename=ts.normalizePath(pfilename);
+    openConfigFile(configFilename: string): ProjectOpenResult {
+        configFilename=ts.normalizePath(configFilename);
         // file references will be relative to dirPath (or absolute)
-        var dirPath = ts.getDirectoryPath(pfilename);
-        var projectText=ts.sys.readFile(pfilename);
-        var projectOptions=<ProjectOptions>JSON.parse(projectText);
-        if (projectOptions.commandLineOptions) {
-            var parsedCommandLine=ts.parseCommandLine(projectOptions.commandLineOptions.split(" "));
-            if (parsedCommandLine.errors.length == 0) {
-                projectOptions.compilerOptions = parsedCommandLine.options;
-            }
-            else {
-                return { errorMsg: "syntax error in field 'command line options'" };
-            }
-        }
-        if (projectOptions.rootFiles) {
-            var proj=Project.createProject(pfilename);
-            for (var i = 0, len = projectOptions.rootFiles.length; i < len; i++) {
-                var rootFilename=projectOptions.rootFiles[i];
-                var normRootFilename = ts.normalizePath(rootFilename);
-                normRootFilename=getAbsolutePath(normRootFilename,dirPath);
-                if (ts.sys.fileExists(normRootFilename)) {
-                    var info = this.openFile(normRootFilename, true, true);
-                    info.isRoot = true;
-                    proj.addGraph(info);
-                }
-                else {
-                    return { errorMsg: "specified root file " + rootFilename + " not found" };
-                }
-            }
-            proj.setProjectOptions(projectOptions);
-            return { success: true, project: proj };
+        var dirPath = ts.getDirectoryPath(configFilename);
+        var rawConfig=<ProjectOptions>ts.readConfigFile(configFilename);
+        if (!rawConfig) {
+            return { errorMsg: "tsconfig syntax error" };
         }
         else {
-            return { errorMsg: "required field 'rootFiles' not found" };
+            // REVIEW: specify no base path so can get absolute path below
+            var parsedCommandLine = ts.parseConfigFile(rawConfig);
+
+            if (parsedCommandLine.errors) {
+                // TODO: gather diagnostics and transmit
+                return { errorMsg: "tsconfig option errors"};
+            }
+            else if (parsedCommandLine.filenames) {
+                var proj = Project.createProject(configFilename);
+                for (var i = 0, len = parsedCommandLine.filenames.length; i < len; i++) {
+                    var rootFilename = parsedCommandLine.filenames[i];
+                    var normRootFilename = ts.normalizePath(rootFilename);
+                    normRootFilename = getAbsolutePath(normRootFilename, dirPath);
+                    if (ts.sys.fileExists(normRootFilename)) {
+                        var info = this.openSpecifiedFile(normRootFilename, false, true);
+                        proj.addGraph(info);
+                    }
+                    else {
+                        return { errorMsg: "specified file " + rootFilename + " not found" };
+                    }
+                }
+                var projectOptions: ProjectOptions = {
+                    files: parsedCommandLine.filenames,
+                    compilerOptions: parsedCommandLine.options
+                };
+                if (rawConfig.formatCodeOptions) {
+                    projectOptions.formatCodeOptions = rawConfig.formatCodeOptions;
+                }
+                proj.setProjectOptions(projectOptions);
+                this.addDefaultLibraryToProject(proj);
+                return { success: true, project: proj };
+            }
+            else {
+                return { errorMsg: "no files found" };
+            }
         }
     }
 
-    openSpecifiedFile(filename:string) {
-        this.rootsChanged=false;
-        this.lastRemovedRoots=[];
+    openSpecifiedFile(filename:string,openedByClient=true,configuredProject=false) {
+        this.inferredRootsChanged=false;
         this.newRootDisjoint=true;
-        var info=this.openFile(filename,true);
-        if (info && (this.rootsChanged)) {
+        var info=this.openFile(filename,openedByClient,configuredProject);
+        if (this.inferredRootsChanged) {
             var i=0;
-            var len=this.roots.length;
+            var len=this.inferredRoots.length;
             if (this.newRootDisjoint) {
                 i=len-1;
             }
             for (;i<len;i++) {
-                var root=this.roots[i];
-                root.isRoot=true;
+                var root=this.inferredRoots[i];
+                root.isInferredRoot=true;
                 this.inferredProjects[i]=Project.createInferredProject(root);
+                this.addDefaultLibraryToProject(this.inferredProjects[i]);
             }
         }
         return info;
@@ -492,7 +537,7 @@ export class ProjectService {
     /**
      * @param filename is absolute pathname
      */
-    openFile(filename: string,possibleRoot=false,explicitProject=false) {
+    openFile(filename: string,openedByClient=false,configuredProject=false) {
         //console.log("opening "+filename+"...");
         filename=ts.normalizePath(filename);
         var dirPath = ts.getDirectoryPath(filename);
@@ -503,11 +548,13 @@ export class ProjectService {
             if (ts.sys.fileExists(filename)) {
                 content = ts.sys.readFile(filename);
             }
-            info = new ScriptInfo(filename, content);
+            info = new ScriptInfo(filename, content, openedByClient);
             this.filenameToScriptInfo[filename] = info;
-            if (possibleRoot && (!explicitProject)) {
-                this.roots.push(info);
-                this.rootsChanged = true;
+            if (openedByClient && (!configuredProject)) {
+                // this is a root because newly opened due to a client request
+                // it would already be open if an existing inferred project referenced it
+                this.inferredRoots.push(info);
+                this.inferredRootsChanged = true;
             }
             if (content.length > 0) {
                 var preProcessedInfo = ts.preProcessFile(content, false); 
@@ -516,21 +563,16 @@ export class ProjectService {
                     for (var i = 0, len = preProcessedInfo.referencedFiles.length; i < len; i++) {
                         var refFilename = ts.normalizePath(preProcessedInfo.referencedFiles[i].filename);
                         refFilename = getAbsolutePath(refFilename, dirPath);
-                        var refInfo = this.openFile(refFilename);
-                        if (refInfo) {
-                            info.addChild(refInfo);
-                        }
-
+                        var refInfo = this.openFile(refFilename,false,configuredProject);
+                        info.addChild(refInfo);
                     }
                 }
             }
-            else {
-            }
         }
-
-        if ((!explicitProject)&&(!possibleRoot)&&(info)&&(info.isRoot)&&(!info.activeProject.isExplicitProject())) {
-            if (this.removeRoot(info)) {
-                this.rootsChanged=true;
+        // if root of inferred project referenced indirectly, remove it
+        else if (info.isInferredRoot  && (!openedByClient)) {
+            if (this.removeInferredRoot(info)) {
+                this.inferredRootsChanged=true;
                 this.newRootDisjoint=false;
             }
         }
