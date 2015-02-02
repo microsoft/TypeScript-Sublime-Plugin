@@ -4,4 +4,4 @@ built/*
 src/service/*.js
 src/testsrc/*.js
 src/service/editorServices.d.ts
-
+!clients/sublime/tls/node_modules

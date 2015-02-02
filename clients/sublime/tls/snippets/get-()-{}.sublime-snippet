@@ -1,0 +1,10 @@
+<snippet>
+	<content><![CDATA[
+public get ${1:value}() : ${2:string} {
+	${3:return }
+}
+]]></content>
+	<tabTrigger>get</tabTrigger>
+	<scope>source.ts</scope>
+    <description>get-property …</description>
+</snippet>
