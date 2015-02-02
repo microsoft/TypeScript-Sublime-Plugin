@@ -1,8 +1,0 @@
-<snippet>
-    <content><![CDATA[public ${1:name}(${2:arguments}) : ${3:void} {
-	${0:// code...}
-}]]></content>
-	<tabTrigger>meth</tabTrigger>
-	<scope>source.ts</scope>
-    <description>class method</description>
-</snippet>
