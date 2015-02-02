@@ -333,6 +333,15 @@ interface IdFile {
     fileName: string;
 }
 
+function allEditsBeforePos(edits: ts.TextChange[], pos: number) {
+    for (var i = 0, len = edits.length; i < len; i++) {
+        if (ts.textSpanEnd(edits[i].span) >= pos) {
+            return false;
+        }
+    }
+    return true;
+}
+
 class Session {
     projectService = new ed.ProjectService();
     prettyJSON = false;
@@ -819,7 +828,7 @@ class Session {
                     try {
                         edits = compilerService.languageService.getFormattingEditsAfterKeystroke(file, pos, key,
                             compilerService.formatCodeOptions);
-                        if (key == "\n") {
+                        if ((key == "\n")&& ((!edits)||(edits.length==0)||allEditsBeforePos(edits,pos))) {
                             // TODO: get this from host
                             var editorOptions: ts.EditorOptions = {
                                 IndentSize: 4,

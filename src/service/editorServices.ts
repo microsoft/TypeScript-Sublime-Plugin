@@ -58,6 +58,11 @@ export class ScriptInfo {
         return this.svc.getSnapshot();
     }
 
+    getText() {
+        var snap=this.snap();
+        return snap.getText(0,snap.getLength());
+    }
+
     getLineInfo(line: number) {
         var snap=this.snap();
         return snap.index.lineNumberToInfo(line);
@@ -384,6 +389,29 @@ export interface ProjectOpenResult {
     project?: Project;
 }
 
+// TODO: keep set of open, non-configured files (changes on open/close and
+// also may change if tsconfig contents change to configure one of the
+// files
+// upon open of new file f, check if member of existing inferred project
+// if not, create new inferred project with f as root
+// upon close of file, or change to references in any file, re-compute
+// projects for files, by the following:
+// let o be set of open, non-configured files
+// for ip in inferredProjects 
+//   let prog=ip.get program
+//   mark all files in o that are also in prog; if none, delete ip
+// for f in o
+//   if f unmarked 
+//     create new inferred project ipn
+//     mark members of i covered by ipn
+// to find inferred projects containing f, use cached prog
+// for ip in inferredProjects
+//    if f in cached prog for up, f in ip
+// this is only used for find references
+// for other ls calls, use most recently created proj referencing f
+// (cache this or recompute based on mru order)
+// keep opened files in mru order
+
 export class ProjectService {
     filenameToScriptInfo: ts.Map<ScriptInfo> = {};
     inferredRoots: ScriptInfo[]=[];
@@ -524,6 +552,7 @@ export class ProjectService {
             if (this.newRootDisjoint) {
                 i=len-1;
             }
+            // TODO: when destroying projects, remove refs from ScriptInfos
             for (;i<len;i++) {
                 var root=this.inferredRoots[i];
                 root.isInferredRoot=true;
@@ -534,6 +563,51 @@ export class ProjectService {
         return info;
     }
 
+    recomputeReferences(filename: string) {
+        var info = ts.lookUp(this.filenameToScriptInfo,filename);
+
+        if (info) {
+            var prevChildrenList = info.children;
+            var prevChildren: ts.StringSet = {};
+            var orphans:ScriptInfo[]=[]
+            var adopted:ScriptInfo[]=[];
+            for (var i = 0, len = prevChildrenList.length; i < len; i++) {
+                prevChildren[prevChildrenList[i].filename]=true;
+            }
+            info.children=[];
+            var dirPath = ts.getDirectoryPath(filename);
+            this.computeReferences(info,dirPath);
+            var children: ts.StringSet = {};            
+            for (var j = 0, clen = info.children.length; j < clen; j++) {
+                children[info.children[j].filename]=true;
+                if (!prevChildren[info.children[j].filename]) {
+                    adopted.push(info.children[j]);
+                }
+            }
+            for (i = 0; i < len; i++) {
+                if (!children[prevChildrenList[i].filename]) {
+                    orphans.push(prevChildrenList[i]);
+                }
+            }
+        }
+    }
+
+    computeReferences(info: ScriptInfo, dirPath:string, content?: string) {
+        if (!content) {
+            content = info.getText();
+        }
+        var preProcessedInfo = ts.preProcessFile(content, false); 
+        // TODO: add import references
+        if (preProcessedInfo.referencedFiles.length > 0) {
+            for (var i = 0, len = preProcessedInfo.referencedFiles.length; i < len; i++) {
+                var refFilename = ts.normalizePath(preProcessedInfo.referencedFiles[i].filename);
+                refFilename = getAbsolutePath(refFilename, dirPath);
+                var refInfo = this.openFile(refFilename);
+                info.addChild(refInfo);
+            }
+        }
+    }
+    
     /**
      * @param filename is absolute pathname
      */
@@ -557,16 +631,7 @@ export class ProjectService {
                 this.inferredRootsChanged = true;
             }
             if (content.length > 0) {
-                var preProcessedInfo = ts.preProcessFile(content, false); 
-                // TODO: add import references
-                if (preProcessedInfo.referencedFiles.length > 0) {
-                    for (var i = 0, len = preProcessedInfo.referencedFiles.length; i < len; i++) {
-                        var refFilename = ts.normalizePath(preProcessedInfo.referencedFiles[i].filename);
-                        refFilename = getAbsolutePath(refFilename, dirPath);
-                        var refInfo = this.openFile(refFilename,false,configuredProject);
-                        info.addChild(refInfo);
-                    }
-                }
+                this.computeReferences(info,dirPath,content);
             }
         }
         // if root of inferred project referenced indirectly, remove it
@@ -612,7 +677,7 @@ export class CompilerService {
 
     isExternalModule(filename: string): boolean {
         var sourceFile = this.languageService.getSourceFile(filename);
-        return ts.isExternalModule(sourceFile);
+        return ts.isExternalModule(sourceFile);   
     }
 
     static defaultFormatCodeOptions: ts.FormatCodeOptions = {
