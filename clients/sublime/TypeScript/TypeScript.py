@@ -148,11 +148,14 @@ def which(program):
         if is_exe(program):
             return program
     else:
-        for path in os.environ["PATH"].split(os.pathsep):
-            path = path.strip('"')
-            exe_file = os.path.join(path, program)
-            if is_exe(exe_file):
-                return exe_file
+       # /usr/local/bin is not on mac default path
+       # but is where node is typically installed on mac
+       path_list=os.environ["PATH"]+":/usr/local/bin"
+       for path in path_list.split(os.pathsep):
+          path = path.strip('"')
+          exe_file = os.path.join(path, program)
+          if is_exe(exe_file):
+             return exe_file
     return None
 
 # get the directory path to this file; ST2 requires this to be done
