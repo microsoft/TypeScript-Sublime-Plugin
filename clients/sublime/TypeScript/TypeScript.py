@@ -213,7 +213,7 @@ class Client:
             # so only use it if on Windows
             si = subprocess.STARTUPINFO()
             si.dwFlags |= subprocess.SW_HIDE | subprocess.STARTF_USESHOWWINDOW
-            self.proc = subprocess.Popen([nodePath,procFile],
+            self.proc = subprocess.Popen(["node",procFile],
                                          stdin=subprocess.PIPE,stdout=subprocess.PIPE,startupinfo=si)
         else:
             self.proc = subprocess.Popen([nodePath,procFile],
@@ -227,10 +227,22 @@ class Client:
         self.refInfo=None
         self.breakpoints=[]
         self.debugProc=None
+        self.versionST2=False
 
-    def addBreakpoint(file,line):
+    def ST2(self):
+       return self.versionST2
+    
+    def setFeatures(self):
+       if int(sublime.version())<3000:
+          self.versionST2 = True
+
+    def addBreakpoint(self,file,line):
         self.breakpoints.append((file,line))
 
+    def reloadRequired(self,view):
+       clientInfo=self.getOrAddFile(view.file_name())
+       return self.versionST2 or clientInfo.pendingChanges or (clientInfo.changeCount<view.change_count())
+       
     # work in progress
     def debug(file):
         # TODO: msg if already debugging
@@ -312,6 +324,7 @@ class FileInfo:
         self.clientInfo=None
         self.changeCountErrReq= -1
         self.lastModChangeCount=cc
+        self.modCount=0
 
 # region that will not change as buffer is modified
 class StaticRegion:
@@ -379,6 +392,8 @@ def setFilePrefs(view):
 # given a list of regions and a (possibly zero-length) string to insert,
 # send the appropriate change information to the server
 def sendReplaceChangesForRegions(view,regions,insertString):
+    if cli.ST2():
+       return
     for region in regions:
         lineColStr=cmdLineColRegion(view,region,"change")
         insertLen=len(insertString)
@@ -393,27 +408,30 @@ def sendReplaceChangesForRegions(view,regions,insertString):
 def cmdLineColPosShow(view,pos,cmdline):
     return cmdLineColPos(view,pos,"{0} {1}:".format(cmdline,pos))
 
+def getTempFileName():
+   return os.path.join(dirpath,".tmpbuf")
+
 # write the buffer of view to a temporary file and have the server reload it
 def reloadBuffer(view,clientInfo=None):
-    # TODO: use different temp file path on Windows (see ST2 code)
     t=time.time()
-    tmpfile=open("/tmp/pydiff","w")
+    tmpfile_name=getTempFileName()
+    tmpfile=open(tmpfile_name,"w")
     tmpfile.write(view.substr(sublime.Region(0,view.size())))
     tmpfile.flush();
-    cli.simpleRequestSync("reload {0} from /tmp/pydiff".format(view.file_name()))
+    cli.simpleRequestSync("reload {0} from {1}".format(view.file_name(),tmpfile_name))
     et=time.time()
     print("time for reload %f" % (et-t))
     if not clientInfo:
         clientInfo=cli.getOrAddFile(view.file_name())
-    clientInfo.changeCount=view.change_count()
+    if not cli.ST2():
+       clientInfo.changeCount=view.change_count()
     clientInfo.pendingChanges=False
 
 # if we have changes to the view not accounted for by change messages,
 # send the whole buffer through a temporary file
 def checkUpdateView(view):
     clientInfo=cli.getOrAddFile(view.file_name())    
-    if clientInfo.pendingChanges or (clientInfo.changeCount<view.change_count()):
-        print('unhandled change: reload '+str(view.change_count())+" "+str(clientInfo.changeCount)+" "+str(clientInfo.pendingChanges))
+    if cli.reloadRequired(view):
         reloadBuffer(view,clientInfo)
 
 # update the buffer if necessary, and then send command to server
@@ -444,15 +462,24 @@ class TypeScriptListener(sublime_plugin.EventListener):
         self.pendingSelectionTimeout=0
         self.errRefreshRequested=False
 
+    def change_count(self,view):
+       info = self.fileMap.get(view.file_name())
+       if info:
+          if cli.ST2():
+             return info.modCount
+          else:
+             return view.change_count()
+
     # called by Sublime when a view receives focus
     def on_activated(self,view):
         if view.file_name() is not None:
             if is_typescript(view):
                 if not cli:
                     plugin_loaded()
+                    print("ST2: "+str(cli.ST2()))
                 info = self.fileMap.get(view.file_name())
                 if not info:
-                    info=FileInfo(view.file_name(),view.change_count())
+                    info=FileInfo(view.file_name(),self.change_count(view))
                     info.view=view
                     info.clientInfo=cli.getOrAddFile(view.file_name())
                     setFilePrefs(view)
@@ -471,16 +498,14 @@ class TypeScriptListener(sublime_plugin.EventListener):
                 # status line
                 self.setOnIdleTimer(20)
                 self.setOnSelectionIdleTimer(20)
-        else:
-            print("active buffer "+str(view.buffer_id()))
 
     # ask the server for diagnostic information on all opened ts files in
     # most-recently-used order
     # TODO: limit this request to ts files currently visible in views
     def refreshErrors(self,view,errDelay):
         info=self.fileMap.get(view.file_name())
-        if info and (info.changeCountErrReq<view.change_count()):
-            info.changeCountErrReq=view.change_count()
+        if info and (info.changeCountErrReq<self.change_count(view)):
+            info.changeCountErrReq=self.change_count(view)
             fileList=""
             delimit=""
             # traverse list in reverse b/c MRU always appended to end of list
@@ -516,11 +541,15 @@ class TypeScriptListener(sublime_plugin.EventListener):
     # error messages arrived from the server; show them in view
     def showErrorMsgs(self,errs,syntactic):
         filename = errs['fileName']
+        if os.name=='nt':
+           filename=filename.replace('/','\\')
+        print("SEM!!! "+ filename)
         diags = errs['diagnostics']
         info = self.fileMap.get(filename)
         if info:
             view=info.view
-            if info.changeCountErrReq==view.change_count():
+            print("sem: "+str(info.changeCountErrReq)+" "+str(self.change_count(view)))
+            if info.changeCountErrReq==self.change_count(view):
                 if syntactic:
                     regionKey='syntacticDiag'
                 else:
@@ -542,12 +571,15 @@ class TypeScriptListener(sublime_plugin.EventListener):
                         clientInfo.errors[regionKey].append((region,text))
                 info.hasErrors=cli.hasErrors(filename)
                 self.update_status(view,info)
-                # TODO: use different flags for ST2
-                view.add_regions(regionKey, errRegions, "keyword", "",
-                                 sublime.DRAW_NO_FILL + sublime.DRAW_NO_OUTLINE + sublime.DRAW_SQUIGGLY_UNDERLINE)            
+                if cli.ST2():
+                   view.add_regions(regionKey, errRegions, "keyword","",sublime.DRAW_OUTLINED)
+                else:
+                   view.add_regions(regionKey, errRegions, "keyword", "",
+                                    sublime.DRAW_NO_FILL + sublime.DRAW_NO_OUTLINE + sublime.DRAW_SQUIGGLY_UNDERLINE)            
 
     # event arrived from the server; call appropriate handler
     def dispatchEvent(self,ev):
+        print("dispatch event")
         evtype=ev['event']
         if evtype=='syntaxDiag':
             self.showErrorMsgs(ev['body'],True)
@@ -644,8 +676,10 @@ class TypeScriptListener(sublime_plugin.EventListener):
 
     # TODO: send close message to service for ts files 
     def on_close(self,view):
-        if view.is_scratch() and (view.name()=="Find References"):
-            cli.disposeRefInfo()
+       if not cli:
+          plugin_loaded()
+       if view.is_scratch() and (view.name()=="Find References"):
+          cli.disposeRefInfo()
 
     # called by Sublime when the cursor moves (or when text is selected)
     # called after on_modified (when on_modified is called)
@@ -654,8 +688,7 @@ class TypeScriptListener(sublime_plugin.EventListener):
         if info:
             if not info.clientInfo:
                 info.clientInfo=cli.getOrAddFile(view.file_name())
-            # TODO: ST2 does not have view.change_count()
-            if (info.clientInfo.changeCount<view.change_count()) and (info.lastModChangeCount!=view.change_count()):
+            if (info.clientInfo.changeCount<self.change_count(view)) and (info.lastModChangeCount!=self.change_count(view)):
                 # detected a change to the view for which Sublime did not call on_modified
                 # and for which we have no hope of discerning what changed
                 info.clientInfo.pendingChanges=True
@@ -673,21 +706,21 @@ class TypeScriptListener(sublime_plugin.EventListener):
         info=self.fileMap.get(view.file_name())
         if info:
             info.modified=True
-            # ST3; no cc in ST2
-            info.lastModChangeCount=view.change_count()
+            if cli.ST2():
+               info.modCount+=1
+            info.lastModChangeCount=self.change_count(view)
             print("modified "+view.file_name())
             (lastCommand,args,rept)=view.command_history(0)
-            print("omm: "+lastCommand+" cc: ",view.change_count())
             if info.preChangeSent:
                 # change handled in on_text_command
-                info.clientInfo.changeCount=view.change_count()
+                info.clientInfo.changeCount=self.change_count(view)
                 info.preChangeSent=False
             elif (lastCommand=="insert") and (not "\n" in args['characters']):
                 # single-line insert, use saved cursor information to determine what was inserted
                 # REVIEW: consider using this only if there is a single cursor, and only if that
                 # cursor is an empty region; right now, the code tries to handle multiple cursors
                 # and non-empty selections (which will be replaced by the string inserted)
-                info.clientInfo.changeCount=view.change_count()
+                info.clientInfo.changeCount=self.change_count(view)
                 prevCursor=info.prevSel[0].begin()
                 cursor=view.sel()[0].begin()
                 key=view.substr(sublime.Region(prevCursor,cursor))
@@ -712,7 +745,6 @@ class TypeScriptListener(sublime_plugin.EventListener):
                 # file is modified but on_text_command and on_modified did not handle it
                 # handle insertion of string from completion menu, so that
                 # it is fast to type completedName1.completedName2 (avoid a lag when completedName1 is committed)
-                # TODO: make this ST3 only; no completion from server in ST2 because no UI
                 if ((command_name=="commit_completion") or command_name==("insert_best_completion"))  and (len(view.sel())==1):
                     # get saved region that was pushed forward by insertion of the completion
                     apresCompReg=view.get_regions("apresComp")
@@ -833,6 +865,11 @@ class TypescriptQuickInfo(sublime_plugin.TextCommand):
     def is_enabled(self):
         return is_typescript(self.view)
 
+class TypescriptShowDoc(sublime_plugin.TextCommand):
+    def run(self,text,infoStr="",docStr=""):
+       self.view.insert(text,self.view.sel()[0].begin(),infoStr+"\n\n")
+       self.view.insert(text,self.view.sel()[0].begin(),docStr)
+     
 # command to show the doc string associated with quick info;
 # re-runs quick info in case info has changed
 class TypescriptQuickInfoDoc(sublime_plugin.TextCommand):
@@ -844,9 +881,9 @@ class TypescriptQuickInfoDoc(sublime_plugin.TextCommand):
             docStr=allinfo['doc']
             if len(docStr)>0:
                 docPanel=sublime.active_window().get_output_panel("doc")
-                docPanel.run_command('append',{
-                    'characters': infoStr+"\n\n"+docStr 
-                })
+                docPanel.run_command('typescript_show_doc',
+                                     { 'infoStr': infoStr,
+                                       'docStr': docStr })
                 docPanel.settings().set('color_scheme', "Packages/Color Scheme - Default/Blackboard.tmTheme");
                 sublime.active_window().run_command('show_panel',{ 'panel': 'output.doc' })
                 infoStr=infoStr+" (^T^Q for more)"
@@ -894,7 +931,7 @@ class TypescriptGoToDefinitionCommand(sublime_plugin.TextCommand):
             line = 1+int(minlc['line'])
             col = 1+int(minlc['offset'])
             sublime.active_window().open_file(
-                '{}:{}:{}'.format(filename, line or 0, col or 0),
+                '{0}:{1}:{2}'.format(filename, line or 0, col or 0),
                 sublime.ENCODED_POSITION)
 
 # go to type command
@@ -909,7 +946,7 @@ class TypescriptGoToTypeCommand(sublime_plugin.TextCommand):
             line = 1+int(minlc['line'])
             col = 1+int(minlc['offset'])
             sublime.active_window().open_file(
-                '{}:{}:{}'.format(filename, line or 0, col or 0),
+                '{0}:{1}:{2}'.format(filename, line or 0, col or 0),
                 sublime.ENCODED_POSITION)
 
 # rename command
@@ -1012,7 +1049,7 @@ class TypescriptGoToRefCommand(sublime_plugin.TextCommand):
            (filename,l,c,p,n)=mapping.asTuple()           
            updateRefLine(refInfo,cursor[0],self.view)
            sublime.active_window().open_file(
-              '{}:{}:{}'.format(filename, l+1 or 0, c+1 or 0),
+              '{0}:{1}:{2}'.format(filename, l+1 or 0, c+1 or 0),
               sublime.ENCODED_POSITION)    
 
 # command: go to next reference in active references file
@@ -1048,12 +1085,15 @@ class TypescriptPrevRefCommand(sublime_plugin.TextCommand):
             refView.run_command('typescript_go_to_ref')
 
 # highlight all occurances of refId in view
-# TODO: ST2 add_regions with different flags
 def highlightIds(view,refId):
     idRegions=view.find_all("(?<=\W)"+refId+"(?=\W)") 
     if idRegions and (len(idRegions)>0):
-        view.add_regions("refid",idRegions,"constant.numeric",
-                         flags=sublime.DRAW_NO_FILL|sublime.DRAW_NO_OUTLINE|sublime.DRAW_SOLID_UNDERLINE)
+       if cli.ST2():
+          view.add_regions("refid",idRegions,"constant.numeric","",sublime.DRAW_OUTLINED)
+       else:
+          view.add_regions("refid",idRegions,"constant.numeric",
+                           flags=sublime.DRAW_NO_FILL|sublime.DRAW_NO_OUTLINE|sublime.DRAW_SOLID_UNDERLINE)
+
 
 # helper command called by TypescriptFindReferences; put the references in the
 # references buffer
@@ -1080,6 +1120,7 @@ class TypescriptPopulateRefs(sublime_plugin.TextCommand):
             for ref in refs:
                 filename=ref['file']
                 if prevFilename!=filename:
+                    print("refs from "+filename)
                     fileCount+=1
                     if prevFilename!="":
                         self.view.insert(text,self.view.sel()[0].begin(),"\n")
@@ -1187,20 +1228,27 @@ class TypescriptFormatLine(sublime_plugin.TextCommand):
         formatRange(text,self.view,lineRegion.begin(),lineRegion.end())
 
 # this is not always called on startup by Sublime, so we call it
-# from on_activated if necessary
+# from on_activated or on_close if necessary
 # TODO: get abbrev message and set up dictionary
 def plugin_loaded():
     global cli
     print('initialize typescript...')
     print(sublime.version())
     cli = Client()
+    cli.setFeatures()
     refView=getRefView(False)
     if refView:
         settings=refView.settings()
         refInfoV=settings.get('refinfo')
         if refInfoV:
-            refInfo=buildRefInfo(refInfoV)
-            cli.updateRefInfo(refInfo)
+           print("got refinfo from settings")
+           refInfo=buildRefInfo(refInfoV)
+           cli.updateRefInfo(refInfo)
+        else:
+           print("trying to close ref view")
+           window=refView.window()
+           window.focus_view(refView)
+           window.run_command('close')
 
 
 # this unload is not always called on exit

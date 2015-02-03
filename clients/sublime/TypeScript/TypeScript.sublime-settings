@@ -5,5 +5,5 @@
     "auto_indent" : false,
     "translate_tabs_to_spaces" : true,
     "use_tab_stops": false,
-    "auto_complete_commit_on_tab": true,
+    "auto_complete_commit_on_tab": true
 }
