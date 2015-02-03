@@ -1,14 +1,17 @@
 /// <reference path='../../node_modules/typescript/bin/typescript.d.ts'/>
 /// <reference path='../../node_modules/typescript/bin/typescript_internal.d.ts'/>
 /// <reference path='node.d.ts' />
-
-import ts = require('typescript');
-import child_process=require('child_process');
-
+var __extends = this.__extends || function (d, b) {
+    for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
+    function __() { this.constructor = d; }
+    __.prototype = b.prototype;
+    d.prototype = new __();
+};
+var ts = require('typescript');
 var lineCollectionCapacity = 4;
-var indentStrings: string[] = [];
+var indentStrings = [];
 var indentBase = "    ";
-function getIndent(indentAmt: number) {
+function getIndent(indentAmt) {
     if (!indentStrings[indentAmt]) {
         indentStrings[indentAmt] = "";
         for (var i = 0; i < indentAmt; i++) {
@@ -17,12 +20,11 @@ function getIndent(indentAmt: number) {
     }
     return indentStrings[indentAmt];
 }
-
-export function printLine(s: string) {
-    ts.sys.write(s + '\n'); 
+function printLine(s) {
+    ts.sys.write(s + '\n');
 }
-
-function showLines(s: string) {
+exports.printLine = printLine;
+function showLines(s) {
     var strBuilder = "";
     for (var i = 0, len = s.length; i < len; i++) {
         if (s.charCodeAt(i) == 10) {
@@ -37,248 +39,209 @@ function showLines(s: string) {
     }
     return strBuilder;
 }
-
-export class ScriptInfo {
-    svc: ScriptVersionCache;
-    isInferredRoot=false;         
-    activeProjects:Project[]=[];  // projects referencing this file
-    children:ScriptInfo[]=[];     // files referenced by this file
-
-    defaultProject: Project; // project to use by default for file 
-
-    constructor(public filename: string, public content:string, public isOpen = false) {
+var ScriptInfo = (function () {
+    function ScriptInfo(filename, content, isOpen) {
+        if (isOpen === void 0) { isOpen = false; }
+        this.filename = filename;
+        this.content = content;
+        this.isOpen = isOpen;
+        this.isInferredRoot = false;
+        this.activeProjects = []; // projects referencing this file
+        this.children = []; // files referenced by this file
         this.svc = ScriptVersionCache.fromString(content);
     }
-
-    addChild(childInfo:ScriptInfo) {
+    ScriptInfo.prototype.addChild = function (childInfo) {
         this.children.push(childInfo);
-    }
-
-    public snap() {
+    };
+    ScriptInfo.prototype.snap = function () {
         return this.svc.getSnapshot();
-    }
-
-    getText() {
-        var snap=this.snap();
-        return snap.getText(0,snap.getLength());
-    }
-
-    getLineInfo(line: number) {
-        var snap=this.snap();
+    };
+    ScriptInfo.prototype.getText = function () {
+        var snap = this.snap();
+        return snap.getText(0, snap.getLength());
+    };
+    ScriptInfo.prototype.getLineInfo = function (line) {
+        var snap = this.snap();
         return snap.index.lineNumberToInfo(line);
-    }
-
-    public editContent(minChar: number, limChar: number, newText: string): void {
+    };
+    ScriptInfo.prototype.editContent = function (minChar, limChar, newText) {
         this.svc.edit(minChar, limChar - minChar, newText);
-    }
-
-    public getTextChangeRangeBetweenVersions(startVersion: number, endVersion: number): ts.TextChangeRange {
+    };
+    ScriptInfo.prototype.getTextChangeRangeBetweenVersions = function (startVersion, endVersion) {
         return this.svc.getTextChangesBetweenVersions(startVersion, endVersion);
-    }
-
-    getChangeRange(oldSnapshot: ts.IScriptSnapshot): ts.TextChangeRange {
+    };
+    ScriptInfo.prototype.getChangeRange = function (oldSnapshot) {
         return this.snap().getChangeRange(oldSnapshot);
+    };
+    return ScriptInfo;
+})();
+exports.ScriptInfo = ScriptInfo;
+var CancellationToken = (function () {
+    function CancellationToken() {
+        this.requestPending = false;
     }
-}
-
-export class CancellationToken {
-    public static None = new CancellationToken();
-
-    requestPending=false;
-
-    constructor() {
-    }
-
-    cancel() {
-        this.requestPending=true;
-    }
-
-    reset() {
-        this.requestPending=false;
-    }
-
-    public isCancellationRequested() {
-        var temp=this.requestPending;
+    CancellationToken.prototype.cancel = function () {
+        this.requestPending = true;
+    };
+    CancellationToken.prototype.reset = function () {
+        this.requestPending = false;
+    };
+    CancellationToken.prototype.isCancellationRequested = function () {
+        var temp = this.requestPending;
         return temp;
-    }
-}
-
-export class LSHost implements ts.LanguageServiceHost {
-    private ls: ts.LanguageService = null;
-    logger: ts.Logger;
-    compilationSettings: ts.CompilerOptions;
-    filenameToScript: ts.Map<ScriptInfo> = {};
-
-    constructor(private cancellationToken: CancellationToken = CancellationToken.None) {
+    };
+    CancellationToken.None = new CancellationToken();
+    return CancellationToken;
+})();
+exports.CancellationToken = CancellationToken;
+// TODO: make this a parameter of the service or in service environment
+var LSHost = (function () {
+    function LSHost(cancellationToken) {
+        if (cancellationToken === void 0) { cancellationToken = CancellationToken.None; }
+        this.cancellationToken = cancellationToken;
+        this.ls = null;
+        this.filenameToScript = {};
         this.logger = this;
     }
-
-    trace(str:string) {
-    }
-
-    error(str:string) {
-    }
-
-    public cancel() {
+    LSHost.prototype.trace = function (str) {
+    };
+    LSHost.prototype.error = function (str) {
+    };
+    LSHost.prototype.cancel = function () {
         this.cancellationToken.cancel();
-    }
-
-    public reset() {
+    };
+    LSHost.prototype.reset = function () {
         this.cancellationToken.reset();
-    }
-
-    getScriptSnapshot(filename: string): ts.IScriptSnapshot {
+    };
+    LSHost.prototype.getScriptSnapshot = function (filename) {
         return this.getScriptInfo(filename).snap();
-    }
-
-    setCompilationSettings(opt:ts.CompilerOptions) {
-        this.compilationSettings=opt;
-    }
-
-    lineAffectsRefs(filename: string, line: number) {
-        var info=this.getScriptInfo(filename);
-        var lineInfo=info.getLineInfo(line);
+    };
+    LSHost.prototype.setCompilationSettings = function (opt) {
+        this.compilationSettings = opt;
+    };
+    LSHost.prototype.lineAffectsRefs = function (filename, line) {
+        var info = this.getScriptInfo(filename);
+        var lineInfo = info.getLineInfo(line);
         if (lineInfo && lineInfo.text) {
-            var regex=/reference|import|\/\*|\*\//;
+            var regex = /reference|import|\/\*|\*\//;
             return regex.test(lineInfo.text);
         }
-    }
-
-    getCompilationSettings() {
+    };
+    LSHost.prototype.getCompilationSettings = function () {
         // change this to return active project settings for file
         return this.compilationSettings;
-    }
-
-    getScriptFileNames() {
-        var filenames:string[]=[];
+    };
+    LSHost.prototype.getScriptFileNames = function () {
+        var filenames = [];
         for (var filename in this.filenameToScript) {
             filenames.push(filename);
         }
         return filenames;
-    }
-
-    getScriptVersion(filename: string) {
+    };
+    LSHost.prototype.getScriptVersion = function (filename) {
         return this.getScriptInfo(filename).svc.latestVersion().toString();
-    }
-
-    public getCancellationToken(): ts.CancellationToken {
+    };
+    LSHost.prototype.getCancellationToken = function () {
         return this.cancellationToken;
-    }
-
-    public getCurrentDirectory(): string {
+    };
+    LSHost.prototype.getCurrentDirectory = function () {
         return "";
-    }
-
-    public getDefaultLibFilename(): string {
+    };
+    LSHost.prototype.getDefaultLibFilename = function () {
         return "";
-    }
-
-    getScriptIsOpen(filename: string) {
+    };
+    LSHost.prototype.getScriptIsOpen = function (filename) {
         return this.getScriptInfo(filename).isOpen;
-    }
-
-    getScriptInfo(filename: string): ScriptInfo {
-        return ts.lookUp(this.filenameToScript,filename);
-    }
-
-    public addScriptInfo(info:ScriptInfo) {
+    };
+    LSHost.prototype.getScriptInfo = function (filename) {
+        return ts.lookUp(this.filenameToScript, filename);
+    };
+    LSHost.prototype.addScriptInfo = function (info) {
         if (!this.getScriptInfo(info.filename)) {
-            this.filenameToScript[info.filename]=info;
+            this.filenameToScript[info.filename] = info;
             return info;
         }
-    }
-
-    public saveTo(filename: string, tmpfilename: string) {
+    };
+    LSHost.prototype.saveTo = function (filename, tmpfilename) {
         var script = this.getScriptInfo(filename);
         if (script) {
-            var snap=script.snap();
-            ts.sys.writeFile(tmpfilename,snap.getText(0,snap.getLength()));
+            var snap = script.snap();
+            ts.sys.writeFile(tmpfilename, snap.getText(0, snap.getLength()));
         }
-    }
-
-    public reloadScript(filename: string, tmpfilename: string, cb:()=>any) {
+    };
+    LSHost.prototype.reloadScript = function (filename, tmpfilename, cb) {
         var script = this.getScriptInfo(filename);
         if (script) {
-            script.svc.reloadFromFile(tmpfilename,cb);
+            script.svc.reloadFromFile(tmpfilename, cb);
         }
-    }
-
-    public editScript(filename: string, minChar: number, limChar: number, newText: string) {
+    };
+    LSHost.prototype.editScript = function (filename, minChar, limChar, newText) {
         var script = this.getScriptInfo(filename);
         if (script) {
             script.editContent(minChar, limChar, newText);
             return;
         }
-
         throw new Error("No script with name '" + filename + "'");
-    }
-
-    resolvePath(path: string): string {
+    };
+    LSHost.prototype.resolvePath = function (path) {
         var start = new Date().getTime();
         var result = ts.sys.resolvePath(path);
         return result;
-    }
-
-    fileExists(path: string): boolean {
+    };
+    LSHost.prototype.fileExists = function (path) {
         var start = new Date().getTime();
         var result = ts.sys.fileExists(path);
         return result;
-    }
-
-    directoryExists(path: string): boolean {
+    };
+    LSHost.prototype.directoryExists = function (path) {
         return ts.sys.directoryExists(path);
-    }
-
-    public log(s: string): void {
+    };
+    LSHost.prototype.log = function (s) {
         // For debugging...
         //printLine("TypeScriptLS:" + s);
-    }
-
+    };
     /**
      *  @param line 1 based index
      */
-    lineToTextSpan(filename: string, line: number): ts.TextSpan {
-        var script: ScriptInfo = this.filenameToScript[filename];
-        var index=script.snap().index;
-
-        var lineInfo=index.lineNumberToInfo(line+1);
+    LSHost.prototype.lineToTextSpan = function (filename, line) {
+        var script = this.filenameToScript[filename];
+        var index = script.snap().index;
+        var lineInfo = index.lineNumberToInfo(line + 1);
         var len;
         if (lineInfo.leaf) {
             len = lineInfo.leaf.text.length;
         }
         else {
-            var nextLineInfo=index.lineNumberToInfo(line+2);
-            len=nextLineInfo.offset-lineInfo.offset;
+            var nextLineInfo = index.lineNumberToInfo(line + 2);
+            len = nextLineInfo.offset - lineInfo.offset;
         }
-        return ts.createTextSpan(lineInfo.offset,len);
-    }
-
+        return ts.createTextSpan(lineInfo.offset, len);
+    };
     /**
      * @param line 1 based index
      * @param col 1 based index
      */
-    lineColToPosition(filename: string, line: number, col: number): number {
-        var script: ScriptInfo = this.filenameToScript[filename];
-        var index=script.snap().index;
-
-        var lineInfo=index.lineNumberToInfo(line);
+    LSHost.prototype.lineColToPosition = function (filename, line, col) {
+        var script = this.filenameToScript[filename];
+        var index = script.snap().index;
+        var lineInfo = index.lineNumberToInfo(line);
         // TODO: assert this column is actually on the line
         return (lineInfo.offset + col - 1);
-    }
-
+    };
     /**
      * @param line 0 based index
      * @param offset 0 based index
      */
-    positionToZeroBasedLineCol(filename: string, position: number): ILineInfo {
-        var script: ScriptInfo = this.filenameToScript[filename];
-        var index=script.snap().index;
-        var lineCol=index.charOffsetToLineNumberAndPos(position);
+    LSHost.prototype.positionToZeroBasedLineCol = function (filename, position) {
+        var script = this.filenameToScript[filename];
+        var index = script.snap().index;
+        var lineCol = index.charOffsetToLineNumberAndPos(position);
         return { line: lineCol.line - 1, offset: lineCol.offset };
-    }
-}
-
-function getCanonicalFileName(filename: string) {
+    };
+    return LSHost;
+})();
+exports.LSHost = LSHost;
+function getCanonicalFileName(filename) {
     if (ts.sys.useCaseSensitiveFileNames) {
         return filename;
     }
@@ -286,107 +249,84 @@ function getCanonicalFileName(filename: string) {
         return filename.toLowerCase();
     }
 }
-
 // assumes normalized paths
-function getAbsolutePath(filename:string, directory: string) {
-    var rootLength=ts.getRootLength(filename);
-    if (rootLength>0) {
+function getAbsolutePath(filename, directory) {
+    var rootLength = ts.getRootLength(filename);
+    if (rootLength > 0) {
         return filename;
     }
     else {
-        var splitFilename=filename.split('/');
-        var splitDir=directory.split('/');
-        var i=0;
-        var dirTail=0;
-        var sflen=splitFilename.length;
-        while ((i<sflen) && (splitFilename[i].charAt(0)=='.')) {
-            var dots=splitFilename[i];
-            if (dots=='..') {
+        var splitFilename = filename.split('/');
+        var splitDir = directory.split('/');
+        var i = 0;
+        var dirTail = 0;
+        var sflen = splitFilename.length;
+        while ((i < sflen) && (splitFilename[i].charAt(0) == '.')) {
+            var dots = splitFilename[i];
+            if (dots == '..') {
                 dirTail++;
             }
-            else if(dots!='.') {
+            else if (dots != '.') {
                 return undefined;
             }
             i++;
         }
-        return splitDir.slice(0,splitDir.length-dirTail).concat(splitFilename.slice(i)).join('/');
+        return splitDir.slice(0, splitDir.length - dirTail).concat(splitFilename.slice(i)).join('/');
     }
 }
-
-export interface ProjectOptions {
-    // these fields can be present in the project file
-    files?:string[];
-    formatCodeOptions?: ts.FormatCodeOptions;
-    compilerOptions?: ts.CompilerOptions;
-}
-
-
-export class Project {
-    compilerService=new CompilerService();
-    projectOptions:ProjectOptions;
-    projectFilename:string;
-    
-    graphFinished() {
-        this.compilerService.languageService.getNavigateToItems(".*");    
+var Project = (function () {
+    function Project() {
+        this.compilerService = new CompilerService();
     }
-
-    addGraph(scriptInfo:ScriptInfo) {
+    Project.prototype.graphFinished = function () {
+        this.compilerService.languageService.getNavigateToItems(".*");
+    };
+    Project.prototype.addGraph = function (scriptInfo) {
         if (this.addScript(scriptInfo)) {
-            for (var i=0,clen=scriptInfo.children.length;i<clen;i++) {
+            for (var i = 0, clen = scriptInfo.children.length; i < clen; i++) {
                 this.addGraph(scriptInfo.children[i]);
             }
         }
-    }
-
-    isConfiguredProject() {
+    };
+    Project.prototype.isConfiguredProject = function () {
         return this.projectFilename;
-    }
-
-    addScript(info:ScriptInfo) {
+    };
+    Project.prototype.addScript = function (info) {
         if ((!info.defaultProject) || (!info.defaultProject.isConfiguredProject())) {
             info.defaultProject = this;
         }
         info.activeProjects.push(this);
         return this.compilerService.host.addScriptInfo(info);
-    }
-    
-    printFiles() {
-        var filenames=this.compilerService.host.getScriptFileNames();
-        filenames.map(filename=> { console.log(filename); });
-    }
-
-    setProjectOptions(projectOptions: ProjectOptions) {
-        this.projectOptions=projectOptions;
+    };
+    Project.prototype.printFiles = function () {
+        var filenames = this.compilerService.host.getScriptFileNames();
+        filenames.map(function (filename) {
+            console.log(filename);
+        });
+    };
+    Project.prototype.setProjectOptions = function (projectOptions) {
+        this.projectOptions = projectOptions;
         if (projectOptions.compilerOptions) {
             this.compilerService.setCompilerOptions(projectOptions.compilerOptions);
         }
         if (projectOptions.formatCodeOptions) {
             this.compilerService.setFormatCodeOptions(projectOptions.formatCodeOptions);
         }
-        
-    }
-
-    static createProject(projectFilename: string) {
-        var eproj=new Project();
-        eproj.projectFilename=projectFilename;
+    };
+    Project.createProject = function (projectFilename) {
+        var eproj = new Project();
+        eproj.projectFilename = projectFilename;
         return eproj;
-    }
-
-    static createInferredProject(root: ScriptInfo) {
-        var iproj=new Project();
+    };
+    Project.createInferredProject = function (root) {
+        var iproj = new Project();
         iproj.addGraph(root);
         iproj.graphFinished();
-
         return iproj;
-    }
-}
-
-export interface ProjectOpenResult {
-    success?: boolean;
-    errorMsg?: string;
-    project?: Project;
-}
-
+    };
+    return Project;
+})();
+exports.Project = Project;
 // TODO: keep set of open, non-configured files (changes on open/close and
 // also may change if tsconfig contents change to configure one of the
 // files
@@ -409,21 +349,18 @@ export interface ProjectOpenResult {
 // for other ls calls, use most recently created proj referencing f
 // (cache this or recompute based on mru order)
 // keep opened files in mru order
-
-export class ProjectService {
-    filenameToScriptInfo: ts.Map<ScriptInfo> = {};
-    inferredRoots: ScriptInfo[]=[];
-    inferredProjects:Project[]=[];
-    inferredRootsChanged=false;
-    newRootDisjoint=true;
-    defaultLibInfo:ScriptInfo;
-    defaultES6LibInfo:ScriptInfo;
-
-    addDefaultLibraryToProject(proj:Project) {
-        var nodeModuleBinDir:string;
-        var defaultLib:string;
-        if (proj.projectOptions && proj.projectOptions.compilerOptions &&
-            (proj.projectOptions.compilerOptions.target == ts.ScriptTarget.ES6)) {
+var ProjectService = (function () {
+    function ProjectService() {
+        this.filenameToScriptInfo = {};
+        this.inferredRoots = [];
+        this.inferredProjects = [];
+        this.inferredRootsChanged = false;
+        this.newRootDisjoint = true;
+    }
+    ProjectService.prototype.addDefaultLibraryToProject = function (proj) {
+        var nodeModuleBinDir;
+        var defaultLib;
+        if (proj.projectOptions && proj.projectOptions.compilerOptions && (proj.projectOptions.compilerOptions.target == 2 /* ES6 */)) {
             if (!this.defaultES6LibInfo) {
                 nodeModuleBinDir = ts.getDirectoryPath(ts.normalizePath(ts.sys.getExecutingFilePath()));
                 defaultLib = nodeModuleBinDir + "/lib.es6.d.ts";
@@ -439,75 +376,68 @@ export class ProjectService {
             }
             proj.addScript(this.defaultLibInfo);
         }
-    }
-
-
-    getProjectForFile(filename: string) {
-        var scriptInfo=ts.lookUp(this.filenameToScriptInfo,filename);
+    };
+    ProjectService.prototype.getProjectForFile = function (filename) {
+        var scriptInfo = ts.lookUp(this.filenameToScriptInfo, filename);
         if (!scriptInfo) {
-            scriptInfo = this.openSpecifiedFile(filename,false,false);
+            scriptInfo = this.openSpecifiedFile(filename, false, false);
         }
-// TODO: error upon file not found
+        // TODO: error upon file not found
         return scriptInfo.defaultProject;
-    }
-
-    printProjectsForFile(filename: string) {
-        var scriptInfo=ts.lookUp(this.filenameToScriptInfo,filename);
+    };
+    ProjectService.prototype.printProjectsForFile = function (filename) {
+        var scriptInfo = ts.lookUp(this.filenameToScriptInfo, filename);
         if (scriptInfo) {
-            console.log("Projects for "+filename)
+            console.log("Projects for " + filename);
             for (var i = 0, len = scriptInfo.activeProjects.length; i < len; i++) {
                 for (var j = 0, iplen = this.inferredProjects.length; j < iplen; j++) {
                     if (scriptInfo.activeProjects[i] == this.inferredProjects[j]) {
-                        console.log("Inferred Project "+j.toString());
+                        console.log("Inferred Project " + j.toString());
                     }
                 }
             }
         }
         else {
-            console.log(filename+" not in any project");
+            console.log(filename + " not in any project");
         }
-    }
-
-    printProjects() {
-        for (var i=0,len=this.inferredProjects.length;i<len;i++) {
-            var project=this.inferredProjects[i];
-            console.log("Project "+i.toString());
+    };
+    ProjectService.prototype.printProjects = function () {
+        for (var i = 0, len = this.inferredProjects.length; i < len; i++) {
+            var project = this.inferredProjects[i];
+            console.log("Project " + i.toString());
             project.printFiles();
             console.log("-----------------------------------------------");
         }
-    }
-
-    removeInferredRoot(info:ScriptInfo) {
-        var len=this.inferredRoots.length;
-        for (var i=0;i<len;i++) {
-            if (this.inferredRoots[i]==info) {
-                if (i<(len-1)) {
-                    this.inferredRoots[i]=this.inferredRoots[len-1];
+    };
+    ProjectService.prototype.removeInferredRoot = function (info) {
+        var len = this.inferredRoots.length;
+        for (var i = 0; i < len; i++) {
+            if (this.inferredRoots[i] == info) {
+                if (i < (len - 1)) {
+                    this.inferredRoots[i] = this.inferredRoots[len - 1];
                 }
                 this.inferredRoots.length--;
-                this.inferredRootsChanged=true;
-                info.isInferredRoot=false;
+                this.inferredRootsChanged = true;
+                info.isInferredRoot = false;
                 return true;
             }
         }
         return false;
-    }
-
-    openConfigFile(configFilename: string): ProjectOpenResult {
-        configFilename=ts.normalizePath(configFilename);
+    };
+    ProjectService.prototype.openConfigFile = function (configFilename) {
+        configFilename = ts.normalizePath(configFilename);
         // file references will be relative to dirPath (or absolute)
         var dirPath = ts.getDirectoryPath(configFilename);
-        var rawConfig=<ProjectOptions>ts.readConfigFile(configFilename);
+        var rawConfig = ts.readConfigFile(configFilename);
         if (!rawConfig) {
             return { errorMsg: "tsconfig syntax error" };
         }
         else {
             // REVIEW: specify no base path so can get absolute path below
             var parsedCommandLine = ts.parseConfigFile(rawConfig);
-
             if (parsedCommandLine.errors) {
                 // TODO: gather diagnostics and transmit
-                return { errorMsg: "tsconfig option errors"};
+                return { errorMsg: "tsconfig option errors" };
             }
             else if (parsedCommandLine.filenames) {
                 var proj = Project.createProject(configFilename);
@@ -523,7 +453,7 @@ export class ProjectService {
                         return { errorMsg: "specified file " + rootFilename + " not found" };
                     }
                 }
-                var projectOptions: ProjectOptions = {
+                var projectOptions = {
                     files: parsedCommandLine.filenames,
                     compilerOptions: parsedCommandLine.options
                 };
@@ -538,46 +468,45 @@ export class ProjectService {
                 return { errorMsg: "no files found" };
             }
         }
-    }
-
-    openSpecifiedFile(filename:string,openedByClient=true,configuredProject=false) {
-        this.inferredRootsChanged=false;
-        this.newRootDisjoint=true;
-        var info=this.openFile(filename,openedByClient,configuredProject);
+    };
+    ProjectService.prototype.openSpecifiedFile = function (filename, openedByClient, configuredProject) {
+        if (openedByClient === void 0) { openedByClient = true; }
+        if (configuredProject === void 0) { configuredProject = false; }
+        this.inferredRootsChanged = false;
+        this.newRootDisjoint = true;
+        var info = this.openFile(filename, openedByClient, configuredProject);
         if (this.inferredRootsChanged) {
-            var i=0;
-            var len=this.inferredRoots.length;
+            var i = 0;
+            var len = this.inferredRoots.length;
             if (this.newRootDisjoint) {
-                i=len-1;
+                i = len - 1;
             }
             // TODO: when destroying projects, remove refs from ScriptInfos
-            for (;i<len;i++) {
-                var root=this.inferredRoots[i];
-                root.isInferredRoot=true;
-                this.inferredProjects[i]=Project.createInferredProject(root);
+            for (; i < len; i++) {
+                var root = this.inferredRoots[i];
+                root.isInferredRoot = true;
+                this.inferredProjects[i] = Project.createInferredProject(root);
                 this.addDefaultLibraryToProject(this.inferredProjects[i]);
             }
         }
         return info;
-    }
-
-    recomputeReferences(filename: string) {
-        var info = ts.lookUp(this.filenameToScriptInfo,filename);
-
+    };
+    ProjectService.prototype.recomputeReferences = function (filename) {
+        var info = ts.lookUp(this.filenameToScriptInfo, filename);
         if (info) {
             var prevChildrenList = info.children;
-            var prevChildren: ts.StringSet = {};
-            var orphans:ScriptInfo[]=[]
-            var adopted:ScriptInfo[]=[];
+            var prevChildren = {};
+            var orphans = [];
+            var adopted = [];
             for (var i = 0, len = prevChildrenList.length; i < len; i++) {
-                prevChildren[prevChildrenList[i].filename]=true;
+                prevChildren[prevChildrenList[i].filename] = true;
             }
-            info.children=[];
+            info.children = [];
             var dirPath = ts.getDirectoryPath(filename);
-            this.computeReferences(info,dirPath);
-            var children: ts.StringSet = {};            
+            this.computeReferences(info, dirPath);
+            var children = {};
             for (var j = 0, clen = info.children.length; j < clen; j++) {
-                children[info.children[j].filename]=true;
+                children[info.children[j].filename] = true;
                 if (!prevChildren[info.children[j].filename]) {
                     adopted.push(info.children[j]);
                 }
@@ -588,13 +517,12 @@ export class ProjectService {
                 }
             }
         }
-    }
-
-    computeReferences(info: ScriptInfo, dirPath:string, content?: string) {
+    };
+    ProjectService.prototype.computeReferences = function (info, dirPath, content) {
         if (!content) {
             content = info.getText();
         }
-        var preProcessedInfo = ts.preProcessFile(content, false); 
+        var preProcessedInfo = ts.preProcessFile(content, false);
         // TODO: add import references
         if (preProcessedInfo.referencedFiles.length > 0) {
             for (var i = 0, len = preProcessedInfo.referencedFiles.length; i < len; i++) {
@@ -604,19 +532,20 @@ export class ProjectService {
                 info.addChild(refInfo);
             }
         }
-    }
-    
+    };
     /**
      * @param filename is absolute pathname
      */
-    openFile(filename: string,openedByClient=false,configuredProject=false) {
+    ProjectService.prototype.openFile = function (filename, openedByClient, configuredProject) {
+        if (openedByClient === void 0) { openedByClient = false; }
+        if (configuredProject === void 0) { configuredProject = false; }
         //console.log("opening "+filename+"...");
-        filename=ts.normalizePath(filename);
+        filename = ts.normalizePath(filename);
         var dirPath = ts.getDirectoryPath(filename);
         //console.log("normalized as "+filename+" with dir path "+dirPath);
-        var info = ts.lookUp(this.filenameToScriptInfo,filename);
+        var info = ts.lookUp(this.filenameToScriptInfo, filename);
         if (!info) {
-            var content="";
+            var content = "";
             if (ts.sys.fileExists(filename)) {
                 content = ts.sys.readFile(filename);
             }
@@ -629,56 +558,47 @@ export class ProjectService {
                 this.inferredRootsChanged = true;
             }
             if (content.length > 0) {
-                this.computeReferences(info,dirPath,content);
+                this.computeReferences(info, dirPath, content);
             }
         }
-        // if root of inferred project referenced indirectly, remove it
-        else if (info.isInferredRoot  && (!openedByClient)) {
+        else if (info.isInferredRoot && (!openedByClient)) {
             if (this.removeInferredRoot(info)) {
-                this.inferredRootsChanged=true;
-                this.newRootDisjoint=false;
+                this.inferredRootsChanged = true;
+                this.newRootDisjoint = false;
             }
         }
-
         return info;
-    }
-
-}
-
-export class CompilerService {
-    cancellationToken = new CancellationToken();
-    host = new LSHost(this.cancellationToken);
-    languageService: ts.LanguageService;
-    classifier: ts.Classifier;
-    settings = ts.getDefaultCompilerOptions();
-    documentRegistry = ts.createDocumentRegistry();
-    formatCodeOptions: ts.FormatCodeOptions = CompilerService.defaultFormatCodeOptions;
-
-    constructor() {
+    };
+    return ProjectService;
+})();
+exports.ProjectService = ProjectService;
+var CompilerService = (function () {
+    function CompilerService() {
+        this.cancellationToken = new CancellationToken();
+        this.host = new LSHost(this.cancellationToken);
+        this.settings = ts.getDefaultCompilerOptions();
+        this.documentRegistry = ts.createDocumentRegistry();
+        this.formatCodeOptions = CompilerService.defaultFormatCodeOptions;
         this.host.setCompilationSettings(ts.getDefaultCompilerOptions());
         this.languageService = ts.createLanguageService(this.host, this.documentRegistry);
         this.classifier = ts.createClassifier(this.host);
     }
-
-    setCompilerOptions(opt: ts.CompilerOptions) {
+    CompilerService.prototype.setCompilerOptions = function (opt) {
         this.host.setCompilationSettings(opt);
-    }
-
-    setFormatCodeOptions(fco: ts.FormatCodeOptions) {
+    };
+    CompilerService.prototype.setFormatCodeOptions = function (fco) {
         // use this loop to preserve default values
         for (var p in fco) {
-            if ((<Object>fco).hasOwnProperty(p)) {
-                this.formatCodeOptions[p]=fco[p];
+            if (fco.hasOwnProperty(p)) {
+                this.formatCodeOptions[p] = fco[p];
             }
         }
-    }
-
-    isExternalModule(filename: string): boolean {
+    };
+    CompilerService.prototype.isExternalModule = function (filename) {
         var sourceFile = this.languageService.getSourceFile(filename);
-        return ts.isExternalModule(sourceFile);   
-    }
-
-    static defaultFormatCodeOptions: ts.FormatCodeOptions = {
+        return ts.isExternalModule(sourceFile);
+    };
+    CompilerService.defaultFormatCodeOptions = {
         IndentSize: 4,
         TabSize: 4,
         NewLineCharacter: ts.sys.newLine,
@@ -690,74 +610,44 @@ export class CompilerService {
         InsertSpaceAfterFunctionKeywordForAnonymousFunctions: false,
         InsertSpaceAfterOpeningAndBeforeClosingNonemptyParenthesis: false,
         PlaceOpenBraceOnNewLineForFunctions: false,
-        PlaceOpenBraceOnNewLineForControlBlocks: false,
+        PlaceOpenBraceOnNewLineForControlBlocks: false
+    };
+    return CompilerService;
+})();
+exports.CompilerService = CompilerService;
+(function (CharRangeSection) {
+    CharRangeSection[CharRangeSection["PreStart"] = 0] = "PreStart";
+    CharRangeSection[CharRangeSection["Start"] = 1] = "Start";
+    CharRangeSection[CharRangeSection["Entire"] = 2] = "Entire";
+    CharRangeSection[CharRangeSection["Mid"] = 3] = "Mid";
+    CharRangeSection[CharRangeSection["End"] = 4] = "End";
+    CharRangeSection[CharRangeSection["PostEnd"] = 5] = "PostEnd";
+})(exports.CharRangeSection || (exports.CharRangeSection = {}));
+var CharRangeSection = exports.CharRangeSection;
+var BaseLineIndexWalker = (function () {
+    function BaseLineIndexWalker() {
+        this.goSubtree = true;
+        this.done = false;
     }
-
-}
-
-export interface LineCollection {
-    charCount(): number;
-    lineCount(): number;
-    isLeaf(): boolean;
-    walk(rangeStart: number, rangeLength: number, walkFns: ILineIndexWalker): void;
-    print(indentAmt: number): void;
-}
-
-export interface ILineInfo {
-    line: number;
-    offset: number;
-    text?: string;
-    leaf?: LineLeaf;
-}
-
-export enum CharRangeSection {
-    PreStart,
-    Start,
-    Entire,
-    Mid,
-    End,
-    PostEnd
-}
-
-export interface ILineIndexWalker {
-    goSubtree: boolean;
-    done: boolean;
-    leaf(relativeStart: number, relativeLength: number, lineCollection: LineLeaf): void;
-    pre? (relativeStart: number, relativeLength: number, lineCollection: LineCollection,
-          parent: LineNode, nodeType: CharRangeSection): LineCollection;
-    post? (relativeStart: number, relativeLength: number, lineCollection: LineCollection,
-           parent: LineNode, nodeType: CharRangeSection): LineCollection;
-}
-
-class BaseLineIndexWalker implements ILineIndexWalker {
-    goSubtree = true;
-    done = false;
-    leaf(rangeStart: number, rangeLength: number, ll: LineLeaf) {
-    }
-}
-
-class EditWalker extends BaseLineIndexWalker {
-    lineIndex = new LineIndex();
-    // path to start of range
-    startPath: LineCollection[];
-    endBranch: LineCollection[] = [];
-    branchNode: LineNode;
-    // path to current node 
-    stack: LineNode[];
-    state = CharRangeSection.Entire;
-    lineCollectionAtBranch: LineCollection;
-    initialText = "";
-    trailingText = ""; 
-    suppressTrailingText = false;
-
-    constructor() {
-        super();
+    BaseLineIndexWalker.prototype.leaf = function (rangeStart, rangeLength, ll) {
+    };
+    return BaseLineIndexWalker;
+})();
+var EditWalker = (function (_super) {
+    __extends(EditWalker, _super);
+    function EditWalker() {
+        _super.call(this);
+        this.lineIndex = new LineIndex();
+        this.endBranch = [];
+        this.state = 2 /* Entire */;
+        this.initialText = "";
+        this.trailingText = "";
+        this.suppressTrailingText = false;
         this.lineIndex.root = new LineNode();
         this.startPath = [this.lineIndex.root];
         this.stack = [this.lineIndex.root];
     }
-
-    insertLines(insertedText: string) {
+    EditWalker.prototype.insertLines = function (insertedText) {
         if (this.suppressTrailingText) {
             this.trailingText = "";
         }
@@ -774,15 +664,14 @@ class EditWalker extends BaseLineIndexWalker {
                 lines.length--;
             }
         }
-        var branchParent: LineNode;
-        var lastZeroCount: LineCollection;
-
-        for (var k = this.endBranch.length-1; k >= 0; k--) {
-            (<LineNode>this.endBranch[k]).updateCounts();
+        var branchParent;
+        var lastZeroCount;
+        for (var k = this.endBranch.length - 1; k >= 0; k--) {
+            this.endBranch[k].updateCounts();
             if (this.endBranch[k].charCount() == 0) {
                 lastZeroCount = this.endBranch[k];
                 if (k > 0) {
-                    branchParent = <LineNode>this.endBranch[k - 1];
+                    branchParent = this.endBranch[k - 1];
                 }
                 else {
                     branchParent = this.branchNode;
@@ -792,24 +681,21 @@ class EditWalker extends BaseLineIndexWalker {
         if (lastZeroCount) {
             branchParent.remove(lastZeroCount);
         }
-
         // path at least length two (root and leaf)
-        var insertionNode = <LineNode>this.startPath[this.startPath.length - 2];
-        var leafNode = <LineLeaf>this.startPath[this.startPath.length - 1];
+        var insertionNode = this.startPath[this.startPath.length - 2];
+        var leafNode = this.startPath[this.startPath.length - 1];
         var len = lines.length;
-
-        if (len>0) {
+        if (len > 0) {
             leafNode.text = lines[0];
-
             if (len > 1) {
-                var insertedNodes = <LineCollection[]>new Array(len - 1);
-                var startNode = <LineCollection>leafNode;
+                var insertedNodes = new Array(len - 1);
+                var startNode = leafNode;
                 for (var i = 1, len = lines.length; i < len; i++) {
                     insertedNodes[i - 1] = new LineLeaf(lines[i]);
                 }
                 var pathIndex = this.startPath.length - 2;
                 while (pathIndex >= 0) {
-                    insertionNode = <LineNode>this.startPath[pathIndex];
+                    insertionNode = this.startPath[pathIndex];
                     insertedNodes = insertionNode.insertAt(startNode, insertedNodes);
                     pathIndex--;
                     startNode = insertionNode;
@@ -826,7 +712,7 @@ class EditWalker extends BaseLineIndexWalker {
             }
             else {
                 for (var j = this.startPath.length - 2; j >= 0; j--) {
-                    (<LineNode>this.startPath[j]).updateCounts();
+                    this.startPath[j].updateCounts();
                 }
             }
         }
@@ -834,168 +720,158 @@ class EditWalker extends BaseLineIndexWalker {
             // no content for leaf node, so delete it
             insertionNode.remove(leafNode);
             for (var j = this.startPath.length - 2; j >= 0; j--) {
-                (<LineNode>this.startPath[j]).updateCounts();
+                this.startPath[j].updateCounts();
             }
         }
-
         return this.lineIndex;
-    }
-
-    post(relativeStart: number, relativeLength: number, lineCollection: LineCollection, parent: LineCollection, nodeType: CharRangeSection):LineCollection {
+    };
+    EditWalker.prototype.post = function (relativeStart, relativeLength, lineCollection, parent, nodeType) {
         // have visited the path for start of range, now looking for end
         // if range is on single line, we will never make this state transition
         if (lineCollection == this.lineCollectionAtBranch) {
-            this.state = CharRangeSection.End;
+            this.state = 4 /* End */;
         }
         // always pop stack because post only called when child has been visited
         this.stack.length--;
         return undefined;
-    }
-
-    pre(relativeStart: number, relativeLength: number, lineCollection: LineCollection, parent: LineCollection, nodeType: CharRangeSection) {
+    };
+    EditWalker.prototype.pre = function (relativeStart, relativeLength, lineCollection, parent, nodeType) {
         // currentNode corresponds to parent, but in the new tree
         var currentNode = this.stack[this.stack.length - 1];
-
-        if ((this.state == CharRangeSection.Entire) && (nodeType == CharRangeSection.Start)) {
+        if ((this.state == 2 /* Entire */) && (nodeType == 1 /* Start */)) {
             // if range is on single line, we will never make this state transition
-            this.state = CharRangeSection.Start;
+            this.state = 1 /* Start */;
             this.branchNode = currentNode;
             this.lineCollectionAtBranch = lineCollection;
         }
-        
-        var child: LineCollection;
-        function fresh(node: LineCollection): LineCollection {
+        var child;
+        function fresh(node) {
             if (node.isLeaf()) {
                 return new LineLeaf("");
             }
-            else return new LineNode();
+            else
+                return new LineNode();
         }
         switch (nodeType) {
-        case CharRangeSection.PreStart:
-            this.goSubtree = false;
-            if (this.state != CharRangeSection.End) {
-                currentNode.add(lineCollection);
-            }
-            break;
-        case CharRangeSection.Start:
-            if (this.state == CharRangeSection.End) {
+            case 0 /* PreStart */:
                 this.goSubtree = false;
-            }
-            else {
-                child = fresh(lineCollection);
-                currentNode.add(child);
-                this.startPath[this.startPath.length] = child;
-            }
-            break;
-        case CharRangeSection.Entire:
-            if (this.state != CharRangeSection.End) {
-                child = fresh(lineCollection);
-                currentNode.add(child);
-                this.startPath[this.startPath.length] = child;
-            }
-            else {
-                if (!lineCollection.isLeaf()) {
+                if (this.state != 4 /* End */) {
+                    currentNode.add(lineCollection);
+                }
+                break;
+            case 1 /* Start */:
+                if (this.state == 4 /* End */) {
+                    this.goSubtree = false;
+                }
+                else {
                     child = fresh(lineCollection);
                     currentNode.add(child);
-                    this.endBranch[this.endBranch.length] = child;
+                    this.startPath[this.startPath.length] = child;
                 }
-            }
-            break;
-        case CharRangeSection.Mid:
-            this.goSubtree = false;
-            break;
-        case CharRangeSection.End:
-            if (this.state != CharRangeSection.End) {
-                this.goSubtree = false;
-            }
-            else {
-                if (!lineCollection.isLeaf()) {
+                break;
+            case 2 /* Entire */:
+                if (this.state != 4 /* End */) {
                     child = fresh(lineCollection);
                     currentNode.add(child);
-                    this.endBranch[this.endBranch.length] = child;
+                    this.startPath[this.startPath.length] = child;
                 }
-            }
-            break;
-        case CharRangeSection.PostEnd:
-            this.goSubtree = false;
-            if (this.state != CharRangeSection.Start) {
-                currentNode.add(lineCollection);
-            }
-            break;
+                else {
+                    if (!lineCollection.isLeaf()) {
+                        child = fresh(lineCollection);
+                        currentNode.add(child);
+                        this.endBranch[this.endBranch.length] = child;
+                    }
+                }
+                break;
+            case 3 /* Mid */:
+                this.goSubtree = false;
+                break;
+            case 4 /* End */:
+                if (this.state != 4 /* End */) {
+                    this.goSubtree = false;
+                }
+                else {
+                    if (!lineCollection.isLeaf()) {
+                        child = fresh(lineCollection);
+                        currentNode.add(child);
+                        this.endBranch[this.endBranch.length] = child;
+                    }
+                }
+                break;
+            case 5 /* PostEnd */:
+                this.goSubtree = false;
+                if (this.state != 1 /* Start */) {
+                    currentNode.add(lineCollection);
+                }
+                break;
         }
         if (this.goSubtree) {
-            this.stack[this.stack.length] = <LineNode>child;
+            this.stack[this.stack.length] = child;
         }
         return lineCollection;
-    }
+    };
     // just gather text from the leaves
-    leaf(relativeStart: number, relativeLength: number, ll: LineLeaf) {
-        if (this.state == CharRangeSection.Start) {
+    EditWalker.prototype.leaf = function (relativeStart, relativeLength, ll) {
+        if (this.state == 1 /* Start */) {
             this.initialText = ll.text.substring(0, relativeStart);
         }
-        else if (this.state == CharRangeSection.Entire) {
+        else if (this.state == 2 /* Entire */) {
             this.initialText = ll.text.substring(0, relativeStart);
-            this.trailingText = ll.text.substring(relativeStart+relativeLength);
+            this.trailingText = ll.text.substring(relativeStart + relativeLength);
         }
         else {
             // state is CharRangeSection.End
             this.trailingText = ll.text.substring(relativeStart + relativeLength);
         }
-    }
-}
-
+    };
+    return EditWalker;
+})(BaseLineIndexWalker);
 // text change information 
-export class TextChange {
-    constructor(public pos: number, public deleteLen: number, public insertedText?: string) {
+var TextChange = (function () {
+    function TextChange(pos, deleteLen, insertedText) {
+        this.pos = pos;
+        this.deleteLen = deleteLen;
+        this.insertedText = insertedText;
     }
-
-    getTextChangeRange() {
-        return ts.createTextChangeRange(ts.createTextSpan(this.pos, this.deleteLen),
-                                        this.insertedText ? this.insertedText.length : 0);
+    TextChange.prototype.getTextChangeRange = function () {
+        return ts.createTextChangeRange(ts.createTextSpan(this.pos, this.deleteLen), this.insertedText ? this.insertedText.length : 0);
+    };
+    return TextChange;
+})();
+exports.TextChange = TextChange;
+var ScriptVersionCache = (function () {
+    function ScriptVersionCache() {
+        this.changes = [];
+        this.versions = [];
+        this.minVersion = 0; // no versions earlier than min version will maintain change history
+        this.currentVersion = 0;
     }
-}
-
-export class ScriptVersionCache {
-    changes: TextChange[] = [];
-    versions: LineIndexSnapshot[] = [];
-    minVersion = 0;  // no versions earlier than min version will maintain change history
-    private currentVersion = 0;
-
-    static changeNumberThreshold = 8;
-    static changeLengthThreshold = 256;
-
     // REVIEW: can optimize by coalescing simple edits
-    edit(pos: number, deleteLen: number, insertedText?: string) {
+    ScriptVersionCache.prototype.edit = function (pos, deleteLen, insertedText) {
         this.changes[this.changes.length] = new TextChange(pos, deleteLen, insertedText);
-        if ((this.changes.length > ScriptVersionCache.changeNumberThreshold) ||
-            (deleteLen > ScriptVersionCache.changeLengthThreshold) ||
-            (insertedText && (insertedText.length>ScriptVersionCache.changeLengthThreshold))) {
+        if ((this.changes.length > ScriptVersionCache.changeNumberThreshold) || (deleteLen > ScriptVersionCache.changeLengthThreshold) || (insertedText && (insertedText.length > ScriptVersionCache.changeLengthThreshold))) {
             this.getSnapshot();
         }
-    }
-
-    latest() {
+    };
+    ScriptVersionCache.prototype.latest = function () {
         return this.versions[this.currentVersion];
-    }
-
-    latestVersion() {
+    };
+    ScriptVersionCache.prototype.latestVersion = function () {
         if (this.changes.length > 0) {
             this.getSnapshot();
         }
         return this.currentVersion;
-    }
-
-    reloadFromFile(filename: string,cb?:()=>any) {
+    };
+    ScriptVersionCache.prototype.reloadFromFile = function (filename, cb) {
         var content = ts.sys.readFile(filename);
         this.reload(content);
         if (cb)
             cb();
-    }
-    
+    };
     // reload whole script, leaving no change history behind reload
-    reload(script: string) {
+    ScriptVersionCache.prototype.reload = function (script) {
         this.currentVersion++;
-        this.changes=[]; // history wiped out by reload
+        this.changes = []; // history wiped out by reload
         var snap = new LineIndexSnapshot(this.currentVersion, this);
         this.versions[this.currentVersion] = snap;
         snap.index = new LineIndex();
@@ -1003,13 +879,11 @@ export class ScriptVersionCache {
         snap.index.load(lm.lines);
         // REVIEW: could use linked list 
         for (var i = this.minVersion; i < this.currentVersion; i++) {
-            this.versions[i]=undefined;
+            this.versions[i] = undefined;
         }
-        this.minVersion=this.currentVersion;
-
-    }
-
-    getSnapshot() {
+        this.minVersion = this.currentVersion;
+    };
+    ScriptVersionCache.prototype.getSnapshot = function () {
         var snap = this.versions[this.currentVersion];
         if (this.changes.length > 0) {
             var snapIndex = this.latest().index;
@@ -1025,12 +899,11 @@ export class ScriptVersionCache {
             this.changes = [];
         }
         return snap;
-    }
-
-    getTextChangesBetweenVersions(oldVersion: number, newVersion: number) {
+    };
+    ScriptVersionCache.prototype.getTextChangesBetweenVersions = function (oldVersion, newVersion) {
         if (oldVersion < newVersion) {
             if (oldVersion >= this.minVersion) {
-                var textChangeRanges: ts.TextChangeRange[] = [];
+                var textChangeRanges = [];
                 for (var i = oldVersion + 1; i <= newVersion; i++) {
                     var snap = this.versions[i];
                     for (var j = 0, len = snap.changesSincePreviousVersion.length; j < len; j++) {
@@ -1047,9 +920,8 @@ export class ScriptVersionCache {
         else {
             return ts.unchangedTextChangeRange;
         }
-    }
-
-    static fromString(script: string) {
+    };
+    ScriptVersionCache.fromString = function (script) {
         var svc = new ScriptVersionCache();
         var snap = new LineIndexSnapshot(0, svc);
         svc.versions[svc.currentVersion] = snap;
@@ -1057,69 +929,66 @@ export class ScriptVersionCache {
         var lm = LineIndex.linesFromText(script);
         snap.index.load(lm.lines);
         return svc;
+    };
+    ScriptVersionCache.changeNumberThreshold = 8;
+    ScriptVersionCache.changeLengthThreshold = 256;
+    return ScriptVersionCache;
+})();
+exports.ScriptVersionCache = ScriptVersionCache;
+var LineIndexSnapshot = (function () {
+    function LineIndexSnapshot(version, cache) {
+        this.version = version;
+        this.cache = cache;
+        this.changesSincePreviousVersion = [];
     }
-}
-
-export class LineIndexSnapshot implements ts.IScriptSnapshot {
-    index: LineIndex;
-    changesSincePreviousVersion: TextChange[] = [];
-
-    constructor(public version: number, public cache: ScriptVersionCache) {
-    }
-
-    getText(rangeStart: number, rangeEnd: number) {
-        return this.index.getText(rangeStart, rangeEnd-rangeStart);
-    }
-
-    getLength() {
+    LineIndexSnapshot.prototype.getText = function (rangeStart, rangeEnd) {
+        return this.index.getText(rangeStart, rangeEnd - rangeStart);
+    };
+    LineIndexSnapshot.prototype.getLength = function () {
         return this.index.root.charCount();
-    }
-
+    };
     // this requires linear space so don't hold on to these 
-    getLineStartPositions(): number[] {
-        var starts: number[] = [-1];
+    LineIndexSnapshot.prototype.getLineStartPositions = function () {
+        var starts = [-1];
         var count = 1;
         var pos = 0;
-        this.index.every((ll, s, len) => {
+        this.index.every(function (ll, s, len) {
             starts[count++] = pos;
             pos += ll.text.length;
             return true;
-        },0);
+        }, 0);
         return starts;
-    }
-
-    getLineMapper() {
-        return ((line: number) => {
-            return this.index.lineNumberToInfo(line).offset;
+    };
+    LineIndexSnapshot.prototype.getLineMapper = function () {
+        var _this = this;
+        return (function (line) {
+            return _this.index.lineNumberToInfo(line).offset;
         });
-    }
-
-    getTextChangeRangeSinceVersion(scriptVersion: number) {
+    };
+    LineIndexSnapshot.prototype.getTextChangeRangeSinceVersion = function (scriptVersion) {
         if (this.version <= scriptVersion) {
             return ts.unchangedTextChangeRange;
         }
         else {
-            return this.cache.getTextChangesBetweenVersions(scriptVersion,this.version);
+            return this.cache.getTextChangesBetweenVersions(scriptVersion, this.version);
         }
-    }
-
-    getChangeRange(oldSnapshot: ts.IScriptSnapshot): ts.TextChangeRange {
-        var oldSnap=<LineIndexSnapshot>oldSnapshot;
+    };
+    LineIndexSnapshot.prototype.getChangeRange = function (oldSnapshot) {
+        var oldSnap = oldSnapshot;
         return this.getTextChangeRangeSinceVersion(oldSnap.version);
+    };
+    return LineIndexSnapshot;
+})();
+exports.LineIndexSnapshot = LineIndexSnapshot;
+var LineIndex = (function () {
+    function LineIndex() {
+        // set this to true to check each edit for accuracy
+        this.checkEdits = false;
     }
-}
-
-
-export class LineIndex {
-    root: LineNode;
-    // set this to true to check each edit for accuracy
-    checkEdits=false;
-
-    charOffsetToLineNumberAndPos(charOffset: number) {
+    LineIndex.prototype.charOffsetToLineNumberAndPos = function (charOffset) {
         return this.root.charOffsetToLineNumberAndPos(1, charOffset);
-    }
-
-    lineNumberToInfo(lineNumber: number): ILineInfo {
+    };
+    LineIndex.prototype.lineNumberToInfo = function (lineNumber) {
         var lineCount = this.root.lineCount();
         if (lineNumber <= lineCount) {
             var lineInfo = this.root.lineNumberToInfo(lineNumber, 0);
@@ -1130,66 +999,61 @@ export class LineIndex {
             return {
                 line: lineNumber,
                 offset: this.root.charCount()
-            }
+            };
         }
-    }
-
-    print() {
+    };
+    LineIndex.prototype.print = function () {
         printLine("index TC " + this.root.charCount() + " TL " + this.root.lineCount());
         this.root.print(0);
         printLine("");
-    }
-
-    load(lines: string[]) {
+    };
+    LineIndex.prototype.load = function (lines) {
         if (lines.length > 0) {
-            var leaves: LineLeaf[] = [];
+            var leaves = [];
             for (var i = 0, len = lines.length; i < len; i++) {
                 leaves[i] = new LineLeaf(lines[i]);
             }
             this.root = LineIndex.buildTreeFromBottom(leaves);
         }
         else {
-            this.root=new LineNode();
+            this.root = new LineNode();
         }
-    }
-
-    walk(rangeStart: number, rangeLength: number, walkFns: ILineIndexWalker) {
+    };
+    LineIndex.prototype.walk = function (rangeStart, rangeLength, walkFns) {
         this.root.walk(rangeStart, rangeLength, walkFns);
-    }
-
-    getText(rangeStart: number, rangeLength: number) {
+    };
+    LineIndex.prototype.getText = function (rangeStart, rangeLength) {
         var accum = "";
         if (rangeLength > 0) {
             this.walk(rangeStart, rangeLength, {
                 goSubtree: true,
                 done: false,
-                leaf: (relativeStart: number, relativeLength: number, ll: LineLeaf) => {
+                leaf: function (relativeStart, relativeLength, ll) {
                     accum = accum.concat(ll.text.substring(relativeStart, relativeStart + relativeLength));
                 }
             });
         }
         return accum;
-    }
-
-    every(f: (ll: LineLeaf, s: number, len: number) => boolean, rangeStart: number, rangeEnd?: number) {
+    };
+    LineIndex.prototype.every = function (f, rangeStart, rangeEnd) {
         if (!rangeEnd) {
             rangeEnd = this.root.charCount();
         }
         var walkFns = {
             goSubtree: true,
             done: false,
-            leaf: function (relativeStart: number, relativeLength: number, ll: LineLeaf) {
+            leaf: function (relativeStart, relativeLength, ll) {
                 if (!f(ll, relativeStart, relativeLength)) {
                     this.done = true;
                 }
             }
-        }
+        };
         this.walk(rangeStart, rangeEnd - rangeStart, walkFns);
         return !walkFns.done;
-    }
-
-    edit(pos: number, deleteLength:number, newText?: string) {
-        function editFlat(source: string, s: number, dl: number, nt="") {
+    };
+    LineIndex.prototype.edit = function (pos, deleteLength, newText) {
+        function editFlat(source, s, dl, nt) {
+            if (nt === void 0) { nt = ""; }
             return source.substring(0, s) + nt + source.substring(s + dl, source.length);
         }
         if (this.root.charCount() == 0) {
@@ -1243,11 +1107,10 @@ export class LineIndex {
             }
             return walker.lineIndex;
         }
-    }
-
-    static buildTreeFromBottom(nodes: LineCollection[]) : LineNode {
+    };
+    LineIndex.buildTreeFromBottom = function (nodes) {
         var nodeCount = Math.ceil(nodes.length / lineCollectionCapacity);
-        var interiorNodes: LineNode[] = [];
+        var interiorNodes = [];
         var nodeIndex = 0;
         for (var i = 0; i < nodeCount; i++) {
             interiorNodes[i] = new LineNode();
@@ -1273,21 +1136,18 @@ export class LineIndex {
         else {
             return this.buildTreeFromBottom(interiorNodes);
         }
-    }
-
-    static linesFromText(text: string) {
+    };
+    LineIndex.linesFromText = function (text) {
         var sourceSnap = ts.ScriptSnapshot.fromString(text);
         var lineStarts = sourceSnap.getLineStartPositions();
-
         if (lineStarts.length == 0) {
-            return { lines: <string[]>[], lineMap: lineStarts };
+            return { lines: [], lineMap: lineStarts };
         }
-        var lines = <string[]>new Array(lineStarts.length);
+        var lines = new Array(lineStarts.length);
         var lc = lineStarts.length - 1;
         for (var lmi = 0; lmi < lc; lmi++) {
             lines[lmi] = text.substring(lineStarts[lmi], lineStarts[lmi + 1]);
         }
-
         var endText = text.substring(lineStarts[lc]);
         if (endText.length > 0) {
             lines[lc] = endText;
@@ -1296,40 +1156,39 @@ export class LineIndex {
             lines.length--;
         }
         return { lines: lines, lineMap: lineStarts };
+    };
+    return LineIndex;
+})();
+exports.LineIndex = LineIndex;
+var LineNode = (function () {
+    function LineNode() {
+        this.totalChars = 0;
+        this.totalLines = 0;
+        this.children = [];
     }
-}
-
-export class LineNode implements LineCollection {
-    totalChars = 0;
-    totalLines = 0;
-    children: LineCollection[] = [];
-
-    isLeaf() {
+    LineNode.prototype.isLeaf = function () {
         return false;
-    }
-
-    print(indentAmt: number) {
+    };
+    LineNode.prototype.print = function (indentAmt) {
         var strBuilder = getIndent(indentAmt);
         strBuilder += ("node ch " + this.children.length + " TC " + this.totalChars + " TL " + this.totalLines + " :");
         printLine(strBuilder);
         for (var ch = 0, clen = this.children.length; ch < clen; ch++) {
             this.children[ch].print(indentAmt + 1);
         }
-    }
-
-    updateCounts() {
+    };
+    LineNode.prototype.updateCounts = function () {
         this.totalChars = 0;
         this.totalLines = 0;
-        for (var i = 0, len = this.children.length; i<len ; i++) {
+        for (var i = 0, len = this.children.length; i < len; i++) {
             var child = this.children[i];
             this.totalChars += child.charCount();
             this.totalLines += child.lineCount();
         }
-    }
-
-    execWalk(rangeStart: number, rangeLength: number, walkFns: ILineIndexWalker, childIndex: number, nodeType:CharRangeSection) {
+    };
+    LineNode.prototype.execWalk = function (rangeStart, rangeLength, walkFns, childIndex, nodeType) {
         if (walkFns.pre) {
-            walkFns.pre(rangeStart, rangeLength,this.children[childIndex], this, nodeType);
+            walkFns.pre(rangeStart, rangeLength, this.children[childIndex], this, nodeType);
         }
         if (walkFns.goSubtree) {
             this.children[childIndex].walk(rangeStart, rangeLength, walkFns);
@@ -1341,16 +1200,14 @@ export class LineNode implements LineCollection {
             walkFns.goSubtree = true;
         }
         return walkFns.done;
-    }
-
-    skipChild(relativeStart: number, relativeLength: number, childIndex: number, walkFns: ILineIndexWalker, nodeType: CharRangeSection) {
+    };
+    LineNode.prototype.skipChild = function (relativeStart, relativeLength, childIndex, walkFns, nodeType) {
         if (walkFns.pre && (!walkFns.done)) {
             walkFns.pre(relativeStart, relativeLength, this.children[childIndex], this, nodeType);
             walkFns.goSubtree = true;
         }
-    }
-
-    walk(rangeStart: number, rangeLength: number, walkFns: ILineIndexWalker) {
+    };
+    LineNode.prototype.walk = function (rangeStart, rangeLength, walkFns) {
         // assume (rangeStart < this.totalChars) && (rangeLength <= this.totalChars) 
         var childIndex = 0;
         var child = this.children[0];
@@ -1358,20 +1215,20 @@ export class LineNode implements LineCollection {
         // find sub-tree containing start
         var adjustedStart = rangeStart;
         while (adjustedStart >= childCharCount) {
-            this.skipChild(adjustedStart, rangeLength, childIndex, walkFns, CharRangeSection.PreStart);
+            this.skipChild(adjustedStart, rangeLength, childIndex, walkFns, 0 /* PreStart */);
             adjustedStart -= childCharCount;
             child = this.children[++childIndex];
             childCharCount = child.charCount();
         }
         // Case I: both start and end of range in same subtree
         if ((adjustedStart + rangeLength) <= childCharCount) {
-            if (this.execWalk(adjustedStart, rangeLength, walkFns, childIndex, CharRangeSection.Entire)) {
+            if (this.execWalk(adjustedStart, rangeLength, walkFns, childIndex, 2 /* Entire */)) {
                 return;
             }
         }
         else {
             // Case II: start and end of range in different subtrees (possibly with subtrees in the middle)
-            if (this.execWalk(adjustedStart, childCharCount - adjustedStart, walkFns, childIndex, CharRangeSection.Start)) {
+            if (this.execWalk(adjustedStart, childCharCount - adjustedStart, walkFns, childIndex, 1 /* Start */)) {
                 return;
             }
             var adjustedLength = rangeLength - (childCharCount - adjustedStart);
@@ -1381,7 +1238,7 @@ export class LineNode implements LineCollection {
             }
             childCharCount = child.charCount();
             while (adjustedLength > childCharCount) {
-                if (this.execWalk(0, childCharCount, walkFns, childIndex, CharRangeSection.Mid)) {
+                if (this.execWalk(0, childCharCount, walkFns, childIndex, 3 /* Mid */)) {
                     return;
                 }
                 adjustedLength -= childCharCount;
@@ -1389,7 +1246,7 @@ export class LineNode implements LineCollection {
                 childCharCount = child.charCount();
             }
             if (adjustedLength > 0) {
-                if (this.execWalk(0, adjustedLength, walkFns, childIndex, CharRangeSection.End)) {
+                if (this.execWalk(0, adjustedLength, walkFns, childIndex, 4 /* End */)) {
                     return;
                 }
             }
@@ -1398,53 +1255,50 @@ export class LineNode implements LineCollection {
         if (walkFns.pre) {
             var clen = this.children.length;
             if (childIndex < (clen - 1)) {
-                for (var ej = childIndex+1; ej < clen; ej++) {
-                    this.skipChild(0, 0, ej, walkFns, CharRangeSection.PostEnd);
+                for (var ej = childIndex + 1; ej < clen; ej++) {
+                    this.skipChild(0, 0, ej, walkFns, 5 /* PostEnd */);
                 }
             }
         }
-    }
-
-    charOffsetToLineNumberAndPos(lineNumber: number, charOffset: number): ILineInfo {
+    };
+    LineNode.prototype.charOffsetToLineNumberAndPos = function (lineNumber, charOffset) {
         var childInfo = this.childFromCharOffset(lineNumber, charOffset);
-        if (childInfo.childIndex<this.children.length) {
+        if (childInfo.childIndex < this.children.length) {
             if (childInfo.child.isLeaf()) {
                 return {
                     line: childInfo.lineNumber,
                     offset: childInfo.charOffset,
-                    text: (<LineLeaf>(childInfo.child)).text,
-                    leaf: (<LineLeaf>(childInfo.child))
+                    text: (childInfo.child).text,
+                    leaf: (childInfo.child)
                 };
             }
             else {
-                var lineNode = <LineNode>(childInfo.child);
+                var lineNode = (childInfo.child);
                 return lineNode.charOffsetToLineNumberAndPos(childInfo.lineNumber, childInfo.charOffset);
             }
         }
         else {
-            var lineInfo=this.lineNumberToInfo(this.lineCount(),0);
+            var lineInfo = this.lineNumberToInfo(this.lineCount(), 0);
             return { line: this.lineCount(), offset: lineInfo.leaf.charCount() };
         }
-    }
-
-    lineNumberToInfo(lineNumber: number, charOffset: number): ILineInfo {
+    };
+    LineNode.prototype.lineNumberToInfo = function (lineNumber, charOffset) {
         var childInfo = this.childFromLineNumber(lineNumber, charOffset);
         if (childInfo.child.isLeaf()) {
             return {
                 line: lineNumber,
                 offset: childInfo.charOffset,
-                text: (<LineLeaf>(childInfo.child)).text,
-                leaf: (<LineLeaf>(childInfo.child))
-            }
+                text: (childInfo.child).text,
+                leaf: (childInfo.child)
+            };
         }
         else {
-            var lineNode = <LineNode>(childInfo.child);
+            var lineNode = (childInfo.child);
             return lineNode.lineNumberToInfo(childInfo.relativeLineNumber, childInfo.charOffset);
         }
-    }
-
-    childFromLineNumber(lineNumber: number, charOffset: number) {
-        var child: LineCollection;
+    };
+    LineNode.prototype.childFromLineNumber = function (lineNumber, charOffset) {
+        var child;
         var relativeLineNumber = lineNumber;
         for (var i = 0, len = this.children.length; i < len; i++) {
             child = this.children[i];
@@ -1463,10 +1317,9 @@ export class LineNode implements LineCollection {
             relativeLineNumber: relativeLineNumber,
             charOffset: charOffset
         };
-    }
-
-    childFromCharOffset(lineNumber: number, charOffset: number) {
-        var child: LineCollection;
+    };
+    LineNode.prototype.childFromCharOffset = function (lineNumber, charOffset) {
+        var child;
         for (var i = 0, len = this.children.length; i < len; i++) {
             child = this.children[i];
             if (child.charCount() > charOffset) {
@@ -1482,11 +1335,10 @@ export class LineNode implements LineCollection {
             childIndex: i,
             charOffset: charOffset,
             lineNumber: lineNumber
-        }
-    }
-
-    splitAfter(childIndex: number) {
-        var splitNode: LineNode;
+        };
+    };
+    LineNode.prototype.splitAfter = function (childIndex) {
+        var splitNode;
         var clen = this.children.length;
         childIndex++;
         var endLength = childIndex;
@@ -1499,27 +1351,25 @@ export class LineNode implements LineCollection {
         }
         this.children.length = endLength;
         return splitNode;
-    }
-
-    remove(child: LineCollection) {
+    };
+    LineNode.prototype.remove = function (child) {
         var childIndex = this.findChildIndex(child);
         var clen = this.children.length;
         if (childIndex < (clen - 1)) {
-            for (var i = childIndex; i < (clen-1); i++) {
+            for (var i = childIndex; i < (clen - 1); i++) {
                 this.children[i] = this.children[i + 1];
             }
         }
         this.children.length--;
-    }
-
-    findChildIndex(child: LineCollection) {
+    };
+    LineNode.prototype.findChildIndex = function (child) {
         var childIndex = 0;
         var clen = this.children.length;
-        while ((this.children[childIndex] != child) && (childIndex < clen)) childIndex++;
+        while ((this.children[childIndex] != child) && (childIndex < clen))
+            childIndex++;
         return childIndex;
-    }
-
-    insertAt(child: LineCollection, nodes: LineCollection[]) {
+    };
+    LineNode.prototype.insertAt = function (child, nodes) {
         var childIndex = this.findChildIndex(child);
         var clen = this.children.length;
         var nodeCount = nodes.length;
@@ -1533,24 +1383,24 @@ export class LineNode implements LineCollection {
             var shiftNode = this.splitAfter(childIndex);
             var nodeIndex = 0;
             childIndex++;
-            while ((childIndex < lineCollectionCapacity) &&( nodeIndex<nodeCount)) {
+            while ((childIndex < lineCollectionCapacity) && (nodeIndex < nodeCount)) {
                 this.children[childIndex++] = nodes[nodeIndex++];
             }
-            var splitNodes: LineNode[] = [];
+            var splitNodes = [];
             var splitNodeCount = 0;
             if (nodeIndex < nodeCount) {
-                splitNodeCount = Math.ceil((nodeCount-nodeIndex) / lineCollectionCapacity);
-                splitNodes = <LineNode[]>new Array(splitNodeCount);
+                splitNodeCount = Math.ceil((nodeCount - nodeIndex) / lineCollectionCapacity);
+                splitNodes = new Array(splitNodeCount);
                 var splitNodeIndex = 0;
                 for (var i = 0; i < splitNodeCount; i++) {
                     splitNodes[i] = new LineNode();
                 }
-                var splitNode = <LineNode>splitNodes[0];
+                var splitNode = splitNodes[0];
                 while (nodeIndex < nodeCount) {
                     splitNode.add(nodes[nodeIndex++]);
                     if (splitNode.children.length == lineCollectionCapacity) {
                         splitNodeIndex++;
-                        splitNode = <LineNode>splitNodes[splitNodeIndex];
+                        splitNode = splitNodes[splitNodeIndex];
                     }
                 }
                 for (i = splitNodes.length - 1; i >= 0; i--) {
@@ -1564,62 +1414,51 @@ export class LineNode implements LineCollection {
             }
             this.updateCounts();
             for (i = 0; i < splitNodeCount; i++) {
-                (<LineNode>splitNodes[i]).updateCounts();
+                splitNodes[i].updateCounts();
             }
             return splitNodes;
         }
-    }
-
+    };
     // assume there is room for the item; return true if more room
-    add(collection: LineCollection) {
+    LineNode.prototype.add = function (collection) {
         this.children[this.children.length] = collection;
-        return(this.children.length < lineCollectionCapacity);
-    }
-
-    charCount() {
+        return (this.children.length < lineCollectionCapacity);
+    };
+    LineNode.prototype.charCount = function () {
         return this.totalChars;
-    }
-
-    lineCount() {
+    };
+    LineNode.prototype.lineCount = function () {
         return this.totalLines;
+    };
+    return LineNode;
+})();
+exports.LineNode = LineNode;
+var LineLeaf = (function () {
+    function LineLeaf(text) {
+        this.text = text;
     }
-}
-
-export class LineLeaf implements LineCollection {
-    udata: any;
-
-    constructor(public text: string) {
-
-    }
-
-    setUdata(data: any) {
+    LineLeaf.prototype.setUdata = function (data) {
         this.udata = data;
-    }
-
-    getUdata() {
+    };
+    LineLeaf.prototype.getUdata = function () {
         return this.udata;
-    }
-
-    isLeaf() {
+    };
+    LineLeaf.prototype.isLeaf = function () {
         return true;
-    }
-
-    walk(rangeStart: number, rangeLength: number, walkFns: ILineIndexWalker) {
-        walkFns.leaf(rangeStart, rangeLength,  this);
-    }
-
-    charCount() {
+    };
+    LineLeaf.prototype.walk = function (rangeStart, rangeLength, walkFns) {
+        walkFns.leaf(rangeStart, rangeLength, this);
+    };
+    LineLeaf.prototype.charCount = function () {
         return this.text.length;
-    }
-
-    lineCount() {
+    };
+    LineLeaf.prototype.lineCount = function () {
         return 1;
-    }
-
-    print(indentAmt: number) {
+    };
+    LineLeaf.prototype.print = function (indentAmt) {
         var strBuilder = getIndent(indentAmt);
         printLine(strBuilder + showLines(this.text));
-    }
-}
-
-
+    };
+    return LineLeaf;
+})();
+exports.LineLeaf = LineLeaf;

@@ -1,0 +1,119 @@
+[
+    { "keys": ["ctrl+t","ctrl+d"], "command": "typescript_go_to_definition",
+      "context": [     
+          {"key": "selector", "operator": "equal", "operand": "source.ts" }
+      ]
+    },
+    { "keys": ["ctrl+t","ctrl+f"], "command": "typescript_format_selection",
+      "context": [
+          { "key": "selection_empty", "operator": "equal", "operand": false, "match_all": true },
+          { "key": "num_selections", "operator": "equal", "operand": 1, "match_all": true },
+          { "key": "selector", "operator": "equal", "operand": "source.ts" }
+      ]
+    },
+    { "keys": ["ctrl+t","ctrl+f"], "command": "typescript_format_document",
+      "context": [
+          { "key": "selection_empty", "operator": "equal", "operand": true, "match_all": true },
+          { "key": "num_selections", "operator": "equal", "operand": 1, "match_all": true },
+          { "key": "selector", "operator": "equal", "operand": "source.ts" }
+      ]
+    },
+    { "keys": ["ctrl+t","ctrl+m"], "command": "typescript_rename",
+      "context": [     
+          {"key": "selector", "operator": "equal", "operand": "source.ts" }
+      ]
+    },
+    { "keys": ["ctrl+t","ctrl+n"], "command": "typescript_next_ref",
+      "context": [     
+          {"key": "selector", "operator": "equal", "operand": "source.ts" }
+      ]
+    },
+    { "keys": ["ctrl+t","ctrl+n"], "command": "typescript_next_ref",
+      "context": [     
+          {"key": "selector", "operator": "equal", "operand": "text.find-refs" }
+      ]
+    },
+    { "keys": ["ctrl+t","ctrl+p"], "command": "typescript_prev_ref",
+      "context": [     
+          {"key": "selector", "operator": "equal", "operand": "source.ts" }
+      ]
+    },
+    { "keys": ["ctrl+t","ctrl+p"], "command": "typescript_prev_ref",
+      "context": [     
+          {"key": "selector", "operator": "equal", "operand": "text.find-refs" }
+      ]
+    },
+    { "keys": ["ctrl+t","ctrl+q"], "command": "typescript_quick_info_doc",
+      "context": [     
+          {"key": "selector", "operator": "equal", "operand": "source.ts" }
+      ]
+    },
+    { "keys": ["ctrl+t","ctrl+r"], "command": "typescript_find_references",
+      "context": [     
+          {"key": "selector", "operator": "equal", "operand": "source.ts" }
+      ]
+    },
+    { "keys": ["ctrl+t","ctrl+s"], "command": "typescript_save",
+      "context": [     
+          {"key": "selector", "operator": "equal", "operand": "source.ts" }
+      ]
+    },
+    { "keys": ["ctrl+t","ctrl+t"], "command": "typescript_go_to_type",
+      "context": [     
+          {"key": "selector", "operator": "equal", "operand": "source.ts" }
+      ]
+    },
+    { "keys": ["}"], "command": "typescript_format_on_key", "args": { "key": "}" },
+      "context": [     
+          {"key": "selector", "operator": "equal", "operand": "source.ts" }
+      ]
+    },
+    { "keys": [";"], "command": "typescript_format_on_key", "args": { "key": ";" },
+      "context": [     
+          {"key": "selector", "operator": "equal", "operand": "source.ts" }
+      ]
+    },
+    { "keys": ["enter"], "command": "typescript_format_on_key", "args": { "key": "\n" },
+      "context": [
+	  { "key": "auto_complete_visible", "operator": "equal", "operand": false },
+          {"key": "selector", "operator": "equal", "operand": "source.ts" }
+      ]
+    },
+    { "keys": ["enter"], "command": "typescript_go_to_ref", 
+      "context": [
+          {"key": "selector", "operator": "equal", "operand": "text.find-refs" }
+      ]
+    },
+    { "keys": ["enter"], "command": "commit_completion",
+      "context": [
+	  { "key": "auto_complete_visible","operator": "equal", "operand": true },
+      ]
+    },
+
+    { "keys": ["shift+enter"], "command": "typescript_format_on_key", "args": { "key": "\n" },
+      "context": [
+          {"key": "selector", "operator": "equal", "operand": "source.ts" }
+      ]
+    },
+    { "keys": ["keypad_enter"], "command": "typescript_format_on_key", "args": { "key": "\n" },
+      "context": [
+          {"key": "selector", "operator": "equal", "operand": "source.ts" }
+      ]
+    },
+    { "keys": ["shift+keypad_enter"], "command": "typescript_format_on_key", "args": { "key": "\n" },
+      "context": [
+          {"key": "selector", "operator": "equal", "operand": "source.ts" }
+      ]
+    },
+    { "keys": ["tab"], "command": "typescript_format_line",
+      "context": [
+	  { "key": "auto_complete_visible","operator": "equal", "operand": false },
+          {"key": "selector", "operator": "equal", "operand": "source.ts" }
+      ]
+    },
+    { "keys": ["tab"], "command": "commit_completion",
+      "context": [
+	  { "key": "auto_complete_visible","operator": "equal", "operand": true },
+      ]
+    },
+]

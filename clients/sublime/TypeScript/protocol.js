@@ -3,28 +3,20 @@
 /// <reference path='editorServices.d.ts' />
 /// <reference path='node.d.ts' />
 /// <reference path='_debugger.d.ts' />
-
-import net = require('net');
-import nodeproto = require('_debugger');
-import readline = require('readline');
-import util = require('util');
-import path=require('path');
-import ts=require('typescript');
-import ed=require('./editorServices');
-
+var nodeproto = require('_debugger');
+var readline = require('readline');
+var path = require('path');
+var ts = require('typescript');
+var ed = require('./editorServices');
 var rl = readline.createInterface({
     input: process.stdin,
     output: process.stdout,
-    terminal: false,
+    terminal: false
 });
-
-var paddedLength=8;
-
-var typeNames = ["interface","class","enum","module","alias","type"];
-
-var spaceCache = [" ","  ","   ","    "];
-
-function generateSpaces(n: number): string {
+var paddedLength = 8;
+var typeNames = ["interface", "class", "enum", "module", "alias", "type"];
+var spaceCache = [" ", "  ", "   ", "    "];
+function generateSpaces(n) {
     if (!spaceCache[n]) {
         var strBuilder = "";
         for (var i = 0; i < n; i++) {
@@ -34,64 +26,54 @@ function generateSpaces(n: number): string {
     }
     return spaceCache[n];
 }
-
-function printObject(obj: any) {
+function printObject(obj) {
     for (var p in obj) {
         if (obj.hasOwnProperty(p)) {
-            console.log(p+": "+obj[p]);
+            console.log(p + ": " + obj[p]);
         }
     }
 }
-
-function isTypeName(name: string,suffix?:string) {
-    for (var i=0,len=typeNames.length;i<len;i++) {
-        if (typeNames[i]==name) {
+function isTypeName(name, suffix) {
+    for (var i = 0, len = typeNames.length; i < len; i++) {
+        if (typeNames[i] == name) {
             return true;
         }
-        else if (suffix&&((typeNames[i]+suffix)==name)) {
+        else if (suffix && ((typeNames[i] + suffix) == name)) {
             return true;
         }
     }
     return false;
 }
-
-function parseTypeName(displayParts: ts.SymbolDisplayPart[]) {
-    var len=displayParts.length;
-    for (var i=len-1;i>=0;i--) {
-        if (isTypeName(displayParts[i].kind,"Name")) {
+function parseTypeName(displayParts) {
+    var len = displayParts.length;
+    for (var i = len - 1; i >= 0; i--) {
+        if (isTypeName(displayParts[i].kind, "Name")) {
             return displayParts[i].text;
         }
     }
     return undefined;
 }
-
-function findExactMatchType(items: ts.NavigateToItem[]) {
-    for (var i=0,len = items.length;i<len;i++) {
-        var navItem=items[i];
-        if (navItem.matchKind=="exact") {
+function findExactMatchType(items) {
+    for (var i = 0, len = items.length; i < len; i++) {
+        var navItem = items[i];
+        if (navItem.matchKind == "exact") {
             if (isTypeName(navItem.kind)) {
                 return navItem;
             }
         }
     }
 }
-
-interface FileMin {
-    file: string;
-    min: ed.ILineInfo;
-}
-
-function compareNumber(a: number, b: number) {
+function compareNumber(a, b) {
     if (a < b) {
         return -1;
     }
     else if (a == b) {
         return 0;
     }
-    else return 1;
+    else
+        return 1;
 }
-
-function compareFileMin(a: FileMin, b: FileMin) {
+function compareFileMin(a, b) {
     if (a.file < b.file) {
         return -1;
     }
@@ -100,25 +82,25 @@ function compareFileMin(a: FileMin, b: FileMin) {
         if (n == 0) {
             return compareNumber(a.min.offset, b.min.offset);
         }
-        else return n;
+        else
+            return n;
     }
     else {
         return 1;
     }
 }
-
-function sortNavItems(items: ts.NavigateToItem[]) {
-    return items.sort((a,b)=> {
-        if (a.matchKind<b.matchKind) {
+function sortNavItems(items) {
+    return items.sort(function (a, b) {
+        if (a.matchKind < b.matchKind) {
             return -1;
         }
-        else if (a.matchKind==b.matchKind) {
-            var lowa=a.name.toLowerCase();
-            var lowb=b.name.toLowerCase();
-            if (lowa<lowb) {
+        else if (a.matchKind == b.matchKind) {
+            var lowa = a.name.toLowerCase();
+            var lowb = b.name.toLowerCase();
+            if (lowa < lowb) {
                 return -1;
             }
-            else if (lowa==lowb) {
+            else if (lowa == lowb) {
                 return 0;
             }
             else {
@@ -128,76 +110,64 @@ function sortNavItems(items: ts.NavigateToItem[]) {
         else {
             return 1;
         }
-    })
+    });
 }
-
-function SourceInfo(body:nodeproto.BreakResponse) {
+function SourceInfo(body) {
     var result = body.exception ? 'exception in ' : 'break in ';
-
     if (body.script) {
         if (body.script.name) {
-            var name = body.script.name,
-            dir = path.resolve() + '/';
-
+            var name = body.script.name, dir = path.resolve() + '/';
             // Change path to relative, if possible
             if (name.indexOf(dir) === 0) {
                 name = name.slice(dir.length);
             }
-
             result += name;
-        } else {
+        }
+        else {
             result += '[unnamed]';
         }
     }
     result += ':';
     result += body.sourceLine + 1;
-
-    if (body.exception) result += '\n' + body.exception.text;
-
+    if (body.exception)
+        result += '\n' + body.exception.text;
     return result;
 }
-
-class JsDebugSession {
-    client:nodeproto.Client;
-    host='localhost';
-    port=5858;
-
-    constructor() {
+var JsDebugSession = (function () {
+    function JsDebugSession() {
+        this.host = 'localhost';
+        this.port = 5858;
         this.init();
     }
-
-    cont(cb:nodeproto.RequestHandler) {
+    JsDebugSession.prototype.cont = function (cb) {
         this.client.reqContinue(cb);
-    }
-
-    listSrc() {
-        this.client.reqScripts((err) => {
+    };
+    JsDebugSession.prototype.listSrc = function () {
+        var _this = this;
+        this.client.reqScripts(function (err) {
             if (err) {
                 console.log("rscr error: " + err);
             }
             else {
                 console.log("req scripts");
-                for (var id in this.client.scripts) {
-                    var script = this.client.scripts[id];
-                    if ((typeof script==="object") && script.name) {
+                for (var id in _this.client.scripts) {
+                    var script = _this.client.scripts[id];
+                    if ((typeof script === "object") && script.name) {
                         console.log(id + ": " + script.name);
                     }
                 }
             }
         });
-    } 
-
-    findScript(file: string) {
+    };
+    JsDebugSession.prototype.findScript = function (file) {
         if (file) {
-            var script: nodeproto.ScriptDesc;
+            var script;
             var scripts = this.client.scripts;
             var keys = Object.keys(scripts);
             var ambiguous = false;
             for (var v = 0; v < keys.length; v++) {
                 var id = keys[v];
-                if (scripts[id] &&
-                    scripts[id].name &&
-                    scripts[id].name.indexOf(file) !== -1) {
+                if (scripts[id] && scripts[id].name && scripts[id].name.indexOf(file) !== -1) {
                     if (script) {
                         ambiguous = true;
                     }
@@ -206,15 +176,14 @@ class JsDebugSession {
             }
             return { script: script, ambiguous: ambiguous };
         }
-    }
-
+    };
     // TODO: condition
-    setBreakpointOnLine(line: number, file?: string) {
+    JsDebugSession.prototype.setBreakpointOnLine = function (line, file) {
         if (!file) {
-            file=this.client.currentScript;
+            file = this.client.currentScript;
         }
-        var script:nodeproto.ScriptDesc;
-        var scriptResult=this.findScript(file);
+        var script;
+        var scriptResult = this.findScript(file);
         if (scriptResult) {
             if (scriptResult.ambiguous) {
                 // TODO: send back error
@@ -226,58 +195,55 @@ class JsDebugSession {
         }
         // TODO: set breakpoint when script not loaded
         if (script) {
-            var brkmsg:nodeproto.BreakpointMessageBody = {
+            var brkmsg = {
                 type: 'scriptId',
                 target: script.id,
-                line: line-1,
-            }
-            this.client.setBreakpoint(brkmsg,(err, bod) => {
+                line: line - 1
+            };
+            this.client.setBreakpoint(brkmsg, function (err, bod) {
                 // TODO: remember breakpoint
                 if (err) {
-                    console.log("Error: set breakpoint: "+err);
+                    console.log("Error: set breakpoint: " + err);
                 }
             });
         }
-
-    }
-
-    init() {
-        var connectionAttempts=0;
-        this.client=new nodeproto.Client();
-        this.client.on('break', res=> {
-            this.handleBreak(res.body);
+    };
+    JsDebugSession.prototype.init = function () {
+        var _this = this;
+        var connectionAttempts = 0;
+        this.client = new nodeproto.Client();
+        this.client.on('break', function (res) {
+            _this.handleBreak(res.body);
         });
-        this.client.on('exception', res=> {
-            this.handleBreak(res.body);
+        this.client.on('exception', function (res) {
+            _this.handleBreak(res.body);
         });
-        this.client.on('error',() => {
-            setTimeout(() => {
+        this.client.on('error', function () {
+            setTimeout(function () {
                 ++connectionAttempts;
-                this.client.connect(this.port,this.host);
-            },500);
+                _this.client.connect(_this.port, _this.host);
+            }, 500);
         });
-        this.client.once('ready',() => {
+        this.client.once('ready', function () {
         });
-        this.client.on('unhandledResponse',() => {
+        this.client.on('unhandledResponse', function () {
         });
-        this.client.connect(this.port,this.host);
-    }
-
-    evaluate(code: string) {
+        this.client.connect(this.port, this.host);
+    };
+    JsDebugSession.prototype.evaluate = function (code) {
+        var _this = this;
         var frame = this.client.currentFrame;
-        this.client.reqFrameEval(code, frame, (err, bod) => {
+        this.client.reqFrameEval(code, frame, function (err, bod) {
             if (err) {
-                console.log("Error: evaluate: "+err);
+                console.log("Error: evaluate: " + err);
                 return;
             }
-
-            console.log("Value: "+bod.toString());
+            console.log("Value: " + bod.toString());
             if (typeof bod === "object") {
                 printObject(bod);
             }
-
             // Request object by handles (and it's sub-properties)
-            this.client.mirrorObject(bod, 3, (err, mirror) => {
+            _this.client.mirrorObject(bod, 3, function (err, mirror) {
                 if (mirror) {
                     if (typeof mirror === "object") {
                         printObject(mirror);
@@ -288,52 +254,27 @@ class JsDebugSession {
                     console.log("undefined");
                 }
             });
-
         });
-    }
-
-    handleBreak(breakInfo:nodeproto.BreakResponse) {
+    };
+    JsDebugSession.prototype.handleBreak = function (breakInfo) {
         this.client.currentSourceLine = breakInfo.sourceLine;
         this.client.currentSourceLineText = breakInfo.sourceLineText;
         this.client.currentSourceColumn = breakInfo.sourceColumn;
         this.client.currentFrame = 0;
         this.client.currentScript = breakInfo.script && breakInfo.script.name;
-
         console.log(SourceInfo(breakInfo));
-// TODO: watchers        
-    }
-}
-
-interface FileRange {
-    file?:string;
-    min: ed.ILineInfo;
-    lim: ed.ILineInfo;
-}
-
-interface FileRanges {
-    file: string;
-    locs: FileRange[];
-}
-
-function formatDiag(file:string, project: ed.Project, diag: ts.Diagnostic) {
+        // TODO: watchers        
+    };
+    return JsDebugSession;
+})();
+function formatDiag(file, project, diag) {
     return {
         min: project.compilerService.host.positionToZeroBasedLineCol(file, diag.start),
         len: diag.length,
-        text: diag.messageText,
+        text: diag.messageText
     };
 }
-
-interface PendingErrorCheck {
-    filename: string;
-    project: ed.Project;
-}
-
-interface IdFile {
-    id: number;
-    fileName: string;
-}
-
-function allEditsBeforePos(edits: ts.TextChange[], pos: number) {
+function allEditsBeforePos(edits, pos) {
     for (var i = 0, len = edits.length; i < len; i++) {
         if (ts.textSpanEnd(edits[i].span) >= pos) {
             return false;
@@ -341,70 +282,60 @@ function allEditsBeforePos(edits: ts.TextChange[], pos: number) {
     }
     return true;
 }
-
-class Session {
-    projectService = new ed.ProjectService();
-    prettyJSON = false;
-    pendingOperation = false;
-    fileHash: ts.Map<number> = {};
-    abbrevTable: ts.Map<string>;
-    fetchedAbbrev = false;
-    nextFileId = 1;
-    debugSession: JsDebugSession;
-    protocol: nodeproto.Protocol;
-    errorTimer: NodeJS.Timer;
-    immediateId: any;
-    changeSeq = 0;
-
-    constructor(useProtocol = false) {
+var Session = (function () {
+    function Session(useProtocol) {
+        if (useProtocol === void 0) { useProtocol = false; }
+        this.projectService = new ed.ProjectService();
+        this.prettyJSON = false;
+        this.pendingOperation = false;
+        this.fileHash = {};
+        this.fetchedAbbrev = false;
+        this.nextFileId = 1;
+        this.changeSeq = 0;
         this.initAbbrevTable();
         if (useProtocol) {
             this.initProtocol();
         }
     }
-
-    initProtocol() {
+    Session.prototype.initProtocol = function () {
+        var _this = this;
         this.protocol = new nodeproto.Protocol();
         // note: onResponse was named by nodejs authors; we are re-purposing the Protocol
         // class in this case so that it supports a server instead of a client
-        this.protocol.onResponse = (pkt) => {
-            this.handleRequest(pkt);
+        this.protocol.onResponse = function (pkt) {
+            _this.handleRequest(pkt);
         };
-    }
-
-    handleRequest(req: nodeproto.Packet) {
+    };
+    Session.prototype.handleRequest = function (req) {
         // TODO: so far requests always come in on stdin
-    }
-
-    send(msg: nodeproto.Message) {
-        var json: string;
+    };
+    Session.prototype.send = function (msg) {
+        var json;
         if (this.prettyJSON) {
             json = JSON.stringify(msg, null, " ");
         }
         else {
             json = JSON.stringify(msg);
         }
-        console.log('Content-Length: ' + (1 + Buffer.byteLength(json, 'utf8')) +
-            '\r\n\r\n' + json);
-    }
-
-    event(info: any, eventName: string) {
-        var ev: nodeproto.Event = {
+        console.log('Content-Length: ' + (1 + Buffer.byteLength(json, 'utf8')) + '\r\n\r\n' + json);
+    };
+    Session.prototype.event = function (info, eventName) {
+        var ev = {
             seq: 0,
             type: "event",
             event: eventName,
-            body: info,
+            body: info
         };
         this.send(ev);
-    }
-
-    response(info: any, reqSeq = 0, errorMsg?: string) {
-        var res: nodeproto.Response = {
+    };
+    Session.prototype.response = function (info, reqSeq, errorMsg) {
+        if (reqSeq === void 0) { reqSeq = 0; }
+        var res = {
             seq: 0,
             type: "response",
             request_seq: reqSeq,
-            success: !errorMsg,
-        }
+            success: !errorMsg
+        };
         if (!errorMsg) {
             res.body = info;
         }
@@ -412,9 +343,8 @@ class Session {
             res.message = errorMsg;
         }
         this.send(res);
-    }
-
-    initAbbrevTable() {
+    };
+    Session.prototype.initAbbrevTable = function () {
         this.abbrevTable = {
             name: "n",
             kind: "k",
@@ -425,11 +355,10 @@ class Session {
             line: "l",
             offset: "o",
             "interface": "i",
-            "function": "fn",
+            "function": "fn"
         };
-    }
-
-    encodeFilename(filename: string): number | IdFile {
+    };
+    Session.prototype.encodeFilename = function (filename) {
         var id = ts.lookUp(this.fileHash, filename);
         if (!id) {
             id = this.nextFileId++;
@@ -439,9 +368,8 @@ class Session {
         else {
             return id;
         }
-    }
-
-    abbreviate(obj: any) {
+    };
+    Session.prototype.abbreviate = function (obj) {
         if (this.fetchedAbbrev && (!this.prettyJSON)) {
             for (var p in obj) {
                 if (obj.hasOwnProperty(p)) {
@@ -453,9 +381,8 @@ class Session {
                 }
             }
         }
-    }
-
-    output(info, errorMsg?: string) {
+    };
+    Session.prototype.output = function (info, errorMsg) {
         if (this.protocol) {
             this.response(info, 0, errorMsg);
         }
@@ -466,7 +393,8 @@ class Session {
             else {
                 console.log(JSON.stringify(errorMsg));
             }
-        } else {
+        }
+        else {
             if (!errorMsg) {
                 var infoStr = JSON.stringify(info).trim();
                 // [8 digits of length,infoStr] + '\n'
@@ -482,31 +410,29 @@ class Session {
                 console.log(JSON.stringify("error: " + errorMsg));
             }
         }
-    }
-
-    semanticCheck(file: string, project: ed.Project) {
+    };
+    Session.prototype.semanticCheck = function (file, project) {
         var diags = project.compilerService.languageService.getSemanticDiagnostics(file);
         if (diags) {
-            var bakedDiags = diags.map((diag) => formatDiag(file, project, diag));
+            var bakedDiags = diags.map(function (diag) { return formatDiag(file, project, diag); });
             this.event({ fileName: file, diagnostics: bakedDiags }, "semanticDiag");
         }
-    }
-
-    syntacticCheck(file: string, project: ed.Project) {
+    };
+    Session.prototype.syntacticCheck = function (file, project) {
         var diags = project.compilerService.languageService.getSyntacticDiagnostics(file);
         if (diags) {
-            var bakedDiags = diags.map((diag) => formatDiag(file, project, diag));
+            var bakedDiags = diags.map(function (diag) { return formatDiag(file, project, diag); });
             this.event({ fileName: file, diagnostics: bakedDiags }, "syntaxDiag");
         }
-    }
-
-    errorCheck(file: string, project: ed.Project) {
+    };
+    Session.prototype.errorCheck = function (file, project) {
         this.syntacticCheck(file, project);
         this.semanticCheck(file, project);
-    }
-
-    updateErrorCheck(checkList: PendingErrorCheck[], seq: number,
-        matchSeq: (seq: number) => boolean, ms = 1500, followMs = 200) {
+    };
+    Session.prototype.updateErrorCheck = function (checkList, seq, matchSeq, ms, followMs) {
+        var _this = this;
+        if (ms === void 0) { ms = 1500; }
+        if (followMs === void 0) { followMs = 200; }
         if (followMs > ms) {
             followMs = ms;
         }
@@ -518,97 +444,94 @@ class Session {
             this.immediateId = undefined;
         }
         var index = 0;
-        var checkOne = () => {
+        var checkOne = function () {
             if (matchSeq(seq)) {
                 var checkSpec = checkList[index++];
-                this.syntacticCheck(checkSpec.filename, checkSpec.project);
-                this.immediateId = setImmediate(() => {
-                    this.semanticCheck(checkSpec.filename, checkSpec.project);
-                    this.immediateId = undefined;
+                _this.syntacticCheck(checkSpec.filename, checkSpec.project);
+                _this.immediateId = setImmediate(function () {
+                    _this.semanticCheck(checkSpec.filename, checkSpec.project);
+                    _this.immediateId = undefined;
                     if (checkList.length > index) {
-                        this.errorTimer = setTimeout(checkOne, followMs);
+                        _this.errorTimer = setTimeout(checkOne, followMs);
                     }
                     else {
-                        this.errorTimer = undefined;
+                        _this.errorTimer = undefined;
                     }
                 });
             }
-        }
+        };
         if ((checkList.length > index) && (matchSeq(seq))) {
             this.errorTimer = setTimeout(checkOne, ms);
         }
-    }
-
-    listen() {
+    };
+    Session.prototype.listen = function () {
+        var _this = this;
         //console.log("up...");
-        rl.on('line', (input: string) => {
+        rl.on('line', function (input) {
             var cmd = input.trim();
-            var line: number, col: number, file: string;
-            var tmpfile: string;
-            var pos: number;
-            var m: string[];
-            var project: ed.Project;
-            var compilerService: ed.CompilerService;
-
+            var line, col, file;
+            var tmpfile;
+            var pos;
+            var m;
+            var project;
+            var compilerService;
             if (m = cmd.match(/^definition (\d+) (\d+) (.*)$/)) {
                 line = parseInt(m[1]);
                 col = parseInt(m[2]);
                 file = ts.normalizePath(m[3]);
-                project = this.projectService.getProjectForFile(file);
+                project = _this.projectService.getProjectForFile(file);
                 if (project) {
                     var compilerService = project.compilerService;
                     pos = compilerService.host.lineColToPosition(file, line, col);
                     var locs = compilerService.languageService.getDefinitionAtPosition(file, pos);
                     if (locs) {
-                        var info = locs.map(def => ({
+                        var info = locs.map(function (def) { return ({
                             file: def && def.fileName,
-                            min: def &&
-                            compilerService.host.positionToZeroBasedLineCol(def.fileName, def.textSpan.start),
-                            lim: def &&
-                            compilerService.host.positionToZeroBasedLineCol(def.fileName, ts.textSpanEnd(def.textSpan))
-                        }));
-                        this.output(info[0] || null);
+                            min: def && compilerService.host.positionToZeroBasedLineCol(def.fileName, def.textSpan.start),
+                            lim: def && compilerService.host.positionToZeroBasedLineCol(def.fileName, ts.textSpanEnd(def.textSpan))
+                        }); });
+                        _this.output(info[0] || null);
                     }
                     else {
-                        this.output(undefined, "could not find def");
+                        _this.output(undefined, "could not find def");
                     }
                 }
                 else {
-                    this.output(undefined, "no project for " + file);
+                    _this.output(undefined, "no project for " + file);
                 }
             }
             else if (m = cmd.match(/^dbg start$/)) {
-                this.debugSession = new JsDebugSession();
+                _this.debugSession = new JsDebugSession();
             }
             else if (m = cmd.match(/^dbg cont$/)) {
-                if (this.debugSession) {
-                    this.debugSession.cont((err, body, res) => {
+                if (_this.debugSession) {
+                    _this.debugSession.cont(function (err, body, res) {
                     });
                 }
             }
             else if (m = cmd.match(/^dbg src$/)) {
-                if (this.debugSession) {
-                    this.debugSession.listSrc();
+                if (_this.debugSession) {
+                    _this.debugSession.listSrc();
                 }
             }
             else if (m = cmd.match(/^dbg brk (\d+) (.*)$/)) {
                 line = parseInt(m[1]);
                 file = ts.normalizePath(m[2]);
-                if (this.debugSession) {
-                    this.debugSession.setBreakpointOnLine(line, file);
+                if (_this.debugSession) {
+                    _this.debugSession.setBreakpointOnLine(line, file);
                 }
             }
             else if (m = cmd.match(/^dbg eval (.*)$/)) {
                 var code = m[1];
-                if (this.debugSession) {
-                    this.debugSession.evaluate(code);
+                if (_this.debugSession) {
+                    _this.debugSession.evaluate(code);
                 }
             }
             else if (m = cmd.match(/^rename (\d+) (\d+) (.*)$/)) {
                 line = parseInt(m[1]);
                 col = parseInt(m[2]);
                 file = ts.normalizePath(m[3]);
-                project = this.projectService.getProjectForFile(file);
+                project = _this.projectService.getProjectForFile(file);
                 if (project) {
                     var compilerService = project.compilerService;
                     pos = compilerService.host.lineColToPosition(file, line, col);
@@ -617,11 +540,11 @@ class Session {
                         if (renameInfo.canRename) {
                             var renameLocs = compilerService.languageService.findRenameLocations(file, pos, false, false);
                             if (renameLocs) {
-                                var bakedRenameLocs = renameLocs.map(loc=> ({
+                                var bakedRenameLocs = renameLocs.map(function (loc) { return ({
                                     file: loc.fileName,
                                     min: compilerService.host.positionToZeroBasedLineCol(loc.fileName, loc.textSpan.start),
-                                    lim: compilerService.host.positionToZeroBasedLineCol(loc.fileName, ts.textSpanEnd(loc.textSpan)),
-                                })).sort((a, b) => {
+                                    lim: compilerService.host.positionToZeroBasedLineCol(loc.fileName, ts.textSpanEnd(loc.textSpan))
+                                }); }).sort(function (a, b) {
                                     if (a.file < b.file) {
                                         return -1;
                                     }
@@ -640,8 +563,8 @@ class Session {
                                             return b.min.offset - a.min.offset;
                                         }
                                     }
-                                }).reduce<FileRanges[]>((accum: FileRanges[], cur: FileRange) => {
-                                    var curFileAccum: FileRanges;
+                                }).reduce(function (accum, cur) {
+                                    var curFileAccum;
                                     if (accum.length > 0) {
                                         curFileAccum = accum[accum.length - 1];
                                         if (curFileAccum.file != cur.file) {
@@ -655,18 +578,18 @@ class Session {
                                     curFileAccum.locs.push({ min: cur.min, lim: cur.lim });
                                     return accum;
                                 }, []);
-                                this.output({ info: renameInfo, locs: bakedRenameLocs });
+                                _this.output({ info: renameInfo, locs: bakedRenameLocs });
                             }
                             else {
-                                this.output([]);
+                                _this.output([]);
                             }
                         }
                         else {
-                            this.output(undefined, renameInfo.localizedErrorMessage);
+                            _this.output(undefined, renameInfo.localizedErrorMessage);
                         }
                     }
                     else {
-                        this.output(undefined, "no rename information at cursor");
+                        _this.output(undefined, "no rename information at cursor");
                     }
                 }
             }
@@ -674,13 +597,12 @@ class Session {
                 line = parseInt(m[1]);
                 col = parseInt(m[2]);
                 file = ts.normalizePath(m[3]);
-                project = this.projectService.getProjectForFile(file);
+                project = _this.projectService.getProjectForFile(file);
                 if (project) {
                     var compilerService = project.compilerService;
                     pos = compilerService.host.lineColToPosition(file, line, col);
                     var quickInfo = compilerService.languageService.getQuickInfoAtPosition(file, pos);
-                    var typeLoc:any;
-
+                    var typeLoc;
                     if (quickInfo && (quickInfo.kind == "var") || (quickInfo.kind == "local var")) {
                         var typeName = parseTypeName(quickInfo.displayParts);
                         if (typeName) {
@@ -689,26 +611,25 @@ class Session {
                             if (navItem) {
                                 typeLoc = {
                                     fileName: navItem.fileName,
-                                    min: compilerService.host.positionToZeroBasedLineCol(navItem.fileName,
-                                        navItem.textSpan.start),
+                                    min: compilerService.host.positionToZeroBasedLineCol(navItem.fileName, navItem.textSpan.start)
                                 };
                             }
                         }
                     }
                     if (typeLoc) {
-                        this.output(typeLoc);
+                        _this.output(typeLoc);
                     }
                     else {
-                        this.output(undefined,"no info at this location");
+                        _this.output(undefined, "no info at this location");
                     }
                 }
                 else {
-                    this.output(undefined, "no project for " + file);
+                    _this.output(undefined, "no project for " + file);
                 }
             }
             else if (m = cmd.match(/^open (.*)$/)) {
                 file = ts.normalizePath(m[1]);
-                this.projectService.openSpecifiedFile(file);
+                _this.projectService.openSpecifiedFile(file);
             }
             else if (m = cmd.match(/^references (\d+) (\d+) (.*)$/)) {
                 line = parseInt(m[1]);
@@ -716,7 +637,7 @@ class Session {
                 file = ts.normalizePath(m[3]);
                 // TODO: get all projects for this file; report refs for all projects deleting duplicates
                 // can avoid duplicates by eliminating same ref file from subsequent projects
-                project = this.projectService.getProjectForFile(file);
+                project = _this.projectService.getProjectForFile(file);
                 if (project) {
                     compilerService = project.compilerService;
                     pos = compilerService.host.lineColToPosition(file, line, col);
@@ -726,30 +647,28 @@ class Session {
                         if (nameInfo) {
                             var displayString = ts.displayPartsToString(nameInfo.displayParts);
                             var nameSpan = nameInfo.textSpan;
-                            var nameColStart =
-                                compilerService.host.positionToZeroBasedLineCol(file, nameSpan.start).offset;
-                            var nameText =
-                                compilerService.host.getScriptSnapshot(file).getText(nameSpan.start, ts.textSpanEnd(nameSpan));
-                            var bakedRefs = refs.map((ref) => {
+                            var nameColStart = compilerService.host.positionToZeroBasedLineCol(file, nameSpan.start).offset;
+                            var nameText = compilerService.host.getScriptSnapshot(file).getText(nameSpan.start, ts.textSpanEnd(nameSpan));
+                            var bakedRefs = refs.map(function (ref) {
                                 var min = compilerService.host.positionToZeroBasedLineCol(ref.fileName, ref.textSpan.start);
-                                var refLineSpan=compilerService.host.lineToTextSpan(ref.fileName,min.line);
-                                var snap=compilerService.host.getScriptSnapshot(ref.fileName);
-                                var lineText=snap.getText(refLineSpan.start,ts.textSpanEnd(refLineSpan)).replace(/\r|\n/g,"");
+                                var refLineSpan = compilerService.host.lineToTextSpan(ref.fileName, min.line);
+                                var snap = compilerService.host.getScriptSnapshot(ref.fileName);
+                                var lineText = snap.getText(refLineSpan.start, ts.textSpanEnd(refLineSpan)).replace(/\r|\n/g, "");
                                 return {
                                     file: ref.fileName,
                                     min: min,
                                     lineText: lineText,
-                                    lim: compilerService.host.positionToZeroBasedLineCol(ref.fileName, ts.textSpanEnd(ref.textSpan)),
+                                    lim: compilerService.host.positionToZeroBasedLineCol(ref.fileName, ts.textSpanEnd(ref.textSpan))
                                 };
                             }).sort(compareFileMin);
-                            this.output([bakedRefs, nameText, nameColStart, displayString]);
+                            _this.output([bakedRefs, nameText, nameColStart, displayString]);
                         }
                         else {
-                            this.output(undefined, "no references at this position");
+                            _this.output(undefined, "no references at this position");
                         }
                     }
                     else {
-                        this.output(undefined, "no references at this position");
+                        _this.output(undefined, "no references at this position");
                     }
                 }
             }
@@ -757,7 +676,7 @@ class Session {
                 line = parseInt(m[1]);
                 col = parseInt(m[2]);
                 file = ts.normalizePath(m[3]);
-                project = this.projectService.getProjectForFile(file);
+                project = _this.projectService.getProjectForFile(file);
                 if (project) {
                     compilerService = project.compilerService;
                     pos = compilerService.host.lineColToPosition(file, line, col);
@@ -765,13 +684,13 @@ class Session {
                     if (quickInfo) {
                         var displayString = ts.displayPartsToString(quickInfo.displayParts);
                         var docString = ts.displayPartsToString(quickInfo.documentation);
-                        this.output({
+                        _this.output({
                             info: displayString,
-                            doc: docString,
+                            doc: docString
                         });
                     }
                     else {
-                        this.output(undefined, "no info")
+                        _this.output(undefined, "no info");
                     }
                 }
             }
@@ -782,35 +701,31 @@ class Session {
                 var endLine = parseInt(m[3]);
                 var endCol = parseInt(m[4]);
                 file = ts.normalizePath(m[5]);
-
-                project = this.projectService.getProjectForFile(file);
+                project = _this.projectService.getProjectForFile(file);
                 if (project) {
                     compilerService = project.compilerService;
                     pos = compilerService.host.lineColToPosition(file, line, col);
                     var endPos = compilerService.host.lineColToPosition(file, endLine, endCol);
-                    var edits: ts.TextChange[];
+                    var edits;
                     // TODO: avoid duplicate code (with formatonkey)
                     try {
-                        edits = compilerService.languageService.getFormattingEditsForRange(file, pos, endPos,
-                            compilerService.formatCodeOptions);
+                        edits = compilerService.languageService.getFormattingEditsForRange(file, pos, endPos, compilerService.formatCodeOptions);
                     }
                     catch (err) {
-                        edits=undefined;
+                        edits = undefined;
                     }
                     if (edits) {
-                        var bakedEdits=edits.map((edit)=>{
+                        var bakedEdits = edits.map(function (edit) {
                             return {
-                                min: compilerService.host.positionToZeroBasedLineCol(file,
-                                                                                     edit.span.start),
-                                lim: compilerService.host.positionToZeroBasedLineCol(file,
-                                                                                     ts.textSpanEnd(edit.span)),
-                                newText: edit.newText?edit.newText:""
+                                min: compilerService.host.positionToZeroBasedLineCol(file, edit.span.start),
+                                lim: compilerService.host.positionToZeroBasedLineCol(file, ts.textSpanEnd(edit.span)),
+                                newText: edit.newText ? edit.newText : ""
                             };
                         });
-                        this.output(bakedEdits);
+                        _this.output(bakedEdits);
                     }
                     else {
-                        this.output(undefined,"no edits")
+                        _this.output(undefined, "no edits");
                     }
                 }
             }
@@ -818,23 +733,21 @@ class Session {
                 line = parseInt(m[1]);
                 col = parseInt(m[2]);
                 file = ts.normalizePath(m[4]);
-                project = this.projectService.getProjectForFile(file);
+                project = _this.projectService.getProjectForFile(file);
                 if (project) {
                     compilerService = project.compilerService;
                     pos = compilerService.host.lineColToPosition(file, line, col);
                     var key = JSON.parse(m[3].substring(1, m[3].length - 1));
-
-                    var edits: ts.TextChange[];
+                    var edits;
                     try {
-                        edits = compilerService.languageService.getFormattingEditsAfterKeystroke(file, pos, key,
-                            compilerService.formatCodeOptions);
-                        if ((key == "\n")&& ((!edits)||(edits.length==0)||allEditsBeforePos(edits,pos))) {
+                        edits = compilerService.languageService.getFormattingEditsAfterKeystroke(file, pos, key, compilerService.formatCodeOptions);
+                        if ((key == "\n") && ((!edits) || (edits.length == 0) || allEditsBeforePos(edits, pos))) {
                             // TODO: get this from host
-                            var editorOptions: ts.EditorOptions = {
+                            var editorOptions = {
                                 IndentSize: 4,
                                 TabSize: 4,
                                 NewLineCharacter: "\n",
-                                ConvertTabsToSpaces: true,
+                                ConvertTabsToSpaces: true
                             };
                             var indentPosition = compilerService.languageService.getIndentationAtPosition(file, pos, editorOptions);
                             var spaces = generateSpaces(indentPosition);
@@ -844,22 +757,20 @@ class Session {
                         }
                     }
                     catch (err) {
-                        edits=undefined;
+                        edits = undefined;
                     }
                     if (edits) {
-                        var bakedEdits=edits.map((edit)=>{
+                        var bakedEdits = edits.map(function (edit) {
                             return {
-                                min: compilerService.host.positionToZeroBasedLineCol(file,
-                                                                                     edit.span.start),
-                                lim: compilerService.host.positionToZeroBasedLineCol(file,
-                                                                                     ts.textSpanEnd(edit.span)),
-                                newText: edit.newText?edit.newText:""
+                                min: compilerService.host.positionToZeroBasedLineCol(file, edit.span.start),
+                                lim: compilerService.host.positionToZeroBasedLineCol(file, ts.textSpanEnd(edit.span)),
+                                newText: edit.newText ? edit.newText : ""
                             };
                         });
-                        this.output(bakedEdits);
+                        _this.output(bakedEdits);
                     }
                     else {
-                        this.output(undefined,"no edits")
+                        _this.output(undefined, "no edits");
                     }
                 }
             }
@@ -871,8 +782,8 @@ class Session {
                 if (m[3]) {
                     prefix = m[3].substring(1, m[3].length - 1);
                 }
-                project = this.projectService.getProjectForFile(file);
-                var completions: ts.CompletionInfo = undefined;
+                project = _this.projectService.getProjectForFile(file);
+                var completions = undefined;
                 if (project) {
                     compilerService = project.compilerService;
                     pos = compilerService.host.lineColToPosition(file, line, col);
@@ -884,9 +795,9 @@ class Session {
                             completions = undefined;
                         }
                         if (completions) {
-                            var compressedEntries = completions.entries.reduce((accum: ts.CompletionEntryDetails[], entry: ts.CompletionEntry) => {
+                            var compressedEntries = completions.entries.reduce(function (accum, entry) {
                                 if (entry.name.indexOf(prefix) == 0) {
-                                    var protoEntry = <ts.CompletionEntryDetails>{};
+                                    var protoEntry = {};
                                     protoEntry.name = entry.name;
                                     protoEntry.kind = entry.kind;
                                     if (entry.kindModifiers && (entry.kindModifiers.length > 0)) {
@@ -900,165 +811,153 @@ class Session {
                                 }
                                 return accum;
                             }, []);
-                            this.output(compressedEntries);
+                            _this.output(compressedEntries);
                         }
                     }
                 }
                 if (!completions) {
-                    this.output(undefined, "no completions");
+                    _this.output(undefined, "no completions");
                 }
             }
             else if (m = cmd.match(/^geterr (\d+) (.*)$/)) {
                 var ms = parseInt(m[1]);
-                var rawFiles=m[2];
-                var files=rawFiles.split(';');
-                var checkList = files.reduce((accum: PendingErrorCheck[], filename: string) => {
-                    filename=ts.normalizePath(filename);
-                    project = this.projectService.getProjectForFile(filename);
+                var rawFiles = m[2];
+                var files = rawFiles.split(';');
+                var checkList = files.reduce(function (accum, filename) {
+                    filename = ts.normalizePath(filename);
+                    project = _this.projectService.getProjectForFile(filename);
                     if (project) {
                         accum.push({ filename: filename, project: project });
                     }
                     return accum;
                 }, []);
                 if (checkList.length > 0) {
-                    this.updateErrorCheck(checkList,this.changeSeq,(n)=>n==this.changeSeq,
-                                          ms)
+                    _this.updateErrorCheck(checkList, _this.changeSeq, function (n) { return n == _this.changeSeq; }, ms);
                 }
             }
-            else if (m=cmd.match(/^change (\d+) (\d+) (\d+) (\d+) (\{\".*\"\})?\s*(.*)$/)) {
+            else if (m = cmd.match(/^change (\d+) (\d+) (\d+) (\d+) (\{\".*\"\})?\s*(.*)$/)) {
                 line = parseInt(m[1]);
-                col  = parseInt(m[2]);
-                var deleteLen=parseInt(m[3]);
-                var insertLen=parseInt(m[4]);
-                var insertString:string;
-
+                col = parseInt(m[2]);
+                var deleteLen = parseInt(m[3]);
+                var insertLen = parseInt(m[4]);
+                var insertString;
                 if (insertLen) {
-                    insertString=JSON.parse(m[5].substring(1,m[5].length-1));
+                    insertString = JSON.parse(m[5].substring(1, m[5].length - 1));
                 }
-
                 file = ts.normalizePath(m[6]);
-                project=this.projectService.getProjectForFile(file);
+                project = _this.projectService.getProjectForFile(file);
                 if (project) {
                     compilerService = project.compilerService;
                     pos = compilerService.host.lineColToPosition(file, line, col);
                     if (pos >= 0) {
-                        var checkRefs=false;
-                        endLine=compilerService.host.positionToZeroBasedLineCol(file,pos+deleteLen).line+1;
-                        if ((endLine == line) && ((!insertString)||(0>insertString.indexOf('\n')))) {
-                            checkRefs=compilerService.host.lineAffectsRefs(file,line);
+                        var checkRefs = false;
+                        endLine = compilerService.host.positionToZeroBasedLineCol(file, pos + deleteLen).line + 1;
+                        if ((endLine == line) && ((!insertString) || (0 > insertString.indexOf('\n')))) {
+                            checkRefs = compilerService.host.lineAffectsRefs(file, line);
                         }
                         else {
-                            checkRefs=true;
+                            checkRefs = true;
                         }
                         compilerService.host.editScript(file, pos, pos + deleteLen, insertString);
                         if (!checkRefs) {
-                            checkRefs=compilerService.host.lineAffectsRefs(file,line);
+                            checkRefs = compilerService.host.lineAffectsRefs(file, line);
                         }
                         if (checkRefs) {
-                            // TODO: recompute references for file
                         }
-                        this.changeSeq++;
+                        _this.changeSeq++;
                     }
-                    // TODO: report async error
                 }
             }
             else if (m = cmd.match(/^reload (.*) from (.*)$/)) {
-                file=ts.normalizePath(m[1]);
-                tmpfile=ts.normalizePath(m[2]);
-                project=this.projectService.getProjectForFile(file);
+                file = ts.normalizePath(m[1]);
+                tmpfile = ts.normalizePath(m[2]);
+                project = _this.projectService.getProjectForFile(file);
                 if (project) {
-                    this.changeSeq++;
+                    _this.changeSeq++;
                     // make sure no changes happen before this one is finished
-                    project.compilerService.host.reloadScript(file, tmpfile, () => {
-                        this.output({ ack: true });
-                    }); 
-                }                
-            }
-            else if (m = cmd.match(/^save (.*) to (.*)$/)) {
-                file = ts.normalizePath(m[1])
-                tmpfile = ts.normalizePath(m[2])
-                project=this.projectService.getProjectForFile(file);
-                if (project) {
-                    project.compilerService.host.saveTo(file,tmpfile);
+                    project.compilerService.host.reloadScript(file, tmpfile, function () {
+                        _this.output({ ack: true });
+                    });
                 }
             }
-            else if (m=cmd.match(/^navto (\{.*\}) (.*)$/)) {
-                var searchTerm=m[1];
-                searchTerm=searchTerm.substring(1,searchTerm.length-1);
-                file = ts.normalizePath(m[2]);
-                project=this.projectService.getProjectForFile(file);
+            else if (m = cmd.match(/^save (.*) to (.*)$/)) {
+                file = ts.normalizePath(m[1]);
+                tmpfile = ts.normalizePath(m[2]);
+                project = _this.projectService.getProjectForFile(file);
                 if (project) {
-                    compilerService=project.compilerService;
-                    var navItems: ts.NavigateToItem[];
-                    var cancellationToken=<ed.CancellationToken>compilerService.host.getCancellationToken();
-                    if (this.pendingOperation) {
+                    project.compilerService.host.saveTo(file, tmpfile);
+                }
+            }
+            else if (m = cmd.match(/^navto (\{.*\}) (.*)$/)) {
+                var searchTerm = m[1];
+                searchTerm = searchTerm.substring(1, searchTerm.length - 1);
+                file = ts.normalizePath(m[2]);
+                project = _this.projectService.getProjectForFile(file);
+                if (project) {
+                    compilerService = project.compilerService;
+                    var navItems;
+                    var cancellationToken = compilerService.host.getCancellationToken();
+                    if (_this.pendingOperation) {
                         cancellationToken.cancel();
                         cancellationToken.reset();
                     }
                     try {
-                        this.pendingOperation=true;
+                        _this.pendingOperation = true;
                         navItems = sortNavItems(compilerService.languageService.getNavigateToItems(searchTerm));
                     }
                     catch (err) {
-                        navItems=undefined;
+                        navItems = undefined;
                     }
-                    this.pendingOperation=false;
+                    _this.pendingOperation = false;
                     if (navItems) {
-                        var bakedNavItems = navItems.map((navItem)=>{
-                            var min =compilerService.host.positionToZeroBasedLineCol(navItem.fileName,
-                                                                                     navItem.textSpan.start);
-                            this.abbreviate(min);
-                            var bakedItem:any = {
+                        var bakedNavItems = navItems.map(function (navItem) {
+                            var min = compilerService.host.positionToZeroBasedLineCol(navItem.fileName, navItem.textSpan.start);
+                            _this.abbreviate(min);
+                            var bakedItem = {
                                 name: navItem.name,
                                 kind: navItem.kind,
-                                fileName: this.encodeFilename(navItem.fileName),
-                                min: min,
+                                fileName: _this.encodeFilename(navItem.fileName),
+                                min: min
                             };
-                            if (navItem.containerName&&(navItem.containerName.length>0)) {
-                                bakedItem.containerName=navItem.containerName;
+                            if (navItem.containerName && (navItem.containerName.length > 0)) {
+                                bakedItem.containerName = navItem.containerName;
                             }
-                            if (navItem.containerKind&&(navItem.containerKind.length>0)) {
-                                bakedItem.containerKind=navItem.containerKind;
+                            if (navItem.containerKind && (navItem.containerKind.length > 0)) {
+                                bakedItem.containerKind = navItem.containerKind;
                             }
-                            this.abbreviate(bakedItem);
+                            _this.abbreviate(bakedItem);
                             return bakedItem;
                         });
-                        
-                        this.output(bakedNavItems);
+                        _this.output(bakedNavItems);
                     }
                     else {
-                        this.output(undefined,"no nav items");
+                        _this.output(undefined, "no nav items");
                     }
                 }
             }
-            else if (m=cmd.match(/^abbrev/)) {
-                this.fetchedAbbrev=true;
-                this.output(this.abbrevTable);
+            else if (m = cmd.match(/^abbrev/)) {
+                _this.fetchedAbbrev = true;
+                _this.output(_this.abbrevTable);
             }
             else if (m = cmd.match(/^pretty/)) {
-                this.prettyJSON=true;
+                _this.prettyJSON = true;
             }
             else if (m = cmd.match(/^printproj/)) {
-                this.projectService.printProjects();
+                _this.projectService.printProjects();
             }
             else if (m = cmd.match(/^fileproj (.*)$/)) {
                 file = ts.normalizePath(m[1]);
-                this.projectService.printProjectsForFile(file);
+                _this.projectService.printProjectsForFile(file);
             }
             else {
-                this.output(undefined,"Unrecognized command "+cmd);
+                _this.output(undefined, "Unrecognized command " + cmd);
             }
         });
-
-        rl.on('close', function() {
+        rl.on('close', function () {
             console.log("Exiting...");
             process.exit(0);
         });
-    }
-}
-
+    };
+    return Session;
+})();
 new Session(true).listen();
-
-
-
-
