@@ -95,8 +95,13 @@ class Ref:
 class RefInfo:
     def __init__(self,firstLine):
         self.refMap={}
-        self.currentRefLine=firstLine
-                
+        self.currentRefLine=None
+        self.firstLine=firstLine
+        self.lastLine=None
+
+    def setLastLine(self,lastLine):
+       self.lastLine=lastLine
+
     def addMapping(self,line,target):
         self.refMap[line]=target
 
@@ -115,14 +120,39 @@ class RefInfo:
         self.currentRefLine=line
 
     def getRefLine(self):
-        return self.currentRefLine
+       return self.currentRefLine
 
+    def nextRefLine(self):
+      currentMapping=self.getCurrentMapping()
+      if (not self.currentRefLine) or (not currentMapping):
+         self.currentRefLine=self.firstLine
+      else:
+         (filename,l,c,p,n)=currentMapping.asTuple()
+         if n:
+            self.currentRefLine=n
+         else:
+            self.currentRefLine=firstLine
+      return self.currentRefLine
+
+    def prevRefLine(self):
+      currentMapping=self.getCurrentMapping()
+      if (not self.currentRefLine) or (not currentMapping):
+         self.currentRefLine=self.lastLine
+      else:
+         (filename,l,c,p,n)=currentMapping.asTuple()
+         if p:
+            self.currentRefLine=p
+         else:
+            self.currentRefLine=self.lastLine
+
+      return self.currentRefLine
+          
     def asValue(self):
         vmap={}
         keys=self.refMap.keys()
         for key in keys:
             vmap[key]=self.refMap[key].asTuple()
-        return (vmap,self.currentRefLine)
+        return (vmap,self.currentRefLine,self.firstLine,self.lastLine)
 
 # build a reference from a serialized reference
 def buildRef(refTuple):
@@ -133,7 +163,7 @@ def buildRef(refTuple):
 
 # build a ref info from a serialized ref info
 def buildRefInfo(refInfoV):
-    refInfo=RefInfo(refInfoV[1])
+    refInfo=RefInfo(refInfoV[1],refInfoV[2],refInfoV[3])
     dict=refInfoV[0]
     for key in dict.keys():
         refInfo.addMapping(key,buildRef(dict[key]))
@@ -964,37 +994,28 @@ def extractLineCol(lc):
 
 # place the caret on the currently-referenced line and
 # update the reference line to go to next
-def updateRefLine(refInfo,curLine,nextLine,view):
-    print("update ref line {0} {1}".format(curLine,nextLine))
+def updateRefLine(refInfo,curLine,view):
     view.erase_regions("curref")
-    refInfo.setRefLine(nextLine)    
-    caretPos=view.text_point(int(curLine),0)
+    caretPos=view.text_point(curLine,0)
     view.add_regions("curref",[sublime.Region(caretPos,caretPos+1)],
                      "keyword","Packages/TypeScript/icons/arrow-right3.png",
                      sublime.HIDDEN)
 
 # if cursor is on reference line, go to (filename, line, col) referenced by that line    
 class TypescriptGoToRefCommand(sublime_plugin.TextCommand):
-    def run(self,text,forward=True):
+    def run(self,text):
         pos = self.view.sel()[0].begin()
         cursor = self.view.rowcol(pos)
-        line=str(cursor[0])
         refInfo=cli.getRefInfo()
-        if refInfo.containsMapping(line):
-            (filename,l,c,p,n)=refInfo.getMapping(line).asTuple()
-            if forward:
-                updateRefLine(refInfo,line,n,self.view)
-            else:
-                updateRefLine(refInfo,line,p,self.view)
-            print(cmdLineColPos(self.view,self.view.sel()[0].begin(),
-                                "GoRef: "))
-            print('{}:{}:{}'.format(filename, l+1 or 0, c+1 or 0))
-            sublime.active_window().open_file(
-                '{}:{}:{}'.format(filename, l+1 or 0, c+1 or 0),
-                sublime.ENCODED_POSITION)    
+        mapping=refInfo.getMapping(str(cursor[0]))
+        if mapping:
+           (filename,l,c,p,n)=mapping.asTuple()           
+           updateRefLine(refInfo,cursor[0],self.view)
+           sublime.active_window().open_file(
+              '{}:{}:{}'.format(filename, l+1 or 0, c+1 or 0),
+              sublime.ENCODED_POSITION)    
 
-# FIX: this works in the middle of the ref file but not at the end
-# go to next reference in active references file
+# command: go to next reference in active references file
 # TODO: generalize this to work for all types of references
 class TypescriptNextRefCommand(sublime_plugin.TextCommand):
     def run(self,text):
@@ -1004,17 +1025,13 @@ class TypescriptNextRefCommand(sublime_plugin.TextCommand):
         refView=getRefView()
         if refView:
             refInfo=cli.getRefInfo()
-            line=refInfo.getRefLine()
-            mapping=refInfo.getMapping(line)
-            if mapping:
-                (filename,l,c,p,n)=mapping.asTuple()
-                pos=refView.text_point(int(line),0)
-                refView.sel().clear()
-                refView.sel().add(sublime.Region(pos,pos))
-                refView.run_command('typescript_go_to_ref')
+            line=refInfo.nextRefLine()
+            pos=refView.text_point(int(line),0)
+            refView.sel().clear()
+            refView.sel().add(sublime.Region(pos,pos))
+            refView.run_command('typescript_go_to_ref')
 
-# FIX: this works in the middle of the ref file but not at the end
-# go to previous reference in active references file
+# command: go to previous reference in active references file
 # TODO: generalize this to work for all types of references
 class TypescriptPrevRefCommand(sublime_plugin.TextCommand):
     def run(self,text):
@@ -1024,14 +1041,11 @@ class TypescriptPrevRefCommand(sublime_plugin.TextCommand):
         refView=getRefView()
         if refView:
             refInfo=cli.getRefInfo()
-            line=refInfo.getRefLine()
-            mapping=refInfo.getMapping(line)
-            if mapping:
-                (filename,l,c,p,n)=mapping.asTuple()
-                pos=refView.text_point(int(line),0)
-                refView.sel().clear()
-                refView.sel().add(sublime.Region(pos,pos))
-                refView.run_command('typescript_go_to_ref', { "forward": False })
+            line=refInfo.prevRefLine()
+            pos=refView.text_point(int(line),0)
+            refView.sel().clear()
+            refView.sel().add(sublime.Region(pos,pos))
+            refView.run_command('typescript_go_to_ref')
 
 # highlight all occurances of refId in view
 # TODO: ST2 add_regions with different flags
@@ -1087,6 +1101,7 @@ class TypescriptPopulateRefs(sublime_plugin.TextCommand):
                 displayRef="    {0}:  {1}\n".format(l+1,content)
                 matchCount+=1
                 self.view.insert(text,self.view.sel()[0].begin(),displayRef)
+        refInfo.setLastLine(line)
         self.view.insert(text,self.view.sel()[0].begin(),
                              "\n{0} matches in {1} file{2}\n".format(matchCount,
                                                                      fileCount,"" if (fileCount==1) else "s"))
