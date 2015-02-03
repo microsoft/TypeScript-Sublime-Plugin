@@ -93,11 +93,12 @@ class Ref:
 
 # maps (line in view containing references) to (filename, line, column) referenced
 class RefInfo:
-    def __init__(self,firstLine):
+    def __init__(self,firstLine,refId):
         self.refMap={}
         self.currentRefLine=None
         self.firstLine=firstLine
         self.lastLine=None
+        self.refId=refId
 
     def setLastLine(self,lastLine):
        self.lastLine=lastLine
@@ -122,6 +123,9 @@ class RefInfo:
     def getRefLine(self):
        return self.currentRefLine
 
+    def getRefId(self):
+       return self.refId
+    
     def nextRefLine(self):
       currentMapping=self.getCurrentMapping()
       if (not self.currentRefLine) or (not currentMapping):
@@ -131,7 +135,7 @@ class RefInfo:
          if n:
             self.currentRefLine=n
          else:
-            self.currentRefLine=firstLine
+            self.currentRefLine=self.firstLine
       return self.currentRefLine
 
     def prevRefLine(self):
@@ -152,7 +156,7 @@ class RefInfo:
         keys=self.refMap.keys()
         for key in keys:
             vmap[key]=self.refMap[key].asTuple()
-        return (vmap,self.currentRefLine,self.firstLine,self.lastLine)
+        return (vmap,self.currentRefLine,self.firstLine,self.lastLine,self.refId)
 
 # build a reference from a serialized reference
 def buildRef(refTuple):
@@ -163,8 +167,10 @@ def buildRef(refTuple):
 
 # build a ref info from a serialized ref info
 def buildRefInfo(refInfoV):
-    refInfo=RefInfo(refInfoV[1],refInfoV[2],refInfoV[3])
-    dict=refInfoV[0]
+    (dict,currentLine,firstLine,lastLine,refId)=refInfoV
+    refInfo=RefInfo(firstLine,refId)
+    refInfo.setRefLine(currentLine)
+    refInfo.setLastLine(lastLine)
     for key in dict.keys():
         refInfo.addMapping(key,buildRef(dict[key]))
     return refInfo
@@ -255,8 +261,8 @@ class Client:
     def disposeRefInfo(self):
         self.refInfo=None
 
-    def initRefInfo(self,firstLine):
-        self.refInfo=RefInfo(firstLine)
+    def initRefInfo(self,firstLine,refId):
+        self.refInfo=RefInfo(firstLine,refId)
         return self.refInfo
 
     def updateRefInfo(self,refInfo):
@@ -413,19 +419,20 @@ def getTempFileName():
 
 # write the buffer of view to a temporary file and have the server reload it
 def reloadBuffer(view,clientInfo=None):
-    t=time.time()
-    tmpfile_name=getTempFileName()
-    tmpfile=open(tmpfile_name,"w")
-    tmpfile.write(view.substr(sublime.Region(0,view.size())))
-    tmpfile.flush();
-    cli.simpleRequestSync("reload {0} from {1}".format(view.file_name(),tmpfile_name))
-    et=time.time()
-    print("time for reload %f" % (et-t))
-    if not clientInfo:
-        clientInfo=cli.getOrAddFile(view.file_name())
-    if not cli.ST2():
-       clientInfo.changeCount=view.change_count()
-    clientInfo.pendingChanges=False
+   if not view.is_loading():
+      t=time.time()
+      tmpfile_name=getTempFileName()
+      tmpfile=open(tmpfile_name,"w")
+      tmpfile.write(view.substr(sublime.Region(0,view.size())))
+      tmpfile.flush();
+      cli.simpleRequestSync("reload {0} from {1}".format(view.file_name(),tmpfile_name))
+      et=time.time()
+      print("time for reload %f" % (et-t))
+      if not cli.ST2():
+         if not clientInfo:
+            clientInfo=cli.getOrAddFile(view.file_name())
+         clientInfo.changeCount=view.change_count()
+         clientInfo.pendingChanges=False
 
 # if we have changes to the view not accounted for by change messages,
 # send the whole buffer through a temporary file
@@ -486,7 +493,10 @@ class TypeScriptListener(sublime_plugin.EventListener):
                     self.fileMap[view.file_name()]=info
                     cli.sendCmd("open "+view.file_name())
                     if view.is_dirty():
-                        reloadBuffer(view,info.clientInfo)
+                       if not view.is_loading():
+                          reloadBuffer(view,info.clientInfo)
+                       else:
+                          info.clientInfo.pendingChanges=True
                 else:
                     self.mruFileList.remove(info)
                 self.mruFileList.append(info)
@@ -1129,7 +1139,7 @@ class TypescriptPopulateRefs(sublime_plugin.TextCommand):
                 cursor = self.view.rowcol(pos)
                 line=str(cursor[0])
                 if not refInfo:
-                    refInfo=cli.initRefInfo(line)
+                    refInfo=cli.initRefInfo(line,refId)
                 refInfo.addMapping(line,Ref(filename,l,c,prevLine))
                 if prevLine:
                     mapping=refInfo.getMapping(prevLine)
@@ -1143,7 +1153,6 @@ class TypescriptPopulateRefs(sublime_plugin.TextCommand):
         self.view.insert(text,self.view.sel()[0].begin(),
                              "\n{0} matches in {1} file{2}\n".format(matchCount,
                                                                      fileCount,"" if (fileCount==1) else "s"))
-
         if matchCount>0:
             highlightIds(self.view,refId)
         window.focus_view(self.view)
@@ -1188,8 +1197,8 @@ class TypescriptFormatOnKey(sublime_plugin.TextCommand):
         loc=self.view.sel()[0].begin()
         self.view.insert(text,loc,key)
         sendReplaceChangesForRegions(self.view,[sublime.Region(loc,loc)],key)
-        clientInfo=cli.getOrAddFile(self.view.file_name())
         if not cli.ST2():
+           clientInfo=cli.getOrAddFile(self.view.file_name())
            clientInfo.changeCount=self.view.change_count()
         encodedKey = json.JSONEncoder().encode(key);
         cmdstr = cmdLineCol(self.view, "formatonkey")
@@ -1208,7 +1217,8 @@ def formatRange(text,view,begin,end):
             changes=data['body']
             applyFormattingChanges(text,view,changes)
         if not cli.ST2():
-           clientInfo.changeCount=self.view.change_count()            
+           clientInfo=cli.getOrAddFile(view.file_name())
+           clientInfo.changeCount=view.change_count()            
 
 # command to format the current selection    
 class TypescriptFormatSelection(sublime_plugin.TextCommand):
@@ -1244,7 +1254,13 @@ def plugin_loaded():
            print("got refinfo from settings")
            refInfo=buildRefInfo(refInfoV)
            cli.updateRefInfo(refInfo)
-           refView.set_scratch(True)           
+           refView.set_scratch(True)
+           highlightIds(refView,refInfo.getRefId())
+           curLine=refInfo.getRefLine()
+           if curLine:
+              updateRefLine(refInfo,curLine,refView)
+           else:
+              print("no current ref line")
         else:
            print("trying to close ref view")
            window=sublime.active_window()
