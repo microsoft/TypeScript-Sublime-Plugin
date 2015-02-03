@@ -791,20 +791,17 @@ class TypeScriptListener(sublime_plugin.EventListener):
             'auto_complete_commit_on_tab': True,
         })
 
-    # ST3 only
     # synchronous for now; can change to async by adding hide/show from the handler
     def on_query_completions(self,view,prefix,locations):
         info=self.fileMap.get(view.file_name())
         if info:
             print("complete with: "+prefix)
-            word=view.substr(view.word(locations[0]))
-            print(view.id())
             info.completionPrefixSel=decrLocsToRegions(locations,len(prefix))
-            view.add_regions("apresComp",decrLocsToRegions(locations,0),flags=sublime.HIDDEN)
+            if not cli.ST2():
+               view.add_regions("apresComp",decrLocsToRegions(locations,0),flags=sublime.HIDDEN)
             cmdsuffix="{{{0}}} {1}".format(prefix,view.file_name())
             cmdstr = cmdLineColPos(view,locations[0],"completions")+cmdsuffix
             updateSimpleRequest(view,self.handleCompletionInfo,cmdstr)
-            print("end complete with: "+prefix)
             completions=self.pendingCompletions
             self.pendingCompletions=None
             return (completions,sublime.INHIBIT_WORD_COMPLETIONS|sublime.INHIBIT_EXPLICIT_COMPLETIONS)
@@ -990,7 +987,7 @@ class TypescriptFinishRenameCommand(sublime_plugin.TextCommand):
 def getRefView(create=True):
     active_window=sublime.active_window()
     for view in active_window.views():
-        if view.is_scratch() and (view.name()=="Find References"):
+        if view.name()=="Find References":
             return view
     if create:
         refView=active_window.new_file()
@@ -1192,7 +1189,8 @@ class TypescriptFormatOnKey(sublime_plugin.TextCommand):
         self.view.insert(text,loc,key)
         sendReplaceChangesForRegions(self.view,[sublime.Region(loc,loc)],key)
         clientInfo=cli.getOrAddFile(self.view.file_name())
-        clientInfo.changeCount=self.view.change_count()
+        if not cli.ST2():
+           clientInfo.changeCount=self.view.change_count()
         encodedKey = json.JSONEncoder().encode(key);
         cmdstr = cmdLineCol(self.view, "formatonkey")
         cmdstr += ("{{{0}}} ".format(encodedKey)+self.view.file_name())
@@ -1209,6 +1207,8 @@ def formatRange(text,view,begin,end):
         if data['success']:
             changes=data['body']
             applyFormattingChanges(text,view,changes)
+        if not cli.ST2():
+           clientInfo.changeCount=self.view.change_count()            
 
 # command to format the current selection    
 class TypescriptFormatSelection(sublime_plugin.TextCommand):
@@ -1244,11 +1244,15 @@ def plugin_loaded():
            print("got refinfo from settings")
            refInfo=buildRefInfo(refInfoV)
            cli.updateRefInfo(refInfo)
+           refView.set_scratch(True)           
         else:
            print("trying to close ref view")
-           window=refView.window()
-           window.focus_view(refView)
-           window.run_command('close')
+           window=sublime.active_window()
+           if window:
+              window.focus_view(refView)
+              window.run_command('close')
+    else:
+       print("ref view not found")
 
 
 # this unload is not always called on exit
