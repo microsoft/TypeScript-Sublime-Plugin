@@ -12,7 +12,7 @@ except ImportError:
 import json
 import time
 
-# globally-accessible information singleton; set in function plugin_loaded 
+# globally-accessible information singleton; set in function plugin_loaded  2
 cli = None
 
 # currently active view
