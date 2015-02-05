@@ -1,16 +1,19 @@
-import sys
+import json
 import os
+import sys
+import time
+
 import sublime
 import sublime_plugin
-import subprocess
-import threading
-# queue module name changed from Python 2 to 3
-try:
-   import Queue as queue
+
+from .nodeclient import NodeClient
+
+# Enable Python Tools for visual studio remove debugging
+try: 
+    from .ptvsd import enable_attach
+    enable_attach(secret=None)
 except ImportError:
-   import queue
-import json
-import time
+    pass
 
 # globally-accessible information singleton; set in function plugin_loaded
 cli = None
@@ -36,33 +39,6 @@ def is_typescript_scope(view, scopeSel):
         return False
 
     return view.match_selector(location, scopeSel)
-
-# reader thread helper
-def readMsg(stream, msgq, eventq):
-    state = 'headers'
-    bodlen = 0
-    while state == 'headers':
-        header = stream.readline().strip()
-        if len(header) == 0:
-            state = 'body'
-        elif header.startswith(b'Content-Length: '):
-            bodlen = int(header[15:])
-# TODO: signal error if bodlen == 0
-    if bodlen > 0:
-        data = stream.read(bodlen)
-        jsonStr = data.decode('utf-8')
-        jsonObj = json.loads(jsonStr)
-        if jsonObj['type'] == 'response':
-            msgq.put(jsonObj)
-        else:
-            print("event:")
-            print(jsonObj)
-            eventq.put(jsonObj)
-
-# main function for reader thread
-def reader(stream, msgq, eventq):
-    while True:
-        readMsg(stream, msgq, eventq)
 
 # per-file, globally-accessible information
 class ClientFileInfo:
@@ -176,64 +152,26 @@ def buildRefInfo(refInfoV):
         refInfo.addMapping(key, buildRef(dict[key]))
     return refInfo
 
-def which(program):
-    def is_exe(fpath):
-        return os.path.isfile(fpath) and os.access(fpath, os.X_OK)
-
-    fpath, fname = os.path.split(program)
-    if fpath:
-        if is_exe(program):
-            return program
-    else:
-       # /usr/local/bin is not on mac default path
-       # but is where node is typically installed on mac
-       path_list = os.environ["PATH"] + ":/usr/local/bin"
-       for path in path_list.split(os.pathsep):
-          path = path.strip('"')
-          exe_file = os.path.join(path, program)
-          if is_exe(exe_file):
-             return exe_file
-    return None
-
 # get the directory path to this file; ST2 requires this to be done
 # at global scope
 dirpath = os.path.dirname(os.path.realpath(__file__))
 
 # hold information that must be accessible globally; this is a singleton
-class Client:
+class EditorClient:
     def __init__(self):
-        # create response and event queues
-        self.msgq = queue.Queue()
-        self.eventq = queue.Queue()
-        # see if user set path for protocol.js
+        # retrieve the path to protocol.js
+        # first see if user set the path to the file
         settings = sublime.load_settings('Preferences.sublime-settings')
         procFile = settings.get('typescript_proc_file')
         if not procFile:
             # otherwise, get protocol.js from package directory
             procFile = os.path.join(dirpath, "protocol.js")
         print("spawning node module: " + procFile)
-        nodePath = which('node')
-        print(nodePath)
-        # start node process
-        if os.name == 'nt':
-            # linux subprocess module does not have STARTUPINFO
-            # so only use it if on Windows
-            si = subprocess.STARTUPINFO()
-            si.dwFlags |= subprocess.SW_HIDE | subprocess.STARTF_USESHOWWINDOW
-            self.proc = subprocess.Popen(["node", procFile], 
-                                         stdin=subprocess.PIPE, stdout=subprocess.PIPE, startupinfo=si)
-        else:
-            self.proc = subprocess.Popen([nodePath, procFile], 
-                                         stdin=subprocess.PIPE, stdout=subprocess.PIPE)
-        # start reader thread
-        self.t = threading.Thread(target = reader, args=(self.proc.stdout, self.msgq, self.eventq))
-        self.t.daemon = True
-        self.t.start()
+        
+        self.nodeClient = NodeClient(procFile)
         self.completions = {}
         self.fileMap = {}
         self.refInfo = None
-        self.breakpoints = []
-        self.debugProc = None
         self.versionST2 = False
 
     def ST2(self):
@@ -243,18 +181,9 @@ class Client:
        if int(sublime.version()) < 3000:
           self.versionST2 = True
 
-    def addBreakpoint(self, file, line):
-        self.breakpoints.append((file, line))
-
     def reloadRequired(self, view):
        clientInfo = self.getOrAddFile(view.file_name())
        return self.versionST2 or clientInfo.pendingChanges or (clientInfo.changeCount < view.change_count())
-       
-    # work in progress
-    def debug(file):
-        # TODO: msg if already debugging
-        self.debugProc = subprocess.Popen(['node', 'debug', file], 
-                                     stdin=subprocess.PIPE, stdout=subprocess.PIPE)
 
     # ref info is for Find References view
     # TODO: generalize this so that there can be multiple
@@ -285,37 +214,17 @@ class Client:
         clientInfo = self.getOrAddFile(filename)
         return (len(clientInfo.errors['syntacticDiag']) > 0) or (len(clientInfo.errors['semanticDiag']) > 0)
 
-    #  send single-line command string; no sequence number; wait for response
-    #  this assumes stdin/stdout; for TCP, need to add correlation with
-    #  sequence numbers
     def simpleRequest(self, cb, cmd):
-        self.sendCmd(cmd)
-        data = self.msgq.get(True)
-        cb(data)
+        self.nodeClient.sendCmd(cb, cmd);
 
-    # synchronous version of simpleRequest
     def simpleRequestSync(self, cmd):
-        self.sendCmd(cmd)
-        data = self.msgq.get(True)
-        return data
+        return self.nodeClient.sendCmdSync(cmd);
 
-    # send command to server; no response needed
     def sendCmd(self, cmd):
-        print(cmd)
-        cmd = cmd + "\n"
-        self.proc.stdin.write(cmd.encode())
-        self.proc.stdin.flush()
+        self.nodeClient.postCmd(cmd)
 
-    # try to get event from event queue
     def getEvent(self):
-        try:
-            ev = self.eventq.get(False)
-        except:
-            return None
-        return ev
-
-    def printCmd(self, cmd):
-        print(cmd)
+        return self.nodeClient.getEvent()
 
 # per-file info that will only be accessible from TypeScriptListener instance
 class FileInfo:
@@ -615,12 +524,12 @@ class TypeScriptListener(sublime_plugin.EventListener):
         view = active_view()
         info = self.fileMap.get(view.file_name())
         if info:
-            self.update_status(view, info)        
+            self.update_status(view, info)
 
     # set timer to go off when file not being modified
     def setOnIdleTimer(self, ms):
         self.pendingTimeout+=1
-        sublime.set_timeout(self.handleTimeout, ms)                
+        sublime.set_timeout(self.handleTimeout, ms)
         
     def handleTimeout(self):
         self.pendingTimeout-=1
@@ -1074,7 +983,7 @@ class TypescriptGoToRefCommand(sublime_plugin.TextCommand):
         refInfo = cli.getRefInfo()
         mapping = refInfo.getMapping(str(cursor[0]))
         if mapping:
-           (filename, l, c, p, n) = mapping.asTuple()           
+           (filename, l, c, p, n) = mapping.asTuple()
            updateRefLine(refInfo, cursor[0], self.view)
            sublime.active_window().open_file('{0}:{1}:{2}'.format(filename, l + 1 or 0, c + 1 or 0), 
               sublime.ENCODED_POSITION)    
@@ -1264,7 +1173,7 @@ def plugin_loaded():
     global cli
     print('initialize typescript...')
     print(sublime.version())
-    cli = Client()
+    cli = EditorClient()
     cli.setFeatures()
     refView = getRefView(False)
     if refView:
