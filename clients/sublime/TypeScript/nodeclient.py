@@ -11,7 +11,14 @@ except ImportError:
    import queue
 
 
-class NodeClient:
+class CommClient:
+    def getEvent(self): pass
+    def postCmd(self, cmd): pass
+    def sendCmd(self, cb, cmd): pass
+    def sendCmdSync(self, cmd): pass
+
+
+class NodeCommClient(CommClient):
     __HEADER_CONTENT_LENGTH = b"Content-Length: "
 
     def __init__(self, scriptPath):
@@ -33,13 +40,13 @@ class NodeClient:
             self.__serverProc = subprocess.Popen(["node", scriptPath],
                                          stdin=subprocess.PIPE, stdout=subprocess.PIPE, startupinfo=si)
         else:
-            nodePath = NodeClient.__which("node")
+            nodePath = NodeCommClient.__which("node")
             print(nodePath)
             self.__serverProc = subprocess.Popen([nodePath, scriptPath],
                                          stdin=subprocess.PIPE, stdout=subprocess.PIPE)
 
         # start reader thread
-        readerThread = threading.Thread(target=NodeClient.__reader, args=(self.__serverProc.stdout, self.__msgq, self.__eventq))
+        readerThread = threading.Thread(target=NodeCommClient.__reader, args=(self.__serverProc.stdout, self.__msgq, self.__eventq))
         readerThread.daemon = True
         readerThread.start()
 
@@ -63,7 +70,8 @@ class NodeClient:
         """
         self.postCmd(cmd)
         data = self.__msgq.get(block=True)
-        cb(data)
+        if cb:
+            cb(data)
 
     def sendCmdSync(self, cmd):
         """
@@ -103,8 +111,8 @@ class NodeClient:
             header = stream.readline().strip()
             if len(header) == 0:
                 state = "body"
-            elif header.startswith(NodeClient.__HEADER_CONTENT_LENGTH):
-                bodlen = int(header[len(NodeClient.__HEADER_CONTENT_LENGTH):])
+            elif header.startswith(NodeCommClient.__HEADER_CONTENT_LENGTH):
+                bodlen = int(header[len(NodeCommClient.__HEADER_CONTENT_LENGTH):])
         # TODO: signal error if bodlen == 0
         if bodlen > 0:
             data = stream.read(bodlen)
@@ -123,7 +131,7 @@ class NodeClient:
         Main function for reader thread
         """
         while True:
-            NodeClient.__readMsg(stream, msgq, eventq)
+            NodeCommClient.__readMsg(stream, msgq, eventq)
 
     @staticmethod
     def __which(program):
