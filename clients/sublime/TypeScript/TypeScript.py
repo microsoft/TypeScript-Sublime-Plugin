@@ -168,7 +168,7 @@ class EditorClient:
             procFile = os.path.join(dirpath, "protocol.js")
         print("spawning node module: " + procFile)
         
-        self.node = NodeClient(procFile)
+        self.nodeClient = NodeClient(procFile)
         self.completions = {}
         self.fileMap = {}
         self.refInfo = None
@@ -215,16 +215,16 @@ class EditorClient:
         return (len(clientInfo.errors['syntacticDiag']) > 0) or (len(clientInfo.errors['semanticDiag']) > 0)
 
     def simpleRequest(self, cb, cmd):
-        self.node.sendCmd(cb, cmd);
+        self.nodeClient.sendCmd(cb, cmd);
 
     def simpleRequestSync(self, cmd):
-        return self.node.sendCmdSync(cmd);
+        return self.nodeClient.sendCmdSync(cmd);
 
     def sendCmd(self, cmd):
-        self.node.postCmd(cmd)
+        self.nodeClient.postCmd(cmd)
 
     def getEvent(self):
-        return self.node.getEvent()
+        return self.nodeClient.getEvent()
 
 # per-file info that will only be accessible from TypeScriptListener instance
 class FileInfo:

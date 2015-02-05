@@ -12,6 +12,8 @@ except ImportError:
 
 
 class NodeClient:
+    __HEADER_CONTENT_LENGTH = b"Content-Length: "
+
     def __init__(self, scriptPath):
         """
         Starts a node client (if not already started) and communicate with it. 
@@ -28,18 +30,18 @@ class NodeClient:
             # so only use it if on Windows
             si = subprocess.STARTUPINFO()
             si.dwFlags |= subprocess.SW_HIDE | subprocess.STARTF_USESHOWWINDOW
-            self.__proc = subprocess.Popen(["node", scriptPath],
+            self.__serverProc = subprocess.Popen(["node", scriptPath],
                                          stdin=subprocess.PIPE, stdout=subprocess.PIPE, startupinfo=si)
         else:
             nodePath = NodeClient.__which("node")
             print(nodePath)
-            self.__proc = subprocess.Popen([nodePath, scriptPath],
+            self.__serverProc = subprocess.Popen([nodePath, scriptPath],
                                          stdin=subprocess.PIPE, stdout=subprocess.PIPE)
 
         # start reader thread
-        self.__t = threading.Thread(target=NodeClient.__reader, args=(self.__proc.stdout, self.__msgq, self.__eventq))
-        self.__t.daemon = True
-        self.__t.start()
+        readerThread = threading.Thread(target=NodeClient.__reader, args=(self.__serverProc.stdout, self.__msgq, self.__eventq))
+        readerThread.daemon = True
+        readerThread.start()
 
         self.__debugProc = None
         self.__breakpoints = []
@@ -77,8 +79,8 @@ class NodeClient:
         """
         print(cmd)
         cmd = cmd + "\n"
-        self.__proc.stdin.write(cmd.encode())
-        self.__proc.stdin.flush()
+        self.__serverProc.stdin.write(cmd.encode())
+        self.__serverProc.stdin.flush()
 
     def getEvent(self):
         """
@@ -101,8 +103,8 @@ class NodeClient:
             header = stream.readline().strip()
             if len(header) == 0:
                 state = "body"
-            elif header.startswith(b'Content-Length: '):
-                bodlen = int(header[15:])
+            elif header.startswith(NodeClient.__HEADER_CONTENT_LENGTH):
+                bodlen = int(header[len(NodeClient.__HEADER_CONTENT_LENGTH):])
         # TODO: signal error if bodlen == 0
         if bodlen > 0:
             data = stream.read(bodlen)
@@ -125,20 +127,20 @@ class NodeClient:
 
     @staticmethod
     def __which(program):
-        def is_exe(fpath):
+        def is_executable(fpath):
             return os.path.isfile(fpath) and os.access(fpath, os.X_OK)
 
         fpath, fname = os.path.split(program)
         if fpath:
-            if is_exe(program):
+            if is_executable(program):
                 return program
         else:
            # /usr/local/bin is not on mac default path
            # but is where node is typically installed on mac
-           path_list = os.environ["PATH"] + ":/usr/local/bin"
+           path_list = os.environ["PATH"] + os.pathsep + "/usr/local/bin"
            for path in path_list.split(os.pathsep):
               path = path.strip('"')
-              exe_file = os.path.join(path, program)
-              if is_exe(exe_file):
-                 return exe_file
+              programPath = os.path.join(path, program)
+              if is_executable(programPath):
+                 return programPath
         return None
