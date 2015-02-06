@@ -6,17 +6,27 @@ import time
 import sublime
 import sublime_plugin
 
-from .nodeclient import NodeClient
+# Adds the current path, so sublime can load our modules fine in both Sublime 2 & 3
+# Sublime 2 doesn't like relative module references .<module>
+# Sublime 3 requires relative module references to load from the current path
+sys.path.append(os.path.dirname(__file__))
 
-# Enable Python Tools for visual studio remove debugging
+from nodeclient import NodeCommClient
+from serviceproxy import *
+
+# Enable Python Tools for visual studio remote debugging
 try: 
-    from .ptvsd import enable_attach
+    from ptvsd import enable_attach
     enable_attach(secret=None)
 except ImportError:
     pass
 
 # globally-accessible information singleton; set in function plugin_loaded
 cli = None
+
+# get the directory path to this file; ST2 requires this to be done
+# at global scope
+dirpath = os.path.dirname(os.path.realpath(__file__))
 
 # currently active view
 def active_view():
@@ -40,6 +50,30 @@ def is_typescript_scope(view, scopeSel):
 
     return view.match_selector(location, scopeSel)
 
+def getLocationFromView(view):
+    """
+    Returns the Location tuple of the beginning of the first selected region in the view
+    """
+    region = view.sel()[0]
+    return getLocationFromRegion(view, region)
+
+def getLocationFromRegion(view, region):
+    """
+    Returns the Location tuple of the beginning of the given region
+    """
+    position = region.begin()
+    return getLocationFromPosition(view, position)
+
+def getLocationFromPosition(view, position):
+    """
+    Returns the Location tuple of the given text position
+    """
+    cursor = view.rowcol(position)
+    line = cursor[0]
+    col = cursor[1]
+    return Location(line, col)
+
+
 # per-file, globally-accessible information
 class ClientFileInfo:
     def __init__(self, filename):
@@ -50,6 +84,7 @@ class ClientFileInfo:
             'syntacticDiag': [], 
             'semanticDiag': [], 
         }
+
 
 # a reference to a source file, line, column; next and prev refer to the
 # next and previous reference in a view containing references
@@ -66,6 +101,7 @@ class Ref:
 
     def asTuple(self):
         return (self.filename, self.line, self.col, self.prevLine, self.nextLine)
+
 
 # maps (line in view containing references) to (filename, line, column)
 # referenced
@@ -135,6 +171,7 @@ class RefInfo:
             vmap[key] = self.refMap[key].asTuple()
         return (vmap, self.currentRefLine, self.firstLine, self.lastLine, self.refId)
 
+
 # build a reference from a serialized reference
 def buildRef(refTuple):
     (filename, line, col, prevLine, nextLine) = refTuple
@@ -152,9 +189,6 @@ def buildRefInfo(refInfoV):
         refInfo.addMapping(key, buildRef(dict[key]))
     return refInfo
 
-# get the directory path to this file; ST2 requires this to be done
-# at global scope
-dirpath = os.path.dirname(os.path.realpath(__file__))
 
 # hold information that must be accessible globally; this is a singleton
 class EditorClient:
@@ -168,7 +202,8 @@ class EditorClient:
             procFile = os.path.join(dirpath, "protocol.js")
         print("spawning node module: " + procFile)
         
-        self.nodeClient = NodeClient(procFile)
+        self.nodeClient = NodeCommClient(procFile)
+        self.service = ServiceProxy(self.nodeClient)
         self.completions = {}
         self.fileMap = {}
         self.refInfo = None
@@ -214,17 +249,9 @@ class EditorClient:
         clientInfo = self.getOrAddFile(filename)
         return (len(clientInfo.errors['syntacticDiag']) > 0) or (len(clientInfo.errors['semanticDiag']) > 0)
 
-    def simpleRequest(self, cb, cmd):
-        self.nodeClient.sendCmd(cb, cmd);
-
-    def simpleRequestSync(self, cmd):
-        return self.nodeClient.sendCmdSync(cmd);
-
-    def sendCmd(self, cmd):
-        self.nodeClient.postCmd(cmd)
-
     def getEvent(self):
         return self.nodeClient.getEvent()
+
 
 # per-file info that will only be accessible from TypeScriptListener instance
 class FileInfo:
@@ -243,6 +270,7 @@ class FileInfo:
         self.lastModChangeCount = cc
         self.modCount = 0
 
+
 # region that will not change as buffer is modified
 class StaticRegion:
     def __init__(self, b, e):
@@ -254,6 +282,7 @@ class StaticRegion:
 
     def begin(self):
         return self.b
+
 
 # convert a list of static regions to ordinary regions
 def staticRegionsToRegions(staticRegions):
@@ -312,18 +341,8 @@ def sendReplaceChangesForRegions(view, regions, insertString):
     if cli.ST2():
        return
     for region in regions:
-        lineColStr = cmdLineColRegion(view, region, "change")
-        insertLen = len(insertString)
-        if insertLen > 0:
-            encodedInsertStr = json.JSONEncoder().encode(insertString)
-            cli.sendCmd('{0}{1} {2} {{{3}}} {4}'.format(lineColStr, region.size(), insertLen, 
-                                                        encodedInsertStr, view.file_name()))
-        else:
-            cli.sendCmd('{0}{1} {2} {3}'.format(lineColStr, region.size(), insertLen, 
-                                                view.file_name()))
-# helper for printing parts of command lines
-def cmdLineColPosShow(view, pos, cmdline):
-    return cmdLineColPos(view, pos, "{0} {1}:".format(cmdline, pos))
+        location = getLocationFromRegion(view, region)
+        cli.service.change(view.file_name(), location, region.size(), insertString)
 
 def getTempFileName():
    return os.path.join(dirpath, ".tmpbuf")
@@ -332,11 +351,11 @@ def getTempFileName():
 def reloadBuffer(view, clientInfo=None):
    if not view.is_loading():
       t = time.time()
-      tmpfile_name = getTempFileName()
-      tmpfile = open(tmpfile_name, "w")
+      tmpfileName = getTempFileName()
+      tmpfile = open(tmpfileName, "w")
       tmpfile.write(view.substr(sublime.Region(0, view.size())))
       tmpfile.flush()
-      cli.simpleRequestSync("reload {0} from {1}".format(view.file_name(), tmpfile_name))
+      cli.service.reload(view.file_name(), tmpfileName)
       et = time.time()
       print("time for reload %f" % (et - t))
       if not cli.ST2():
@@ -348,26 +367,10 @@ def reloadBuffer(view, clientInfo=None):
 # if we have changes to the view not accounted for by change messages, 
 # send the whole buffer through a temporary file
 def checkUpdateView(view):
-    clientInfo = cli.getOrAddFile(view.file_name())    
+    clientInfo = cli.getOrAddFile(view.file_name())
     if cli.reloadRequired(view):
         reloadBuffer(view, clientInfo)
 
-# update the buffer if necessary, and then send command to server
-def updateSendCmd(view, cmdstr):
-    checkUpdateView(view)
-    cli.sendCmd(cmdstr)
-
-# update the buffer if necessary, and then send command to server;
-# wait for response and when it is back, call cb
-def updateSimpleRequest(view, cb, cmdstr):
-    checkUpdateView(view)
-    cli.simpleRequest(cb, cmdstr)
-
-# update the buffer if necessary, and then send command to server;
-# wait for response and return it
-def updateSimpleRequestSync(view, cmdstr):
-    checkUpdateView(view)
-    return cli.simpleRequestSync(cmdstr)
 
 # singleton that receives event calls from Sublime
 class TypeScriptListener(sublime_plugin.EventListener):
@@ -402,7 +405,7 @@ class TypeScriptListener(sublime_plugin.EventListener):
                     info.clientInfo = cli.getOrAddFile(view.file_name())
                     setFilePrefs(view)
                     self.fileMap[view.file_name()] = info
-                    cli.sendCmd("open " + view.file_name())
+                    cli.service.open(view.file_name())
                     if view.is_dirty():
                        if not view.is_loading():
                           reloadBuffer(view, info.clientInfo)
@@ -428,15 +431,13 @@ class TypeScriptListener(sublime_plugin.EventListener):
         info = self.fileMap.get(view.file_name())
         if info and (info.changeCountErrReq < self.change_count(view)):
             info.changeCountErrReq = self.change_count(view)
-            fileList = ""
-            delimit = ""
+            
             # traverse list in reverse b/c MRU always appended to end of list
             # TODO: check if file visible and only add if is visible
-            for i in range(len(self.mruFileList) - 1, -1, -1):
-                fileList+=(delimit + self.mruFileList[i].filename)
-                delimit = ";"
-            cmdstr = "geterr {0} {1}".format(errDelay, fileList)
-            updateSendCmd(view, cmdstr)
+            files = map(lambda mruFile: mruFile.filename, self.mruFileList[::-1])
+            checkUpdateView(view)
+            cli.service.requestGetError(errDelay, files)
+
             self.errRefreshRequested = True
             self.setOnIdleTimer(errDelay + 300)
 
@@ -740,47 +741,22 @@ class TypeScriptListener(sublime_plugin.EventListener):
             info.completionPrefixSel = decrLocsToRegions(locations, len(prefix))
             if not cli.ST2():
                view.add_regions("apresComp", decrLocsToRegions(locations, 0), flags=sublime.HIDDEN)
-            cmdsuffix = "{{{0}}} {1}".format(prefix, view.file_name())
-            cmdstr = cmdLineColPos(view, locations[0], "completions") + cmdsuffix
-            updateSimpleRequest(view, self.handleCompletionInfo, cmdstr)
+
+            location = getLocationFromPosition(view, locations[0])
+            checkUpdateView(view)
+            cli.service.completions(view.file_name(), location, prefix, self.handleCompletionInfo)
+            
             completions = self.pendingCompletions
             self.pendingCompletions = None
             return (completions, sublime.INHIBIT_WORD_COMPLETIONS | sublime.INHIBIT_EXPLICIT_COMPLETIONS)
-                
-# pos, cmdName => "cmdName lineAtPos colAtPos"
-def cmdLineColPos(view, pos, cmdName):
-    cursor = view.rowcol(pos)
-    line = str(cursor[0] + 1)
-    col = str(cursor[1] + 1)
-    return '{0} {1} {2} '.format(cmdName, line, col)
 
-# pos1, pos2 cmdName => "cmdName lineAtPos1 colAtPos1 lineAtPos2 colAtPos2"
-def cmdLineColPos2(view, pos1, pos2, cmdName):
-    cursor = view.rowcol(pos1)
-    line = str(cursor[0] + 1)
-    col = str(cursor[1] + 1)
-    cursor = view.rowcol(pos2)
-    line2 = str(cursor[0] + 1)
-    col2 = str(cursor[1] + 1)
-    return '{0} {1} {2} {3} {4} '.format(cmdName, line, col, line2, col2)
-
-# location, cmdName => "cmdName lineAtlocation.begin() colAtlocation.begin()"
-def cmdLineColRegion(view, location, cmdName):
-    cursor = view.rowcol(location.begin())
-    line = str(cursor[0] + 1)
-    col = str(cursor[1] + 1)
-    return '{0} {1} {2} '.format(cmdName, line, col)
-
-# cmdName => "cmdName lineAtCursor colAtCursor"
-def cmdLineCol(view, cmdName):
-    location = view.sel()[0]
-    return cmdLineColRegion(view, location, cmdName)
 
 # for debugging, send command to server to save server buffer in temp file
 # TODO: safe temp file name on Windows
 class TypescriptSave(sublime_plugin.TextCommand):
     def run(self, text):
-        cli.sendCmd("save {0} to /tmp/curstate".format(self.view.file_name()))
+        cli.nodeClient.postCmd("save {0} to /tmp/curstate".format(self.view.file_name()))
+
 
 # command currently called only from event handlers
 class TypescriptQuickInfo(sublime_plugin.TextCommand):
@@ -797,17 +773,19 @@ class TypescriptQuickInfo(sublime_plugin.TextCommand):
             self.view.erase_status("typescript_info")
 
     def run(self, text):
-        cmdstr = cmdLineCol(self.view, "quickinfo") + self.view.file_name()
-        updateSimpleRequest(self.view, self.handleQuickInfo, cmdstr)
+        checkUpdateView(self.view)
+        cli.service.quickInfo(self.view.file_name(), getLocationFromView(self.view), self.handleQuickInfo)
              
     def is_enabled(self):
         return is_typescript(self.view)
+
 
 class TypescriptShowDoc(sublime_plugin.TextCommand):
     def run(self, text, infoStr="", docStr=""):
        self.view.insert(text, self.view.sel()[0].begin(), infoStr + "\n\n")
        self.view.insert(text, self.view.sel()[0].begin(), docStr)
      
+
 # command to show the doc string associated with quick info;
 # re-runs quick info in case info has changed
 class TypescriptQuickInfoDoc(sublime_plugin.TextCommand):
@@ -830,11 +808,12 @@ class TypescriptQuickInfoDoc(sublime_plugin.TextCommand):
             self.view.erase_status("typescript_info")
 
     def run(self, text):
-        cmdstr = cmdLineCol(self.view, "quickinfo") + self.view.file_name()
-        updateSimpleRequest(self.view, self.handleQuickInfo, cmdstr)
-             
+        checkUpdateView(self.view)
+        cli.service.quickInfo(self.view.file_name(), getLocationFromView(self.view), self.handleQuickInfo)
+
     def is_enabled(self):
         return is_typescript(self.view)
+
 
 # command called from event handlers to show error text in status line
 # (or to erase error text from status line if no error text for location)
@@ -857,11 +836,12 @@ class TypescriptErrorInfo(sublime_plugin.TextCommand):
     def is_enabled(self):
         return is_typescript(self.view)
 
+
 # go to definition command
 class TypescriptGoToDefinitionCommand(sublime_plugin.TextCommand):
     def run(self, text):
-        cmdstr = cmdLineCol(self.view, "definition") + self.view.file_name()
-        data = updateSimpleRequestSync(self.view, cmdstr)
+        checkUpdateView(self.view)
+        data = cli.service.definition(self.view.file_name(), getLocationFromView(self.view))
         if data['success']:
             bod = data['body']
             filename = bod['file']
@@ -871,11 +851,12 @@ class TypescriptGoToDefinitionCommand(sublime_plugin.TextCommand):
             sublime.active_window().open_file('{0}:{1}:{2}'.format(filename, line or 0, col or 0), 
                 sublime.ENCODED_POSITION)
 
+
 # go to type command
 class TypescriptGoToTypeCommand(sublime_plugin.TextCommand):
     def run(self, text):
-        cmdstr = cmdLineCol(self.view, "type") + self.view.file_name()
-        data = updateSimpleRequestSync(self.view, cmdstr)
+        checkUpdateView(self.view)
+        data = cli.service.type(self.view.file_name(), getLocationFromView(self.view))
         if data['success']:
             bod = data['body']
             filename = bod['fileName']
@@ -885,11 +866,12 @@ class TypescriptGoToTypeCommand(sublime_plugin.TextCommand):
             sublime.active_window().open_file('{0}:{1}:{2}'.format(filename, line or 0, col or 0), 
                 sublime.ENCODED_POSITION)
 
+
 # rename command
 class TypescriptRenameCommand(sublime_plugin.TextCommand):
     def run(self, text):
-        cmdstr = cmdLineCol(self.view, "rename") + self.view.file_name()
-        data = updateSimpleRequestSync(self.view, cmdstr)
+        checkUpdateView(self.view)
+        data = cli.service.rename(self.view.file_name(), getLocationFromView(self.view))
         if data['success']:
             infoLocs = data['body']
             info = infoLocs['info']
@@ -903,6 +885,7 @@ class TypescriptRenameCommand(sublime_plugin.TextCommand):
             if len(outerLocs) > 0:
                 sublime.active_window().show_input_panel("New name for {0}: ".format(displayName), "", 
                                                          on_done, None, on_cancel)
+
 
 # called from on_done handler in finish_rename command
 # on_done is called by input panel for new name
@@ -920,6 +903,7 @@ class TypescriptFinishRenameCommand(sublime_plugin.TextCommand):
                     applyEdit(text, self.view, minl, minc, liml, 
                               limc, ntext=newName)
 
+
 # if the FindReferences view is active, get it
 # TODO: generalize this so that we can find any scratch view
 # containing references to other files
@@ -934,11 +918,12 @@ def getRefView(create=True):
         refView.set_scratch(True)
         return refView
 
+
 # find references command
 class TypescriptFindReferencesCommand(sublime_plugin.TextCommand):
     def run(self, text):
-        cmdstr = cmdLineCol(self.view, "references") + self.view.file_name()
-        data = updateSimpleRequestSync(self.view, cmdstr)
+        checkUpdateView(self.view)
+        data = cli.service.references(self.view.file_name(), getLocationFromView(self.view))
         if data['success']:
             pos = self.view.sel()[0].begin()
             cursor = self.view.rowcol(pos)
@@ -957,8 +942,8 @@ class TypescriptFindReferencesCommand(sublime_plugin.TextCommand):
                                     "line": line, 
                                     "filename" : self.view.file_name()
                                 })
-            
-                                
+
+
 # destructure line and column tuple from JSON-parsed location info
 def extractLineCol(lc):
     line = lc['line']
@@ -974,6 +959,7 @@ def updateRefLine(refInfo, curLine, view):
                      "keyword", "Packages/TypeScript/icons/arrow-right3.png", 
                      sublime.HIDDEN)
 
+
 # if cursor is on reference line, go to (filename, line, col) referenced by
 # that line
 class TypescriptGoToRefCommand(sublime_plugin.TextCommand):
@@ -987,6 +973,7 @@ class TypescriptGoToRefCommand(sublime_plugin.TextCommand):
            updateRefLine(refInfo, cursor[0], self.view)
            sublime.active_window().open_file('{0}:{1}:{2}'.format(filename, l + 1 or 0, c + 1 or 0), 
               sublime.ENCODED_POSITION)    
+
 
 # command: go to next reference in active references file
 # TODO: generalize this to work for all types of references
@@ -1004,6 +991,7 @@ class TypescriptNextRefCommand(sublime_plugin.TextCommand):
             refView.sel().add(sublime.Region(pos, pos))
             refView.run_command('typescript_go_to_ref')
 
+
 # command: go to previous reference in active references file
 # TODO: generalize this to work for all types of references
 class TypescriptPrevRefCommand(sublime_plugin.TextCommand):
@@ -1019,6 +1007,7 @@ class TypescriptPrevRefCommand(sublime_plugin.TextCommand):
             refView.sel().clear()
             refView.sel().add(sublime.Region(pos, pos))
             refView.run_command('typescript_go_to_ref')
+
 
 # highlight all occurances of refId in view
 def highlightIds(view, refId):
@@ -1092,6 +1081,7 @@ class TypescriptPopulateRefs(sublime_plugin.TextCommand):
         self.view.settings().set('refinfo', refInfo.asValue())
         self.view.set_read_only(True)
 
+
 # apply a single edit specification to a view
 def applyEdit(text, view, minl, minc, liml, limc, ntext=""):
     begin = view.text_point(minl, minc)
@@ -1117,6 +1107,7 @@ def applyFormattingChanges(text, view, changes):
         applyEdit(text, view, minLine, minCol, 
                   limLine, limCol, ntext=newText)
 
+
 # format on ";", "}", or "\n"; called by typing these keys in a ts file
 # in the case of "\n", this is only called when no completion dialogue visible
 class TypescriptFormatOnKey(sublime_plugin.TextCommand):
@@ -1129,25 +1120,24 @@ class TypescriptFormatOnKey(sublime_plugin.TextCommand):
         if not cli.ST2():
            clientInfo = cli.getOrAddFile(self.view.file_name())
            clientInfo.changeCount = self.view.change_count()
-        encodedKey = json.JSONEncoder().encode(key)
-        cmdstr = cmdLineCol(self.view, "formatonkey")
-        cmdstr += ("{{{0}}} ".format(encodedKey) + self.view.file_name())
-        data = updateSimpleRequestSync(self.view, cmdstr)
+        checkUpdateView(self.view)
+        data = cli.service.formatOnKey(self.view.file_name(), getLocationFromView(self.view), key)
         if data['success']:
             changes = data['body']
             applyFormattingChanges(text, self.view, changes)
 
+
 # format a range of locations in the view
 def formatRange(text, view, begin, end):
-        cmdstr = cmdLineColPos2(view, begin, end, "format")
-        cmdstr += view.file_name()
-        data = updateSimpleRequestSync(view, cmdstr)
-        if data['success']:
-            changes = data['body']
-            applyFormattingChanges(text, view, changes)
-        if not cli.ST2():
-           clientInfo = cli.getOrAddFile(view.file_name())
-           clientInfo.changeCount = view.change_count()            
+    checkUpdateView(view)
+    data = cli.service.format(view.file_name(), getLocationFromPosition(view, begin), getLocationFromPosition(view, end))
+    if data['success']:
+        changes = data['body']
+        applyFormattingChanges(text, view, changes)
+    if not cli.ST2():
+        clientInfo = cli.getOrAddFile(view.file_name())
+        clientInfo.changeCount = view.change_count()
+
 
 # command to format the current selection
 class TypescriptFormatSelection(sublime_plugin.TextCommand):
@@ -1155,16 +1145,19 @@ class TypescriptFormatSelection(sublime_plugin.TextCommand):
         r = self.view.sel()[0]
         formatRange(text, self.view, r.begin(), r.end())
 
+
 # command to format the entire buffer
 class TypescriptFormatDocument(sublime_plugin.TextCommand):
     def run(self, text):
         formatRange(text, self.view, 0, self.view.size())
+
 
 # command to format the current line
 class TypescriptFormatLine(sublime_plugin.TextCommand):
     def run(self, text):
         lineRegion = self.view.line(self.view.sel()[0])
         formatRange(text, self.view, lineRegion.begin(), lineRegion.end())
+
 
 # this is not always called on startup by Sublime, so we call it
 # from on_activated or on_close if necessary
@@ -1208,8 +1201,3 @@ def plugin_unloaded():
         refInfo = cli.getRefInfo()
         if refInfo:
             refView.settings().set('refinfo', refInfo.asValue())
-        
-    
-
-
-
