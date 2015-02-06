@@ -103,8 +103,6 @@ export class CancellationToken {
     }
 }
 
-// TODO: make this a parameter of the service or in service environment
-
 export class LSHost implements ts.LanguageServiceHost {
     private ls: ts.LanguageService = null;
     logger: ts.Logger;
