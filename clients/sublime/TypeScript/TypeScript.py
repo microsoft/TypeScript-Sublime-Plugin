@@ -8,7 +8,7 @@ import sublime_plugin
 
 # Adds the current path, so sublime can load our modules fine in both Sublime 2 & 3
 # Sublime 2 doesn't like relative module references .<module>
-# Sublime 3 reuires relative module references to load from the current path
+# Sublime 3 requires relative module references to load from the current path
 sys.path.append(os.path.dirname(__file__))
 
 from nodeclient import NodeCommClient
