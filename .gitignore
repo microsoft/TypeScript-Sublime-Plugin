@@ -5,3 +5,6 @@ src/service/*.js
 src/testsrc/*.js
 src/service/editorServices.d.ts
 !clients/sublime/TypeScript/node_modules
+
+#Ignore emacs temporary
+*~
