@@ -86,7 +86,7 @@
     },
     { "keys": ["enter"], "command": "commit_completion",
       "context": [
-	  { "key": "auto_complete_visible","operator": "equal", "operand": true },
+	  { "key": "auto_complete_visible","operator": "equal", "operand": true }
       ]
     },
 
@@ -113,7 +113,7 @@
     },
     { "keys": ["tab"], "command": "commit_completion",
       "context": [
-	  { "key": "auto_complete_visible","operator": "equal", "operand": true },
+	  { "key": "auto_complete_visible","operator": "equal", "operand": true }
       ]
-    },
+    }
 ]
