@@ -19,7 +19,7 @@ class CommClient:
 
 
 class NodeCommClient(CommClient):
-    __HEADER_CONTENT_LENGTH = b"Content-Length: "
+    __CONTENT_LENGTH_HEADER = b"Content-Length: "
 
     def __init__(self, scriptPath):
         """
@@ -111,8 +111,8 @@ class NodeCommClient(CommClient):
             header = stream.readline().strip()
             if len(header) == 0:
                 state = "body"
-            elif header.startswith(NodeCommClient.__HEADER_CONTENT_LENGTH):
-                bodlen = int(header[len(NodeCommClient.__HEADER_CONTENT_LENGTH):])
+            elif header.startswith(NodeCommClient.__CONTENT_LENGTH_HEADER):
+                bodlen = int(header[len(NodeCommClient.__CONTENT_LENGTH_HEADER):])
         # TODO: signal error if bodlen == 0
         if bodlen > 0:
             data = stream.read(bodlen)

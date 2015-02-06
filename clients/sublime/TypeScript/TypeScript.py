@@ -6,12 +6,17 @@ import time
 import sublime
 import sublime_plugin
 
-from .nodeclient import NodeCommClient
-from .serviceproxy import *
+# Adds the current path, so sublime can load our modules fine in both Sublime 2 & 3
+# Sublime 2 doesn't like relative module references .<module>
+# Sublime 3 reuires relative module references to load from the current path
+sys.path.append(os.path.dirname(__file__))
+
+from nodeclient import NodeCommClient
+from serviceproxy import *
 
 # Enable Python Tools for visual studio remote debugging
 try: 
-    from .ptvsd import enable_attach
+    from ptvsd import enable_attach
     enable_attach(secret=None)
 except ImportError:
     pass
@@ -47,21 +52,21 @@ def is_typescript_scope(view, scopeSel):
 
 def getLocationFromView(view):
     """
-    Returns the Location object of the beginning of the first slected region in the view
+    Returns the Location tuple of the beginning of the first selected region in the view
     """
     region = view.sel()[0]
     return getLocationFromRegion(view, region)
 
 def getLocationFromRegion(view, region):
     """
-    Returns the Location object of the beginning of the given region
+    Returns the Location tuple of the beginning of the given region
     """
     position = region.begin()
     return getLocationFromPosition(view, position)
 
 def getLocationFromPosition(view, position):
     """
-    Returns the Location object of the given text position
+    Returns the Location tuple of the given text position
     """
     cursor = view.rowcol(position)
     line = cursor[0]
