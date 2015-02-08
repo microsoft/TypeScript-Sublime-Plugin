@@ -1,18 +1,12 @@
 TS = ../../../TypeScript
 TSLOC = $(TS)/built/local
 LTSC = node $(TSLOC)/tsc.js
+SRC = protocol.ts editorServices.ts
 
-it: editorServices.d.ts
-	$(LTSC) protocol.ts -m commonjs
-
-ed: 
-	$(LTSC) editorServices.ts --declaration -m commonjs		
-
-editorServices.d.ts: editorServices.ts
-	$(LTSC) editorServices.ts --declaration -m commonjs	
+it: $(SRC)
+	$(LTSC) protocol.ts editorServices.ts -m commonjs
 
 clean: 
 	-rm *.js
 	-rm *~
 	-rm #*
-	-rm editorServices.d.ts

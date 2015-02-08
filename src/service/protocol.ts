@@ -1,6 +1,5 @@
 /// <reference path='../../node_modules/typescript/bin/typescript.d.ts'/>
 /// <reference path='../../node_modules/typescript/bin/typescript_internal.d.ts'/>
-/// <reference path='editorServices.d.ts' />
 /// <reference path='node.d.ts' />
 /// <reference path='_debugger.d.ts' />
 
@@ -23,6 +22,10 @@ var paddedLength=8;
 var typeNames = ["interface","class","enum","module","alias","type"];
 
 var spaceCache = [" ","  ","   ","    "];
+
+interface StackTraceError extends Error {
+    stack?: string;
+}
 
 function generateSpaces(n: number): string {
     if (!spaceCache[n]) {
@@ -363,6 +366,18 @@ class Session {
         }
     }
 
+    logError(err: Error, cmd: string) {
+        var typedErr = <StackTraceError>err;
+        var msg = "Exception on executing command " + cmd;
+        if (typedErr.message) {
+            msg += ":\n" + typedErr.message;
+            if (typedErr.stack) {
+                msg += "\n" + typedErr.stack;
+            }
+        }
+        this.projectService.log(msg);
+    }
+
     initProtocol() {
         this.protocol = new nodeproto.Protocol();
         // note: onResponse was named by nodejs authors; we are re-purposing the Protocol
@@ -521,17 +536,19 @@ class Session {
         var checkOne = () => {
             if (matchSeq(seq)) {
                 var checkSpec = checkList[index++];
-                this.syntacticCheck(checkSpec.filename, checkSpec.project);
-                this.immediateId = setImmediate(() => {
-                    this.semanticCheck(checkSpec.filename, checkSpec.project);
-                    this.immediateId = undefined;
-                    if (checkList.length > index) {
-                        this.errorTimer = setTimeout(checkOne, followMs);
-                    }
-                    else {
-                        this.errorTimer = undefined;
-                    }
-                });
+                if (checkSpec.project.getSourceFileFromName(checkSpec.filename)) {
+                    this.syntacticCheck(checkSpec.filename, checkSpec.project);
+                    this.immediateId = setImmediate(() => {
+                        this.semanticCheck(checkSpec.filename, checkSpec.project);
+                        this.immediateId = undefined;
+                        if (checkList.length > index) {
+                            this.errorTimer = setTimeout(checkOne, followMs);
+                        }
+                        else {
+                            this.errorTimer = undefined;
+                        }
+                    });
+                }
             }
         }
         if ((checkList.length > index) && (matchSeq(seq))) {
@@ -550,507 +567,524 @@ class Session {
             var project: ed.Project;
             var compilerService: ed.CompilerService;
 
-            if (m = cmd.match(/^definition (\d+) (\d+) (.*)$/)) {
-                line = parseInt(m[1]);
-                col = parseInt(m[2]);
-                file = ts.normalizePath(m[3]);
-                project = this.projectService.getProjectForFile(file);
-                if (project) {
-                    var compilerService = project.compilerService;
-                    pos = compilerService.host.lineColToPosition(file, line, col);
-                    var locs = compilerService.languageService.getDefinitionAtPosition(file, pos);
-                    if (locs) {
-                        var info = locs.map(def => ({
-                            file: def && def.fileName,
-                            min: def &&
-                            compilerService.host.positionToZeroBasedLineCol(def.fileName, def.textSpan.start),
-                            lim: def &&
-                            compilerService.host.positionToZeroBasedLineCol(def.fileName, ts.textSpanEnd(def.textSpan))
-                        }));
-                        this.output(info[0] || null);
+            try {
+                if (m = cmd.match(/^definition (\d+) (\d+) (.*)$/)) {
+                    line = parseInt(m[1]);
+                    col = parseInt(m[2]);
+                    file = ts.normalizePath(m[3]);
+                    project = this.projectService.getProjectForFile(file);
+                    if (project) {
+                        var compilerService = project.compilerService;
+                        pos = compilerService.host.lineColToPosition(file, line, col);
+                        var locs = compilerService.languageService.getDefinitionAtPosition(file, pos);
+                        if (locs) {
+                            var info = locs.map(def => ({
+                                file: def && def.fileName,
+                                min: def &&
+                                compilerService.host.positionToZeroBasedLineCol(def.fileName, def.textSpan.start),
+                                lim: def &&
+                                compilerService.host.positionToZeroBasedLineCol(def.fileName, ts.textSpanEnd(def.textSpan))
+                            }));
+                            this.output(info[0] || null);
+                        }
+                        else {
+                            this.output(undefined, "could not find def");
+                        }
                     }
                     else {
-                        this.output(undefined, "could not find def");
+                        this.output(undefined, "no project for " + file);
                     }
                 }
-                else {
-                    this.output(undefined, "no project for " + file);
+                else if (m = cmd.match(/^dbg start$/)) {
+                    this.debugSession = new JsDebugSession();
                 }
-            }
-            else if (m = cmd.match(/^dbg start$/)) {
-                this.debugSession = new JsDebugSession();
-            }
-            else if (m = cmd.match(/^dbg cont$/)) {
-                if (this.debugSession) {
-                    this.debugSession.cont((err, body, res) => {
-                    });
+                else if (m = cmd.match(/^dbg cont$/)) {
+                    if (this.debugSession) {
+                        this.debugSession.cont((err, body, res) => {
+                        });
+                    }
                 }
-            }
-            else if (m = cmd.match(/^dbg src$/)) {
-                if (this.debugSession) {
-                    this.debugSession.listSrc();
+                else if (m = cmd.match(/^dbg src$/)) {
+                    if (this.debugSession) {
+                        this.debugSession.listSrc();
+                    }
                 }
-            }
-            else if (m = cmd.match(/^dbg brk (\d+) (.*)$/)) {
-                line = parseInt(m[1]);
-                file = ts.normalizePath(m[2]);
-                if (this.debugSession) {
-                    this.debugSession.setBreakpointOnLine(line, file);
+                else if (m = cmd.match(/^dbg brk (\d+) (.*)$/)) {
+                    line = parseInt(m[1]);
+                    file = ts.normalizePath(m[2]);
+                    if (this.debugSession) {
+                        this.debugSession.setBreakpointOnLine(line, file);
+                    }
                 }
-            }
-            else if (m = cmd.match(/^dbg eval (.*)$/)) {
-                var code = m[1];
-                if (this.debugSession) {
-                    this.debugSession.evaluate(code);
+                else if (m = cmd.match(/^dbg eval (.*)$/)) {
+                    var code = m[1];
+                    if (this.debugSession) {
+                        this.debugSession.evaluate(code);
+                    }
                 }
-            }
-            else if (m = cmd.match(/^rename (\d+) (\d+) (.*)$/)) {
-                line = parseInt(m[1]);
-                col = parseInt(m[2]);
-                file = ts.normalizePath(m[3]);
-                project = this.projectService.getProjectForFile(file);
-                if (project) {
-                    var compilerService = project.compilerService;
-                    pos = compilerService.host.lineColToPosition(file, line, col);
-                    var renameInfo = compilerService.languageService.getRenameInfo(file, pos);
-                    if (renameInfo) {
-                        if (renameInfo.canRename) {
-                            var renameLocs = compilerService.languageService.findRenameLocations(file, pos, false, false);
-                            if (renameLocs) {
-                                var bakedRenameLocs = renameLocs.map(loc=> ({
-                                    file: loc.fileName,
-                                    min: compilerService.host.positionToZeroBasedLineCol(loc.fileName, loc.textSpan.start),
-                                    lim: compilerService.host.positionToZeroBasedLineCol(loc.fileName, ts.textSpanEnd(loc.textSpan)),
-                                })).sort((a, b) => {
-                                    if (a.file < b.file) {
-                                        return -1;
-                                    }
-                                    else if (a.file > b.file) {
-                                        return 1;
-                                    }
-                                    else {
-                                        // reverse sort assuming no overlap
-                                        if (a.min.line < b.min.line) {
-                                            return 1;
-                                        }
-                                        else if (a.min.line > b.min.line) {
+                else if (m = cmd.match(/^rename (\d+) (\d+) (.*)$/)) {
+                    line = parseInt(m[1]);
+                    col = parseInt(m[2]);
+                    file = ts.normalizePath(m[3]);
+                    project = this.projectService.getProjectForFile(file);
+                    if (project) {
+                        var compilerService = project.compilerService;
+                        pos = compilerService.host.lineColToPosition(file, line, col);
+                        var renameInfo = compilerService.languageService.getRenameInfo(file, pos);
+                        if (renameInfo) {
+                            if (renameInfo.canRename) {
+                                var renameLocs = compilerService.languageService.findRenameLocations(file, pos, false, false);
+                                if (renameLocs) {
+                                    var bakedRenameLocs = renameLocs.map(loc=> ({
+                                        file: loc.fileName,
+                                        min: compilerService.host.positionToZeroBasedLineCol(loc.fileName, loc.textSpan.start),
+                                        lim: compilerService.host.positionToZeroBasedLineCol(loc.fileName, ts.textSpanEnd(loc.textSpan)),
+                                    })).sort((a, b) => {
+                                        if (a.file < b.file) {
                                             return -1;
                                         }
+                                        else if (a.file > b.file) {
+                                            return 1;
+                                        }
                                         else {
-                                            return b.min.offset - a.min.offset;
+                                            // reverse sort assuming no overlap
+                                            if (a.min.line < b.min.line) {
+                                                return 1;
+                                            }
+                                            else if (a.min.line > b.min.line) {
+                                                return -1;
+                                            }
+                                            else {
+                                                return b.min.offset - a.min.offset;
+                                            }
                                         }
-                                    }
-                                }).reduce<FileRanges[]>((accum: FileRanges[], cur: FileRange) => {
-                                    var curFileAccum: FileRanges;
-                                    if (accum.length > 0) {
-                                        curFileAccum = accum[accum.length - 1];
-                                        if (curFileAccum.file != cur.file) {
-                                            curFileAccum = undefined;
+                                    }).reduce<FileRanges[]>((accum: FileRanges[], cur: FileRange) => {
+                                        var curFileAccum: FileRanges;
+                                        if (accum.length > 0) {
+                                            curFileAccum = accum[accum.length - 1];
+                                            if (curFileAccum.file != cur.file) {
+                                                curFileAccum = undefined;
+                                            }
                                         }
-                                    }
-                                    if (!curFileAccum) {
-                                        curFileAccum = { file: cur.file, locs: [] };
-                                        accum.push(curFileAccum);
-                                    }
-                                    curFileAccum.locs.push({ min: cur.min, lim: cur.lim });
-                                    return accum;
-                                }, []);
-                                this.output({ info: renameInfo, locs: bakedRenameLocs });
+                                        if (!curFileAccum) {
+                                            curFileAccum = { file: cur.file, locs: [] };
+                                            accum.push(curFileAccum);
+                                        }
+                                        curFileAccum.locs.push({ min: cur.min, lim: cur.lim });
+                                        return accum;
+                                    }, []);
+                                    this.output({ info: renameInfo, locs: bakedRenameLocs });
+                                }
+                                else {
+                                    this.output([]);
+                                }
                             }
                             else {
-                                this.output([]);
+                                this.output(undefined, renameInfo.localizedErrorMessage);
                             }
                         }
                         else {
-                            this.output(undefined, renameInfo.localizedErrorMessage);
+                            this.output(undefined, "no rename information at cursor");
                         }
                     }
-                    else {
-                        this.output(undefined, "no rename information at cursor");
-                    }
                 }
-            }
-            else if (m = cmd.match(/^type (\d+) (\d+) (.*)$/)) {
-                line = parseInt(m[1]);
-                col = parseInt(m[2]);
-                file = ts.normalizePath(m[3]);
-                project = this.projectService.getProjectForFile(file);
-                if (project) {
-                    var compilerService = project.compilerService;
-                    pos = compilerService.host.lineColToPosition(file, line, col);
-                    var quickInfo = compilerService.languageService.getQuickInfoAtPosition(file, pos);
-                    var typeLoc:any;
+                else if (m = cmd.match(/^type (\d+) (\d+) (.*)$/)) {
+                    line = parseInt(m[1]);
+                    col = parseInt(m[2]);
+                    file = ts.normalizePath(m[3]);
+                    project = this.projectService.getProjectForFile(file);
+                    if (project) {
+                        var compilerService = project.compilerService;
+                        pos = compilerService.host.lineColToPosition(file, line, col);
+                        var quickInfo = compilerService.languageService.getQuickInfoAtPosition(file, pos);
+                        var typeLoc: any;
 
-                    if (quickInfo && (quickInfo.kind == "var") || (quickInfo.kind == "local var")) {
-                        var typeName = parseTypeName(quickInfo.displayParts);
-                        if (typeName) {
-                            var navItems = compilerService.languageService.getNavigateToItems(typeName);
-                            var navItem = findExactMatchType(navItems);
-                            if (navItem) {
-                                typeLoc = {
-                                    fileName: navItem.fileName,
-                                    min: compilerService.host.positionToZeroBasedLineCol(navItem.fileName,
-                                        navItem.textSpan.start),
-                                };
+                        if (quickInfo && (quickInfo.kind == "var") || (quickInfo.kind == "local var")) {
+                            var typeName = parseTypeName(quickInfo.displayParts);
+                            if (typeName) {
+                                var navItems = compilerService.languageService.getNavigateToItems(typeName);
+                                var navItem = findExactMatchType(navItems);
+                                if (navItem) {
+                                    typeLoc = {
+                                        fileName: navItem.fileName,
+                                        min: compilerService.host.positionToZeroBasedLineCol(navItem.fileName,
+                                            navItem.textSpan.start),
+                                    };
+                                }
                             }
                         }
-                    }
-                    if (typeLoc) {
-                        this.output(typeLoc);
+                        if (typeLoc) {
+                            this.output(typeLoc);
+                        }
+                        else {
+                            this.output(undefined, "no info at this location");
+                        }
                     }
                     else {
-                        this.output(undefined,"no info at this location");
+                        this.output(undefined, "no project for " + file);
                     }
                 }
-                else {
-                    this.output(undefined, "no project for " + file);
+                else if (m = cmd.match(/^open (.*)$/)) {
+                    file = ts.normalizePath(m[1]);
+                    this.projectService.openClientFile(file);
                 }
-            }
-            else if (m = cmd.match(/^open (.*)$/)) {
-                file = ts.normalizePath(m[1]);
-                this.projectService.openSpecifiedFile(file);
-            }
-            else if (m = cmd.match(/^references (\d+) (\d+) (.*)$/)) {
-                line = parseInt(m[1]);
-                col = parseInt(m[2]);
-                file = ts.normalizePath(m[3]);
-                // TODO: get all projects for this file; report refs for all projects deleting duplicates
-                // can avoid duplicates by eliminating same ref file from subsequent projects
-                project = this.projectService.getProjectForFile(file);
-                if (project) {
-                    compilerService = project.compilerService;
-                    pos = compilerService.host.lineColToPosition(file, line, col);
-                    var refs = compilerService.languageService.getReferencesAtPosition(file, pos);
-                    if (refs) {
-                        var nameInfo = compilerService.languageService.getQuickInfoAtPosition(file, pos);
-                        if (nameInfo) {
-                            var displayString = ts.displayPartsToString(nameInfo.displayParts);
-                            var nameSpan = nameInfo.textSpan;
-                            var nameColStart =
-                                compilerService.host.positionToZeroBasedLineCol(file, nameSpan.start).offset;
-                            var nameText =
-                                compilerService.host.getScriptSnapshot(file).getText(nameSpan.start, ts.textSpanEnd(nameSpan));
-                            var bakedRefs = refs.map((ref) => {
-                                var min = compilerService.host.positionToZeroBasedLineCol(ref.fileName, ref.textSpan.start);
-                                var refLineSpan=compilerService.host.lineToTextSpan(ref.fileName,min.line);
-                                var snap=compilerService.host.getScriptSnapshot(ref.fileName);
-                                var lineText=snap.getText(refLineSpan.start,ts.textSpanEnd(refLineSpan)).replace(/\r|\n/g,"");
-                                return {
-                                    file: ref.fileName,
-                                    min: min,
-                                    lineText: lineText,
-                                    lim: compilerService.host.positionToZeroBasedLineCol(ref.fileName, ts.textSpanEnd(ref.textSpan)),
-                                };
-                            }).sort(compareFileMin);
-                            this.output([bakedRefs, nameText, nameColStart, displayString]);
+                else if (m = cmd.match(/^references (\d+) (\d+) (.*)$/)) {
+                    line = parseInt(m[1]);
+                    col = parseInt(m[2]);
+                    file = ts.normalizePath(m[3]);
+                    // TODO: get all projects for this file; report refs for all projects deleting duplicates
+                    // can avoid duplicates by eliminating same ref file from subsequent projects
+                    project = this.projectService.getProjectForFile(file);
+                    if (project) {
+                        compilerService = project.compilerService;
+                        pos = compilerService.host.lineColToPosition(file, line, col);
+                        var refs = compilerService.languageService.getReferencesAtPosition(file, pos);
+                        if (refs) {
+                            var nameInfo = compilerService.languageService.getQuickInfoAtPosition(file, pos);
+                            if (nameInfo) {
+                                var displayString = ts.displayPartsToString(nameInfo.displayParts);
+                                var nameSpan = nameInfo.textSpan;
+                                var nameColStart =
+                                    compilerService.host.positionToZeroBasedLineCol(file, nameSpan.start).offset;
+                                var nameText =
+                                    compilerService.host.getScriptSnapshot(file).getText(nameSpan.start, ts.textSpanEnd(nameSpan));
+                                var bakedRefs = refs.map((ref) => {
+                                    var min = compilerService.host.positionToZeroBasedLineCol(ref.fileName, ref.textSpan.start);
+                                    var refLineSpan = compilerService.host.lineToTextSpan(ref.fileName, min.line);
+                                    var snap = compilerService.host.getScriptSnapshot(ref.fileName);
+                                    var lineText = snap.getText(refLineSpan.start, ts.textSpanEnd(refLineSpan)).replace(/\r|\n/g, "");
+                                    return {
+                                        file: ref.fileName,
+                                        min: min,
+                                        lineText: lineText,
+                                        lim: compilerService.host.positionToZeroBasedLineCol(ref.fileName, ts.textSpanEnd(ref.textSpan)),
+                                    };
+                                }).sort(compareFileMin);
+                                this.output([bakedRefs, nameText, nameColStart, displayString]);
+                            }
+                            else {
+                                this.output(undefined, "no references at this position");
+                            }
                         }
                         else {
                             this.output(undefined, "no references at this position");
                         }
                     }
-                    else {
-                        this.output(undefined, "no references at this position");
-                    }
                 }
-            }
-            else if (m = cmd.match(/^quickinfo (\d+) (\d+) (.*)$/)) {
-                line = parseInt(m[1]);
-                col = parseInt(m[2]);
-                file = ts.normalizePath(m[3]);
-                project = this.projectService.getProjectForFile(file);
-                if (project) {
-                    compilerService = project.compilerService;
-                    pos = compilerService.host.lineColToPosition(file, line, col);
-                    var quickInfo = compilerService.languageService.getQuickInfoAtPosition(file, pos);
-                    if (quickInfo) {
-                        var displayString = ts.displayPartsToString(quickInfo.displayParts);
-                        var docString = ts.displayPartsToString(quickInfo.documentation);
-                        this.output({
-                            info: displayString,
-                            doc: docString,
-                        });
-                    }
-                    else {
-                        this.output(undefined, "no info")
-                    }
-                }
-            }
-            else if (m = cmd.match(/^format (\d+) (\d+) (\d+) (\d+) (.*)$/)) {
-                // format line col endLine endCol file
-                line = parseInt(m[1]);
-                col = parseInt(m[2]);
-                var endLine = parseInt(m[3]);
-                var endCol = parseInt(m[4]);
-                file = ts.normalizePath(m[5]);
-
-                project = this.projectService.getProjectForFile(file);
-                if (project) {
-                    compilerService = project.compilerService;
-                    pos = compilerService.host.lineColToPosition(file, line, col);
-                    var endPos = compilerService.host.lineColToPosition(file, endLine, endCol);
-                    var edits: ts.TextChange[];
-                    // TODO: avoid duplicate code (with formatonkey)
-                    try {
-                        edits = compilerService.languageService.getFormattingEditsForRange(file, pos, endPos,
-                            compilerService.formatCodeOptions);
-                    }
-                    catch (err) {
-                        edits=undefined;
-                    }
-                    if (edits) {
-                        var bakedEdits=edits.map((edit)=>{
-                            return {
-                                min: compilerService.host.positionToZeroBasedLineCol(file,
-                                                                                     edit.span.start),
-                                lim: compilerService.host.positionToZeroBasedLineCol(file,
-                                                                                     ts.textSpanEnd(edit.span)),
-                                newText: edit.newText?edit.newText:""
-                            };
-                        });
-                        this.output(bakedEdits);
-                    }
-                    else {
-                        this.output(undefined,"no edits")
-                    }
-                }
-            }
-            else if (m = cmd.match(/^formatonkey (\d+) (\d+) (\{\".*\"\})\s* (.*)$/)) {
-                line = parseInt(m[1]);
-                col = parseInt(m[2]);
-                file = ts.normalizePath(m[4]);
-                project = this.projectService.getProjectForFile(file);
-                if (project) {
-                    compilerService = project.compilerService;
-                    pos = compilerService.host.lineColToPosition(file, line, col);
-                    var key = JSON.parse(m[3].substring(1, m[3].length - 1));
-
-                    var edits: ts.TextChange[];
-                    try {
-                        edits = compilerService.languageService.getFormattingEditsAfterKeystroke(file, pos, key,
-                            compilerService.formatCodeOptions);
-                        if ((key == "\n")&& ((!edits)||(edits.length==0)||allEditsBeforePos(edits,pos))) {
-                            // TODO: get this from host
-                            var editorOptions: ts.EditorOptions = {
-                                IndentSize: 4,
-                                TabSize: 4,
-                                NewLineCharacter: "\n",
-                                ConvertTabsToSpaces: true,
-                            };
-                            var indentPosition = compilerService.languageService.getIndentationAtPosition(file, pos, editorOptions);
-                            var spaces = generateSpaces(indentPosition);
-                            if (indentPosition > 0) {
-                                edits.push({ span: ts.createTextSpanFromBounds(pos, pos), newText: spaces });
-                            }
-                        }
-                    }
-                    catch (err) {
-                        edits=undefined;
-                    }
-                    if (edits) {
-                        var bakedEdits=edits.map((edit)=>{
-                            return {
-                                min: compilerService.host.positionToZeroBasedLineCol(file,
-                                                                                     edit.span.start),
-                                lim: compilerService.host.positionToZeroBasedLineCol(file,
-                                                                                     ts.textSpanEnd(edit.span)),
-                                newText: edit.newText?edit.newText:""
-                            };
-                        });
-                        this.output(bakedEdits);
-                    }
-                    else {
-                        this.output(undefined,"no edits")
-                    }
-                }
-            }
-            else if (m = cmd.match(/^completions (\d+) (\d+) (\{.*\})?\s*(.*)$/)) {
-                line = parseInt(m[1]);
-                col = parseInt(m[2]);
-                var prefix = "";
-                file = ts.normalizePath(m[4]);
-                if (m[3]) {
-                    prefix = m[3].substring(1, m[3].length - 1);
-                }
-                project = this.projectService.getProjectForFile(file);
-                var completions: ts.CompletionInfo = undefined;
-                if (project) {
-                    compilerService = project.compilerService;
-                    pos = compilerService.host.lineColToPosition(file, line, col);
-                    if (pos >= 0) {
-                        try {
-                            completions = compilerService.languageService.getCompletionsAtPosition(file, pos);
-                        }
-                        catch (err) {
-                            completions = undefined;
-                        }
-                        if (completions) {
-                            var compressedEntries = completions.entries.reduce((accum: ts.CompletionEntryDetails[], entry: ts.CompletionEntry) => {
-                                if (entry.name.indexOf(prefix) == 0) {
-                                    var protoEntry = <ts.CompletionEntryDetails>{};
-                                    protoEntry.name = entry.name;
-                                    protoEntry.kind = entry.kind;
-                                    if (entry.kindModifiers && (entry.kindModifiers.length > 0)) {
-                                        protoEntry.kindModifiers = entry.kindModifiers;
-                                    }
-                                    var details = compilerService.languageService.getCompletionEntryDetails(file, pos, entry.name);
-                                    if (details && (details.documentation) && (details.documentation.length > 0)) {
-                                        protoEntry.documentation = details.documentation;
-                                    }
-                                    accum.push(protoEntry);
-                                }
-                                return accum;
-                            }, []);
-                            this.output(compressedEntries);
-                        }
-                    }
-                }
-                if (!completions) {
-                    this.output(undefined, "no completions");
-                }
-            }
-            else if (m = cmd.match(/^geterr (\d+) (.*)$/)) {
-                var ms = parseInt(m[1]);
-                var rawFiles=m[2];
-                var files=rawFiles.split(';');
-                var checkList = files.reduce((accum: PendingErrorCheck[], filename: string) => {
-                    filename=ts.normalizePath(filename);
-                    project = this.projectService.getProjectForFile(filename);
+                else if (m = cmd.match(/^quickinfo (\d+) (\d+) (.*)$/)) {
+                    line = parseInt(m[1]);
+                    col = parseInt(m[2]);
+                    file = ts.normalizePath(m[3]);
+                    project = this.projectService.getProjectForFile(file);
                     if (project) {
-                        accum.push({ filename: filename, project: project });
-                    }
-                    return accum;
-                }, []);
-                if (checkList.length > 0) {
-                    this.updateErrorCheck(checkList,this.changeSeq,(n)=>n==this.changeSeq,
-                                          ms)
-                }
-            }
-            else if (m=cmd.match(/^change (\d+) (\d+) (\d+) (\d+) (\{\".*\"\})?\s*(.*)$/)) {
-                line = parseInt(m[1]);
-                col  = parseInt(m[2]);
-                var deleteLen=parseInt(m[3]);
-                var insertLen=parseInt(m[4]);
-                var insertString:string;
-
-                if (insertLen) {
-                    insertString=JSON.parse(m[5].substring(1,m[5].length-1));
-                }
-
-                file = ts.normalizePath(m[6]);
-                project=this.projectService.getProjectForFile(file);
-                if (project) {
-                    compilerService = project.compilerService;
-                    pos = compilerService.host.lineColToPosition(file, line, col);
-                    if (pos >= 0) {
-                        var checkRefs=false;
-                        endLine=compilerService.host.positionToZeroBasedLineCol(file,pos+deleteLen).line+1;
-                        if ((endLine == line) && ((!insertString)||(0>insertString.indexOf('\n')))) {
-                            checkRefs=compilerService.host.lineAffectsRefs(file,line);
+                        compilerService = project.compilerService;
+                        pos = compilerService.host.lineColToPosition(file, line, col);
+                        var quickInfo = compilerService.languageService.getQuickInfoAtPosition(file, pos);
+                        if (quickInfo) {
+                            var displayString = ts.displayPartsToString(quickInfo.displayParts);
+                            var docString = ts.displayPartsToString(quickInfo.documentation);
+                            this.output({
+                                info: displayString,
+                                doc: docString,
+                            });
                         }
                         else {
-                            checkRefs=true;
+                            this.output(undefined, "no info")
                         }
-                        compilerService.host.editScript(file, pos, pos + deleteLen, insertString);
-                        if (!checkRefs) {
-                            checkRefs=compilerService.host.lineAffectsRefs(file,line);
+                    }
+                }
+                else if (m = cmd.match(/^format (\d+) (\d+) (\d+) (\d+) (.*)$/)) {
+                    // format line col endLine endCol file
+                    line = parseInt(m[1]);
+                    col = parseInt(m[2]);
+                    var endLine = parseInt(m[3]);
+                    var endCol = parseInt(m[4]);
+                    file = ts.normalizePath(m[5]);
+
+                    project = this.projectService.getProjectForFile(file);
+                    if (project) {
+                        compilerService = project.compilerService;
+                        pos = compilerService.host.lineColToPosition(file, line, col);
+                        var endPos = compilerService.host.lineColToPosition(file, endLine, endCol);
+                        var edits: ts.TextChange[];
+                        // TODO: avoid duplicate code (with formatonkey)
+                        try {
+                            edits = compilerService.languageService.getFormattingEditsForRange(file, pos, endPos,
+                                compilerService.formatCodeOptions);
                         }
-                        if (checkRefs) {
-                            // TODO: recompute references for file
+                        catch (err) {
+                            this.logError(err, cmd);
+                            edits = undefined;
                         }
+                        if (edits) {
+                            var bakedEdits = edits.map((edit) => {
+                                return {
+                                    min: compilerService.host.positionToZeroBasedLineCol(file,
+                                        edit.span.start),
+                                    lim: compilerService.host.positionToZeroBasedLineCol(file,
+                                        ts.textSpanEnd(edit.span)),
+                                    newText: edit.newText ? edit.newText : ""
+                                };
+                            });
+                            this.output(bakedEdits);
+                        }
+                        else {
+                            this.output(undefined, "no edits")
+                        }
+                    }
+                }
+                else if (m = cmd.match(/^formatonkey (\d+) (\d+) (\{\".*\"\})\s* (.*)$/)) {
+                    line = parseInt(m[1]);
+                    col = parseInt(m[2]);
+                    file = ts.normalizePath(m[4]);
+                    project = this.projectService.getProjectForFile(file);
+                    if (project) {
+                        compilerService = project.compilerService;
+                        pos = compilerService.host.lineColToPosition(file, line, col);
+                        var key = JSON.parse(m[3].substring(1, m[3].length - 1));
+
+                        var edits: ts.TextChange[];
+                        try {
+                            edits = compilerService.languageService.getFormattingEditsAfterKeystroke(file, pos, key,
+                                compilerService.formatCodeOptions);
+                            if ((key == "\n") && ((!edits) || (edits.length == 0) || allEditsBeforePos(edits, pos))) {
+                                // TODO: get this from host
+                                var editorOptions: ts.EditorOptions = {
+                                    IndentSize: 4,
+                                    TabSize: 4,
+                                    NewLineCharacter: "\n",
+                                    ConvertTabsToSpaces: true,
+                                };
+                                var indentPosition = compilerService.languageService.getIndentationAtPosition(file, pos, editorOptions);
+                                var spaces = generateSpaces(indentPosition);
+                                if (indentPosition > 0) {
+                                    edits.push({ span: ts.createTextSpanFromBounds(pos, pos), newText: spaces });
+                                }
+                            }
+                        }
+                        catch (err) {
+                            this.logError(err, cmd);
+                            edits = undefined;
+                        }
+                        if (edits) {
+                            var bakedEdits = edits.map((edit) => {
+                                return {
+                                    min: compilerService.host.positionToZeroBasedLineCol(file,
+                                        edit.span.start),
+                                    lim: compilerService.host.positionToZeroBasedLineCol(file,
+                                        ts.textSpanEnd(edit.span)),
+                                    newText: edit.newText ? edit.newText : ""
+                                };
+                            });
+                            this.output(bakedEdits);
+                        }
+                        else {
+                            this.output(undefined, "no edits")
+                        }
+                    }
+                }
+                else if (m = cmd.match(/^completions (\d+) (\d+) (\{.*\})?\s*(.*)$/)) {
+                    line = parseInt(m[1]);
+                    col = parseInt(m[2]);
+                    var prefix = "";
+                    file = ts.normalizePath(m[4]);
+                    if (m[3]) {
+                        prefix = m[3].substring(1, m[3].length - 1);
+                    }
+                    project = this.projectService.getProjectForFile(file);
+                    var completions: ts.CompletionInfo = undefined;
+                    if (project) {
+                        compilerService = project.compilerService;
+                        pos = compilerService.host.lineColToPosition(file, line, col);
+                        if (pos >= 0) {
+                            try {
+                                completions = compilerService.languageService.getCompletionsAtPosition(file, pos);
+                            }
+                            catch (err) {
+                                this.logError(err, cmd);
+                                completions = undefined;
+                            }
+                            if (completions) {
+                                var compressedEntries = completions.entries.reduce((accum: ts.CompletionEntryDetails[], entry: ts.CompletionEntry) => {
+                                    if (entry.name.indexOf(prefix) == 0) {
+                                        var protoEntry = <ts.CompletionEntryDetails>{};
+                                        protoEntry.name = entry.name;
+                                        protoEntry.kind = entry.kind;
+                                        if (entry.kindModifiers && (entry.kindModifiers.length > 0)) {
+                                            protoEntry.kindModifiers = entry.kindModifiers;
+                                        }
+                                        var details = compilerService.languageService.getCompletionEntryDetails(file, pos, entry.name);
+                                        if (details && (details.documentation) && (details.documentation.length > 0)) {
+                                            protoEntry.documentation = details.documentation;
+                                        }
+                                        accum.push(protoEntry);
+                                    }
+                                    return accum;
+                                }, []);
+                                this.output(compressedEntries);
+                            }
+                        }
+                    }
+                    if (!completions) {
+                        this.output(undefined, "no completions");
+                    }
+                }
+                else if (m = cmd.match(/^geterr (\d+) (.*)$/)) {
+                    var ms = parseInt(m[1]);
+                    var rawFiles = m[2];
+                    var files = rawFiles.split(';');
+                    var checkList = files.reduce((accum: PendingErrorCheck[], filename: string) => {
+                        filename = ts.normalizePath(filename);
+                        project = this.projectService.getProjectForFile(filename);
+                        if (project) {
+                            accum.push({ filename: filename, project: project });
+                        }
+                        return accum;
+                    }, []);
+                    if (checkList.length > 0) {
+                        this.updateErrorCheck(checkList, this.changeSeq, (n) => n == this.changeSeq,
+                            ms)
+                    }
+                }
+                else if (m = cmd.match(/^change (\d+) (\d+) (\d+) (\d+) (\{\".*\"\})?\s*(.*)$/)) {
+                    line = parseInt(m[1]);
+                    col = parseInt(m[2]);
+                    var deleteLen = parseInt(m[3]);
+                    var insertLen = parseInt(m[4]);
+                    var insertString: string;
+
+                    if (insertLen) {
+                        insertString = JSON.parse(m[5].substring(1, m[5].length - 1));
+                    }
+
+                    file = ts.normalizePath(m[6]);
+                    project = this.projectService.getProjectForFile(file);
+                    if (project) {
+                        compilerService = project.compilerService;
+                        pos = compilerService.host.lineColToPosition(file, line, col);
+                        if (pos >= 0) {
+                            var checkRefs = false;
+                            endLine = compilerService.host.positionToZeroBasedLineCol(file, pos + deleteLen).line + 1;
+                            if ((endLine == line) && ((!insertString) || (0 > insertString.indexOf('\n')))) {
+                                checkRefs = compilerService.host.lineAffectsRefs(file, line);
+                            }
+                            else {
+                                checkRefs = true;
+                            }
+                            compilerService.host.editScript(file, pos, pos + deleteLen, insertString);
+                            if (!checkRefs) {
+                                checkRefs = compilerService.host.lineAffectsRefs(file, line);
+                            }
+                            if (checkRefs) {
+                                // TODO: recompute references for file
+                            }
+                            this.changeSeq++;
+                        }
+                        // TODO: report async error
+                    }
+                }
+                else if (m = cmd.match(/^reload (.*) from (.*)$/)) {
+                    file = ts.normalizePath(m[1]);
+                    tmpfile = ts.normalizePath(m[2]);
+                    project = this.projectService.getProjectForFile(file);
+                    if (project) {
                         this.changeSeq++;
-                    }
-                    // TODO: report async error
-                }
-            }
-            else if (m = cmd.match(/^reload (.*) from (.*)$/)) {
-                file=ts.normalizePath(m[1]);
-                tmpfile=ts.normalizePath(m[2]);
-                project=this.projectService.getProjectForFile(file);
-                if (project) {
-                    this.changeSeq++;
-                    // make sure no changes happen before this one is finished
-                    project.compilerService.host.reloadScript(file, tmpfile, () => {
-                        this.output({ ack: true });
-                    }); 
-                }                
-            }
-            else if (m = cmd.match(/^save (.*) to (.*)$/)) {
-                file = ts.normalizePath(m[1])
-                tmpfile = ts.normalizePath(m[2])
-                project=this.projectService.getProjectForFile(file);
-                if (project) {
-                    project.compilerService.host.saveTo(file,tmpfile);
-                }
-            }
-            else if (m=cmd.match(/^navto (\{.*\}) (.*)$/)) {
-                var searchTerm=m[1];
-                searchTerm=searchTerm.substring(1,searchTerm.length-1);
-                file = ts.normalizePath(m[2]);
-                project=this.projectService.getProjectForFile(file);
-                if (project) {
-                    compilerService=project.compilerService;
-                    var navItems: ts.NavigateToItem[];
-                    var cancellationToken=<ed.CancellationToken>compilerService.host.getCancellationToken();
-                    if (this.pendingOperation) {
-                        cancellationToken.cancel();
-                        cancellationToken.reset();
-                    }
-                    try {
-                        this.pendingOperation=true;
-                        navItems = sortNavItems(compilerService.languageService.getNavigateToItems(searchTerm));
-                    }
-                    catch (err) {
-                        navItems=undefined;
-                    }
-                    this.pendingOperation=false;
-                    if (navItems) {
-                        var bakedNavItems = navItems.map((navItem)=>{
-                            var min =compilerService.host.positionToZeroBasedLineCol(navItem.fileName,
-                                                                                     navItem.textSpan.start);
-                            this.abbreviate(min);
-                            var bakedItem:any = {
-                                name: navItem.name,
-                                kind: navItem.kind,
-                                fileName: this.encodeFilename(navItem.fileName),
-                                min: min,
-                            };
-                            if (navItem.containerName&&(navItem.containerName.length>0)) {
-                                bakedItem.containerName=navItem.containerName;
-                            }
-                            if (navItem.containerKind&&(navItem.containerKind.length>0)) {
-                                bakedItem.containerKind=navItem.containerKind;
-                            }
-                            this.abbreviate(bakedItem);
-                            return bakedItem;
+                        // make sure no changes happen before this one is finished
+                        project.compilerService.host.reloadScript(file, tmpfile, () => {
+                            this.output({ ack: true });
                         });
-                        
-                        this.output(bakedNavItems);
-                    }
-                    else {
-                        this.output(undefined,"no nav items");
                     }
                 }
+                else if (m = cmd.match(/^save (.*) to (.*)$/)) {
+                    file = ts.normalizePath(m[1])
+                    tmpfile = ts.normalizePath(m[2])
+                    project = this.projectService.getProjectForFile(file);
+                    if (project) {
+                        project.compilerService.host.saveTo(file, tmpfile);
+                    }
+                }
+                else if (m = cmd.match(/^close (.*)$/)) {
+                    file = ts.normalizePath(m[1]);
+                    this.projectService.closeClientFile(file);
+                }
+                else if (m = cmd.match(/^navto (\{.*\}) (.*)$/)) {
+                    var searchTerm = m[1];
+                    searchTerm = searchTerm.substring(1, searchTerm.length - 1);
+                    file = ts.normalizePath(m[2]);
+                    project = this.projectService.getProjectForFile(file);
+                    if (project) {
+                        compilerService = project.compilerService;
+                        var navItems: ts.NavigateToItem[];
+                        var cancellationToken = <ed.CancellationToken>compilerService.host.getCancellationToken();
+                        if (this.pendingOperation) {
+                            cancellationToken.cancel();
+                            cancellationToken.reset();
+                        }
+                        try {
+                            this.pendingOperation = true;
+                            navItems = sortNavItems(compilerService.languageService.getNavigateToItems(searchTerm));
+                        }
+                        catch (err) {
+                            this.logError(err, cmd);
+                            navItems = undefined;
+                        }
+                        this.pendingOperation = false;
+                        if (navItems) {
+                            var bakedNavItems = navItems.map((navItem) => {
+                                var min = compilerService.host.positionToZeroBasedLineCol(navItem.fileName,
+                                    navItem.textSpan.start);
+                                this.abbreviate(min);
+                                var bakedItem: any = {
+                                    name: navItem.name,
+                                    kind: navItem.kind,
+                                    fileName: this.encodeFilename(navItem.fileName),
+                                    min: min,
+                                };
+                                if (navItem.containerName && (navItem.containerName.length > 0)) {
+                                    bakedItem.containerName = navItem.containerName;
+                                }
+                                if (navItem.containerKind && (navItem.containerKind.length > 0)) {
+                                    bakedItem.containerKind = navItem.containerKind;
+                                }
+                                this.abbreviate(bakedItem);
+                                return bakedItem;
+                            });
+
+                            this.output(bakedNavItems);
+                        }
+                        else {
+                            this.output(undefined, "no nav items");
+                        }
+                    }
+                }
+                else if (m = cmd.match(/^abbrev/)) {
+                    this.fetchedAbbrev = true;
+                    this.output(this.abbrevTable);
+                }
+                else if (m = cmd.match(/^pretty/)) {
+                    this.prettyJSON = true;
+                }
+                else if (m = cmd.match(/^trc/)) {
+                    (<any>this).notthere.x;
+                }
+                else if (m = cmd.match(/^printproj/)) {
+                    this.projectService.printProjects();
+                }
+                else if (m = cmd.match(/^fileproj (.*)$/)) {
+                    file = ts.normalizePath(m[1]);
+                    this.projectService.printProjectsForFile(file);
+                }
+                else {
+                    this.output(undefined, "Unrecognized command " + cmd);
+                }
             }
-            else if (m=cmd.match(/^abbrev/)) {
-                this.fetchedAbbrev=true;
-                this.output(this.abbrevTable);
-            }
-            else if (m = cmd.match(/^pretty/)) {
-                this.prettyJSON=true;
-            }
-            else if (m = cmd.match(/^printproj/)) {
-                this.projectService.printProjects();
-            }
-            else if (m = cmd.match(/^fileproj (.*)$/)) {
-                file = ts.normalizePath(m[1]);
-                this.projectService.printProjectsForFile(file);
-            }
-            else {
-                this.output(undefined,"Unrecognized command "+cmd);
+            catch (err) {
+                this.logError(err,cmd);
             }
         });
 
-        rl.on('close', function() {
+        rl.on('close', () => {
+            this.projectService.closeLog();
             console.log("Exiting...");
             process.exit(0);
         });

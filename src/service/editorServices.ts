@@ -3,8 +3,9 @@
 /// <reference path='node.d.ts' />
 
 import ts = require('typescript');
-import child_process=require('child_process');
+import fs = require('fs');
 
+var measurePerf = true;
 var lineCollectionCapacity = 4;
 var indentStrings: string[] = [];
 var indentBase = "    ";
@@ -38,23 +39,58 @@ function showLines(s: string) {
     return strBuilder;
 }
 
+function calibrateTimer() {
+    var count = 20;
+    var total = 0;
+    for (var i = 0; i < count; i++) {
+        var start = process.hrtime();
+        var elapsed = process.hrtime(start);
+        var elapsedNano = 1e9 * elapsed[0] + elapsed[1];
+        total += elapsedNano;
+    }
+    logger.msg("Estimated precision of high-res timer: " + (total/count).toFixed(3)+" microseconds", "Perf");
+}
+
+function getModififedTime(filename: string) {
+    if (measurePerf) {
+        var start = process.hrtime();
+    }
+    var stats=fs.statSync(filename);
+    if (!stats) {
+        logger.msg("Stat returned undefined for " + filename);
+    }
+    if (measurePerf) {
+        var elapsed = process.hrtime(start);
+        var elapsedNano = 1e9 * elapsed[0] + elapsed[1];
+        logger.msg("Elapsed time for stat (in nanoseconds)" + filename + ": " + elapsedNano.toString(), "Perf");
+    }
+    return stats.mtime;
+}
+
 export class ScriptInfo {
     svc: ScriptVersionCache;
-    isInferredRoot=false;         
-    activeProjects:Project[]=[];  // projects referencing this file
     children:ScriptInfo[]=[];     // files referenced by this file
 
-    defaultProject: Project; // project to use by default for file 
+    defaultProject: Project;      // project to use by default for file
+    mtime: Date;
 
     constructor(public filename: string, public content:string, public isOpen = false) {
         this.svc = ScriptVersionCache.fromString(content);
+        if (!isOpen) {
+            this.mtime = getModififedTime(filename);
+        }
+    }
+
+    close() {
+        this.isOpen = false;
+        this.mtime = getModififedTime(this.filename);
     }
 
     addChild(childInfo:ScriptInfo) {
         this.children.push(childInfo);
     }
 
-    public snap() {
+    snap() {
         return this.svc.getSnapshot();
     }
 
@@ -68,11 +104,11 @@ export class ScriptInfo {
         return snap.index.lineNumberToInfo(line);
     }
 
-    public editContent(minChar: number, limChar: number, newText: string): void {
+    editContent(minChar: number, limChar: number, newText: string): void {
         this.svc.edit(minChar, limChar - minChar, newText);
     }
 
-    public getTextChangeRangeBetweenVersions(startVersion: number, endVersion: number): ts.TextChangeRange {
+    getTextChangeRangeBetweenVersions(startVersion: number, endVersion: number): ts.TextChangeRange {
         return this.svc.getTextChangesBetweenVersions(startVersion, endVersion);
     }
 
@@ -103,45 +139,111 @@ export class CancellationToken {
     }
 }
 
-// TODO: make this a parameter of the service or in service environment
+function padStringRight(str: string, padding: string) {
+    return (str + padding).slice(0,padding.length);
+}
+
+export class Logger {
+    fd = -1;
+    seq = 0;
+    inGroup=false;
+    firstInGroup = true;
+
+    constructor(public logFilename: string) {
+    }
+
+    close() {
+        if (this.fd >= 0) {
+            fs.close(this.fd);
+        }
+    }
+
+    perftrc(s: string) {
+        this.msg(s,"Perf");
+    }
+
+    info(s: string) {
+        this.msg(s,"Info");
+    }
+
+    startGroup() {
+        this.inGroup=true;
+        this.firstInGroup = true;
+    }
+
+    endGroup() {
+        this.inGroup=false;
+        this.seq++;
+        this.firstInGroup = true;
+    }
+
+    msg(s: string, type = "Err") {
+        if (this.fd < 0) {
+            this.fd = fs.openSync(this.logFilename, "w");
+        }
+        if (this.fd >= 0) {
+            s = s + "\n";
+            var prefix = padStringRight(type + " " + this.seq.toString(), "          ");
+            if (this.firstInGroup) {
+                s = prefix + s;
+                this.firstInGroup = false;
+            }
+            if (!this.inGroup) {
+                this.seq++;
+                this.firstInGroup = true;
+            }
+            var buf = new Buffer(s);
+            fs.writeSync(this.fd, buf, 0, buf.length, null);
+        }
+    }
+
+}
+
+export var logger = new Logger(".log"+process.pid.toString());
 
 export class LSHost implements ts.LanguageServiceHost {
-    private ls: ts.LanguageService = null;
-    logger: ts.Logger;
+    ls: ts.LanguageService = null;
     compilationSettings: ts.CompilerOptions;
     filenameToScript: ts.Map<ScriptInfo> = {};
 
-    constructor(private cancellationToken: CancellationToken = CancellationToken.None) {
-        this.logger = this;
+    constructor(public project: Project, private cancellationToken: CancellationToken = CancellationToken.None) {
     }
 
-    trace(str:string) {
+    getDefaultLibFilename() {
+        var nodeModuleBinDir = ts.getDirectoryPath(ts.normalizePath(ts.sys.getExecutingFilePath()));
+
+        if (this.compilationSettings && this.compilationSettings.target == ts.ScriptTarget.ES6) {
+            return nodeModuleBinDir + "/lib.es6.d.ts";
+        }
+        else {
+            return nodeModuleBinDir + "/lib.d.ts";
+        }
     }
 
-    error(str:string) {
-    }
-
-    public cancel() {
+    cancel() {
         this.cancellationToken.cancel();
     }
 
-    public reset() {
+    reset() {
         this.cancellationToken.reset();
     }
 
     getScriptSnapshot(filename: string): ts.IScriptSnapshot {
-        return this.getScriptInfo(filename).snap();
+        var scriptInfo = this.getScriptInfo(filename);
+        if (scriptInfo) {
+            return scriptInfo.snap();
+        }
     }
 
-    setCompilationSettings(opt:ts.CompilerOptions) {
-        this.compilationSettings=opt;
+    setCompilationSettings(opt: ts.CompilerOptions) {
+        this.compilationSettings = opt;
     }
 
     lineAffectsRefs(filename: string, line: number) {
-        var info=this.getScriptInfo(filename);
-        var lineInfo=info.getLineInfo(line);
+        var info = this.getScriptInfo(filename);
+        var lineInfo = info.getLineInfo(line);
         if (lineInfo && lineInfo.text) {
-            var regex=/reference|import|\/\*|\*\//;
+            var regex = /reference|import|\/\*|\*\//;
             return regex.test(lineInfo.text);
         }
     }
@@ -152,9 +254,11 @@ export class LSHost implements ts.LanguageServiceHost {
     }
 
     getScriptFileNames() {
-        var filenames:string[]=[];
+        var filenames: string[] = [];
         for (var filename in this.filenameToScript) {
-            filenames.push(filename);
+            if (this.filenameToScript[filename] && this.filenameToScript[filename].isOpen) {
+                filenames.push(filename);
+            }
         }
         return filenames;
     }
@@ -163,15 +267,11 @@ export class LSHost implements ts.LanguageServiceHost {
         return this.getScriptInfo(filename).svc.latestVersion().toString();
     }
 
-    public getCancellationToken(): ts.CancellationToken {
+    getCancellationToken(): ts.CancellationToken {
         return this.cancellationToken;
     }
 
-    public getCurrentDirectory(): string {
-        return "";
-    }
-
-    public getDefaultLibFilename(): string {
+    getCurrentDirectory(): string {
         return "";
     }
 
@@ -179,33 +279,49 @@ export class LSHost implements ts.LanguageServiceHost {
         return this.getScriptInfo(filename).isOpen;
     }
 
-    getScriptInfo(filename: string): ScriptInfo {
-        return ts.lookUp(this.filenameToScript,filename);
+    removeReferencedFile(info: ScriptInfo) {
+        if (!info.isOpen) {
+            this.filenameToScript[info.filename] = undefined;
+        }
     }
 
-    public addScriptInfo(info:ScriptInfo) {
-        if (!this.getScriptInfo(info.filename)) {
-            this.filenameToScript[info.filename]=info;
+    getScriptInfo(filename: string): ScriptInfo {
+        var scriptInfo = ts.lookUp(this.filenameToScript, filename);
+        if (!scriptInfo) {
+            scriptInfo = this.project.openReferencedFile(filename);
+            if (scriptInfo) {
+                this.filenameToScript[scriptInfo.filename] = scriptInfo;
+            }
+        }
+        else {
+        }
+        return scriptInfo;
+    }
+
+    addRoot(info: ScriptInfo) {
+        var scriptInfo = ts.lookUp(this.filenameToScript, info.filename);
+        if (!scriptInfo) {
+            this.filenameToScript[info.filename] = info;
             return info;
         }
     }
 
-    public saveTo(filename: string, tmpfilename: string) {
+    saveTo(filename: string, tmpfilename: string) {
         var script = this.getScriptInfo(filename);
         if (script) {
-            var snap=script.snap();
-            ts.sys.writeFile(tmpfilename,snap.getText(0,snap.getLength()));
+            var snap = script.snap();
+            ts.sys.writeFile(tmpfilename, snap.getText(0, snap.getLength()));
         }
     }
 
-    public reloadScript(filename: string, tmpfilename: string, cb:()=>any) {
+    reloadScript(filename: string, tmpfilename: string, cb: () => any) {
         var script = this.getScriptInfo(filename);
         if (script) {
-            script.svc.reloadFromFile(tmpfilename,cb);
+            script.svc.reloadFromFile(tmpfilename, cb);
         }
     }
 
-    public editScript(filename: string, minChar: number, limChar: number, newText: string) {
+    editScript(filename: string, minChar: number, limChar: number, newText: string) {
         var script = this.getScriptInfo(filename);
         if (script) {
             script.editContent(minChar, limChar, newText);
@@ -231,28 +347,23 @@ export class LSHost implements ts.LanguageServiceHost {
         return ts.sys.directoryExists(path);
     }
 
-    public log(s: string): void {
-        // For debugging...
-        //printLine("TypeScriptLS:" + s);
-    }
-
     /**
      *  @param line 1 based index
      */
     lineToTextSpan(filename: string, line: number): ts.TextSpan {
         var script: ScriptInfo = this.filenameToScript[filename];
-        var index=script.snap().index;
+        var index = script.snap().index;
 
-        var lineInfo=index.lineNumberToInfo(line+1);
+        var lineInfo = index.lineNumberToInfo(line + 1);
         var len;
         if (lineInfo.leaf) {
             len = lineInfo.leaf.text.length;
         }
         else {
-            var nextLineInfo=index.lineNumberToInfo(line+2);
-            len=nextLineInfo.offset-lineInfo.offset;
+            var nextLineInfo = index.lineNumberToInfo(line + 2);
+            len = nextLineInfo.offset - lineInfo.offset;
         }
-        return ts.createTextSpan(lineInfo.offset,len);
+        return ts.createTextSpan(lineInfo.offset, len);
     }
 
     /**
@@ -261,9 +372,9 @@ export class LSHost implements ts.LanguageServiceHost {
      */
     lineColToPosition(filename: string, line: number, col: number): number {
         var script: ScriptInfo = this.filenameToScript[filename];
-        var index=script.snap().index;
+        var index = script.snap().index;
 
-        var lineInfo=index.lineNumberToInfo(line);
+        var lineInfo = index.lineNumberToInfo(line);
         // TODO: assert this column is actually on the line
         return (lineInfo.offset + col - 1);
     }
@@ -274,8 +385,8 @@ export class LSHost implements ts.LanguageServiceHost {
      */
     positionToZeroBasedLineCol(filename: string, position: number): ILineInfo {
         var script: ScriptInfo = this.filenameToScript[filename];
-        var index=script.snap().index;
-        var lineCol=index.charOffsetToLineNumberAndPos(position);
+        var index = script.snap().index;
+        var lineCol = index.charOffsetToLineNumberAndPos(position);
         return { line: lineCol.line - 1, offset: lineCol.offset };
     }
 }
@@ -324,37 +435,71 @@ export interface ProjectOptions {
 
 
 export class Project {
-    compilerService=new CompilerService();
+    compilerService:CompilerService;
     projectOptions:ProjectOptions;
     projectFilename:string;
+    program: ts.Program;
+    filenameToSourceFile:ts.Map<ts.SourceFile> = {};
+    updateGraphSeq = 0;
     
-    graphFinished() {
-        this.compilerService.languageService.getNavigateToItems(".*");    
+    constructor(public projectService:ProjectService) {
+        this.compilerService=new CompilerService(this);
     }
 
-    addGraph(scriptInfo:ScriptInfo) {
-        if (this.addScript(scriptInfo)) {
-            for (var i=0,clen=scriptInfo.children.length;i<clen;i++) {
-                this.addGraph(scriptInfo.children[i]);
-            }
+    openReferencedFile(filename: string) {
+        return this.projectService.openFile(filename,false);
+    }
+
+    getSourceFile(info:ScriptInfo) {
+        return this.filenameToSourceFile[info.filename];
+    }
+
+    getSourceFileFromName(filename: string) {
+        var info = this.projectService.getScriptInfo(filename);
+        if (info) {
+            return this.getSourceFile(info);
         }
+    }
+
+    removeReferencedFile(info: ScriptInfo) {
+        this.compilerService.host.removeReferencedFile(info);
+        this.updateGraph();
+    }
+
+    updateFileMap() {
+        this.filenameToSourceFile = {};
+        var sourceFiles=this.program.getSourceFiles();
+        for (var i = 0, len = sourceFiles.length; i < len; i++) {
+            var normFilename=ts.normalizePath(sourceFiles[i].filename);
+            this.filenameToSourceFile[normFilename]=sourceFiles[i];
+        }
+    }
+
+    finishGraph() {
+        this.updateGraph();
+        this.compilerService.languageService.getNavigateToItems(".*");
+    }
+
+    updateGraph() {
+        this.program=this.compilerService.languageService.getProgram();
+        this.updateFileMap();        
     }
 
     isConfiguredProject() {
         return this.projectFilename;
     }
 
-    addScript(info:ScriptInfo) {
-        if ((!info.defaultProject) || (!info.defaultProject.isConfiguredProject())) {
-            info.defaultProject = this;
-        }
-        info.activeProjects.push(this);
-        return this.compilerService.host.addScriptInfo(info);
+    // add a root file to project
+    addRoot(info:ScriptInfo) {
+        info.defaultProject = this;
+        return this.compilerService.host.addRoot(info);
     }
     
-    printFiles() {
-        var filenames=this.compilerService.host.getScriptFileNames();
-        filenames.map(filename=> { console.log(filename); });
+    filesToString() {
+        var strBuilder="";
+        ts.forEachValue(this.filenameToSourceFile,
+                        sourceFile => { strBuilder+=sourceFile.filename+"\n"; });
+        return strBuilder;
     }
 
     setProjectOptions(projectOptions: ProjectOptions) {
@@ -367,20 +512,6 @@ export class Project {
         }
         
     }
-
-    static createProject(projectFilename: string) {
-        var eproj=new Project();
-        eproj.projectFilename=projectFilename;
-        return eproj;
-    }
-
-    static createInferredProject(root: ScriptInfo) {
-        var iproj=new Project();
-        iproj.addGraph(root);
-        iproj.graphFinished();
-
-        return iproj;
-    }
 }
 
 export interface ProjectOpenResult {
@@ -389,110 +520,383 @@ export interface ProjectOpenResult {
     project?: Project;
 }
 
-// TODO: keep set of open, non-configured files (changes on open/close and
-// also may change if tsconfig contents change to configure one of the
-// files
-// upon open of new file f, check if member of existing inferred project
-// if not, create new inferred project with f as root
-// upon close of file, or change to references in any file, re-compute
-// projects for files, by the following:
-// let o be set of open, non-configured files
-// for ip in inferredProjects 
-//   let prog=ip.get program
-//   mark all files in o that are also in prog; if none, delete ip
-// for f in o
-//   if f unmarked 
-//     create new inferred project ipn
-//     mark members of i covered by ipn
-// to find inferred projects containing f, use cached prog
-// for ip in inferredProjects
-//    if f in cached prog for up, f in ip
-// this is only used for find references
-// for other ls calls, use most recently created proj referencing f
-// (cache this or recompute based on mru order)
-// keep opened files in mru order
-
-export class ProjectService {
-    filenameToScriptInfo: ts.Map<ScriptInfo> = {};
-    inferredRoots: ScriptInfo[]=[];
-    inferredProjects:Project[]=[];
-    inferredRootsChanged=false;
-    newRootDisjoint=true;
-    defaultLibInfo:ScriptInfo;
-    defaultES6LibInfo:ScriptInfo;
-
-    addDefaultLibraryToProject(proj:Project) {
-        var nodeModuleBinDir:string;
-        var defaultLib:string;
-        if (proj.projectOptions && proj.projectOptions.compilerOptions &&
-            (proj.projectOptions.compilerOptions.target == ts.ScriptTarget.ES6)) {
-            if (!this.defaultES6LibInfo) {
-                nodeModuleBinDir = ts.getDirectoryPath(ts.normalizePath(ts.sys.getExecutingFilePath()));
-                defaultLib = nodeModuleBinDir + "/lib.es6.d.ts";
-                this.defaultES6LibInfo = this.openFile(defaultLib);
-            }
-            proj.addScript(this.defaultES6LibInfo);
+function copyListRemovingItem<T>(item: T, list: T[]) {
+    var copiedList: T[] = [];
+    for (var i = 0, len = list.length; i < len; i++) {
+        if (list[i] != item) {
+            copiedList.push(list[i]);
         }
-        else {
-            if (!this.defaultLibInfo) {
-                nodeModuleBinDir = ts.getDirectoryPath(ts.normalizePath(ts.sys.getExecutingFilePath()));
-                defaultLib = nodeModuleBinDir + "/lib.d.ts";
-                this.defaultLibInfo = this.openFile(defaultLib);
+    }
+    return copiedList;
+}
+
+// REVIEW: for now this implementation uses polling.
+// The advantage of polling is that it works reliably
+// on all os and with network mounted files.
+// For 90 referenced files, the average time to detect 
+// changes is 2*msInterval (by default 5 seconds).
+// The overhead of this is .04 percent (1/2500) with
+// average pause of < 1 millisecond (and max
+// pause less than 1.5 milliseconds); question is
+// do we anticipate reference sets in the 100s and
+// do we care about waiting 10-20 seconds to detect
+// changes for large reference sets? If so, do we want
+// to increase the chunk size or decrease the interval
+// time dynamically to match the large reference set?
+export class WatchedFileSet {
+    watchedFiles: ScriptInfo[] = [];
+    nextFileToCheck = 0;
+    watchTimer: NodeJS.Timer;
+
+    // average async stat takes about 30 microseconds
+    // set chunk size to do 30 files in < 1 millisecond
+    constructor(public fileEvent: (info: ScriptInfo, eventName: string) => void,
+        public msInterval = 2500, public chunkSize = 30) {
+    }
+
+    checkWatchedFileChanged(checkedIndex:number, stats: fs.Stats) {
+        var info = this.watchedFiles[checkedIndex];
+        if (info && (!info.isOpen)) {
+            if (info.mtime.getTime() != stats.mtime.getTime()) {
+                logger.msg(info.filename + " changed");
+                info.svc.reloadFromFile(info.filename);
             }
-            proj.addScript(this.defaultLibInfo);
         }
     }
 
+    fileDeleted(info: ScriptInfo) {
+        if (this.fileEvent) {
+            this.fileEvent(info, "deleted");
+        }
+    }
 
+    static fileDeleted = 34;
+
+    poll(checkedIndex: number) {
+        var watchedFile = this.watchedFiles[checkedIndex];
+        if (!watchedFile) {
+            return;
+        }
+        if (measurePerf) {
+            var start = process.hrtime();
+        }
+        fs.stat(watchedFile.filename, (err, stats) => {
+            if (err) {
+                var msg = err.message;
+                if (err.errno) {
+                    msg += " errno: " + err.errno.toString();
+                }
+                logger.msg("Error " + msg + " in stat for file " + watchedFile.filename);
+                if (err.errno == WatchedFileSet.fileDeleted) {
+                    this.fileDeleted(watchedFile);
+                }
+            }
+            else {
+                this.checkWatchedFileChanged(checkedIndex, stats);
+            }
+        });
+        if (measurePerf) {
+            var elapsed = process.hrtime(start);
+            var elapsedNano = 1e9 * elapsed[0] + elapsed[1];
+            logger.msg("Elapsed time for async stat (in nanoseconds)" + watchedFile.filename + ": " + elapsedNano.toString(), "Perf");
+        }
+    }
+
+    // this implementation uses polling and
+    // stat due to inconsistencies of fs.watch
+    // and efficiency of stat on modern filesystems
+    startWatchTimer() {
+        logger.msg("Start watch timer: " + this.chunkSize.toString(),"Info");
+        this.watchTimer = setInterval(() => {
+            var count = 0;
+            var nextToCheck = this.nextFileToCheck;
+            var firstCheck = -1;
+            while ((count < this.chunkSize) && (nextToCheck != firstCheck)) {
+                this.poll(nextToCheck);
+                if (firstCheck < 0) {
+                    firstCheck = nextToCheck;
+                }
+                nextToCheck++;
+                if (nextToCheck == this.watchedFiles.length) {
+                    nextToCheck = 0;
+                }
+                count++;
+            }
+            this.nextFileToCheck = nextToCheck;
+        }, this.msInterval);
+    }
+
+    // TODO: remove watch file if opened by editor or no longer referenced 
+    // assume normalized and absolute pathname
+    addFile(info: ScriptInfo) {
+        this.watchedFiles.push(info);
+        if (this.watchedFiles.length == 1) {
+            this.startWatchTimer();
+        }
+    }
+
+    removeFile(info: ScriptInfo) {
+        this.watchedFiles = copyListRemovingItem(info, this.watchedFiles);
+    }
+}
+
+export class ProjectService {
+    filenameToScriptInfo: ts.Map<ScriptInfo> = {};
+    // open, non-configured files in two lists
+    openFileRoots: ScriptInfo[]=[];
+    openFilesReferenced: ScriptInfo[]=[];
+    // projects covering open files
+    inferredProjects:Project[]=[];
+    psLogger = logger;
+    watchedFileSet: WatchedFileSet;
+    
+    constructor(public eventHandler?: (eventName: string, project: Project) => void) {
+        if (measurePerf) {
+            calibrateTimer();
+        }
+        ts.disableIncrementalParsing = true;
+        this.watchedFileSet = new WatchedFileSet((info, eventName) => {
+            if (eventName == "deleted") {
+                this.fileDeletedInFilesystem(info);
+            }
+        });
+    }
+
+    log(msg: string,type="Err") {
+        this.psLogger.msg(msg,type);
+    }
+
+    closeLog() {
+        this.psLogger.close();
+    }
+
+    createInferredProject(root: ScriptInfo) {
+        var iproj=new Project(this);
+        iproj.addRoot(root);
+        iproj.finishGraph();
+        this.inferredProjects.push(iproj);
+        return iproj;
+    }
+
+    fileDeletedInFilesystem(info: ScriptInfo) {
+        this.psLogger.info(info.filename + " deleted");
+        this.watchedFileSet.removeFile(info);
+        
+        if (!info.isOpen) {
+            this.filenameToScriptInfo[info.filename] = undefined;
+            var referencingProjects = this.findReferencingProjects(info);
+            for (var i = 0, len = referencingProjects.length; i < len; i++) {
+                referencingProjects[i].removeReferencedFile(info);
+            }
+        }
+        this.printProjects();
+    }
+
+    addOpenFile(info:ScriptInfo) {
+        this.findReferencingProjects(info);
+        if (info.defaultProject) {
+            this.openFilesReferenced.push(info);
+        }
+        else {
+            // create new inferred project p with the newly opened file as root
+            info.defaultProject = this.createInferredProject(info);
+            var openFileRoots: ScriptInfo[] = [];
+            // for each inferred project root r
+            for (var i = 0, len = this.openFileRoots.length; i < len; i++) {
+                var r = this.openFileRoots[i];
+                // if r referenced by the new project
+                if (info.defaultProject.getSourceFile(r)) {
+                    // remove project rooted at r
+                    this.inferredProjects=
+                        copyListRemovingItem(r.defaultProject, this.inferredProjects);
+                    // put r in referenced open file list
+                    this.openFilesReferenced.push(r);
+                    // set default project of r to the new project 
+                    r.defaultProject = info.defaultProject;
+                }
+                else {
+                    // otherwise, keep r as root of inferred project
+                    openFileRoots.push(r);
+                }
+            }
+            this.openFileRoots = openFileRoots;
+            this.openFileRoots.push(info);
+        }
+    }
+
+    closeOpenFile(info: ScriptInfo) {
+        var openFileRoots: ScriptInfo[] = [];
+        var removedProject: Project;
+        for (var i = 0, len = this.openFileRoots.length; i < len; i++) {
+            // if closed file is root of project
+            if (info == this.openFileRoots[i]) {
+                // remove that project and remember it
+                removedProject = info.defaultProject;
+            }
+            else {
+                openFileRoots.push(this.openFileRoots[i]);
+            }
+        }
+        this.openFileRoots = openFileRoots;
+        if (removedProject) {
+            // remove project from inferred projects list
+            this.inferredProjects = copyListRemovingItem(removedProject, this.inferredProjects);
+            var openFilesReferenced: ScriptInfo[] = [];
+            var orphanFiles: ScriptInfo[] = [];
+            // for all open, referenced files f
+            for (var i = 0, len = this.openFilesReferenced.length; i < len; i++) {
+                var f = this.openFilesReferenced[i];
+                // if f was referenced by the removed project, remember it
+                if (f.defaultProject == removedProject) {
+                    f.defaultProject = undefined;
+                    orphanFiles.push(f);
+                }
+                else {
+                    // otherwise add it back to the list of referenced files
+                    openFilesReferenced.push(f);
+                }
+            }
+            this.openFilesReferenced = openFilesReferenced;
+            // treat orphaned files as newly opened
+            for (var i = 0, len = orphanFiles.length; i < len; i++) {
+                this.addOpenFile(orphanFiles[i]);
+            }
+        }
+        else {
+            this.openFilesReferenced = copyListRemovingItem(info, this.openFilesReferenced);
+        }
+        info.close();
+    }
+
+    findReferencingProjects(info: ScriptInfo) {
+        var referencingProjects: Project[] = [];
+        for (var i = 0, len = this.inferredProjects.length; i < len; i++) {
+            this.inferredProjects[i].updateGraph();
+            if (this.inferredProjects[i].getSourceFile(info)) {
+                info.defaultProject=this.inferredProjects[i];
+                referencingProjects.push(this.inferredProjects[i]);
+            }
+        }
+        return referencingProjects;
+    }
+
+    getScriptInfo(filename: string) {
+        filename = ts.normalizePath(filename);
+        return ts.lookUp(this.filenameToScriptInfo, filename);
+    }
+
+    /**
+     * @param filename is absolute pathname
+     */
+    openFile(filename: string, openedByClient = false) {
+        filename = ts.normalizePath(filename);
+        var info = ts.lookUp(this.filenameToScriptInfo, filename);
+        if (!info) {
+            var content;
+            if (ts.sys.fileExists(filename)) {
+                content = ts.sys.readFile(filename);
+            }
+            if (!content) {
+                if (openedByClient) {
+                    content = "";
+                }
+            }
+            if (content!==undefined) {
+                info = new ScriptInfo(filename, content, openedByClient);
+                this.filenameToScriptInfo[filename] = info;
+                if (!info.isOpen) {
+                    this.watchedFileSet.addFile(info);
+                }
+            }
+        }
+        if (info) {
+            if (openedByClient) {
+                info.isOpen = true;
+            }
+        }
+        return info;
+    }
+
+    /**
+     * Open file whose contents is managed by the client
+     * @param filename is absolute pathname
+     */
+
+    openClientFile(filename: string) {
+        // TODO: tsconfig check
+        var info = this.openFile(filename, true);
+        this.addOpenFile(info);
+        this.printProjects();
+        return info;
+    }
+
+    /**
+     * Close file whose contents is managed by the client
+     * @param filename is absolute pathname
+     */
+
+    closeClientFile(filename:string) {
+        // TODO: tsconfig check
+        var info = ts.lookUp(this.filenameToScriptInfo,filename);
+        if (info) {
+            this.closeOpenFile(info);
+            info.isOpen = false;
+        }
+    }
+
+    getProjectsReferencingFile(filename: string) {
+        var scriptInfo=ts.lookUp(this.filenameToScriptInfo,filename);
+        if (scriptInfo) {
+            var projects: Project[] = [];
+            for (var i = 0, len = this.inferredProjects.length; i < len; i++) {
+                if (this.inferredProjects[i].getSourceFile(scriptInfo)) {
+                    projects.push(this.inferredProjects[i]);
+                }
+            }
+            return projects;
+        }
+    }
+    
     getProjectForFile(filename: string) {
         var scriptInfo=ts.lookUp(this.filenameToScriptInfo,filename);
-        if (!scriptInfo) {
-            scriptInfo = this.openSpecifiedFile(filename,false,false);
+        if (scriptInfo) {
+            return scriptInfo.defaultProject;
         }
-// TODO: error upon file not found
-        return scriptInfo.defaultProject;
     }
 
     printProjectsForFile(filename: string) {
         var scriptInfo=ts.lookUp(this.filenameToScriptInfo,filename);
-        if (scriptInfo) {
-            console.log("Projects for "+filename)
-            for (var i = 0, len = scriptInfo.activeProjects.length; i < len; i++) {
-                for (var j = 0, iplen = this.inferredProjects.length; j < iplen; j++) {
-                    if (scriptInfo.activeProjects[i] == this.inferredProjects[j]) {
-                        console.log("Inferred Project "+j.toString());
-                    }
-                }
+        if (scriptInfo) {            
+            this.psLogger.startGroup();
+            this.psLogger.info("Projects for "+filename)
+            var projects = this.getProjectsReferencingFile(filename);
+            for (var i = 0, len = projects.length; i < len; i++) {
+                this.psLogger.info("Inferred Project "+i.toString());
             }
+            this.psLogger.endGroup();
         }
         else {
-            console.log(filename+" not in any project");
+            this.psLogger.info(filename+" not in any project");
         }
     }
 
     printProjects() {
+        this.psLogger.startGroup();
         for (var i=0,len=this.inferredProjects.length;i<len;i++) {
             var project=this.inferredProjects[i];
-            console.log("Project "+i.toString());
-            project.printFiles();
-            console.log("-----------------------------------------------");
+            this.psLogger.info("Project "+i.toString());
+            this.psLogger.info(project.filesToString());
+            this.psLogger.info("-----------------------------------------------");
         }
-    }
-
-    removeInferredRoot(info:ScriptInfo) {
-        var len=this.inferredRoots.length;
-        for (var i=0;i<len;i++) {
-            if (this.inferredRoots[i]==info) {
-                if (i<(len-1)) {
-                    this.inferredRoots[i]=this.inferredRoots[len-1];
-                }
-                this.inferredRoots.length--;
-                this.inferredRootsChanged=true;
-                info.isInferredRoot=false;
-                return true;
-            }
+        this.psLogger.info("Open file roots: ")
+        for (var i = 0, len = this.openFileRoots.length; i < len; i++) {
+            this.psLogger.info(this.openFileRoots[i].filename);
         }
-        return false;
+        this.psLogger.info("Open files referenced: ")
+        for (var i = 0, len = this.openFilesReferenced.length; i < len; i++) {
+            this.psLogger.info(this.openFilesReferenced[i].filename);
+        }
+        this.psLogger.endGroup();
     }
 
     openConfigFile(configFilename: string): ProjectOpenResult {
@@ -512,14 +916,14 @@ export class ProjectService {
                 return { errorMsg: "tsconfig option errors"};
             }
             else if (parsedCommandLine.filenames) {
-                var proj = Project.createProject(configFilename);
+                var proj = this.createProject(configFilename);
                 for (var i = 0, len = parsedCommandLine.filenames.length; i < len; i++) {
                     var rootFilename = parsedCommandLine.filenames[i];
                     var normRootFilename = ts.normalizePath(rootFilename);
                     normRootFilename = getAbsolutePath(normRootFilename, dirPath);
                     if (ts.sys.fileExists(normRootFilename)) {
-                        var info = this.openSpecifiedFile(normRootFilename, false, true);
-                        proj.addGraph(info);
+                        var info = this.openFile(normRootFilename);
+                        proj.addRoot(info);
                     }
                     else {
                         return { errorMsg: "specified file " + rootFilename + " not found" };
@@ -533,7 +937,6 @@ export class ProjectService {
                     projectOptions.formatCodeOptions = rawConfig.formatCodeOptions;
                 }
                 proj.setProjectOptions(projectOptions);
-                this.addDefaultLibraryToProject(proj);
                 return { success: true, project: proj };
             }
             else {
@@ -542,127 +945,34 @@ export class ProjectService {
         }
     }
 
-    openSpecifiedFile(filename:string,openedByClient=true,configuredProject=false) {
-        this.inferredRootsChanged=false;
-        this.newRootDisjoint=true;
-        var info=this.openFile(filename,openedByClient,configuredProject);
-        if (this.inferredRootsChanged) {
-            var i=0;
-            var len=this.inferredRoots.length;
-            if (this.newRootDisjoint) {
-                i=len-1;
-            }
-            // TODO: when destroying projects, remove refs from ScriptInfos
-            for (;i<len;i++) {
-                var root=this.inferredRoots[i];
-                root.isInferredRoot=true;
-                this.inferredProjects[i]=Project.createInferredProject(root);
-                this.addDefaultLibraryToProject(this.inferredProjects[i]);
-            }
-        }
-        return info;
-    }
-
-    recomputeReferences(filename: string) {
-        var info = ts.lookUp(this.filenameToScriptInfo,filename);
-
-        if (info) {
-            var prevChildrenList = info.children;
-            var prevChildren: ts.StringSet = {};
-            var orphans:ScriptInfo[]=[]
-            var adopted:ScriptInfo[]=[];
-            for (var i = 0, len = prevChildrenList.length; i < len; i++) {
-                prevChildren[prevChildrenList[i].filename]=true;
-            }
-            info.children=[];
-            var dirPath = ts.getDirectoryPath(filename);
-            this.computeReferences(info,dirPath);
-            var children: ts.StringSet = {};            
-            for (var j = 0, clen = info.children.length; j < clen; j++) {
-                children[info.children[j].filename]=true;
-                if (!prevChildren[info.children[j].filename]) {
-                    adopted.push(info.children[j]);
-                }
-            }
-            for (i = 0; i < len; i++) {
-                if (!children[prevChildrenList[i].filename]) {
-                    orphans.push(prevChildrenList[i]);
-                }
-            }
-        }
-    }
-
-    computeReferences(info: ScriptInfo, dirPath:string, content?: string) {
-        if (!content) {
-            content = info.getText();
-        }
-        var preProcessedInfo = ts.preProcessFile(content, false); 
-        // TODO: add import references
-        if (preProcessedInfo.referencedFiles.length > 0) {
-            for (var i = 0, len = preProcessedInfo.referencedFiles.length; i < len; i++) {
-                var refFilename = ts.normalizePath(preProcessedInfo.referencedFiles[i].filename);
-                refFilename = getAbsolutePath(refFilename, dirPath);
-                var refInfo = this.openFile(refFilename);
-                info.addChild(refInfo);
-            }
-        }
-    }
-    
-    /**
-     * @param filename is absolute pathname
-     */
-    openFile(filename: string,openedByClient=false,configuredProject=false) {
-        //console.log("opening "+filename+"...");
-        filename=ts.normalizePath(filename);
-        var dirPath = ts.getDirectoryPath(filename);
-        //console.log("normalized as "+filename+" with dir path "+dirPath);
-        var info = ts.lookUp(this.filenameToScriptInfo,filename);
-        if (!info) {
-            var content="";
-            if (ts.sys.fileExists(filename)) {
-                content = ts.sys.readFile(filename);
-            }
-            info = new ScriptInfo(filename, content, openedByClient);
-            this.filenameToScriptInfo[filename] = info;
-            if (openedByClient && (!configuredProject)) {
-                // this is a root because newly opened due to a client request
-                // it would already be open if an existing inferred project referenced it
-                this.inferredRoots.push(info);
-                this.inferredRootsChanged = true;
-            }
-            if (content.length > 0) {
-                this.computeReferences(info,dirPath,content);
-            }
-        }
-        // if root of inferred project referenced indirectly, remove it
-        else if (info.isInferredRoot  && (!openedByClient)) {
-            if (this.removeInferredRoot(info)) {
-                this.inferredRootsChanged=true;
-                this.newRootDisjoint=false;
-            }
-        }
-
-        return info;
+    createProject(projectFilename: string) {
+        var eproj=new Project(this);
+        eproj.projectFilename=projectFilename;
+        return eproj;
     }
 
 }
 
 export class CompilerService {
     cancellationToken = new CancellationToken();
-    host = new LSHost(this.cancellationToken);
+    host:LSHost;
     languageService: ts.LanguageService;
     classifier: ts.Classifier;
     settings = ts.getDefaultCompilerOptions();
     documentRegistry = ts.createDocumentRegistry();
     formatCodeOptions: ts.FormatCodeOptions = CompilerService.defaultFormatCodeOptions;
 
-    constructor() {
-        this.host.setCompilationSettings(ts.getDefaultCompilerOptions());
+    constructor(public project: Project) {
+        this.host = new LSHost(project,this.cancellationToken);
+        // override default ES6 (remove when compiler default back at ES5)
+        this.settings.target = ts.ScriptTarget.ES5;
+        this.host.setCompilationSettings(this.settings);
         this.languageService = ts.createLanguageService(this.host, this.documentRegistry);
-        this.classifier = ts.createClassifier(this.host);
+        this.classifier = ts.createClassifier();
     }
 
     setCompilerOptions(opt: ts.CompilerOptions) {
+        this.settings = opt;
         this.host.setCompilationSettings(opt);
     }
 
@@ -1104,7 +1414,6 @@ export class LineIndexSnapshot implements ts.IScriptSnapshot {
             return this.cache.getTextChangesBetweenVersions(scriptVersion,this.version);
         }
     }
-
     getChangeRange(oldSnapshot: ts.IScriptSnapshot): ts.TextChangeRange {
         var oldSnap=<LineIndexSnapshot>oldSnapshot;
         return this.getTextChangeRangeSinceVersion(oldSnap.version);
@@ -1240,7 +1549,7 @@ export class LineIndex {
             if (this.checkEdits) {
                 var updatedText = this.getText(0, this.root.charCount());
                 if (checkText != updatedText) {
-                    console.log("buffer edit mismatch");
+                    logger.msg("buffer edit mismatch");
                 }
             }
             return walker.lineIndex;
@@ -1278,8 +1587,7 @@ export class LineIndex {
     }
 
     static linesFromText(text: string) {
-        var sourceSnap = ts.ScriptSnapshot.fromString(text);
-        var lineStarts = sourceSnap.getLineStartPositions();
+        var lineStarts = ts.computeLineStarts(text);
 
         if (lineStarts.length == 0) {
             return { lines: <string[]>[], lineMap: lineStarts };
@@ -1409,7 +1717,13 @@ export class LineNode implements LineCollection {
 
     charOffsetToLineNumberAndPos(lineNumber: number, charOffset: number): ILineInfo {
         var childInfo = this.childFromCharOffset(lineNumber, charOffset);
-        if (childInfo.childIndex<this.children.length) {
+        if (!childInfo.child) {
+            return {
+                line: lineNumber,
+                offset: charOffset,
+            }
+        }
+        else if (childInfo.childIndex<this.children.length) {
             if (childInfo.child.isLeaf()) {
                 return {
                     line: childInfo.lineNumber,
@@ -1431,7 +1745,13 @@ export class LineNode implements LineCollection {
 
     lineNumberToInfo(lineNumber: number, charOffset: number): ILineInfo {
         var childInfo = this.childFromLineNumber(lineNumber, charOffset);
-        if (childInfo.child.isLeaf()) {
+        if (!childInfo.child) {
+            return {
+                line: lineNumber,
+                offset: charOffset
+            }
+        }
+        else if (childInfo.child.isLeaf()) {
             return {
                 line: lineNumber,
                 offset: childInfo.charOffset,
