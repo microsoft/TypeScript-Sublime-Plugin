@@ -1,4 +1,5 @@
 node_modules/
+.tmpbuf
 built/*
 ~*.docx
 src/service/*.js

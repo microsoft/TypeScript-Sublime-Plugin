@@ -5,7 +5,7 @@
 import ts = require('typescript');
 import fs = require('fs');
 
-var measurePerf = true;
+var measurePerf = false;
 var lineCollectionCapacity = 4;
 var indentStrings: string[] = [];
 var indentBase = "    ";
@@ -48,7 +48,7 @@ function calibrateTimer() {
         var elapsedNano = 1e9 * elapsed[0] + elapsed[1];
         total += elapsedNano;
     }
-    logger.msg("Estimated precision of high-res timer: " + (total/count).toFixed(3)+" microseconds", "Perf");
+    logger.msg("Estimated precision of high-res timer: " + (total/count).toFixed(3)+" nanoseconds", "Perf");
 }
 
 function getModififedTime(filename: string) {
@@ -640,6 +640,10 @@ export class WatchedFileSet {
     }
 }
 
+interface ProjectServiceEventHandler {
+    (eventName: string, project: Project):void;    
+}
+
 export class ProjectService {
     filenameToScriptInfo: ts.Map<ScriptInfo> = {};
     // open, non-configured files in two lists
@@ -649,8 +653,8 @@ export class ProjectService {
     inferredProjects:Project[]=[];
     psLogger = logger;
     watchedFileSet: WatchedFileSet;
-    
-    constructor(public eventHandler?: (eventName: string, project: Project) => void) {
+        
+    constructor(public eventHandler?: ProjectServiceEventHandler) {
         if (measurePerf) {
             calibrateTimer();
         }
@@ -770,6 +774,7 @@ export class ProjectService {
 
     findReferencingProjects(info: ScriptInfo) {
         var referencingProjects: Project[] = [];
+        info.defaultProject = undefined;
         for (var i = 0, len = this.inferredProjects.length; i < len; i++) {
             this.inferredProjects[i].updateGraph();
             if (this.inferredProjects[i].getSourceFile(info)) {
@@ -842,6 +847,7 @@ export class ProjectService {
             this.closeOpenFile(info);
             info.isOpen = false;
         }
+        this.printProjects();
     }
 
     getProjectsReferencingFile(filename: string) {
