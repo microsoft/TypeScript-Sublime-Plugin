@@ -463,7 +463,7 @@ class TypeScriptListener(sublime_plugin.EventListener):
 
     # error messages arrived from the server; show them in view
     def showErrorMsgs(self, errs, syntactic):
-        filename = errs['fileName']
+        filename = errs['file']
         if os.name == 'nt':
            filename = filename.replace('/', '\\')
         print("SEM!!! " + filename)
@@ -844,13 +844,15 @@ class TypescriptGoToDefinitionCommand(sublime_plugin.TextCommand):
         checkUpdateView(self.view)
         data = cli.service.definition(self.view.file_name(), getLocationFromView(self.view))
         if data['success']:
-            bod = data['body']
-            filename = bod['file']
-            minlc = bod['min']
-            line = int(minlc['line'])
-            col = int(minlc['col'])
-            sublime.active_window().open_file('{0}:{1}:{2}'.format(filename, line or 0, col or 0), 
-                sublime.ENCODED_POSITION)
+            items = data['body']
+            if len(items)>0:
+                bod = items[0]
+                filename = bod['file']
+                minlc = bod['min']
+                line = int(minlc['line'])
+                col = int(minlc['col'])
+                sublime.active_window().open_file('{0}:{1}:{2}'.format(filename, line or 0, col or 0), 
+                                                  sublime.ENCODED_POSITION)
 
 
 # go to type command
@@ -859,13 +861,15 @@ class TypescriptGoToTypeCommand(sublime_plugin.TextCommand):
         checkUpdateView(self.view)
         data = cli.service.type(self.view.file_name(), getLocationFromView(self.view))
         if data['success']:
-            bod = data['body']
-            filename = bod['fileName']
-            minlc = bod['min']
-            line = int(minlc['line'])
-            col = int(minlc['col'])
-            sublime.active_window().open_file('{0}:{1}:{2}'.format(filename, line or 0, col or 0), 
-                sublime.ENCODED_POSITION)
+            items = data['body']
+            if len(items)>0:
+                bod = items[0]
+                filename = bod['file']
+                minlc = bod['min']
+                line = int(minlc['line'])
+                col = int(minlc['col'])
+                sublime.active_window().open_file('{0}:{1}:{2}'.format(filename, line or 0, col or 0), 
+                                                  sublime.ENCODED_POSITION)
 
 
 # rename command

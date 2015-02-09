@@ -504,7 +504,7 @@ class Session {
         var diags = project.compilerService.languageService.getSemanticDiagnostics(file);
         if (diags) {
             var bakedDiags = diags.map((diag) => formatDiag(file, project, diag));
-            this.event({ fileName: file, diagnostics: bakedDiags }, "semanticDiag");
+            this.event({ file: file, diagnostics: bakedDiags }, "semanticDiag");
         }
     }
 
@@ -512,7 +512,7 @@ class Session {
         var diags = project.compilerService.languageService.getSyntacticDiagnostics(file);
         if (diags) {
             var bakedDiags = diags.map((diag) => formatDiag(file, project, diag));
-            this.event({ fileName: file, diagnostics: bakedDiags }, "syntaxDiag");
+            this.event({ file: file, diagnostics: bakedDiags }, "syntaxDiag");
         }
     }
 
@@ -565,14 +565,14 @@ class Session {
             var pos = compilerService.host.lineColToPosition(file, line, col);
             var locs = compilerService.languageService.getDefinitionAtPosition(file, pos);
             if (locs) {
-                var info = locs.map(def => ({
+                var info: ServerProtocol.CodeSpan[] = locs.map(def => ({
                     file: def && def.fileName,
                     min: def &&
                     compilerService.host.positionToLineCol(def.fileName, def.textSpan.start),
                     lim: def &&
                     compilerService.host.positionToLineCol(def.fileName, ts.textSpanEnd(def.textSpan))
                 }));
-                this.output(info[0] || null, reqSeq);
+                this.output(info, reqSeq);
             }
             else {
                 this.output(undefined, reqSeq, "could not find def");
@@ -635,7 +635,7 @@ class Session {
                         this.output({ info: renameInfo, locs: bakedRenameLocs }, reqSeq);
                     }
                     else {
-                        this.output([],reqSeq);
+                        this.output({ info: renameInfo, locs: [] },reqSeq);
                     }
                 }
                 else {
@@ -666,7 +666,7 @@ class Session {
                         compilerService.host.positionToLineCol(file, nameSpan.start).col;
                     var nameText =
                         compilerService.host.getScriptSnapshot(file).getText(nameSpan.start, ts.textSpanEnd(nameSpan));
-                    var bakedRefs: ServerProtocol.FindReferencesResponseItem[] = refs.map((ref) => {
+                    var bakedRefs: ServerProtocol.ReferencesResponseItem[] = refs.map((ref) => {
                         var min = compilerService.host.positionToLineCol(ref.fileName, ref.textSpan.start);
                         var refLineSpan = compilerService.host.lineToTextSpan(ref.fileName, min.line-1);
                         var snap = compilerService.host.getScriptSnapshot(ref.fileName);
@@ -678,7 +678,7 @@ class Session {
                             lim: compilerService.host.positionToLineCol(ref.fileName, ts.textSpanEnd(ref.textSpan)),
                         };
                     }).sort(compareFileMin);
-                    var response: ServerProtocol.FindReferencesResponseBody = {
+                    var response: ServerProtocol.ReferencesResponseBody = {
                         refs: bakedRefs,
                         symbolName: nameText,
                         symbolStartCol: nameColStart,
@@ -696,7 +696,7 @@ class Session {
         }
     }
 
-    // TODO: implement this as ls api
+    // TODO: implement this as ls api that can return multiple def sites
     goToType(line: number, col: number, rawfile: string, reqSeq=0) {
         var file = ts.normalizePath(rawfile);
         var project = this.projectService.getProjectForFile(file);
@@ -713,15 +713,17 @@ class Session {
                     var navItem = findExactMatchType(navItems);
                     if (navItem) {
                         typeLoc = {
-                            fileName: navItem.fileName,
+                            file: navItem.fileName,
                             min: compilerService.host.positionToLineCol(navItem.fileName,
                                 navItem.textSpan.start),
+                            lim: compilerService.host.positionToLineCol(navItem.fileName,
+                                ts.textSpanEnd(navItem.textSpan)),
                         };
                     }
                 }
             }
             if (typeLoc) {
-                this.output(typeLoc,reqSeq);
+                this.output([typeLoc],reqSeq);
             }
             else {
                 this.output(undefined, reqSeq, "no info at this location");
@@ -776,7 +778,7 @@ class Session {
                 edits = undefined;
             }
             if (edits) {
-                var bakedEdits = edits.map((edit) => {
+                var bakedEdits: ServerProtocol.CodeEdit[] = edits.map((edit) => {
                     return {
                         min: compilerService.host.positionToLineCol(file,
                             edit.span.start),
@@ -823,7 +825,7 @@ class Session {
                 edits = undefined;
             }
             if (edits) {
-                var bakedEdits = edits.map((edit) => {
+                var bakedEdits:ServerProtocol.CodeEdit[] = edits.map((edit) => {
                     return {
                         min: compilerService.host.positionToLineCol(file,
                             edit.span.start),
@@ -859,7 +861,8 @@ class Session {
                     completions = undefined;
                 }
                 if (completions) {
-                    var compressedEntries = completions.entries.reduce((accum: ts.CompletionEntryDetails[], entry: ts.CompletionEntry) => {
+                    var compressedEntries: ServerProtocol.CompletionItem[] =
+                        completions.entries.reduce((accum: ts.CompletionEntryDetails[], entry: ts.CompletionEntry) => {
                         if (entry.name.indexOf(prefix) == 0) {
                             var protoEntry = <ts.CompletionEntryDetails>{};
                             protoEntry.name = entry.name;
@@ -940,6 +943,42 @@ class Session {
         this.projectService.closeClientFile(file);
     }
 
+    decorateNavBarItem(navBarItem: ts.NavigationBarItem, compilerService: ed.CompilerService, file: string) {
+        if (navBarItem.spans.length == 1) {
+            var span = navBarItem.spans[0];
+            var offset = span.start;
+            var textForSpan = compilerService.host.getScriptSnapshot(file).getText(offset, offset+span.length);
+            var adj = textForSpan.indexOf(navBarItem.text);
+            if (adj > 0) {
+                offset += adj;
+            }
+            var quickInfo = compilerService.languageService.getQuickInfoAtPosition(file,
+                offset + (navBarItem.text.length / 2));
+            if (quickInfo) {
+                var displayString = ts.displayPartsToString(quickInfo.displayParts);
+                var docString = ts.displayPartsToString(quickInfo.documentation);
+                navBarItem["displayString"] = displayString;
+                navBarItem["docString"] = docString;
+            }
+        }
+        if (navBarItem.childItems.length > 0) {
+            navBarItem.childItems =
+                navBarItem.childItems.map(navBarItem => this.decorateNavBarItem(navBarItem, compilerService, file));
+        }
+        return navBarItem;
+    }
+
+    navbar(rawfile: string, reqSeq = 0) {
+        var file = ts.normalizePath(rawfile);
+        var project = this.projectService.getProjectForFile(file);
+        if (project) {
+            var compilerService = project.compilerService;
+            var navBarItems = compilerService.languageService.getNavigationBarItems(file);
+            var bakedNavBarItems = navBarItems.map(navBarItem => this.decorateNavBarItem(navBarItem, compilerService, file));
+            console.log(JSON.stringify(bakedNavBarItems,null," "));
+        }
+    }
+
     navto(searchTerm: string, rawfile: string, cmd: string, reqSeq = 0) {
         var file = ts.normalizePath(rawfile);
         var project = this.projectService.getProjectForFile(file);
@@ -961,14 +1000,14 @@ class Session {
             }
             this.pendingOperation = false;
             if (navItems) {
-                var bakedNavItems = navItems.map((navItem) => {
+                var bakedNavItems: ServerProtocol.NavtoItem[] = navItems.map((navItem) => {
                     var min = compilerService.host.positionToLineCol(navItem.fileName,
                         navItem.textSpan.start);
                     this.abbreviate(min);
                     var bakedItem: any = {
                         name: navItem.name,
                         kind: navItem.kind,
-                        fileName: this.encodeFilename(navItem.fileName),
+                        file: this.encodeFilename(navItem.fileName),
                         min: min,
                     };
                     if (navItem.containerName && (navItem.containerName.length > 0)) {
@@ -990,30 +1029,36 @@ class Session {
     }
 
     executeJSONcmd(cmd: string) {
-        var req = <ServerProtocol.BasicRequest>JSON.parse(cmd);
+        var req = <ServerProtocol.Request>JSON.parse(cmd);
         switch (req.command) {
             case "definition": {
-                this.goToDefinition(req.arguments.line, req.arguments.col, req.arguments.file,req.seq);
+                var defArgs = <ServerProtocol.CodeLocationRequestArgs>req.arguments;
+                this.goToDefinition(defArgs.line, defArgs.col, defArgs.file,req.seq);
                 break;
             }
             case "references": {
-                this.findReferences(req.arguments.line, req.arguments.col, req.arguments.file, req.seq);
+                var refArgs = <ServerProtocol.CodeLocationRequestArgs>req.arguments;
+                this.findReferences(refArgs.line, refArgs.col, refArgs.file, req.seq);
                 break;
             }
             case "rename": {
-                this.rename(req.arguments.line, req.arguments.col, req.arguments.file, req.seq);
+                var renameArgs = <ServerProtocol.CodeLocationRequestArgs>req.arguments;
+                this.rename(renameArgs.line, renameArgs.col, renameArgs.file, req.seq);
                 break;
             }
             case "type": {
-                this.goToType(req.arguments.line, req.arguments.col, req.arguments.file, req.seq);
+                var typeArgs = <ServerProtocol.CodeLocationRequestArgs>req.arguments;
+                this.goToType(typeArgs.line, typeArgs.col, typeArgs.file, req.seq);
                 break;
             }
             case "open": {
-                this.openClientFile(req.arguments.file);
+                var openArgs = <ServerProtocol.FileRequestArgs>req.arguments;
+                this.openClientFile(openArgs.file);
                 break;
             }
             case "quickinfo": {
-                this.quickInfo(req.arguments.line, req.arguments.col, req.arguments.file, req.seq);
+                var quickinfoArgs = <ServerProtocol.CodeLocationRequestArgs>req.arguments;                
+                this.quickInfo(quickinfoArgs.line, quickinfoArgs.col, quickinfoArgs.file, req.seq);
                 break;
             }
             case "format": {
@@ -1024,7 +1069,7 @@ class Session {
             }
             case "formatonkey": {
                 var formatOnKeyArgs = <ServerProtocol.FormatOnKeyRequestArgs>req.arguments;
-                this.formatOnKey(req.arguments.line, req.arguments.col, formatOnKeyArgs.key, req.arguments.file,
+                this.formatOnKey(formatOnKeyArgs.line, formatOnKeyArgs.col, formatOnKeyArgs.key, formatOnKeyArgs.file,
                     cmd, req.seq);
                 break;
             }
@@ -1047,21 +1092,22 @@ class Session {
             }
             case "reload": {
                 var reloadArgs = <ServerProtocol.ReloadRequestArgs>req.arguments;
-                this.reload(req.arguments.file, reloadArgs.tmpfile, req.seq);
+                this.reload(reloadArgs.file, reloadArgs.tmpfile, req.seq);
                 break;
             }
             case "saveto": {
                 var savetoArgs = <ServerProtocol.SavetoRequestArgs>req.arguments;
-                this.saveToTmp(req.arguments.file, savetoArgs.tmpfile);
+                this.saveToTmp(savetoArgs.file, savetoArgs.tmpfile);
                 break;
             }
             case "close": {
-                this.closeClientFile(req.arguments.file);
+                var closeArgs = <ServerProtocol.FileRequestArgs>req.arguments;
+                this.closeClientFile(closeArgs.file);
                 break;
             }
             case "navto": {
                 var navtoArgs = <ServerProtocol.NavtoRequestArgs>req.arguments;
-                this.navto(navtoArgs.searchTerm, req.arguments.file, cmd, req.seq);
+                this.navto(navtoArgs.searchTerm, navtoArgs.file, cmd, req.seq);
                 break;
             }
             default: {
@@ -1211,6 +1257,9 @@ class Session {
                         var searchTerm = m[1];
                         searchTerm = searchTerm.substring(1, searchTerm.length - 1);
                         this.navto(searchTerm, m[2], cmd);
+                    }
+                    else if (m = cmd.match(/^navbar (.*)$/)) {
+                        this.navbar(m[1]);
                     }
                     else if (m = cmd.match(/^abbrev/)) {
                         this.sendAbbrev();

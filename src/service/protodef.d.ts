@@ -36,22 +36,35 @@ declare module ServerProtocol {
         body?: any;
     }
 
-    /** Arguments for BasicRequest messages */
-    export interface BasicRequestArgs extends Request {
-        /** The line number for the request (1-based) */
-        line?: number;
-        /** The column for the request (1-based) */
-        col?: number;
+    /** Arguments for FileRequest messages */
+    export interface FileRequestArgs extends Request {
         /** The file for the request (absolute pathname required) */
         file: string;
     }
 
     /**
-       Request whose arguments are line, col, file, giving a location
-       (line,col) in buffer named file.
+       Request whose sole parameter is a file name
     */
-    export interface BasicRequest extends Request {
-        arguments: BasicRequestArgs;
+    export interface FileRequest extends Request {
+        arguments: FileRequestArgs;
+    }
+
+    /**
+       Instances of this interface specify a code location:
+       (file, line, col), where line and column are 1-based.
+    */
+
+    export interface CodeLocationRequestArgs extends FileRequestArgs {
+        /** The line number for the request (1-based) */
+        line: number;
+        /** The column for the request (1-based) */
+        col: number;
+    }
+
+    /**
+       A request whose arguments specify a code location (file, line, col)
+    */
+    export interface CodeLocationRequest extends FileRequest {
     }
 
     /**
@@ -59,7 +72,7 @@ declare module ServerProtocol {
        "definition". Return response giving the code locations that
        define the symbol found in file at location line, col.
     */
-    export interface DefinitionRequest extends BasicRequest {
+    export interface DefinitionRequest extends CodeLocationRequest {
     }
 
     /**
@@ -71,10 +84,10 @@ declare module ServerProtocol {
     }
 
     /**
-       Body portion of definition response message.
+       Object found in response messages defining a span of text in
+       source code.
     */
-    // TODO: make this an array
-    export interface DefinitionResponseBody {
+    export interface CodeSpan {
         /** File containing the definition */
         file: string;
         /** First character of the definition */
@@ -86,9 +99,8 @@ declare module ServerProtocol {
     /**
        Definition response message.  Gives text range for definition.
      */
-    // TODO: make this contain multiple definition locations
     export interface DefinitionResponse extends Response {
-        body?: DefinitionResponseBody;
+        body?: CodeSpan[];
     }
 
     /**
@@ -96,22 +108,16 @@ declare module ServerProtocol {
        "references". Return response giving the code locations that
        reference the symbol found in file at location line, col.
     */
-    export interface ReferencesRequest extends BasicRequest {
+    export interface ReferencesRequest extends CodeLocationRequest {
     }
 
-    export interface FindReferencesResponseItem {
-        /** File containing the reference */
-        file: string;
-        /** First character of the reference */
-        min: LineCol;
-        /** One character past last character of the reference */
-        lim: LineCol;
+    export interface ReferencesResponseItem extends CodeSpan {
         /** Text of line containing the reference */
         lineText: string;
     }
 
-    export interface FindReferencesResponseBody {
-        refs: FindReferencesResponseItem[];
+    export interface ReferencesResponseBody {
+        refs: ReferencesResponseItem[];
         symbolName: string;
         symbolStartCol: number;
         symbolDisplayString: string;
@@ -120,10 +126,31 @@ declare module ServerProtocol {
     /**
        Rename request; value of command field is "rename". Return
        response giving the code locations that reference the symbol
-       found in file at location line, col. Also give fully-qualfied
+       found in file at location line, col. Also return full display
        name of the symbol so that client can print it unambiguously.
     */
-    export interface RenameRequest extends BasicRequest {
+    export interface RenameRequest extends CodeLocationRequest {
+    }
+
+    /** Information about the item to be renamed. */
+    export interface RenameInfo {
+        /** Full display name of item to be renamed */
+        fullDisplayName: string;
+    }
+
+    /**
+       Rename response message.  
+    */
+    export interface RenameResponse extends Response {
+        body?: {
+            /** Information about the item to be renamed */
+            info: RenameInfo;
+            /**
+               An array of code locations that refer to the
+               item to be renamed.
+            */
+            locs: CodeSpan[];
+        }
     }
 
     /**
@@ -131,7 +158,11 @@ declare module ServerProtocol {
        giving the code locations that define the type of the symbol
        found in file at location line, col.
     */
-    export interface TypeRequest extends BasicRequest {
+    export interface TypeRequest extends CodeLocationRequest {
+    }
+
+    export interface TypeResponse extends Response {
+        body?: CodeSpan[];
     }
 
     /**
@@ -141,7 +172,7 @@ declare module ServerProtocol {
        that the client is updating the server (using the change and/or
        reload messages) when the file changes.
     */
-    export interface OpenRequest extends BasicRequest {
+    export interface OpenRequest extends FileRequest {
     }
 
     /**
@@ -150,7 +181,7 @@ declare module ServerProtocol {
        file is still referenced by open files, the server will resume
        monitoring the filesystem for changes to file.
     */
-    export interface CloseRequest extends BasicRequest {
+    export interface CloseRequest extends FileRequest {
     }
 
     /**
@@ -159,11 +190,21 @@ declare module ServerProtocol {
        documentation string for the symbol found in file at location
        line, col.
     */
-    export interface QuickInfoRequest extends BasicRequest {
+    export interface QuickInfoRequest extends CodeLocationRequest {
+    }
+
+    /** Quickinfo response message */
+    export interface QuickInfoResponse extends Response {
+        body?: {
+            /** Type and kind of symbol */
+            info: string;
+            /** Documentation associated with symbol */
+            doc: string;
+        };
     }
 
     /** Arguments for format messages */
-    export interface FormatRequestArgs extends BasicRequestArgs {
+    export interface FormatRequestArgs extends CodeLocationRequestArgs {
         /** Last line of range for which to format text in file */
         endLine: number;
         /** Last column of range for which to format text in file */
@@ -177,12 +218,36 @@ declare module ServerProtocol {
        instructions in reverse to file will result in correctly
        reformatted text.
     */
-    export interface FormatRequest extends BasicRequest {
+    export interface FormatRequest extends CodeLocationRequest {
         arguments: FormatRequestArgs;
     } 
 
+    /**
+       Object found in response messages defining an editing
+       instruction for a span of text in source code.  The effect of
+       this instruction is to replace the text starting at min and
+       ending one character before lim with newText. For an insertion,
+       the text span is empty.  For a deletion, newText is empty.
+    */
+    export interface CodeEdit {
+        /** First character of the text span to edit. */
+        min: LineCol;
+        /** One character past last character of the text span to edit */
+        lim: LineCol;
+        /**
+           Replace the span defined above with this string (may be
+           the empty string)
+        */
+        newText: string;
+    }
+
+    /** Format and format on key response message */
+    export interface FormatResponse extends Response {
+        body?: CodeEdit[];
+    }
+
     /** Arguments for format on key messages */
-    export interface FormatOnKeyRequestArgs extends BasicRequestArgs {
+    export interface FormatOnKeyRequestArgs extends CodeLocationRequestArgs {
         /** Key pressed (';', '\n', or '}') */
         key: string;
     }
@@ -195,12 +260,12 @@ declare module ServerProtocol {
        edit instructions in reverse to file will result in correctly
        reformatted text.
     */
-    export interface FormatOnKeyRequest extends BasicRequest {
+    export interface FormatOnKeyRequest extends CodeLocationRequest {
         arguments: FormatOnKeyRequestArgs;
     }
 
     /** Arguments for completions messages */
-    export interface CompletionsRequestArgs extends BasicRequestArgs {
+    export interface CompletionsRequestArgs extends CodeLocationRequestArgs {
         /** Optional prefix to apply to possible completions. */
         prefix?: string;
     }
@@ -211,12 +276,38 @@ declare module ServerProtocol {
        be the empty string), return the possible completions that
        begin with prefix.
     */
-    export interface CompletionsRequest extends BasicRequest {
+    export interface CompletionsRequest extends CodeLocationRequest {
         arguments: CompletionsRequestArgs;
     }
 
+    /**
+       Part of a symbol description.
+    */
+    export interface SymbolDisplayPart {
+        /** Text of an item describing the symbol */
+        text: string;
+        /** The symbol's kind (such as 'className' or 'parameterName' or plain 'text') */
+        kind: string;
+    }
+
+    /** An item found in a completion response */
+    export interface CompletionItem {
+        /** The symbol's name */
+        name: string;
+        /** The symbol's kind (such as 'className' or 'parameterName') */
+        kind: string;
+        /** Optional modifiers for the kind (such as 'public') */
+        kindModifiers?: string;
+        /** Documentation strings for the symbol */
+        documentation?: SymbolDisplayPart[];
+    }
+
+    export interface CompletionsResponse extends Response {
+        body?: CompletionItem[];
+    }
+
     /** Arguments for geterr messages.  */
-    export interface GeterrRequestArgs extends BasicRequestArgs {
+    export interface GeterrRequestArgs {
         /**
            Semi-colon separated list of file names for which to compute
            compiler errors.
@@ -239,13 +330,34 @@ declare module ServerProtocol {
        practice for an editor is to send a file list containing each
        file that is currently visible, in most-recently-used order.
     */
-    export interface GeterrRequest extends BasicRequest {
+    export interface GeterrRequest extends Request {
         arguments: GeterrRequestArgs;
     }
 
+    /** Item of diagnostic information found in a DiagEvent message */
+    export interface Diagnostic {
+        /** Starting code location at which text appies */
+        min: LineCol;
+        /** Length of code location at which text applies */
+        len: number;
+        /** Text of diagnostic message */
+        text: string;
+    }
+
+    /** Event message for "syntaxDiag" and "semanticDiag" event types.
+        These events provide syntactic and semantic errors for a file.
+    */
+    export interface DiagEvent extends Event {
+        body?: {
+            /** The file for which diagnostic information is reported */
+            file: string;
+            /** An array of diagnostic information items */
+            diagnostics: Diagnostic[];
+        };
+    }
 
     /** Arguments for reload request. */
-    export interface ReloadRequestArgs extends BasicRequestArgs {
+    export interface ReloadRequestArgs extends FileRequestArgs {
         /**
            Name of temporary file from which to reload file
            contents. May be same as file.
@@ -259,13 +371,19 @@ declare module ServerProtocol {
        from temporary file with name given by the 'tmpfile' argument.
        The two names can be identical.
     */ 
-    export interface ReloadRequest extends BasicRequest {
+    export interface ReloadRequest extends FileRequest {
         arguments: ReloadRequestArgs;
     }
 
+    export interface ReloadResponse extends Response {
+        body?: {
+            /** Acknowledge that the reload has completed */
+            ack: boolean;
+        }
+    }
 
     /** Arguments for saveto request. */
-    export interface SavetoRequestArgs extends BasicRequestArgs {
+    export interface SavetoRequestArgs extends FileRequestArgs {
         /**
            Name of temporary file into which to save server's view of
            file contents.
@@ -279,12 +397,12 @@ declare module ServerProtocol {
        argument 'tmpfile') the contents of file named by argument
        'file'.  
     */
-    export interface SavetoRequest extends BasicRequest {
+    export interface SavetoRequest extends FileRequest {
         arguments: SavetoRequestArgs;
     }
 
     /** Arguments for navto request message */
-    export interface NavtoRequestArgs extends BasicRequestArgs {
+    export interface NavtoRequestArgs extends FileRequestArgs {
         /**
            Search term to navigate to from current location; term can
            be '.*' or an identifier prefix.
@@ -295,14 +413,41 @@ declare module ServerProtocol {
     /**
        Navto request message; value of command field is "navto".
        Return list of objects giving code locations and symbols that
-       match the search term given in argument 'searchTerm'.  
+       match the search term given in argument 'searchTerm'.  The
+       context for the search is given by the named file.
     */
-    export interface NavtoRequest extends BasicRequest {
+    export interface NavtoRequest extends FileRequest {
         arguments: NavtoRequestArgs;
     }
 
+    /** An item found in a navto response */
+    export interface NavtoItem {
+        /** The symbol's name */
+        name: string;
+        /** The symbol's kind (such as 'className' or 'parameterName') */
+        kind: string;
+        /** The file in which the symbol is found */
+        file: string;
+        /** The location within file at which the symbol is found */
+        min: LineCol;
+        /** Name of symbol's container symbol (if any); for example,
+            the class name if symbol is a class member
+        */
+        containerName?: string;
+        /** Kind of symbol's container symbol (if any) */        
+        containerKind?: string;
+    }
+
+    /**
+       Navto response message. Body is an array of navto items.  Each
+       item gives a symbol that matched the search term.
+    */
+    export interface NavtoResponse extends Response {
+        body?: NavtoItem[];
+    }
+
     /** Arguments for change request message. */
-    export interface ChangeRequestArgs extends BasicRequestArgs {
+    export interface ChangeRequestArgs extends CodeLocationRequestArgs {
         /**
            Length of span deleted at location (file, line, col); may
            be zero.
@@ -321,7 +466,7 @@ declare module ServerProtocol {
        Change request message; value of command field is "change".
        Update the server's view of the file named by argument 'file'.  
     */
-    export interface ChangeRequest extends BasicRequest {
+    export interface ChangeRequest extends CodeLocationRequest {
         arguments: ChangeRequestArgs;
     }
 }
