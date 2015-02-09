@@ -108,8 +108,8 @@ module ts.server {
             return snap.index.lineNumberToInfo(line);
         }
 
-        editContent(minChar: number, limChar: number, newText: string): void {
-            this.svc.edit(minChar, limChar - minChar, newText);
+        editContent(start: number, end: number, newText: string): void {
+            this.svc.edit(start, end - start, newText);
         }
 
         getTextChangeRangeBetweenVersions(startVersion: number, endVersion: number): ts.TextChangeRange {
@@ -327,10 +327,10 @@ module ts.server {
             }
         }
 
-        editScript(filename: string, minChar: number, limChar: number, newText: string) {
+        editScript(filename: string, start: number, end: number, newText: string) {
             var script = this.getScriptInfo(filename);
             if (script) {
-                script.editContent(minChar, limChar, newText);
+                script.editContent(start, end, newText);
                 return;
             }
 
