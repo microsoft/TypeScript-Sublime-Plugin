@@ -427,14 +427,14 @@ var Session = (function () {
         var diags = project.compilerService.languageService.getSemanticDiagnostics(file);
         if (diags) {
             var bakedDiags = diags.map(function (diag) { return formatDiag(file, project, diag); });
-            this.event({ fileName: file, diagnostics: bakedDiags }, "semanticDiag");
+            this.event({ file: file, diagnostics: bakedDiags }, "semanticDiag");
         }
     };
     Session.prototype.syntacticCheck = function (file, project) {
         var diags = project.compilerService.languageService.getSyntacticDiagnostics(file);
         if (diags) {
             var bakedDiags = diags.map(function (diag) { return formatDiag(file, project, diag); });
-            this.event({ fileName: file, diagnostics: bakedDiags }, "syntaxDiag");
+            this.event({ file: file, diagnostics: bakedDiags }, "syntaxDiag");
         }
     };
     Session.prototype.errorCheck = function (file, project) {
@@ -492,7 +492,7 @@ var Session = (function () {
                     min: def && compilerService.host.positionToLineCol(def.fileName, def.textSpan.start),
                     lim: def && compilerService.host.positionToLineCol(def.fileName, ts.textSpanEnd(def.textSpan))
                 }); });
-                this.output(info[0] || null, reqSeq);
+                this.output(info, reqSeq);
             }
             else {
                 this.output(undefined, reqSeq, "could not find def");
@@ -555,7 +555,7 @@ var Session = (function () {
                         this.output({ info: renameInfo, locs: bakedRenameLocs }, reqSeq);
                     }
                     else {
-                        this.output([], reqSeq);
+                        this.output({ info: renameInfo, locs: [] }, reqSeq);
                     }
                 }
                 else {
@@ -613,7 +613,7 @@ var Session = (function () {
             }
         }
     };
-    // TODO: implement this as ls api
+    // TODO: implement this as ls api that can return multiple def sites
     Session.prototype.goToType = function (line, col, rawfile, reqSeq) {
         if (reqSeq === void 0) { reqSeq = 0; }
         var file = ts.normalizePath(rawfile);
@@ -630,14 +630,15 @@ var Session = (function () {
                     var navItem = findExactMatchType(navItems);
                     if (navItem) {
                         typeLoc = {
-                            fileName: navItem.fileName,
-                            min: compilerService.host.positionToLineCol(navItem.fileName, navItem.textSpan.start)
+                            file: navItem.fileName,
+                            min: compilerService.host.positionToLineCol(navItem.fileName, navItem.textSpan.start),
+                            lim: compilerService.host.positionToLineCol(navItem.fileName, ts.textSpanEnd(navItem.textSpan))
                         };
                     }
                 }
             }
             if (typeLoc) {
-                this.output(typeLoc, reqSeq);
+                this.output([typeLoc], reqSeq);
             }
             else {
                 this.output(undefined, reqSeq, "no info at this location");
@@ -845,6 +846,41 @@ var Session = (function () {
         var file = ts.normalizePath(rawfile);
         this.projectService.closeClientFile(file);
     };
+    Session.prototype.decorateNavBarItem = function (navBarItem, compilerService, file) {
+        var _this = this;
+        if (navBarItem.spans.length == 1) {
+            var span = navBarItem.spans[0];
+            var offset = span.start;
+            var textForSpan = compilerService.host.getScriptSnapshot(file).getText(offset, offset + span.length);
+            var adj = textForSpan.indexOf(navBarItem.text);
+            if (adj > 0) {
+                offset += adj;
+            }
+            var quickInfo = compilerService.languageService.getQuickInfoAtPosition(file, offset + (navBarItem.text.length / 2));
+            if (quickInfo) {
+                var displayString = ts.displayPartsToString(quickInfo.displayParts);
+                var docString = ts.displayPartsToString(quickInfo.documentation);
+                navBarItem["displayString"] = displayString;
+                navBarItem["docString"] = docString;
+            }
+        }
+        if (navBarItem.childItems.length > 0) {
+            navBarItem.childItems = navBarItem.childItems.map(function (navBarItem) { return _this.decorateNavBarItem(navBarItem, compilerService, file); });
+        }
+        return navBarItem;
+    };
+    Session.prototype.navbar = function (rawfile, reqSeq) {
+        var _this = this;
+        if (reqSeq === void 0) { reqSeq = 0; }
+        var file = ts.normalizePath(rawfile);
+        var project = this.projectService.getProjectForFile(file);
+        if (project) {
+            var compilerService = project.compilerService;
+            var navBarItems = compilerService.languageService.getNavigationBarItems(file);
+            var bakedNavBarItems = navBarItems.map(function (navBarItem) { return _this.decorateNavBarItem(navBarItem, compilerService, file); });
+            console.log(JSON.stringify(bakedNavBarItems, null, " "));
+        }
+    };
     Session.prototype.navto = function (searchTerm, rawfile, cmd, reqSeq) {
         var _this = this;
         if (reqSeq === void 0) { reqSeq = 0; }
@@ -874,7 +910,7 @@ var Session = (function () {
                     var bakedItem = {
                         name: navItem.name,
                         kind: navItem.kind,
-                        fileName: _this.encodeFilename(navItem.fileName),
+                        file: _this.encodeFilename(navItem.fileName),
                         min: min
                     };
                     if (navItem.containerName && (navItem.containerName.length > 0)) {
@@ -897,27 +933,33 @@ var Session = (function () {
         var req = JSON.parse(cmd);
         switch (req.command) {
             case "definition": {
-                this.goToDefinition(req.arguments.line, req.arguments.col, req.arguments.file, req.seq);
+                var defArgs = req.arguments;
+                this.goToDefinition(defArgs.line, defArgs.col, defArgs.file, req.seq);
                 break;
             }
             case "references": {
-                this.findReferences(req.arguments.line, req.arguments.col, req.arguments.file, req.seq);
+                var refArgs = req.arguments;
+                this.findReferences(refArgs.line, refArgs.col, refArgs.file, req.seq);
                 break;
             }
             case "rename": {
-                this.rename(req.arguments.line, req.arguments.col, req.arguments.file, req.seq);
+                var renameArgs = req.arguments;
+                this.rename(renameArgs.line, renameArgs.col, renameArgs.file, req.seq);
                 break;
             }
             case "type": {
-                this.goToType(req.arguments.line, req.arguments.col, req.arguments.file, req.seq);
+                var typeArgs = req.arguments;
+                this.goToType(typeArgs.line, typeArgs.col, typeArgs.file, req.seq);
                 break;
             }
             case "open": {
-                this.openClientFile(req.arguments.file);
+                var openArgs = req.arguments;
+                this.openClientFile(openArgs.file);
                 break;
             }
             case "quickinfo": {
-                this.quickInfo(req.arguments.line, req.arguments.col, req.arguments.file, req.seq);
+                var quickinfoArgs = req.arguments;
+                this.quickInfo(quickinfoArgs.line, quickinfoArgs.col, quickinfoArgs.file, req.seq);
                 break;
             }
             case "format": {
@@ -927,7 +969,7 @@ var Session = (function () {
             }
             case "formatonkey": {
                 var formatOnKeyArgs = req.arguments;
-                this.formatOnKey(req.arguments.line, req.arguments.col, formatOnKeyArgs.key, req.arguments.file, cmd, req.seq);
+                this.formatOnKey(formatOnKeyArgs.line, formatOnKeyArgs.col, formatOnKeyArgs.key, formatOnKeyArgs.file, cmd, req.seq);
                 break;
             }
             case "completions": {
@@ -947,21 +989,22 @@ var Session = (function () {
             }
             case "reload": {
                 var reloadArgs = req.arguments;
-                this.reload(req.arguments.file, reloadArgs.tmpfile, req.seq);
+                this.reload(reloadArgs.file, reloadArgs.tmpfile, req.seq);
                 break;
             }
             case "saveto": {
                 var savetoArgs = req.arguments;
-                this.saveToTmp(req.arguments.file, savetoArgs.tmpfile);
+                this.saveToTmp(savetoArgs.file, savetoArgs.tmpfile);
                 break;
             }
             case "close": {
-                this.closeClientFile(req.arguments.file);
+                var closeArgs = req.arguments;
+                this.closeClientFile(closeArgs.file);
                 break;
             }
             case "navto": {
                 var navtoArgs = req.arguments;
-                this.navto(navtoArgs.searchTerm, req.arguments.file, cmd, req.seq);
+                this.navto(navtoArgs.searchTerm, navtoArgs.file, cmd, req.seq);
                 break;
             }
             default: {
@@ -1109,6 +1152,9 @@ var Session = (function () {
                         var searchTerm = m[1];
                         searchTerm = searchTerm.substring(1, searchTerm.length - 1);
                         _this.navto(searchTerm, m[2], cmd);
+                    }
+                    else if (m = cmd.match(/^navbar (.*)$/)) {
+                        _this.navbar(m[1]);
                     }
                     else if (m = cmd.match(/^abbrev/)) {
                         _this.sendAbbrev();
