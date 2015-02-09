@@ -192,7 +192,7 @@ var LSHost = (function () {
         this.ls = null;
         this.filenameToScript = {};
     }
-    LSHost.prototype.getDefaultLibFilename = function () {
+    LSHost.prototype.getDefaultLibFileName = function () {
         var nodeModuleBinDir = ts.getDirectoryPath(ts.normalizePath(ts.sys.getExecutingFilePath()));
         if (this.compilationSettings && this.compilationSettings.target == 2 /* ES6 */) {
             return nodeModuleBinDir + "/lib.es6.d.ts";
@@ -408,7 +408,7 @@ var Project = (function () {
         this.filenameToSourceFile = {};
         var sourceFiles = this.program.getSourceFiles();
         for (var i = 0, len = sourceFiles.length; i < len; i++) {
-            var normFilename = ts.normalizePath(sourceFiles[i].filename);
+            var normFilename = ts.normalizePath(sourceFiles[i].fileName);
             this.filenameToSourceFile[normFilename] = sourceFiles[i];
         }
     };
@@ -431,7 +431,7 @@ var Project = (function () {
     Project.prototype.filesToString = function () {
         var strBuilder = "";
         ts.forEachValue(this.filenameToSourceFile, function (sourceFile) {
-            strBuilder += sourceFile.filename + "\n";
+            strBuilder += sourceFile.fileName + "\n";
         });
         return strBuilder;
     };
@@ -822,10 +822,10 @@ var ProjectService = (function () {
                 // TODO: gather diagnostics and transmit
                 return { errorMsg: "tsconfig option errors" };
             }
-            else if (parsedCommandLine.filenames) {
+            else if (parsedCommandLine.fileNames) {
                 var proj = this.createProject(configFilename);
-                for (var i = 0, len = parsedCommandLine.filenames.length; i < len; i++) {
-                    var rootFilename = parsedCommandLine.filenames[i];
+                for (var i = 0, len = parsedCommandLine.fileNames.length; i < len; i++) {
+                    var rootFilename = parsedCommandLine.fileNames[i];
                     var normRootFilename = ts.normalizePath(rootFilename);
                     normRootFilename = getAbsolutePath(normRootFilename, dirPath);
                     if (ts.sys.fileExists(normRootFilename)) {
@@ -837,7 +837,7 @@ var ProjectService = (function () {
                     }
                 }
                 var projectOptions = {
-                    files: parsedCommandLine.filenames,
+                    files: parsedCommandLine.fileNames,
                     compilerOptions: parsedCommandLine.options
                 };
                 if (rawConfig.formatCodeOptions) {

@@ -211,7 +211,7 @@ export class LSHost implements ts.LanguageServiceHost {
     constructor(public project: Project, private cancellationToken: CancellationToken = CancellationToken.None) {
     }
 
-    getDefaultLibFilename() {
+    getDefaultLibFileName() {
         var nodeModuleBinDir = ts.getDirectoryPath(ts.normalizePath(ts.sys.getExecutingFilePath()));
 
         if (this.compilationSettings && this.compilationSettings.target == ts.ScriptTarget.ES6) {
@@ -472,7 +472,7 @@ export class Project {
         this.filenameToSourceFile = {};
         var sourceFiles=this.program.getSourceFiles();
         for (var i = 0, len = sourceFiles.length; i < len; i++) {
-            var normFilename=ts.normalizePath(sourceFiles[i].filename);
+            var normFilename=ts.normalizePath(sourceFiles[i].fileName);
             this.filenameToSourceFile[normFilename]=sourceFiles[i];
         }
     }
@@ -500,7 +500,7 @@ export class Project {
     filesToString() {
         var strBuilder="";
         ts.forEachValue(this.filenameToSourceFile,
-                        sourceFile => { strBuilder+=sourceFile.filename+"\n"; });
+                        sourceFile => { strBuilder+=sourceFile.fileName+"\n"; });
         return strBuilder;
     }
 
@@ -923,10 +923,10 @@ export class ProjectService {
                 // TODO: gather diagnostics and transmit
                 return { errorMsg: "tsconfig option errors"};
             }
-            else if (parsedCommandLine.filenames) {
+            else if (parsedCommandLine.fileNames) {
                 var proj = this.createProject(configFilename);
-                for (var i = 0, len = parsedCommandLine.filenames.length; i < len; i++) {
-                    var rootFilename = parsedCommandLine.filenames[i];
+                for (var i = 0, len = parsedCommandLine.fileNames.length; i < len; i++) {
+                    var rootFilename = parsedCommandLine.fileNames[i];
                     var normRootFilename = ts.normalizePath(rootFilename);
                     normRootFilename = getAbsolutePath(normRootFilename, dirPath);
                     if (ts.sys.fileExists(normRootFilename)) {
@@ -938,7 +938,7 @@ export class ProjectService {
                     }
                 }
                 var projectOptions: ProjectOptions = {
-                    files: parsedCommandLine.filenames,
+                    files: parsedCommandLine.fileNames,
                     compilerOptions: parsedCommandLine.options
                 };
                 if (rawConfig.formatCodeOptions) {
