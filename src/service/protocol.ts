@@ -102,7 +102,7 @@ function compareFileMin(a: FileMin, b: FileMin) {
     else if (a.file == b.file) {
         var n = compareNumber(a.min.line, b.min.line);
         if (n == 0) {
-            return compareNumber(a.min.offset, b.min.offset);
+            return compareNumber(a.min.col, b.min.col);
         }
         else return n;
     }
@@ -321,7 +321,7 @@ interface FileRanges {
 
 function formatDiag(file:string, project: ed.Project, diag: ts.Diagnostic) {
     return {
-        min: project.compilerService.host.positionToZeroBasedLineCol(file, diag.start),
+        min: project.compilerService.host.positionToLineCol(file, diag.start),
         len: diag.length,
         text: diag.messageText,
     };
@@ -435,11 +435,11 @@ class Session {
             name: "n",
             kind: "k",
             fileName: "f",
-            containerName: "c",
+            containerName: "cn",
             containerKind: "ck",
             min: "m",
             line: "l",
-            offset: "o",
+            col: "c",
             "interface": "i",
             "function": "fn",
         };
@@ -568,9 +568,9 @@ class Session {
                 var info = locs.map(def => ({
                     file: def && def.fileName,
                     min: def &&
-                    compilerService.host.positionToZeroBasedLineCol(def.fileName, def.textSpan.start),
+                    compilerService.host.positionToLineCol(def.fileName, def.textSpan.start),
                     lim: def &&
-                    compilerService.host.positionToZeroBasedLineCol(def.fileName, ts.textSpanEnd(def.textSpan))
+                    compilerService.host.positionToLineCol(def.fileName, ts.textSpanEnd(def.textSpan))
                 }));
                 this.output(info[0] || null, reqSeq);
             }
@@ -596,8 +596,8 @@ class Session {
                     if (renameLocs) {
                         var bakedRenameLocs = renameLocs.map(loc=> ({
                             file: loc.fileName,
-                            min: compilerService.host.positionToZeroBasedLineCol(loc.fileName, loc.textSpan.start),
-                            lim: compilerService.host.positionToZeroBasedLineCol(loc.fileName, ts.textSpanEnd(loc.textSpan)),
+                            min: compilerService.host.positionToLineCol(loc.fileName, loc.textSpan.start),
+                            lim: compilerService.host.positionToLineCol(loc.fileName, ts.textSpanEnd(loc.textSpan)),
                         })).sort((a, b) => {
                             if (a.file < b.file) {
                                 return -1;
@@ -614,7 +614,7 @@ class Session {
                                     return -1;
                                 }
                                 else {
-                                    return b.min.offset - a.min.offset;
+                                    return b.min.col - a.min.col;
                                 }
                             }
                         }).reduce<FileRanges[]>((accum: FileRanges[], cur: FileRange) => {
@@ -663,22 +663,28 @@ class Session {
                     var displayString = ts.displayPartsToString(nameInfo.displayParts);
                     var nameSpan = nameInfo.textSpan;
                     var nameColStart =
-                        compilerService.host.positionToZeroBasedLineCol(file, nameSpan.start).offset;
+                        compilerService.host.positionToLineCol(file, nameSpan.start).col;
                     var nameText =
                         compilerService.host.getScriptSnapshot(file).getText(nameSpan.start, ts.textSpanEnd(nameSpan));
-                    var bakedRefs = refs.map((ref) => {
-                        var min = compilerService.host.positionToZeroBasedLineCol(ref.fileName, ref.textSpan.start);
-                        var refLineSpan = compilerService.host.lineToTextSpan(ref.fileName, min.line);
+                    var bakedRefs: ServerProtocol.FindReferencesResponseItem[] = refs.map((ref) => {
+                        var min = compilerService.host.positionToLineCol(ref.fileName, ref.textSpan.start);
+                        var refLineSpan = compilerService.host.lineToTextSpan(ref.fileName, min.line-1);
                         var snap = compilerService.host.getScriptSnapshot(ref.fileName);
                         var lineText = snap.getText(refLineSpan.start, ts.textSpanEnd(refLineSpan)).replace(/\r|\n/g, "");
                         return {
                             file: ref.fileName,
                             min: min,
                             lineText: lineText,
-                            lim: compilerService.host.positionToZeroBasedLineCol(ref.fileName, ts.textSpanEnd(ref.textSpan)),
+                            lim: compilerService.host.positionToLineCol(ref.fileName, ts.textSpanEnd(ref.textSpan)),
                         };
                     }).sort(compareFileMin);
-                    this.output([bakedRefs, nameText, nameColStart, displayString],reqSeq);
+                    var response: ServerProtocol.FindReferencesResponseBody = {
+                        refs: bakedRefs,
+                        symbolName: nameText,
+                        symbolStartCol: nameColStart,
+                        symbolDisplayString: displayString
+                    };
+                    this.output(response,reqSeq);
                 }
                 else {
                     this.output(undefined, reqSeq, "no references at this position");
@@ -708,7 +714,7 @@ class Session {
                     if (navItem) {
                         typeLoc = {
                             fileName: navItem.fileName,
-                            min: compilerService.host.positionToZeroBasedLineCol(navItem.fileName,
+                            min: compilerService.host.positionToLineCol(navItem.fileName,
                                 navItem.textSpan.start),
                         };
                     }
@@ -772,9 +778,9 @@ class Session {
             if (edits) {
                 var bakedEdits = edits.map((edit) => {
                     return {
-                        min: compilerService.host.positionToZeroBasedLineCol(file,
+                        min: compilerService.host.positionToLineCol(file,
                             edit.span.start),
-                        lim: compilerService.host.positionToZeroBasedLineCol(file,
+                        lim: compilerService.host.positionToLineCol(file,
                             ts.textSpanEnd(edit.span)),
                         newText: edit.newText ? edit.newText : ""
                     };
@@ -819,9 +825,9 @@ class Session {
             if (edits) {
                 var bakedEdits = edits.map((edit) => {
                     return {
-                        min: compilerService.host.positionToZeroBasedLineCol(file,
+                        min: compilerService.host.positionToLineCol(file,
                             edit.span.start),
-                        lim: compilerService.host.positionToZeroBasedLineCol(file,
+                        lim: compilerService.host.positionToLineCol(file,
                             ts.textSpanEnd(edit.span)),
                         newText: edit.newText ? edit.newText : ""
                     };
@@ -956,7 +962,7 @@ class Session {
             this.pendingOperation = false;
             if (navItems) {
                 var bakedNavItems = navItems.map((navItem) => {
-                    var min = compilerService.host.positionToZeroBasedLineCol(navItem.fileName,
+                    var min = compilerService.host.positionToLineCol(navItem.fileName,
                         navItem.textSpan.start);
                     this.abbreviate(min);
                     var bakedItem: any = {

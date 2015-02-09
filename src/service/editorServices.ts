@@ -199,7 +199,9 @@ export class Logger {
 
 }
 
-export var logger = new Logger(".log"+process.pid.toString());
+// this places log file in the directory containing editorServices.js
+// TODO: check that this location is writable
+export var logger = new Logger(__dirname+"/.log"+process.pid.toString());
 
 export class LSHost implements ts.LanguageServiceHost {
     ls: ts.LanguageService = null;
@@ -361,9 +363,9 @@ export class LSHost implements ts.LanguageServiceHost {
         }
         else {
             var nextLineInfo = index.lineNumberToInfo(line + 2);
-            len = nextLineInfo.offset - lineInfo.offset;
+            len = nextLineInfo.col - lineInfo.col;
         }
-        return ts.createTextSpan(lineInfo.offset, len);
+        return ts.createTextSpan(lineInfo.col, len);
     }
 
     /**
@@ -376,18 +378,18 @@ export class LSHost implements ts.LanguageServiceHost {
 
         var lineInfo = index.lineNumberToInfo(line);
         // TODO: assert this column is actually on the line
-        return (lineInfo.offset + col - 1);
+        return (lineInfo.col + col - 1);
     }
 
     /**
-     * @param line 0 based index
-     * @param offset 0 based index
+     * @param line 1-based index
+     * @param col 1-based index
      */
-    positionToZeroBasedLineCol(filename: string, position: number): ILineInfo {
+    positionToLineCol(filename: string, position: number): ILineInfo {
         var script: ScriptInfo = this.filenameToScript[filename];
         var index = script.snap().index;
         var lineCol = index.charOffsetToLineNumberAndPos(position);
-        return { line: lineCol.line - 1, offset: lineCol.offset };
+        return { line: lineCol.line, col: lineCol.col+1 };
     }
 }
 
@@ -1023,7 +1025,7 @@ export interface LineCollection {
 
 export interface ILineInfo {
     line: number;
-    offset: number;
+    col: number;
     text?: string;
     leaf?: LineLeaf;
 }
@@ -1408,7 +1410,7 @@ export class LineIndexSnapshot implements ts.IScriptSnapshot {
 
     getLineMapper() {
         return ((line: number) => {
-            return this.index.lineNumberToInfo(line).offset;
+            return this.index.lineNumberToInfo(line).col;
         });
     }
 
@@ -1446,7 +1448,7 @@ export class LineIndex {
         else {
             return {
                 line: lineNumber,
-                offset: this.root.charCount()
+                col: this.root.charCount()
             }
         }
     }
@@ -1525,7 +1527,7 @@ export class LineIndex {
                 // check whether last characters deleted are line break
                 var e = pos + deleteLength;
                 var lineInfo = this.charOffsetToLineNumberAndPos(e);
-                if ((lineInfo && (lineInfo.offset == 0))) {
+                if ((lineInfo && (lineInfo.col == 0))) {
                     // move range end just past line that will merge with previous line
                     deleteLength += lineInfo.text.length;
                     // store text by appending to end of insertedText
@@ -1726,14 +1728,14 @@ export class LineNode implements LineCollection {
         if (!childInfo.child) {
             return {
                 line: lineNumber,
-                offset: charOffset,
+                col: charOffset,
             }
         }
         else if (childInfo.childIndex<this.children.length) {
             if (childInfo.child.isLeaf()) {
                 return {
                     line: childInfo.lineNumber,
-                    offset: childInfo.charOffset,
+                    col: childInfo.charOffset,
                     text: (<LineLeaf>(childInfo.child)).text,
                     leaf: (<LineLeaf>(childInfo.child))
                 };
@@ -1745,7 +1747,7 @@ export class LineNode implements LineCollection {
         }
         else {
             var lineInfo=this.lineNumberToInfo(this.lineCount(),0);
-            return { line: this.lineCount(), offset: lineInfo.leaf.charCount() };
+            return { line: this.lineCount(), col: lineInfo.leaf.charCount() };
         }
     }
 
@@ -1754,13 +1756,13 @@ export class LineNode implements LineCollection {
         if (!childInfo.child) {
             return {
                 line: lineNumber,
-                offset: charOffset
+                col: charOffset
             }
         }
         else if (childInfo.child.isLeaf()) {
             return {
                 line: lineNumber,
-                offset: childInfo.charOffset,
+                col: childInfo.charOffset,
                 text: (<LineLeaf>(childInfo.child)).text,
                 leaf: (<LineLeaf>(childInfo.child))
             }

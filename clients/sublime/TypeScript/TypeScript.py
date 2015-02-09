@@ -543,6 +543,7 @@ class TypeScriptListener(sublime_plugin.EventListener):
         view = active_view()
         ev = cli.getEvent()
         if ev is not None:
+            print("idle got event")
             self.dispatchEvent(ev)
             self.errRefreshRequested = False
             # reset the timer in case more events are on the queue
@@ -846,8 +847,8 @@ class TypescriptGoToDefinitionCommand(sublime_plugin.TextCommand):
             bod = data['body']
             filename = bod['file']
             minlc = bod['min']
-            line = 1 + int(minlc['line'])
-            col = 1 + int(minlc['offset'])
+            line = int(minlc['line'])
+            col = int(minlc['col'])
             sublime.active_window().open_file('{0}:{1}:{2}'.format(filename, line or 0, col or 0), 
                 sublime.ENCODED_POSITION)
 
@@ -861,8 +862,8 @@ class TypescriptGoToTypeCommand(sublime_plugin.TextCommand):
             bod = data['body']
             filename = bod['fileName']
             minlc = bod['min']
-            line = 1 + int(minlc['line'])
-            col = 1 + int(minlc['offset'])
+            line = int(minlc['line'])
+            col = int(minlc['col'])
             sublime.active_window().open_file('{0}:{1}:{2}'.format(filename, line or 0, col or 0), 
                 sublime.ENCODED_POSITION)
 
@@ -929,10 +930,10 @@ class TypescriptFindReferencesCommand(sublime_plugin.TextCommand):
             cursor = self.view.rowcol(pos)
             line = str(cursor[0] + 1)
             refsPlusIdInfo = data['body']
-            refs = refsPlusIdInfo[0]
-            refId = refsPlusIdInfo[1]
-            refIdStart = refsPlusIdInfo[2]
-            refDisplayString = refsPlusIdInfo[3]
+            refs = refsPlusIdInfo['refs']
+            refId = refsPlusIdInfo['symbolName']
+            refIdStart = refsPlusIdInfo['symbolStartCol']-1
+            refDisplayString = refsPlusIdInfo['symbolDisplayString']
             refView = getRefView()
             refView.run_command('typescript_populate_refs', 
                                 {
@@ -945,9 +946,10 @@ class TypescriptFindReferencesCommand(sublime_plugin.TextCommand):
 
 
 # destructure line and column tuple from JSON-parsed location info
+# convert 1-based line,col to zero-based line,col
 def extractLineCol(lc):
-    line = lc['line']
-    col = lc['offset']
+    line = lc['line']-1
+    col = lc['col']-1
     return (line, col)
 
 # place the caret on the currently-referenced line and

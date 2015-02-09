@@ -1,5 +1,6 @@
 [
  { "caption" : "TypeScript: GoToDefinition", "command": "typescript_go_to_definition" },
+ { "caption" : "TypeScript: GoToType", "command": "typescript_go_to_type" },
  { "caption" : "TypeScript: QuickInfoDocumentation", "command": "typescript_quick_info_doc" },
  { "caption" : "TypeScript: SaveTmp", "command": "typescript_save" },
  { "caption" : "TypeScript: FormatSelection", "command": "typescript_format_selection" },

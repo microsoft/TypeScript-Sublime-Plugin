@@ -95,7 +95,7 @@ class NodeCommClient(CommClient):
         Try to get event from event queue
         """
         try:
-            ev = self.eventq.get(block=False)
+            ev = self.__eventq.get(False)
         except:
             return None
         return ev

@@ -1,4 +1,4 @@
-/** Declaration module describing teh TypeScript Server protocol */
+/** Declaration module describing the TypeScript Server protocol */
 declare module ServerProtocol {
     /** A TypeScript Server message */
     export interface Message {
@@ -63,12 +63,11 @@ declare module ServerProtocol {
     }
 
     /**
-       Object containing line and column (zero-based) of code location
+       Object containing line and column (one-based) of code location
     */
-    // TODO: change this to line, col and change clients to match
-    export interface LineOffset {
+    export interface LineCol {
         line: number;
-        offset: number;
+        col: number;
     }
 
     /**
@@ -79,13 +78,13 @@ declare module ServerProtocol {
         /** File containing the definition */
         file: string;
         /** First character of the definition */
-        min: LineOffset;
+        min: LineCol;
         /** One character past last character of the definition */
-        lim: LineOffset;
+        lim: LineCol;
     }
 
     /**
-       Definition response message.  Gives textg range for definition.
+       Definition response message.  Gives text range for definition.
      */
     // TODO: make this contain multiple definition locations
     export interface DefinitionResponse extends Response {
@@ -98,6 +97,24 @@ declare module ServerProtocol {
        reference the symbol found in file at location line, col.
     */
     export interface ReferencesRequest extends BasicRequest {
+    }
+
+    export interface FindReferencesResponseItem {
+        /** File containing the reference */
+        file: string;
+        /** First character of the reference */
+        min: LineCol;
+        /** One character past last character of the reference */
+        lim: LineCol;
+        /** Text of line containing the reference */
+        lineText: string;
+    }
+
+    export interface FindReferencesResponseBody {
+        refs: FindReferencesResponseItem[];
+        symbolName: string;
+        symbolStartCol: number;
+        symbolDisplayString: string;
     }
 
     /**

@@ -8,6 +8,8 @@ var __extends = this.__extends || function (d, b) {
     d.prototype = new __();
 };
 var ts = require('typescript');
+var fs = require('fs');
+var measurePerf = false;
 var lineCollectionCapacity = 4;
 var indentStrings = [];
 var indentBase = "    ";
@@ -39,17 +41,48 @@ function showLines(s) {
     }
     return strBuilder;
 }
+function calibrateTimer() {
+    var count = 20;
+    var total = 0;
+    for (var i = 0; i < count; i++) {
+        var start = process.hrtime();
+        var elapsed = process.hrtime(start);
+        var elapsedNano = 1e9 * elapsed[0] + elapsed[1];
+        total += elapsedNano;
+    }
+    exports.logger.msg("Estimated precision of high-res timer: " + (total / count).toFixed(3) + " nanoseconds", "Perf");
+}
+function getModififedTime(filename) {
+    if (measurePerf) {
+        var start = process.hrtime();
+    }
+    var stats = fs.statSync(filename);
+    if (!stats) {
+        exports.logger.msg("Stat returned undefined for " + filename);
+    }
+    if (measurePerf) {
+        var elapsed = process.hrtime(start);
+        var elapsedNano = 1e9 * elapsed[0] + elapsed[1];
+        exports.logger.msg("Elapsed time for stat (in nanoseconds)" + filename + ": " + elapsedNano.toString(), "Perf");
+    }
+    return stats.mtime;
+}
 var ScriptInfo = (function () {
     function ScriptInfo(filename, content, isOpen) {
         if (isOpen === void 0) { isOpen = false; }
         this.filename = filename;
         this.content = content;
         this.isOpen = isOpen;
-        this.isInferredRoot = false;
-        this.activeProjects = []; // projects referencing this file
         this.children = []; // files referenced by this file
         this.svc = ScriptVersionCache.fromString(content);
+        if (!isOpen) {
+            this.mtime = getModififedTime(filename);
+        }
     }
+    ScriptInfo.prototype.close = function () {
+        this.isOpen = false;
+        this.mtime = getModififedTime(this.filename);
+    };
     ScriptInfo.prototype.addChild = function (childInfo) {
         this.children.push(childInfo);
     };
@@ -94,18 +127,79 @@ var CancellationToken = (function () {
     return CancellationToken;
 })();
 exports.CancellationToken = CancellationToken;
-// TODO: make this a parameter of the service or in service environment
+function padStringRight(str, padding) {
+    return (str + padding).slice(0, padding.length);
+}
+var Logger = (function () {
+    function Logger(logFilename) {
+        this.logFilename = logFilename;
+        this.fd = -1;
+        this.seq = 0;
+        this.inGroup = false;
+        this.firstInGroup = true;
+    }
+    Logger.prototype.close = function () {
+        if (this.fd >= 0) {
+            fs.close(this.fd);
+        }
+    };
+    Logger.prototype.perftrc = function (s) {
+        this.msg(s, "Perf");
+    };
+    Logger.prototype.info = function (s) {
+        this.msg(s, "Info");
+    };
+    Logger.prototype.startGroup = function () {
+        this.inGroup = true;
+        this.firstInGroup = true;
+    };
+    Logger.prototype.endGroup = function () {
+        this.inGroup = false;
+        this.seq++;
+        this.firstInGroup = true;
+    };
+    Logger.prototype.msg = function (s, type) {
+        if (type === void 0) { type = "Err"; }
+        if (this.fd < 0) {
+            this.fd = fs.openSync(this.logFilename, "w");
+        }
+        if (this.fd >= 0) {
+            s = s + "\n";
+            var prefix = padStringRight(type + " " + this.seq.toString(), "          ");
+            if (this.firstInGroup) {
+                s = prefix + s;
+                this.firstInGroup = false;
+            }
+            if (!this.inGroup) {
+                this.seq++;
+                this.firstInGroup = true;
+            }
+            var buf = new Buffer(s);
+            fs.writeSync(this.fd, buf, 0, buf.length, null);
+        }
+    };
+    return Logger;
+})();
+exports.Logger = Logger;
+// this places log file in the directory containing editorServices.js
+// TODO: check that this location is writable
+exports.logger = new Logger(__dirname + "/.log" + process.pid.toString());
 var LSHost = (function () {
-    function LSHost(cancellationToken) {
+    function LSHost(project, cancellationToken) {
         if (cancellationToken === void 0) { cancellationToken = CancellationToken.None; }
+        this.project = project;
         this.cancellationToken = cancellationToken;
         this.ls = null;
         this.filenameToScript = {};
-        this.logger = this;
     }
-    LSHost.prototype.trace = function (str) {
-    };
-    LSHost.prototype.error = function (str) {
+    LSHost.prototype.getDefaultLibFilename = function () {
+        var nodeModuleBinDir = ts.getDirectoryPath(ts.normalizePath(ts.sys.getExecutingFilePath()));
+        if (this.compilationSettings && this.compilationSettings.target == 2 /* ES6 */) {
+            return nodeModuleBinDir + "/lib.es6.d.ts";
+        }
+        else {
+            return nodeModuleBinDir + "/lib.d.ts";
+        }
     };
     LSHost.prototype.cancel = function () {
         this.cancellationToken.cancel();
@@ -114,7 +208,10 @@ var LSHost = (function () {
         this.cancellationToken.reset();
     };
     LSHost.prototype.getScriptSnapshot = function (filename) {
-        return this.getScriptInfo(filename).snap();
+        var scriptInfo = this.getScriptInfo(filename);
+        if (scriptInfo) {
+            return scriptInfo.snap();
+        }
     };
     LSHost.prototype.setCompilationSettings = function (opt) {
         this.compilationSettings = opt;
@@ -134,7 +231,9 @@ var LSHost = (function () {
     LSHost.prototype.getScriptFileNames = function () {
         var filenames = [];
         for (var filename in this.filenameToScript) {
-            filenames.push(filename);
+            if (this.filenameToScript[filename] && this.filenameToScript[filename].isOpen) {
+                filenames.push(filename);
+            }
         }
         return filenames;
     };
@@ -147,17 +246,29 @@ var LSHost = (function () {
     LSHost.prototype.getCurrentDirectory = function () {
         return "";
     };
-    LSHost.prototype.getDefaultLibFilename = function () {
-        return "";
-    };
     LSHost.prototype.getScriptIsOpen = function (filename) {
         return this.getScriptInfo(filename).isOpen;
     };
-    LSHost.prototype.getScriptInfo = function (filename) {
-        return ts.lookUp(this.filenameToScript, filename);
+    LSHost.prototype.removeReferencedFile = function (info) {
+        if (!info.isOpen) {
+            this.filenameToScript[info.filename] = undefined;
+        }
     };
-    LSHost.prototype.addScriptInfo = function (info) {
-        if (!this.getScriptInfo(info.filename)) {
+    LSHost.prototype.getScriptInfo = function (filename) {
+        var scriptInfo = ts.lookUp(this.filenameToScript, filename);
+        if (!scriptInfo) {
+            scriptInfo = this.project.openReferencedFile(filename);
+            if (scriptInfo) {
+                this.filenameToScript[scriptInfo.filename] = scriptInfo;
+            }
+        }
+        else {
+        }
+        return scriptInfo;
+    };
+    LSHost.prototype.addRoot = function (info) {
+        var scriptInfo = ts.lookUp(this.filenameToScript, info.filename);
+        if (!scriptInfo) {
             this.filenameToScript[info.filename] = info;
             return info;
         }
@@ -196,10 +307,6 @@ var LSHost = (function () {
     LSHost.prototype.directoryExists = function (path) {
         return ts.sys.directoryExists(path);
     };
-    LSHost.prototype.log = function (s) {
-        // For debugging...
-        //printLine("TypeScriptLS:" + s);
-    };
     /**
      *  @param line 1 based index
      */
@@ -213,9 +320,9 @@ var LSHost = (function () {
         }
         else {
             var nextLineInfo = index.lineNumberToInfo(line + 2);
-            len = nextLineInfo.offset - lineInfo.offset;
+            len = nextLineInfo.col - lineInfo.col;
         }
-        return ts.createTextSpan(lineInfo.offset, len);
+        return ts.createTextSpan(lineInfo.col, len);
     };
     /**
      * @param line 1 based index
@@ -226,17 +333,17 @@ var LSHost = (function () {
         var index = script.snap().index;
         var lineInfo = index.lineNumberToInfo(line);
         // TODO: assert this column is actually on the line
-        return (lineInfo.offset + col - 1);
+        return (lineInfo.col + col - 1);
     };
     /**
-     * @param line 0 based index
-     * @param offset 0 based index
+     * @param line 1-based index
+     * @param col 1-based index
      */
-    LSHost.prototype.positionToZeroBasedLineCol = function (filename, position) {
+    LSHost.prototype.positionToLineCol = function (filename, position) {
         var script = this.filenameToScript[filename];
         var index = script.snap().index;
         var lineCol = index.charOffsetToLineNumberAndPos(position);
-        return { line: lineCol.line - 1, offset: lineCol.offset };
+        return { line: lineCol.line, col: lineCol.col + 1 };
     };
     return LSHost;
 })();
@@ -275,34 +382,58 @@ function getAbsolutePath(filename, directory) {
     }
 }
 var Project = (function () {
-    function Project() {
-        this.compilerService = new CompilerService();
+    function Project(projectService) {
+        this.projectService = projectService;
+        this.filenameToSourceFile = {};
+        this.updateGraphSeq = 0;
+        this.compilerService = new CompilerService(this);
     }
-    Project.prototype.graphFinished = function () {
+    Project.prototype.openReferencedFile = function (filename) {
+        return this.projectService.openFile(filename, false);
+    };
+    Project.prototype.getSourceFile = function (info) {
+        return this.filenameToSourceFile[info.filename];
+    };
+    Project.prototype.getSourceFileFromName = function (filename) {
+        var info = this.projectService.getScriptInfo(filename);
+        if (info) {
+            return this.getSourceFile(info);
+        }
+    };
+    Project.prototype.removeReferencedFile = function (info) {
+        this.compilerService.host.removeReferencedFile(info);
+        this.updateGraph();
+    };
+    Project.prototype.updateFileMap = function () {
+        this.filenameToSourceFile = {};
+        var sourceFiles = this.program.getSourceFiles();
+        for (var i = 0, len = sourceFiles.length; i < len; i++) {
+            var normFilename = ts.normalizePath(sourceFiles[i].filename);
+            this.filenameToSourceFile[normFilename] = sourceFiles[i];
+        }
+    };
+    Project.prototype.finishGraph = function () {
+        this.updateGraph();
         this.compilerService.languageService.getNavigateToItems(".*");
     };
-    Project.prototype.addGraph = function (scriptInfo) {
-        if (this.addScript(scriptInfo)) {
-            for (var i = 0, clen = scriptInfo.children.length; i < clen; i++) {
-                this.addGraph(scriptInfo.children[i]);
-            }
-        }
+    Project.prototype.updateGraph = function () {
+        this.program = this.compilerService.languageService.getProgram();
+        this.updateFileMap();
     };
     Project.prototype.isConfiguredProject = function () {
         return this.projectFilename;
     };
-    Project.prototype.addScript = function (info) {
-        if ((!info.defaultProject) || (!info.defaultProject.isConfiguredProject())) {
-            info.defaultProject = this;
-        }
-        info.activeProjects.push(this);
-        return this.compilerService.host.addScriptInfo(info);
+    // add a root file to project
+    Project.prototype.addRoot = function (info) {
+        info.defaultProject = this;
+        return this.compilerService.host.addRoot(info);
     };
-    Project.prototype.printFiles = function () {
-        var filenames = this.compilerService.host.getScriptFileNames();
-        filenames.map(function (filename) {
-            console.log(filename);
+    Project.prototype.filesToString = function () {
+        var strBuilder = "";
+        ts.forEachValue(this.filenameToSourceFile, function (sourceFile) {
+            strBuilder += sourceFile.filename + "\n";
         });
+        return strBuilder;
     };
     Project.prototype.setProjectOptions = function (projectOptions) {
         this.projectOptions = projectOptions;
@@ -313,116 +444,368 @@ var Project = (function () {
             this.compilerService.setFormatCodeOptions(projectOptions.formatCodeOptions);
         }
     };
-    Project.createProject = function (projectFilename) {
-        var eproj = new Project();
-        eproj.projectFilename = projectFilename;
-        return eproj;
-    };
-    Project.createInferredProject = function (root) {
-        var iproj = new Project();
-        iproj.addGraph(root);
-        iproj.graphFinished();
-        return iproj;
-    };
     return Project;
 })();
 exports.Project = Project;
-// TODO: keep set of open, non-configured files (changes on open/close and
-// also may change if tsconfig contents change to configure one of the
-// files
-// upon open of new file f, check if member of existing inferred project
-// if not, create new inferred project with f as root
-// upon close of file, or change to references in any file, re-compute
-// projects for files, by the following:
-// let o be set of open, non-configured files
-// for ip in inferredProjects 
-//   let prog=ip.get program
-//   mark all files in o that are also in prog; if none, delete ip
-// for f in o
-//   if f unmarked 
-//     create new inferred project ipn
-//     mark members of i covered by ipn
-// to find inferred projects containing f, use cached prog
-// for ip in inferredProjects
-//    if f in cached prog for up, f in ip
-// this is only used for find references
-// for other ls calls, use most recently created proj referencing f
-// (cache this or recompute based on mru order)
-// keep opened files in mru order
-var ProjectService = (function () {
-    function ProjectService() {
-        this.filenameToScriptInfo = {};
-        this.inferredRoots = [];
-        this.inferredProjects = [];
-        this.inferredRootsChanged = false;
-        this.newRootDisjoint = true;
+function copyListRemovingItem(item, list) {
+    var copiedList = [];
+    for (var i = 0, len = list.length; i < len; i++) {
+        if (list[i] != item) {
+            copiedList.push(list[i]);
+        }
     }
-    ProjectService.prototype.addDefaultLibraryToProject = function (proj) {
-        var nodeModuleBinDir;
-        var defaultLib;
-        if (proj.projectOptions && proj.projectOptions.compilerOptions && (proj.projectOptions.compilerOptions.target == 2 /* ES6 */)) {
-            if (!this.defaultES6LibInfo) {
-                nodeModuleBinDir = ts.getDirectoryPath(ts.normalizePath(ts.sys.getExecutingFilePath()));
-                defaultLib = nodeModuleBinDir + "/lib.es6.d.ts";
-                this.defaultES6LibInfo = this.openFile(defaultLib);
+    return copiedList;
+}
+// REVIEW: for now this implementation uses polling.
+// The advantage of polling is that it works reliably
+// on all os and with network mounted files.
+// For 90 referenced files, the average time to detect 
+// changes is 2*msInterval (by default 5 seconds).
+// The overhead of this is .04 percent (1/2500) with
+// average pause of < 1 millisecond (and max
+// pause less than 1.5 milliseconds); question is
+// do we anticipate reference sets in the 100s and
+// do we care about waiting 10-20 seconds to detect
+// changes for large reference sets? If so, do we want
+// to increase the chunk size or decrease the interval
+// time dynamically to match the large reference set?
+var WatchedFileSet = (function () {
+    // average async stat takes about 30 microseconds
+    // set chunk size to do 30 files in < 1 millisecond
+    function WatchedFileSet(fileEvent, msInterval, chunkSize) {
+        if (msInterval === void 0) { msInterval = 2500; }
+        if (chunkSize === void 0) { chunkSize = 30; }
+        this.fileEvent = fileEvent;
+        this.msInterval = msInterval;
+        this.chunkSize = chunkSize;
+        this.watchedFiles = [];
+        this.nextFileToCheck = 0;
+    }
+    WatchedFileSet.prototype.checkWatchedFileChanged = function (checkedIndex, stats) {
+        var info = this.watchedFiles[checkedIndex];
+        if (info && (!info.isOpen)) {
+            if (info.mtime.getTime() != stats.mtime.getTime()) {
+                exports.logger.msg(info.filename + " changed");
+                info.svc.reloadFromFile(info.filename);
             }
-            proj.addScript(this.defaultES6LibInfo);
+        }
+    };
+    WatchedFileSet.prototype.fileDeleted = function (info) {
+        if (this.fileEvent) {
+            this.fileEvent(info, "deleted");
+        }
+    };
+    WatchedFileSet.prototype.poll = function (checkedIndex) {
+        var _this = this;
+        var watchedFile = this.watchedFiles[checkedIndex];
+        if (!watchedFile) {
+            return;
+        }
+        if (measurePerf) {
+            var start = process.hrtime();
+        }
+        fs.stat(watchedFile.filename, function (err, stats) {
+            if (err) {
+                var msg = err.message;
+                if (err.errno) {
+                    msg += " errno: " + err.errno.toString();
+                }
+                exports.logger.msg("Error " + msg + " in stat for file " + watchedFile.filename);
+                if (err.errno == WatchedFileSet.fileDeleted) {
+                    _this.fileDeleted(watchedFile);
+                }
+            }
+            else {
+                _this.checkWatchedFileChanged(checkedIndex, stats);
+            }
+        });
+        if (measurePerf) {
+            var elapsed = process.hrtime(start);
+            var elapsedNano = 1e9 * elapsed[0] + elapsed[1];
+            exports.logger.msg("Elapsed time for async stat (in nanoseconds)" + watchedFile.filename + ": " + elapsedNano.toString(), "Perf");
+        }
+    };
+    // this implementation uses polling and
+    // stat due to inconsistencies of fs.watch
+    // and efficiency of stat on modern filesystems
+    WatchedFileSet.prototype.startWatchTimer = function () {
+        var _this = this;
+        exports.logger.msg("Start watch timer: " + this.chunkSize.toString(), "Info");
+        this.watchTimer = setInterval(function () {
+            var count = 0;
+            var nextToCheck = _this.nextFileToCheck;
+            var firstCheck = -1;
+            while ((count < _this.chunkSize) && (nextToCheck != firstCheck)) {
+                _this.poll(nextToCheck);
+                if (firstCheck < 0) {
+                    firstCheck = nextToCheck;
+                }
+                nextToCheck++;
+                if (nextToCheck == _this.watchedFiles.length) {
+                    nextToCheck = 0;
+                }
+                count++;
+            }
+            _this.nextFileToCheck = nextToCheck;
+        }, this.msInterval);
+    };
+    // TODO: remove watch file if opened by editor or no longer referenced 
+    // assume normalized and absolute pathname
+    WatchedFileSet.prototype.addFile = function (info) {
+        this.watchedFiles.push(info);
+        if (this.watchedFiles.length == 1) {
+            this.startWatchTimer();
+        }
+    };
+    WatchedFileSet.prototype.removeFile = function (info) {
+        this.watchedFiles = copyListRemovingItem(info, this.watchedFiles);
+    };
+    WatchedFileSet.fileDeleted = 34;
+    return WatchedFileSet;
+})();
+exports.WatchedFileSet = WatchedFileSet;
+var ProjectService = (function () {
+    function ProjectService(eventHandler) {
+        var _this = this;
+        this.eventHandler = eventHandler;
+        this.filenameToScriptInfo = {};
+        // open, non-configured files in two lists
+        this.openFileRoots = [];
+        this.openFilesReferenced = [];
+        // projects covering open files
+        this.inferredProjects = [];
+        this.psLogger = exports.logger;
+        if (measurePerf) {
+            calibrateTimer();
+        }
+        ts.disableIncrementalParsing = true;
+        this.watchedFileSet = new WatchedFileSet(function (info, eventName) {
+            if (eventName == "deleted") {
+                _this.fileDeletedInFilesystem(info);
+            }
+        });
+    }
+    ProjectService.prototype.log = function (msg, type) {
+        if (type === void 0) { type = "Err"; }
+        this.psLogger.msg(msg, type);
+    };
+    ProjectService.prototype.closeLog = function () {
+        this.psLogger.close();
+    };
+    ProjectService.prototype.createInferredProject = function (root) {
+        var iproj = new Project(this);
+        iproj.addRoot(root);
+        iproj.finishGraph();
+        this.inferredProjects.push(iproj);
+        return iproj;
+    };
+    ProjectService.prototype.fileDeletedInFilesystem = function (info) {
+        this.psLogger.info(info.filename + " deleted");
+        this.watchedFileSet.removeFile(info);
+        if (!info.isOpen) {
+            this.filenameToScriptInfo[info.filename] = undefined;
+            var referencingProjects = this.findReferencingProjects(info);
+            for (var i = 0, len = referencingProjects.length; i < len; i++) {
+                referencingProjects[i].removeReferencedFile(info);
+            }
+        }
+        this.printProjects();
+    };
+    ProjectService.prototype.addOpenFile = function (info) {
+        this.findReferencingProjects(info);
+        if (info.defaultProject) {
+            this.openFilesReferenced.push(info);
         }
         else {
-            if (!this.defaultLibInfo) {
-                nodeModuleBinDir = ts.getDirectoryPath(ts.normalizePath(ts.sys.getExecutingFilePath()));
-                defaultLib = nodeModuleBinDir + "/lib.d.ts";
-                this.defaultLibInfo = this.openFile(defaultLib);
+            // create new inferred project p with the newly opened file as root
+            info.defaultProject = this.createInferredProject(info);
+            var openFileRoots = [];
+            // for each inferred project root r
+            for (var i = 0, len = this.openFileRoots.length; i < len; i++) {
+                var r = this.openFileRoots[i];
+                // if r referenced by the new project
+                if (info.defaultProject.getSourceFile(r)) {
+                    // remove project rooted at r
+                    this.inferredProjects = copyListRemovingItem(r.defaultProject, this.inferredProjects);
+                    // put r in referenced open file list
+                    this.openFilesReferenced.push(r);
+                    // set default project of r to the new project 
+                    r.defaultProject = info.defaultProject;
+                }
+                else {
+                    // otherwise, keep r as root of inferred project
+                    openFileRoots.push(r);
+                }
             }
-            proj.addScript(this.defaultLibInfo);
+            this.openFileRoots = openFileRoots;
+            this.openFileRoots.push(info);
+        }
+    };
+    ProjectService.prototype.closeOpenFile = function (info) {
+        var openFileRoots = [];
+        var removedProject;
+        for (var i = 0, len = this.openFileRoots.length; i < len; i++) {
+            // if closed file is root of project
+            if (info == this.openFileRoots[i]) {
+                // remove that project and remember it
+                removedProject = info.defaultProject;
+            }
+            else {
+                openFileRoots.push(this.openFileRoots[i]);
+            }
+        }
+        this.openFileRoots = openFileRoots;
+        if (removedProject) {
+            // remove project from inferred projects list
+            this.inferredProjects = copyListRemovingItem(removedProject, this.inferredProjects);
+            var openFilesReferenced = [];
+            var orphanFiles = [];
+            // for all open, referenced files f
+            for (var i = 0, len = this.openFilesReferenced.length; i < len; i++) {
+                var f = this.openFilesReferenced[i];
+                // if f was referenced by the removed project, remember it
+                if (f.defaultProject == removedProject) {
+                    f.defaultProject = undefined;
+                    orphanFiles.push(f);
+                }
+                else {
+                    // otherwise add it back to the list of referenced files
+                    openFilesReferenced.push(f);
+                }
+            }
+            this.openFilesReferenced = openFilesReferenced;
+            // treat orphaned files as newly opened
+            for (var i = 0, len = orphanFiles.length; i < len; i++) {
+                this.addOpenFile(orphanFiles[i]);
+            }
+        }
+        else {
+            this.openFilesReferenced = copyListRemovingItem(info, this.openFilesReferenced);
+        }
+        info.close();
+    };
+    ProjectService.prototype.findReferencingProjects = function (info) {
+        var referencingProjects = [];
+        info.defaultProject = undefined;
+        for (var i = 0, len = this.inferredProjects.length; i < len; i++) {
+            this.inferredProjects[i].updateGraph();
+            if (this.inferredProjects[i].getSourceFile(info)) {
+                info.defaultProject = this.inferredProjects[i];
+                referencingProjects.push(this.inferredProjects[i]);
+            }
+        }
+        return referencingProjects;
+    };
+    ProjectService.prototype.getScriptInfo = function (filename) {
+        filename = ts.normalizePath(filename);
+        return ts.lookUp(this.filenameToScriptInfo, filename);
+    };
+    /**
+     * @param filename is absolute pathname
+     */
+    ProjectService.prototype.openFile = function (filename, openedByClient) {
+        if (openedByClient === void 0) { openedByClient = false; }
+        filename = ts.normalizePath(filename);
+        var info = ts.lookUp(this.filenameToScriptInfo, filename);
+        if (!info) {
+            var content;
+            if (ts.sys.fileExists(filename)) {
+                content = ts.sys.readFile(filename);
+            }
+            if (!content) {
+                if (openedByClient) {
+                    content = "";
+                }
+            }
+            if (content !== undefined) {
+                info = new ScriptInfo(filename, content, openedByClient);
+                this.filenameToScriptInfo[filename] = info;
+                if (!info.isOpen) {
+                    this.watchedFileSet.addFile(info);
+                }
+            }
+        }
+        if (info) {
+            if (openedByClient) {
+                info.isOpen = true;
+            }
+        }
+        return info;
+    };
+    /**
+     * Open file whose contents is managed by the client
+     * @param filename is absolute pathname
+     */
+    ProjectService.prototype.openClientFile = function (filename) {
+        // TODO: tsconfig check
+        var info = this.openFile(filename, true);
+        this.addOpenFile(info);
+        this.printProjects();
+        return info;
+    };
+    /**
+     * Close file whose contents is managed by the client
+     * @param filename is absolute pathname
+     */
+    ProjectService.prototype.closeClientFile = function (filename) {
+        // TODO: tsconfig check
+        var info = ts.lookUp(this.filenameToScriptInfo, filename);
+        if (info) {
+            this.closeOpenFile(info);
+            info.isOpen = false;
+        }
+        this.printProjects();
+    };
+    ProjectService.prototype.getProjectsReferencingFile = function (filename) {
+        var scriptInfo = ts.lookUp(this.filenameToScriptInfo, filename);
+        if (scriptInfo) {
+            var projects = [];
+            for (var i = 0, len = this.inferredProjects.length; i < len; i++) {
+                if (this.inferredProjects[i].getSourceFile(scriptInfo)) {
+                    projects.push(this.inferredProjects[i]);
+                }
+            }
+            return projects;
         }
     };
     ProjectService.prototype.getProjectForFile = function (filename) {
         var scriptInfo = ts.lookUp(this.filenameToScriptInfo, filename);
-        if (!scriptInfo) {
-            scriptInfo = this.openSpecifiedFile(filename, false, false);
+        if (scriptInfo) {
+            return scriptInfo.defaultProject;
         }
-        // TODO: error upon file not found
-        return scriptInfo.defaultProject;
     };
     ProjectService.prototype.printProjectsForFile = function (filename) {
         var scriptInfo = ts.lookUp(this.filenameToScriptInfo, filename);
         if (scriptInfo) {
-            console.log("Projects for " + filename);
-            for (var i = 0, len = scriptInfo.activeProjects.length; i < len; i++) {
-                for (var j = 0, iplen = this.inferredProjects.length; j < iplen; j++) {
-                    if (scriptInfo.activeProjects[i] == this.inferredProjects[j]) {
-                        console.log("Inferred Project " + j.toString());
-                    }
-                }
+            this.psLogger.startGroup();
+            this.psLogger.info("Projects for " + filename);
+            var projects = this.getProjectsReferencingFile(filename);
+            for (var i = 0, len = projects.length; i < len; i++) {
+                this.psLogger.info("Inferred Project " + i.toString());
             }
+            this.psLogger.endGroup();
         }
         else {
-            console.log(filename + " not in any project");
+            this.psLogger.info(filename + " not in any project");
         }
     };
     ProjectService.prototype.printProjects = function () {
+        this.psLogger.startGroup();
         for (var i = 0, len = this.inferredProjects.length; i < len; i++) {
             var project = this.inferredProjects[i];
-            console.log("Project " + i.toString());
-            project.printFiles();
-            console.log("-----------------------------------------------");
+            this.psLogger.info("Project " + i.toString());
+            this.psLogger.info(project.filesToString());
+            this.psLogger.info("-----------------------------------------------");
         }
-    };
-    ProjectService.prototype.removeInferredRoot = function (info) {
-        var len = this.inferredRoots.length;
-        for (var i = 0; i < len; i++) {
-            if (this.inferredRoots[i] == info) {
-                if (i < (len - 1)) {
-                    this.inferredRoots[i] = this.inferredRoots[len - 1];
-                }
-                this.inferredRoots.length--;
-                this.inferredRootsChanged = true;
-                info.isInferredRoot = false;
-                return true;
-            }
+        this.psLogger.info("Open file roots: ");
+        for (var i = 0, len = this.openFileRoots.length; i < len; i++) {
+            this.psLogger.info(this.openFileRoots[i].filename);
         }
-        return false;
+        this.psLogger.info("Open files referenced: ");
+        for (var i = 0, len = this.openFilesReferenced.length; i < len; i++) {
+            this.psLogger.info(this.openFilesReferenced[i].filename);
+        }
+        this.psLogger.endGroup();
     };
     ProjectService.prototype.openConfigFile = function (configFilename) {
         configFilename = ts.normalizePath(configFilename);
@@ -440,14 +823,14 @@ var ProjectService = (function () {
                 return { errorMsg: "tsconfig option errors" };
             }
             else if (parsedCommandLine.filenames) {
-                var proj = Project.createProject(configFilename);
+                var proj = this.createProject(configFilename);
                 for (var i = 0, len = parsedCommandLine.filenames.length; i < len; i++) {
                     var rootFilename = parsedCommandLine.filenames[i];
                     var normRootFilename = ts.normalizePath(rootFilename);
                     normRootFilename = getAbsolutePath(normRootFilename, dirPath);
                     if (ts.sys.fileExists(normRootFilename)) {
-                        var info = this.openSpecifiedFile(normRootFilename, false, true);
-                        proj.addGraph(info);
+                        var info = this.openFile(normRootFilename);
+                        proj.addRoot(info);
                     }
                     else {
                         return { errorMsg: "specified file " + rootFilename + " not found" };
@@ -461,7 +844,6 @@ var ProjectService = (function () {
                     projectOptions.formatCodeOptions = rawConfig.formatCodeOptions;
                 }
                 proj.setProjectOptions(projectOptions);
-                this.addDefaultLibraryToProject(proj);
                 return { success: true, project: proj };
             }
             else {
@@ -469,121 +851,30 @@ var ProjectService = (function () {
             }
         }
     };
-    ProjectService.prototype.openSpecifiedFile = function (filename, openedByClient, configuredProject) {
-        if (openedByClient === void 0) { openedByClient = true; }
-        if (configuredProject === void 0) { configuredProject = false; }
-        this.inferredRootsChanged = false;
-        this.newRootDisjoint = true;
-        var info = this.openFile(filename, openedByClient, configuredProject);
-        if (this.inferredRootsChanged) {
-            var i = 0;
-            var len = this.inferredRoots.length;
-            if (this.newRootDisjoint) {
-                i = len - 1;
-            }
-            // TODO: when destroying projects, remove refs from ScriptInfos
-            for (; i < len; i++) {
-                var root = this.inferredRoots[i];
-                root.isInferredRoot = true;
-                this.inferredProjects[i] = Project.createInferredProject(root);
-                this.addDefaultLibraryToProject(this.inferredProjects[i]);
-            }
-        }
-        return info;
-    };
-    ProjectService.prototype.recomputeReferences = function (filename) {
-        var info = ts.lookUp(this.filenameToScriptInfo, filename);
-        if (info) {
-            var prevChildrenList = info.children;
-            var prevChildren = {};
-            var orphans = [];
-            var adopted = [];
-            for (var i = 0, len = prevChildrenList.length; i < len; i++) {
-                prevChildren[prevChildrenList[i].filename] = true;
-            }
-            info.children = [];
-            var dirPath = ts.getDirectoryPath(filename);
-            this.computeReferences(info, dirPath);
-            var children = {};
-            for (var j = 0, clen = info.children.length; j < clen; j++) {
-                children[info.children[j].filename] = true;
-                if (!prevChildren[info.children[j].filename]) {
-                    adopted.push(info.children[j]);
-                }
-            }
-            for (i = 0; i < len; i++) {
-                if (!children[prevChildrenList[i].filename]) {
-                    orphans.push(prevChildrenList[i]);
-                }
-            }
-        }
-    };
-    ProjectService.prototype.computeReferences = function (info, dirPath, content) {
-        if (!content) {
-            content = info.getText();
-        }
-        var preProcessedInfo = ts.preProcessFile(content, false);
-        // TODO: add import references
-        if (preProcessedInfo.referencedFiles.length > 0) {
-            for (var i = 0, len = preProcessedInfo.referencedFiles.length; i < len; i++) {
-                var refFilename = ts.normalizePath(preProcessedInfo.referencedFiles[i].filename);
-                refFilename = getAbsolutePath(refFilename, dirPath);
-                var refInfo = this.openFile(refFilename);
-                info.addChild(refInfo);
-            }
-        }
-    };
-    /**
-     * @param filename is absolute pathname
-     */
-    ProjectService.prototype.openFile = function (filename, openedByClient, configuredProject) {
-        if (openedByClient === void 0) { openedByClient = false; }
-        if (configuredProject === void 0) { configuredProject = false; }
-        //console.log("opening "+filename+"...");
-        filename = ts.normalizePath(filename);
-        var dirPath = ts.getDirectoryPath(filename);
-        //console.log("normalized as "+filename+" with dir path "+dirPath);
-        var info = ts.lookUp(this.filenameToScriptInfo, filename);
-        if (!info) {
-            var content = "";
-            if (ts.sys.fileExists(filename)) {
-                content = ts.sys.readFile(filename);
-            }
-            info = new ScriptInfo(filename, content, openedByClient);
-            this.filenameToScriptInfo[filename] = info;
-            if (openedByClient && (!configuredProject)) {
-                // this is a root because newly opened due to a client request
-                // it would already be open if an existing inferred project referenced it
-                this.inferredRoots.push(info);
-                this.inferredRootsChanged = true;
-            }
-            if (content.length > 0) {
-                this.computeReferences(info, dirPath, content);
-            }
-        }
-        else if (info.isInferredRoot && (!openedByClient)) {
-            if (this.removeInferredRoot(info)) {
-                this.inferredRootsChanged = true;
-                this.newRootDisjoint = false;
-            }
-        }
-        return info;
+    ProjectService.prototype.createProject = function (projectFilename) {
+        var eproj = new Project(this);
+        eproj.projectFilename = projectFilename;
+        return eproj;
     };
     return ProjectService;
 })();
 exports.ProjectService = ProjectService;
 var CompilerService = (function () {
-    function CompilerService() {
+    function CompilerService(project) {
+        this.project = project;
         this.cancellationToken = new CancellationToken();
-        this.host = new LSHost(this.cancellationToken);
         this.settings = ts.getDefaultCompilerOptions();
         this.documentRegistry = ts.createDocumentRegistry();
         this.formatCodeOptions = CompilerService.defaultFormatCodeOptions;
-        this.host.setCompilationSettings(ts.getDefaultCompilerOptions());
+        this.host = new LSHost(project, this.cancellationToken);
+        // override default ES6 (remove when compiler default back at ES5)
+        this.settings.target = 1 /* ES5 */;
+        this.host.setCompilationSettings(this.settings);
         this.languageService = ts.createLanguageService(this.host, this.documentRegistry);
-        this.classifier = ts.createClassifier(this.host);
+        this.classifier = ts.createClassifier();
     }
     CompilerService.prototype.setCompilerOptions = function (opt) {
+        this.settings = opt;
         this.host.setCompilationSettings(opt);
     };
     CompilerService.prototype.setFormatCodeOptions = function (fco) {
@@ -962,7 +1253,7 @@ var LineIndexSnapshot = (function () {
     LineIndexSnapshot.prototype.getLineMapper = function () {
         var _this = this;
         return (function (line) {
-            return _this.index.lineNumberToInfo(line).offset;
+            return _this.index.lineNumberToInfo(line).col;
         });
     };
     LineIndexSnapshot.prototype.getTextChangeRangeSinceVersion = function (scriptVersion) {
@@ -998,7 +1289,7 @@ var LineIndex = (function () {
         else {
             return {
                 line: lineNumber,
-                offset: this.root.charCount()
+                col: this.root.charCount()
             };
         }
     };
@@ -1072,7 +1363,7 @@ var LineIndex = (function () {
                 // check whether last characters deleted are line break
                 var e = pos + deleteLength;
                 var lineInfo = this.charOffsetToLineNumberAndPos(e);
-                if ((lineInfo && (lineInfo.offset == 0))) {
+                if ((lineInfo && (lineInfo.col == 0))) {
                     // move range end just past line that will merge with previous line
                     deleteLength += lineInfo.text.length;
                     // store text by appending to end of insertedText
@@ -1102,7 +1393,7 @@ var LineIndex = (function () {
             if (this.checkEdits) {
                 var updatedText = this.getText(0, this.root.charCount());
                 if (checkText != updatedText) {
-                    console.log("buffer edit mismatch");
+                    exports.logger.msg("buffer edit mismatch");
                 }
             }
             return walker.lineIndex;
@@ -1138,8 +1429,7 @@ var LineIndex = (function () {
         }
     };
     LineIndex.linesFromText = function (text) {
-        var sourceSnap = ts.ScriptSnapshot.fromString(text);
-        var lineStarts = sourceSnap.getLineStartPositions();
+        var lineStarts = ts.computeLineStarts(text);
         if (lineStarts.length == 0) {
             return { lines: [], lineMap: lineStarts };
         }
@@ -1263,11 +1553,17 @@ var LineNode = (function () {
     };
     LineNode.prototype.charOffsetToLineNumberAndPos = function (lineNumber, charOffset) {
         var childInfo = this.childFromCharOffset(lineNumber, charOffset);
-        if (childInfo.childIndex < this.children.length) {
+        if (!childInfo.child) {
+            return {
+                line: lineNumber,
+                col: charOffset
+            };
+        }
+        else if (childInfo.childIndex < this.children.length) {
             if (childInfo.child.isLeaf()) {
                 return {
                     line: childInfo.lineNumber,
-                    offset: childInfo.charOffset,
+                    col: childInfo.charOffset,
                     text: (childInfo.child).text,
                     leaf: (childInfo.child)
                 };
@@ -1279,15 +1575,21 @@ var LineNode = (function () {
         }
         else {
             var lineInfo = this.lineNumberToInfo(this.lineCount(), 0);
-            return { line: this.lineCount(), offset: lineInfo.leaf.charCount() };
+            return { line: this.lineCount(), col: lineInfo.leaf.charCount() };
         }
     };
     LineNode.prototype.lineNumberToInfo = function (lineNumber, charOffset) {
         var childInfo = this.childFromLineNumber(lineNumber, charOffset);
-        if (childInfo.child.isLeaf()) {
+        if (!childInfo.child) {
             return {
                 line: lineNumber,
-                offset: childInfo.charOffset,
+                col: charOffset
+            };
+        }
+        else if (childInfo.child.isLeaf()) {
+            return {
+                line: lineNumber,
+                col: childInfo.charOffset,
                 text: (childInfo.child).text,
                 leaf: (childInfo.child)
             };
