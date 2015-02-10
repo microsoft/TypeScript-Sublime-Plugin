@@ -1298,6 +1298,4 @@ module ts.server {
             });
         }
     }
-
-    new Session(true).listen();
 }
