@@ -598,7 +598,7 @@ declare module NodeJS {
         export class Protocol {
             res: Packet;
             state: string;
-            execute(data: string);
+            execute(data: string): void;
             serialize(rq: Request): string;
             onResponse: (pkt: Packet) => void;
         }
@@ -661,7 +661,7 @@ declare module NodeJS {
             currentFrame: number;
             currentScript: string;
 
-            connect(port: number, host: string);
+            connect(port: number, host: string): void;
             req(req: any, cb: RequestHandler): void;
             reqFrameEval(code: string, frame: number, cb: RequestHandler): void;
             mirrorObject(obj: any, depth: number, cb: ResponseBodyHandler): void;
@@ -670,7 +670,7 @@ declare module NodeJS {
             listbreakpoints(cb: RequestHandler): void;
             reqSource(from: number, to: number, cb: RequestHandler): void;
             reqScripts(cb: any): void;
-            reqContinue(cb: RequestHandler);
+            reqContinue(cb: RequestHandler): void;
         }
     }
 }

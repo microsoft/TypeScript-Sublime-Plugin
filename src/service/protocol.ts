@@ -5,7 +5,13 @@
 /// <reference path='editorServices.ts' />
 
 
-    
+module ts {
+    export interface NavigationBarItem {
+        displayString?: string;
+        docString?: string;
+    }
+}
+
 module ts.server {
     var nodeproto: typeof NodeJS._debugger = require('_debugger');
     var readline: NodeJS.ReadLine = require('readline');
@@ -26,6 +32,8 @@ module ts.server {
     interface StackTraceError extends Error {
         stack?: string;
     }
+
+
 
     function generateSpaces(n: number): string {
         if (!spaceCache[n]) {
@@ -174,7 +182,7 @@ module ts.server {
         }
 
         listSrc() {
-            this.client.reqScripts((err) => {
+            this.client.reqScripts((err: any) => {
                 if (err) {
                     console.log("rscr error: " + err);
                 }
@@ -194,7 +202,7 @@ module ts.server {
             if (file) {
                 var script: NodeJS._debugger.ScriptDesc;
                 var scripts = this.client.scripts;
-                var keys = Object.keys(scripts);
+                var keys: any[] = Object.keys(scripts);
                 var ambiguous = false;
                 for (var v = 0; v < keys.length; v++) {
                     var id = keys[v];
@@ -247,10 +255,10 @@ module ts.server {
         init() {
             var connectionAttempts = 0;
             this.client = new nodeproto.Client();
-            this.client.on('break', res=> {
+            this.client.on('break', (res: NodeJS._debugger.Event) => {
                 this.handleBreak(res.body);
             });
-            this.client.on('exception', res=> {
+            this.client.on('exception',(res: NodeJS._debugger.Event) => {
                 this.handleBreak(res.body);
             });
             this.client.on('error',() => {
@@ -470,7 +478,7 @@ module ts.server {
             }
         }
 
-        output(info, reqSeq = 0, errorMsg?: string) {
+        output(info: any, reqSeq = 0, errorMsg?: string) {
             if (this.protocol) {
                 this.response(info, reqSeq, errorMsg);
             }
@@ -956,8 +964,8 @@ module ts.server {
                 if (quickInfo) {
                     var displayString = ts.displayPartsToString(quickInfo.displayParts);
                     var docString = ts.displayPartsToString(quickInfo.documentation);
-                    navBarItem["displayString"] = displayString;
-                    navBarItem["docString"] = docString;
+                    navBarItem.displayString = displayString;
+                    navBarItem.docString = docString;
                 }
             }
             if (navBarItem.childItems.length > 0) {

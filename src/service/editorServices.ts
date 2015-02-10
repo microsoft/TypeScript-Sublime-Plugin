@@ -361,7 +361,7 @@ module ts.server {
             var index = script.snap().index;
 
             var lineInfo = index.lineNumberToInfo(line + 1);
-            var len;
+            var len: number;
             if (lineInfo.leaf) {
                 len = lineInfo.leaf.text.length;
             }
@@ -803,7 +803,7 @@ module ts.server {
             filename = ts.normalizePath(filename);
             var info = ts.lookUp(this.filenameToScriptInfo, filename);
             if (!info) {
-                var content;
+                var content: string;
                 if (ts.sys.fileExists(filename)) {
                     content = ts.sys.readFile(filename);
                 }
