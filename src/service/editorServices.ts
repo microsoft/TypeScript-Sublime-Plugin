@@ -6,7 +6,7 @@ var typescript: typeof ts;
 
 module ts.server {
     var ts: typeof typescript = require('typescript');
-  
+
     var fs: typeof NodeJS.fs = require('fs');
 
     var measurePerf = false;
@@ -217,7 +217,7 @@ module ts.server {
 
         getDefaultLibFileName() {
             var nodeModuleBinDir = ts.getDirectoryPath(ts.normalizePath(ts.sys.getExecutingFilePath()));
-            
+
             if (this.compilationSettings && this.compilationSettings.target == ts.ScriptTarget.ES6) {
                 return nodeModuleBinDir + "/lib.es6.d.ts";
             }

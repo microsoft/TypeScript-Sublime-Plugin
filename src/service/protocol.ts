@@ -255,7 +255,7 @@ module ts.server {
         init() {
             var connectionAttempts = 0;
             this.client = new nodeproto.Client();
-            this.client.on('break', (res: NodeJS._debugger.Event) => {
+            this.client.on('break',(res: NodeJS._debugger.Event) => {
                 this.handleBreak(res.body);
             });
             this.client.on('exception',(res: NodeJS._debugger.Event) => {
@@ -467,7 +467,7 @@ module ts.server {
                 containerKind: "ck",
                 kindModifiers: "km",
                 start: "s",
-                end: "e", 
+                end: "e",
                 line: "l",
                 col: "c",
                 "interface": "i",
@@ -678,7 +678,7 @@ module ts.server {
                     }
                 }
                 else {
-                    this.output(undefined,CommandNames.Rename, reqSeq, "no rename information at cursor");
+                    this.output(undefined, CommandNames.Rename, reqSeq, "no rename information at cursor");
                 }
             }
         }
@@ -758,14 +758,14 @@ module ts.server {
                     }
                 }
                 if (typeLoc) {
-                    this.output([typeLoc],CommandNames.Type, reqSeq);
+                    this.output([typeLoc], CommandNames.Type, reqSeq);
                 }
                 else {
-                    this.output(undefined,CommandNames.Type, reqSeq, "no info at this location");
+                    this.output(undefined, CommandNames.Type, reqSeq, "no info at this location");
                 }
             }
             else {
-                this.output(undefined,CommandNames.Type, reqSeq, "no project for " + file);
+                this.output(undefined, CommandNames.Type, reqSeq, "no project for " + file);
             }
         }
 
@@ -787,15 +787,15 @@ module ts.server {
                     var qi: ServerProtocol.QuickInfoResponseBody = {
                         kind: quickInfo.kind,
                         kindModifiers: quickInfo.kindModifiers,
-                        start: compilerService.host.positionToLineCol(file,quickInfo.textSpan.start),
-                        end: compilerService.host.positionToLineCol(file,ts.textSpanEnd(quickInfo.textSpan)),
+                        start: compilerService.host.positionToLineCol(file, quickInfo.textSpan.start),
+                        end: compilerService.host.positionToLineCol(file, ts.textSpanEnd(quickInfo.textSpan)),
                         displayString: displayString,
                         documentation: docString,
                     };
                     this.output(qi, CommandNames.Quickinfo, reqSeq);
                 }
                 else {
-                    this.output(undefined,CommandNames.Quickinfo, reqSeq, "no info")
+                    this.output(undefined, CommandNames.Quickinfo, reqSeq, "no info")
                 }
             }
         }
@@ -827,10 +827,10 @@ module ts.server {
                             newText: edit.newText ? edit.newText : ""
                         };
                     });
-                    this.output(bakedEdits,CommandNames.Format, reqSeq);
+                    this.output(bakedEdits, CommandNames.Format, reqSeq);
                 }
                 else {
-                    this.output(undefined,CommandNames.Format, reqSeq, "no edits")
+                    this.output(undefined, CommandNames.Format, reqSeq, "no edits")
                 }
             }
         }
@@ -874,10 +874,10 @@ module ts.server {
                             newText: edit.newText ? edit.newText : ""
                         };
                     });
-                    this.output(bakedEdits,CommandNames.Formatonkey, reqSeq);
+                    this.output(bakedEdits, CommandNames.Formatonkey, reqSeq);
                 }
                 else {
-                    this.output(undefined,CommandNames.Formatonkey, reqSeq, "no edits")
+                    this.output(undefined, CommandNames.Formatonkey, reqSeq, "no edits")
                 }
             }
         }
@@ -921,12 +921,12 @@ module ts.server {
                                 }
                                 return accum;
                             }, []);
-                        this.output(compressedEntries,CommandNames.Completions, reqSeq);
+                        this.output(compressedEntries, CommandNames.Completions, reqSeq);
                     }
                 }
             }
             if (!completions) {
-                this.output(undefined,CommandNames.Completions, reqSeq, "no completions");
+                this.output(undefined, CommandNames.Completions, reqSeq, "no completions");
             }
         }
 
@@ -1074,10 +1074,10 @@ module ts.server {
                         return bakedItem;
                     });
 
-                    this.output(bakedNavItems,CommandNames.Navto, reqSeq);
+                    this.output(bakedNavItems, CommandNames.Navto, reqSeq);
                 }
                 else {
-                    this.output(undefined,CommandNames.Navto, reqSeq, "no nav items");
+                    this.output(undefined, CommandNames.Navto, reqSeq, "no nav items");
                 }
             }
         }
@@ -1173,7 +1173,7 @@ module ts.server {
 
         sendAbbrev(reqSeq = 0) {
             if (!this.fetchedAbbrev) {
-                this.output(this.abbrevTable,CommandNames.Abbrev, reqSeq);
+                this.output(this.abbrevTable, CommandNames.Abbrev, reqSeq);
             }
             this.fetchedAbbrev = true;
         }
@@ -1329,7 +1329,7 @@ module ts.server {
                             this.projectService.printProjectsForFile(file);
                         }
                         else {
-                            this.output(undefined,CommandNames.Unknown, 0, "Unrecognized command " + cmd);
+                            this.output(undefined, CommandNames.Unknown, 0, "Unrecognized command " + cmd);
                         }
                     }
                     catch (err) {
