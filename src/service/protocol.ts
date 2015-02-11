@@ -969,7 +969,7 @@ module ts.server {
                 this.changeSeq++;
                 // make sure no changes happen before this one is finished
                 project.compilerService.host.reloadScript(file, tmpfile,() => {
-                    this.output({ ack: true }, CommandNames.Reload, reqSeq);
+                    this.output(undefined, CommandNames.Reload, reqSeq);
                 });
             }
         }

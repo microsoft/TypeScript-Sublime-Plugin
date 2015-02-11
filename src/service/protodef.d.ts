@@ -198,7 +198,8 @@ declare module ServerProtocol {
        server that the client has file open.  The server will not
        monitor the filesystem for changes in this file and will assume
        that the client is updating the server (using the change and/or
-       reload messages) when the file changes.
+       reload messages) when the file changes. Server does not currently
+       send a response to an open request.
     */
     export interface OpenRequest extends FileRequest {
     }
@@ -207,7 +208,8 @@ declare module ServerProtocol {
        Close request; value of command field is "close". Notify the
        server that the client has closed a previously open file.  If
        file is still referenced by open files, the server will resume
-       monitoring the filesystem for changes to file.
+       monitoring the filesystem for changes to file.  Server does not
+       currently send a response to a close request.
     */
     export interface CloseRequest extends FileRequest {
     }
@@ -416,11 +418,11 @@ declare module ServerProtocol {
         arguments: ReloadRequestArgs;
     }
 
+    /**
+       Response to "reload" request.  This is just an acknowledgement, so
+       no body field is required.
+    */
     export interface ReloadResponse extends Response {
-        body?: {
-            /** Acknowledge that the reload has completed */
-            ack: boolean;
-        }
     }
 
     /** Arguments for saveto request. */
@@ -436,7 +438,8 @@ declare module ServerProtocol {
        Saveto request message; value of command field is "saveto".
        For debugging purposes, save to a temporaryfile (named by
        argument 'tmpfile') the contents of file named by argument
-       'file'.  
+       'file'.  The server does not currently send a response to a
+       "saveto" request.
     */
     export interface SavetoRequest extends FileRequest {
         arguments: SavetoRequestArgs;
@@ -512,6 +515,7 @@ declare module ServerProtocol {
     /**
        Change request message; value of command field is "change".
        Update the server's view of the file named by argument 'file'.  
+       Server does not currently send a response to a change request.
     */
     export interface ChangeRequest extends CodeLocationRequest {
         arguments: ChangeRequestArgs;
