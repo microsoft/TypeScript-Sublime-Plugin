@@ -4,7 +4,10 @@ LTSC = node $(TSLOC)/tsc.js
 SRC = editorServices.ts protocol.ts server.ts
 
 it: $(SRC)
-	$(LTSC) node.d.ts editorServices.ts protocol.ts server.ts -m commonjs --noImplicitAny -out protocol.js 
+	$(LTSC) node.d.ts editorServices.ts protocol.ts server.ts --noImplicitAny -out protocol.js 
+
+client: $(SRC)
+	$(LTSC) node.d.ts editorServices.ts protocol.ts client.ts --noImplicitAny -out client.js 
 
 install:
 	-rm -rf ../../clients/sublime/TypeScript/node_modules
