@@ -4,7 +4,6 @@
 /// <reference path='protodef.d.ts' />
 /// <reference path='editorServices.ts' />
 
-
 module ts {
     export interface NavigationBarItem {
         displayString?: string;
@@ -13,6 +12,7 @@ module ts {
 }
 
 module ts.server {
+    var ts: typeof typescript = require('typescript');
     var nodeproto: typeof NodeJS._debugger = require('_debugger');
     var readline: NodeJS.ReadLine = require('readline');
     var path: NodeJS.Path = require('path');
@@ -353,6 +353,26 @@ module ts.server {
         return true;
     }
 
+    module CommandNames {
+        export var Abbrev = "abbrev";
+        export var Change = "change";
+        export var Close = "close";
+        export var Completions = "completions";
+        export var Definition = "definition";
+        export var Format = "format";
+        export var Formatonkey = "formatonkey";
+        export var Geterr = "geterr";
+        export var Navto = "navto";
+        export var Open = "open";
+        export var Quickinfo = "quickinfo";
+        export var References = "references";
+        export var Reload = "reload";
+        export var Rename = "rename";
+        export var Saveto = "saveto";
+        export var Type = "type";
+        export var Unknown = "unknown";
+    }
+
     export class Session {
         projectService = new ProjectService();
         prettyJSON = false;
@@ -399,6 +419,11 @@ module ts.server {
             console.log("Got JSON msg:\n" + req.raw);
         }
 
+        sendLineToClient(line: string) {
+            // this will use the sys host
+            console.log(line);
+        }
+
         send(msg: NodeJS._debugger.Message) {
             var json: string;
             if (this.prettyJSON) {
@@ -407,7 +432,7 @@ module ts.server {
             else {
                 json = JSON.stringify(msg);
             }
-            console.log('Content-Length: ' + (1 + Buffer.byteLength(json, 'utf8')) +
+            this.sendLineToClient('Content-Length: ' + (1 + Buffer.byteLength(json, 'utf8')) +
                 '\r\n\r\n' + json);
         }
 
@@ -421,10 +446,11 @@ module ts.server {
             this.send(ev);
         }
 
-        response(info: any, reqSeq = 0, errorMsg?: string) {
+        response(info: any, cmdName: string, reqSeq = 0, errorMsg?: string) {
             var res: NodeJS._debugger.Response = {
                 seq: 0,
                 type: "response",
+                command: cmdName,
                 request_seq: reqSeq,
                 success: !errorMsg,
             }
@@ -478,16 +504,16 @@ module ts.server {
             }
         }
 
-        output(info: any, reqSeq = 0, errorMsg?: string) {
+        output(info: any, cmdName: string, reqSeq = 0, errorMsg?: string) {
             if (this.protocol) {
-                this.response(info, reqSeq, errorMsg);
+                this.response(info, cmdName, reqSeq, errorMsg);
             }
             else if (this.prettyJSON) {
                 if (!errorMsg) {
-                    console.log(JSON.stringify(info, null, " ").trim());
+                    this.sendLineToClient(JSON.stringify(info, null, " ").trim());
                 }
                 else {
-                    console.log(JSON.stringify(errorMsg));
+                    this.sendLineToClient(JSON.stringify(errorMsg));
                 }
             } else {
                 if (!errorMsg) {
@@ -499,10 +525,10 @@ module ts.server {
                     for (var i = 0; i < padLen; i++) {
                         lenStr = '0' + lenStr;
                     }
-                    console.log("[" + lenStr + "," + infoStr + "]");
+                    this.sendLineToClient("[" + lenStr + "," + infoStr + "]");
                 }
                 else {
-                    console.log(JSON.stringify("error: " + errorMsg));
+                    this.sendLineToClient(JSON.stringify("error: " + errorMsg));
                 }
             }
         }
@@ -579,14 +605,14 @@ module ts.server {
                         lim: def &&
                         compilerService.host.positionToLineCol(def.fileName, ts.textSpanEnd(def.textSpan))
                     }));
-                    this.output(info, reqSeq);
+                    this.output(info, CommandNames.Definition, reqSeq);
                 }
                 else {
-                    this.output(undefined, reqSeq, "could not find def");
+                    this.output(undefined, CommandNames.Definition, reqSeq, "could not find def");
                 }
             }
             else {
-                this.output(undefined, reqSeq, "no project for " + file);
+                this.output(undefined, CommandNames.Definition, reqSeq, "no project for " + file);
             }
         }
 
@@ -639,18 +665,18 @@ module ts.server {
                                 curFileAccum.locs.push({ min: cur.min, lim: cur.lim });
                                 return accum;
                             }, []);
-                            this.output({ info: renameInfo, locs: bakedRenameLocs }, reqSeq);
+                            this.output({ info: renameInfo, locs: bakedRenameLocs }, CommandNames.Rename, reqSeq);
                         }
                         else {
-                            this.output({ info: renameInfo, locs: [] }, reqSeq);
+                            this.output({ info: renameInfo, locs: [] }, CommandNames.Rename, reqSeq);
                         }
                     }
                     else {
-                        this.output(undefined, reqSeq, renameInfo.localizedErrorMessage);
+                        this.output(undefined, CommandNames.Rename, reqSeq, renameInfo.localizedErrorMessage);
                     }
                 }
                 else {
-                    this.output(undefined, reqSeq, "no rename information at cursor");
+                    this.output(undefined,CommandNames.Rename, reqSeq, "no rename information at cursor");
                 }
             }
         }
@@ -691,14 +717,14 @@ module ts.server {
                             symbolStartCol: nameColStart,
                             symbolDisplayString: displayString
                         };
-                        this.output(response, reqSeq);
+                        this.output(response, CommandNames.References, reqSeq);
                     }
                     else {
-                        this.output(undefined, reqSeq, "no references at this position");
+                        this.output(undefined, CommandNames.References, reqSeq, "no references at this position");
                     }
                 }
                 else {
-                    this.output(undefined, reqSeq, "no references at this position");
+                    this.output(undefined, CommandNames.References, reqSeq, "no references at this position");
                 }
             }
         }
@@ -730,14 +756,14 @@ module ts.server {
                     }
                 }
                 if (typeLoc) {
-                    this.output([typeLoc], reqSeq);
+                    this.output([typeLoc],CommandNames.Type, reqSeq);
                 }
                 else {
-                    this.output(undefined, reqSeq, "no info at this location");
+                    this.output(undefined,CommandNames.Type, reqSeq, "no info at this location");
                 }
             }
             else {
-                this.output(undefined, reqSeq, "no project for " + file);
+                this.output(undefined,CommandNames.Type, reqSeq, "no project for " + file);
             }
         }
 
@@ -759,10 +785,10 @@ module ts.server {
                     this.output({
                         info: displayString,
                         doc: docString,
-                    }, reqSeq);
+                    }, CommandNames.Quickinfo, reqSeq);
                 }
                 else {
-                    this.output(undefined, reqSeq, "no info")
+                    this.output(undefined,CommandNames.Quickinfo, reqSeq, "no info")
                 }
             }
         }
@@ -794,10 +820,10 @@ module ts.server {
                             newText: edit.newText ? edit.newText : ""
                         };
                     });
-                    this.output(bakedEdits, reqSeq);
+                    this.output(bakedEdits,CommandNames.Format, reqSeq);
                 }
                 else {
-                    this.output(undefined, reqSeq, "no edits")
+                    this.output(undefined,CommandNames.Format, reqSeq, "no edits")
                 }
             }
         }
@@ -841,10 +867,10 @@ module ts.server {
                             newText: edit.newText ? edit.newText : ""
                         };
                     });
-                    this.output(bakedEdits, reqSeq);
+                    this.output(bakedEdits,CommandNames.Formatonkey, reqSeq);
                 }
                 else {
-                    this.output(undefined, reqSeq, "no edits")
+                    this.output(undefined,CommandNames.Formatonkey, reqSeq, "no edits")
                 }
             }
         }
@@ -885,17 +911,16 @@ module ts.server {
                                 }
                                 return accum;
                             }, []);
-                        this.output(compressedEntries, reqSeq);
+                        this.output(compressedEntries,CommandNames.Completions, reqSeq);
                     }
                 }
             }
             if (!completions) {
-                this.output(undefined, reqSeq, "no completions");
+                this.output(undefined,CommandNames.Completions, reqSeq, "no completions");
             }
         }
 
-        geterr(ms: number, rawFiles: string) {
-            var files = rawFiles.split(';');
+        geterr(ms: number, files: string[]) {
             var checkList = files.reduce((accum: PendingErrorCheck[], filename: string) => {
                 filename = ts.normalizePath(filename);
                 var project = this.projectService.getProjectForFile(filename);
@@ -930,7 +955,7 @@ module ts.server {
                 this.changeSeq++;
                 // make sure no changes happen before this one is finished
                 project.compilerService.host.reloadScript(file, tmpfile,() => {
-                    this.output({ ack: true }, reqSeq);
+                    this.output({ ack: true }, CommandNames.Reload, reqSeq);
                 });
             }
         }
@@ -1027,10 +1052,10 @@ module ts.server {
                         return bakedItem;
                     });
 
-                    this.output(bakedNavItems, reqSeq);
+                    this.output(bakedNavItems,CommandNames.Navto, reqSeq);
                 }
                 else {
-                    this.output(undefined, reqSeq, "no nav items");
+                    this.output(undefined,CommandNames.Navto, reqSeq, "no nav items");
                 }
             }
         }
@@ -1038,81 +1063,81 @@ module ts.server {
         executeJSONcmd(cmd: string) {
             var req = <ServerProtocol.Request>JSON.parse(cmd);
             switch (req.command) {
-                case "definition": {
+                case CommandNames.Definition: {
                     var defArgs = <ServerProtocol.CodeLocationRequestArgs>req.arguments;
                     this.goToDefinition(defArgs.line, defArgs.col, defArgs.file, req.seq);
                     break;
                 }
-                case "references": {
+                case CommandNames.References: {
                     var refArgs = <ServerProtocol.CodeLocationRequestArgs>req.arguments;
                     this.findReferences(refArgs.line, refArgs.col, refArgs.file, req.seq);
                     break;
                 }
-                case "rename": {
+                case CommandNames.Rename: {
                     var renameArgs = <ServerProtocol.CodeLocationRequestArgs>req.arguments;
                     this.rename(renameArgs.line, renameArgs.col, renameArgs.file, req.seq);
                     break;
                 }
-                case "type": {
+                case CommandNames.Type: {
                     var typeArgs = <ServerProtocol.CodeLocationRequestArgs>req.arguments;
                     this.goToType(typeArgs.line, typeArgs.col, typeArgs.file, req.seq);
                     break;
                 }
-                case "open": {
+                case CommandNames.Open: {
                     var openArgs = <ServerProtocol.FileRequestArgs>req.arguments;
                     this.openClientFile(openArgs.file);
                     break;
                 }
-                case "quickinfo": {
+                case CommandNames.Quickinfo: {
                     var quickinfoArgs = <ServerProtocol.CodeLocationRequestArgs>req.arguments;
                     this.quickInfo(quickinfoArgs.line, quickinfoArgs.col, quickinfoArgs.file, req.seq);
                     break;
                 }
-                case "format": {
+                case CommandNames.Format: {
                     var formatArgs = <ServerProtocol.FormatRequestArgs>req.arguments;
                     this.format(formatArgs.line, formatArgs.col, formatArgs.endLine, formatArgs.endCol, formatArgs.file,
                         cmd, req.seq);
                     break;
                 }
-                case "formatonkey": {
+                case CommandNames.Formatonkey: {
                     var formatOnKeyArgs = <ServerProtocol.FormatOnKeyRequestArgs>req.arguments;
                     this.formatOnKey(formatOnKeyArgs.line, formatOnKeyArgs.col, formatOnKeyArgs.key, formatOnKeyArgs.file,
                         cmd, req.seq);
                     break;
                 }
-                case "completions": {
+                case CommandNames.Completions: {
                     var completionsArgs = <ServerProtocol.CompletionsRequestArgs>req.arguments;
                     this.completions(req.arguments.line, req.arguments.col, completionsArgs.prefix, req.arguments.file,
                         cmd, req.seq);
                     break;
                 }
-                case "geterr": {
+                case CommandNames.Geterr: {
                     var geterrArgs = <ServerProtocol.GeterrRequestArgs>req.arguments;
                     this.geterr(geterrArgs.delay, geterrArgs.files);
                     break;
                 }
-                case "change": {
+                case CommandNames.Change: {
                     var changeArgs = <ServerProtocol.ChangeRequestArgs>req.arguments;
                     this.change(changeArgs.line, changeArgs.col, changeArgs.deleteLen, changeArgs.insertLen, changeArgs.insertString,
                         changeArgs.file);
                     break;
                 }
-                case "reload": {
+                case CommandNames.Reload: {
                     var reloadArgs = <ServerProtocol.ReloadRequestArgs>req.arguments;
                     this.reload(reloadArgs.file, reloadArgs.tmpfile, req.seq);
                     break;
                 }
-                case "saveto": {
+                case CommandNames.Saveto: {
                     var savetoArgs = <ServerProtocol.SavetoRequestArgs>req.arguments;
                     this.saveToTmp(savetoArgs.file, savetoArgs.tmpfile);
                     break;
                 }
-                case "close": {
+                case CommandNames.Close: {
                     var closeArgs = <ServerProtocol.FileRequestArgs>req.arguments;
                     this.closeClientFile(closeArgs.file);
                     break;
                 }
-                case "navto": {
+                case CommandNames.Navto: {
                     var navtoArgs = <ServerProtocol.NavtoRequestArgs>req.arguments;
                     this.navto(navtoArgs.searchTerm, navtoArgs.file, cmd, req.seq);
                     break;
@@ -1126,7 +1151,7 @@ module ts.server {
 
         sendAbbrev(reqSeq = 0) {
             if (!this.fetchedAbbrev) {
-                this.output(this.abbrevTable, reqSeq);
+                this.output(this.abbrevTable,CommandNames.Abbrev, reqSeq);
             }
             this.fetchedAbbrev = true;
         }
@@ -1236,7 +1261,7 @@ module ts.server {
                         else if (m = cmd.match(/^geterr (\d+) (.*)$/)) {
                             var ms = parseInt(m[1]);
                             var rawFiles = m[2];
-                            this.geterr(ms, rawFiles);
+                            this.geterr(ms, rawFiles.split(';'));
                         }
                         else if (m = cmd.match(/^change (\d+) (\d+) (\d+) (\d+) (\{\".*\"\})?\s*(.*)$/)) {
                             line = parseInt(m[1]);
@@ -1282,7 +1307,7 @@ module ts.server {
                             this.projectService.printProjectsForFile(file);
                         }
                         else {
-                            this.output(undefined, 0, "Unrecognized command " + cmd);
+                            this.output(undefined,CommandNames.Unknown, 0, "Unrecognized command " + cmd);
                         }
                     }
                     catch (err) {
@@ -1293,7 +1318,6 @@ module ts.server {
 
             rl.on('close',() => {
                 this.projectService.closeLog();
-                console.log("Exiting...");
                 process.exit(0);
             });
         }

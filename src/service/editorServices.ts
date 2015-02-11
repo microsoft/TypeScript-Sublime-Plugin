@@ -217,7 +217,7 @@ module ts.server {
 
         getDefaultLibFileName() {
             var nodeModuleBinDir = ts.getDirectoryPath(ts.normalizePath(ts.sys.getExecutingFilePath()));
-
+            
             if (this.compilationSettings && this.compilationSettings.target == ts.ScriptTarget.ES6) {
                 return nodeModuleBinDir + "/lib.es6.d.ts";
             }
@@ -513,10 +513,7 @@ module ts.server {
             if (projectOptions.compilerOptions) {
                 this.compilerService.setCompilerOptions(projectOptions.compilerOptions);
             }
-            if (projectOptions.formatCodeOptions) {
-                this.compilerService.setFormatCodeOptions(projectOptions.formatCodeOptions);
-            }
-
+            // TODO: format code options
         }
     }
 
@@ -986,15 +983,6 @@ module ts.server {
         setCompilerOptions(opt: ts.CompilerOptions) {
             this.settings = opt;
             this.host.setCompilationSettings(opt);
-        }
-
-        setFormatCodeOptions(fco: ts.FormatCodeOptions) {
-            // use this loop to preserve default values
-            for (var p in fco) {
-                if ((<Object>fco).hasOwnProperty(p)) {
-                    this.formatCodeOptions[p] = fco[p];
-                }
-            }
         }
 
         isExternalModule(filename: string): boolean {

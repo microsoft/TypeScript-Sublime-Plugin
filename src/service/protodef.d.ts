@@ -30,6 +30,8 @@ declare module ServerProtocol {
         request_seq: number;
         /** Outcome of the request */
         success: boolean;
+        /** The command requested */
+        command: string;
         /** Contains error message if success == false. */
         message?: string;
         /** Contains message body if success == true. */
@@ -37,7 +39,7 @@ declare module ServerProtocol {
     }
 
     /** Arguments for FileRequest messages */
-    export interface FileRequestArgs extends Request {
+    export interface FileRequestArgs {
         /** The file for the request (absolute pathname required) */
         file: string;
     }
@@ -53,7 +55,6 @@ declare module ServerProtocol {
        Instances of this interface specify a code location:
        (file, line, col), where line and column are 1-based.
     */
-
     export interface CodeLocationRequestArgs extends FileRequestArgs {
         /** The line number for the request (1-based) */
         line: number;
@@ -65,6 +66,7 @@ declare module ServerProtocol {
        A request whose arguments specify a code location (file, line, col)
     */
     export interface CodeLocationRequest extends FileRequest {
+        arguments: CodeLocationRequestArgs;
     }
 
     /**
@@ -309,10 +311,10 @@ declare module ServerProtocol {
     /** Arguments for geterr messages.  */
     export interface GeterrRequestArgs {
         /**
-           Semi-colon separated list of file names for which to compute
-           compiler errors.
+           List of file names for which to compute compiler errors.
+           The files will be checked in list order.
         */
-        files: string;
+        files: string[];
         /**
            Delay in milliseconds to wait before starting to compute
            errors for the files in the file list
@@ -468,6 +470,58 @@ declare module ServerProtocol {
     */
     export interface ChangeRequest extends CodeLocationRequest {
         arguments: ChangeRequestArgs;
+    }
+
+    /*
+      The following messages describe an OPTIONAL compression scheme
+       that clients can choose to use.  If a client does not opt-in to
+       this scheme by sending an "abbrev" request, the server will not
+       compress messages.  
+    */
+
+    /**
+       Abbrev request message; value of command field is "abbrev".
+       Server returns an array of mappings from common message field
+       names and common message field string values to shortened
+       versions of these strings.  Once a client opts-in by requesting
+       the abbreviations, the server may send responses whose field
+       names are shortened.  The server may also send file names as
+       instances of AssignFileId, or as file ids, if the corresponding
+       id assignment had been previously returned.
+    */       
+    export interface AbbrevRequest extends Request {
+    }
+
+    /**
+       If an object of this type is returned in place of a string as
+       the value of a file field in a response message, add the
+       mapping id => file to the client's cache of file id mappings,
+       and interpret the value as if it was the string in the 'file'
+       field.
+    */
+    export interface AssignFileId {
+        /** Id to assign to file */
+        id: number;
+        /** File name that will correspond to id */
+        file: string;
+    }
+
+    /**
+       Response to abbrev opt-in request message.  This is a map of
+       string field names and common string field values to shortened
+       strings.  Once the server sends this response, it will assume
+       that it can use the shortened field names and field values.  In
+       addition, the server will assume it can assign ids to file
+       names by returning an AssignFileId instance in place of a file
+       name.  Once an AssignFileId instance is returned, the server
+       may send the file id (a number) in place of the file name.
+    */       
+    export interface AbbrevResponse extends Response {
+        body?: {
+            /** Map from full string (either field name or string
+                field value) to shortened string */
+            [fullString: string]: string;
+        }
     }
 }
 
