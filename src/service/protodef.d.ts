@@ -27,7 +27,7 @@ declare module ServerProtocol {
     /** Response by server to client request message */
     export interface Response extends Message {
         /** Sequence number of the request message */
-        requestSeq: number;
+        request_seq: number;
         /** Outcome of the request */
         success: boolean;
         /** The command requested */

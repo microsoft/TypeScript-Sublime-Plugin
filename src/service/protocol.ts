@@ -442,7 +442,7 @@ module ts.server {
         }
 
         response(info: any, cmdName: string, reqSeq = 0, errorMsg?: string) {
-            var res: NodeJS._debugger.Response = {
+            var res: ServerProtocol.Response = {
                 seq: 0,
                 type: "response",
                 command: cmdName,
