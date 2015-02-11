@@ -712,13 +712,13 @@ class TypeScriptListener(sublime_plugin.EventListener):
             info.completionSel = None
 
     # helper called back when completion info received from server
-    def handleCompletionInfo(self, data):
-        if data['success']:
+    def handleCompletionInfo(self, completionsResp):
+        if completionsResp.success:
             completions = []
-            rawCompletions = data['body']
+            rawCompletions = completionsResp.body
             for rawCompletion in rawCompletions:
-                name = rawCompletion['name']
-                completion = (name + "\t" + rawCompletion['kind'], name)
+                name = rawCompletion.name
+                completion = (name + "\t" + rawCompletion.kind, name)
                 completions.append(completion)
             self.pendingCompletions = completions
         else:
@@ -761,12 +761,10 @@ class TypescriptSave(sublime_plugin.TextCommand):
 
 # command currently called only from event handlers
 class TypescriptQuickInfo(sublime_plugin.TextCommand):
-    def handleQuickInfo(self, data):
-        print(data)
-        if data['success']:
-            allinfo = data['body']
-            infoStr = allinfo['info']
-            docStr = allinfo['doc']
+    def handleQuickInfo(self, quickInfoResp):
+        if quickInfoResp.success:
+            infoStr = quickInfoResp.body.info
+            docStr = quickInfoResp.body.doc
             if len(docStr) > 0:
                 infoStr = infoStr + " (^T^Q for more)"
             self.view.set_status("typescript_info", infoStr)
@@ -790,12 +788,10 @@ class TypescriptShowDoc(sublime_plugin.TextCommand):
 # command to show the doc string associated with quick info;
 # re-runs quick info in case info has changed
 class TypescriptQuickInfoDoc(sublime_plugin.TextCommand):
-    def handleQuickInfo(self, data):
-        print(data)
-        if data['success']:
-            allinfo = data['body']
-            infoStr = allinfo['info']
-            docStr = allinfo['doc']
+    def handleQuickInfo(self, quickInfoResp):
+        if quickInfoResp.success:
+            infoStr = quickInfoResp.body.info
+            docStr = quickInfoResp.body.doc
             if len(docStr) > 0:
                 docPanel = sublime.active_window().get_output_panel("doc")
                 docPanel.run_command('typescript_show_doc', 
@@ -842,16 +838,13 @@ class TypescriptErrorInfo(sublime_plugin.TextCommand):
 class TypescriptGoToDefinitionCommand(sublime_plugin.TextCommand):
     def run(self, text):
         checkUpdateView(self.view)
-        data = cli.service.definition(self.view.file_name(), getLocationFromView(self.view))
-        if data['success']:
-            items = data['body']
-            if len(items)>0:
-                bod = items[0]
-                filename = bod['file']
-                minlc = bod['min']
-                line = int(minlc['line'])
-                col = int(minlc['col'])
-                sublime.active_window().open_file('{0}:{1}:{2}'.format(filename, line or 0, col or 0), 
+        definitionResp = cli.service.definition(self.view.file_name(), getLocationFromView(self.view))
+        if definitionResp.success:
+            codeSpan = definitionResp.body[0] if len(definitionResp.body) > 0 else None
+            if codeSpan:
+                filename = codeSpan.file
+                minlc = codeSpan.min
+                sublime.active_window().open_file('{0}:{1}:{2}'.format(filename, minlc.line, minlc.col),
                                                   sublime.ENCODED_POSITION)
 
 
@@ -859,34 +852,42 @@ class TypescriptGoToDefinitionCommand(sublime_plugin.TextCommand):
 class TypescriptGoToTypeCommand(sublime_plugin.TextCommand):
     def run(self, text):
         checkUpdateView(self.view)
-        data = cli.service.type(self.view.file_name(), getLocationFromView(self.view))
-        if data['success']:
-            items = data['body']
-            if len(items)>0:
-                bod = items[0]
-                filename = bod['file']
-                minlc = bod['min']
-                line = int(minlc['line'])
-                col = int(minlc['col'])
-                sublime.active_window().open_file('{0}:{1}:{2}'.format(filename, line or 0, col or 0), 
+        typeResp = cli.service.type(self.view.file_name(), getLocationFromView(self.view))
+        if typeResp.success:
+            items = typeResp.body
+            if len(items) > 0:
+                codeSpan = items[0]
+                filename = codeSpan.file
+                minlc = codeSpan.min
+                sublime.active_window().open_file('{0}:{1}:{2}'.format(filename, minlc.line or 0, minlc.col or 0), 
                                                   sublime.ENCODED_POSITION)
 
+class FinishRenameArgs:
+    def __init__(self, newName, outerLocs):
+        self.newName = newName
+        self.outerLocs = outerLocs
+
+    @staticmethod
+    def fromDict(newName, outerLocs):
+        return FinishRenameArgs(
+            newName, 
+            jsonhelpers.fromDict(servicedefs.FileLocations, outerLocs))
 
 # rename command
 class TypescriptRenameCommand(sublime_plugin.TextCommand):
     def run(self, text):
         checkUpdateView(self.view)
-        data = cli.service.rename(self.view.file_name(), getLocationFromView(self.view))
-        if data['success']:
-            infoLocs = data['body']
-            info = infoLocs['info']
-            displayName = info['fullDisplayName']
-            outerLocs = infoLocs['locs']
+        renameResp = cli.service.rename(self.view.file_name(), getLocationFromView(self.view))
+        if renameResp.success:
+            infoLocs = renameResp.body
+            displayName = infoLocs.info.fullDisplayName
+            outerLocs = infoLocs.locs
             def on_cancel():
                 return 
             def on_done(newName):
-                self.view.run_command('typescript_finish_rename', 
-                                      { "outerLocs":outerLocs, "newName":newName})
+                args = FinishRenameArgs(newName, outerLocs)
+                argsJsonStr = jsonhelpers.encode(args)
+                self.view.run_command('typescript_finish_rename', { "argsJson": argsJsonStr })
             if len(outerLocs) > 0:
                 sublime.active_window().show_input_panel("New name for {0}: ".format(displayName), "", 
                                                          on_done, None, on_cancel)
@@ -895,16 +896,19 @@ class TypescriptRenameCommand(sublime_plugin.TextCommand):
 # called from on_done handler in finish_rename command
 # on_done is called by input panel for new name
 class TypescriptFinishRenameCommand(sublime_plugin.TextCommand):
-    def run(self, text, outerLocs=[], newName=""):
+    def run(self, text, argsJson=""):
+        args = jsonhelpers.decode(FinishRenameArgs, argsJson)
+        newName = args.newName
+        outerLocs = args.outerLocs
         if len(outerLocs) > 0:
             for outerLoc in outerLocs:
-                file = outerLoc['file']
-                innerLocs = outerLoc['locs']
+                file = outerLoc.file
+                innerLocs = outerLoc.locs
                 for innerLoc in innerLocs:
-                    minlc = innerLoc['min']
-                    (minl, minc) = extractLineCol(minlc)
-                    limlc = innerLoc['lim']
-                    (liml, limc) = extractLineCol(limlc)
+                    minlc = innerLoc.min
+                    (minl, minc) = extractLineCol2(minlc)
+                    limlc = innerLoc.lim
+                    (liml, limc) = extractLineCol2(limlc)
                     applyEdit(text, self.view, minl, minc, liml, 
                               limc, ntext=newName)
 
@@ -928,16 +932,16 @@ def getRefView(create=True):
 class TypescriptFindReferencesCommand(sublime_plugin.TextCommand):
     def run(self, text):
         checkUpdateView(self.view)
-        data = cli.service.references(self.view.file_name(), getLocationFromView(self.view))
-        if data['success']:
+        referencesResp = cli.service.references(self.view.file_name(), getLocationFromView(self.view))
+        if referencesResp.success:
             pos = self.view.sel()[0].begin()
             cursor = self.view.rowcol(pos)
             line = str(cursor[0] + 1)
-            refsPlusIdInfo = data['body']
-            refs = refsPlusIdInfo['refs']
-            refId = refsPlusIdInfo['symbolName']
-            refIdStart = refsPlusIdInfo['symbolStartCol']-1
-            refDisplayString = refsPlusIdInfo['symbolDisplayString']
+            refsPlusIdInfo = referencesResp.body
+            refs = refsPlusIdInfo.refs
+            refId = refsPlusIdInfo.symbolName
+            refIdStart = refsPlusIdInfo.symbolStartCol - 1
+            refDisplayString = refsPlusIdInfo.symbolDisplayString
             refView = getRefView()
             refView.run_command('typescript_populate_refs', 
                                 {
@@ -954,6 +958,11 @@ class TypescriptFindReferencesCommand(sublime_plugin.TextCommand):
 def extractLineCol(lc):
     line = lc['line']-1
     col = lc['col']-1
+    return (line, col)
+
+def extractLineCol2(lc):
+    line = lc.line - 1
+    col = lc.col - 1
     return (line, col)
 
 # place the caret on the currently-referenced line and
