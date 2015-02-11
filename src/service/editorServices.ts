@@ -7,7 +7,23 @@ var typescript: typeof ts;
 module ts.server {
     var ts: typeof typescript = require('typescript');
 
-    var fs: typeof NodeJS.fs = require('fs');
+    export interface Logger {
+        close(): void;
+        perftrc(s: string): void;
+        info(s: string): void;
+        startGroup(): void;
+        endGroup(): void;
+        msg(s: string, type?: string): void;
+    }
+
+    // Global process logger
+    export var globalLogger: Logger;
+
+    function logMessage(message: string, type?: string): void {
+        if (globalLogger) {
+            globalLogger.msg(message, type);
+        }
+    }
 
     var measurePerf = false;
     var lineCollectionCapacity = 4;
@@ -52,23 +68,7 @@ module ts.server {
             var elapsedNano = 1e9 * elapsed[0] + elapsed[1];
             total += elapsedNano;
         }
-        logger.msg("Estimated precision of high-res timer: " + (total / count).toFixed(3) + " nanoseconds", "Perf");
-    }
-
-    function getModififedTime(filename: string) {
-        if (measurePerf) {
-            var start = process.hrtime();
-        }
-        var stats = fs.statSync(filename);
-        if (!stats) {
-            logger.msg("Stat returned undefined for " + filename);
-        }
-        if (measurePerf) {
-            var elapsed = process.hrtime(start);
-            var elapsedNano = 1e9 * elapsed[0] + elapsed[1];
-            logger.msg("Elapsed time for stat (in nanoseconds)" + filename + ": " + elapsedNano.toString(), "Perf");
-        }
-        return stats.mtime;
+        logMessage("Estimated precision of high-res timer: " + (total / count).toFixed(3) + " nanoseconds", "Perf");
     }
 
     export class ScriptInfo {
@@ -78,16 +78,16 @@ module ts.server {
         defaultProject: Project;      // project to use by default for file
         mtime: Date;
 
-        constructor(public filename: string, public content: string, public isOpen = false) {
+        constructor(private host: ServerHost, public filename: string, public content: string, public isOpen = false) {
             this.svc = ScriptVersionCache.fromString(content);
             if (!isOpen) {
-                this.mtime = getModififedTime(filename);
+                this.mtime = this.host.getModififedTime(filename);
             }
         }
 
         close() {
             this.isOpen = false;
-            this.mtime = getModififedTime(this.filename);
+            this.mtime = this.host.getModififedTime(this.filename);
         }
 
         addChild(childInfo: ScriptInfo) {
@@ -143,80 +143,16 @@ module ts.server {
         }
     }
 
-    function padStringRight(str: string, padding: string) {
-        return (str + padding).slice(0, padding.length);
-    }
-
-    export class Logger {
-        fd = -1;
-        seq = 0;
-        inGroup = false;
-        firstInGroup = true;
-
-        constructor(public logFilename: string) {
-        }
-
-        close() {
-            if (this.fd >= 0) {
-                fs.close(this.fd);
-            }
-        }
-
-        perftrc(s: string) {
-            this.msg(s, "Perf");
-        }
-
-        info(s: string) {
-            this.msg(s, "Info");
-        }
-
-        startGroup() {
-            this.inGroup = true;
-            this.firstInGroup = true;
-        }
-
-        endGroup() {
-            this.inGroup = false;
-            this.seq++;
-            this.firstInGroup = true;
-        }
-
-        msg(s: string, type = "Err") {
-            if (this.fd < 0) {
-                this.fd = fs.openSync(this.logFilename, "w");
-            }
-            if (this.fd >= 0) {
-                s = s + "\n";
-                var prefix = padStringRight(type + " " + this.seq.toString(), "          ");
-                if (this.firstInGroup) {
-                    s = prefix + s;
-                    this.firstInGroup = false;
-                }
-                if (!this.inGroup) {
-                    this.seq++;
-                    this.firstInGroup = true;
-                }
-                var buf = new Buffer(s);
-                fs.writeSync(this.fd, buf, 0, buf.length, null);
-            }
-        }
-
-    }
-
-    // this places log file in the directory containing editorServices.js
-    // TODO: check that this location is writable
-    export var logger = new Logger(__dirname + "/.log" + process.pid.toString());
-
     export class LSHost implements ts.LanguageServiceHost {
         ls: ts.LanguageService = null;
         compilationSettings: ts.CompilerOptions;
         filenameToScript: ts.Map<ScriptInfo> = {};
 
-        constructor(public project: Project, private cancellationToken: CancellationToken = CancellationToken.None) {
+        constructor(public host: ServerHost, public project: Project, private cancellationToken: CancellationToken = CancellationToken.None) {
         }
 
         getDefaultLibFileName() {
-            var nodeModuleBinDir = ts.getDirectoryPath(ts.normalizePath(ts.sys.getExecutingFilePath()));
+            var nodeModuleBinDir = ts.getDirectoryPath(ts.normalizePath(this.host.getExecutingFilePath()));
 
             if (this.compilationSettings && this.compilationSettings.target == ts.ScriptTarget.ES6) {
                 return nodeModuleBinDir + "/lib.es6.d.ts";
@@ -316,7 +252,7 @@ module ts.server {
             var script = this.getScriptInfo(filename);
             if (script) {
                 var snap = script.snap();
-                ts.sys.writeFile(tmpfilename, snap.getText(0, snap.getLength()));
+                this.host.writeFile(tmpfilename, snap.getText(0, snap.getLength()));
             }
         }
 
@@ -339,18 +275,18 @@ module ts.server {
 
         resolvePath(path: string): string {
             var start = new Date().getTime();
-            var result = ts.sys.resolvePath(path);
+            var result = this.host.resolvePath(path);
             return result;
         }
 
         fileExists(path: string): boolean {
             var start = new Date().getTime();
-            var result = ts.sys.fileExists(path);
+            var result = this.host.fileExists(path);
             return result;
         }
 
         directoryExists(path: string): boolean {
-            return ts.sys.directoryExists(path);
+            return this.host.directoryExists(path);
         }
 
         /**
@@ -397,15 +333,6 @@ module ts.server {
         }
     }
 
-    function getCanonicalFileName(filename: string) {
-        if (ts.sys.useCaseSensitiveFileNames) {
-            return filename;
-        }
-        else {
-            return filename.toLowerCase();
-        }
-    }
-
     // assumes normalized paths
     function getAbsolutePath(filename: string, directory: string) {
         var rootLength = ts.getRootLength(filename);
@@ -438,7 +365,6 @@ module ts.server {
         formatCodeOptions?: ts.FormatCodeOptions;
         compilerOptions?: ts.CompilerOptions;
     }
-
 
     export class Project {
         compilerService: CompilerService;
@@ -513,8 +439,7 @@ module ts.server {
             if (projectOptions.compilerOptions) {
                 this.compilerService.setCompilerOptions(projectOptions.compilerOptions);
             }
-            // TODO: format code options
-        }
+            // TODO: format code options        }
     }
 
     export interface ProjectOpenResult {
@@ -553,7 +478,7 @@ module ts.server {
 
         // average async stat takes about 30 microseconds
         // set chunk size to do 30 files in < 1 millisecond
-        constructor(public fileEvent: (info: ScriptInfo, eventName: string) => void,
+        constructor(private host: ServerHost, public fileEvent: (info: ScriptInfo, eventName: string) => void,
             public msInterval = 2500, public chunkSize = 30) {
         }
 
@@ -561,7 +486,7 @@ module ts.server {
             var info = this.watchedFiles[checkedIndex];
             if (info && (!info.isOpen)) {
                 if (info.mtime.getTime() != stats.mtime.getTime()) {
-                    logger.msg(info.filename + " changed");
+                    logMessage(info.filename + " changed");
                     info.svc.reloadFromFile(info.filename);
                 }
             }
@@ -583,13 +508,13 @@ module ts.server {
             if (measurePerf) {
                 var start = process.hrtime();
             }
-            fs.stat(watchedFile.filename,(err, stats) => {
+            this.host.stat(watchedFile.filename,(err, stats) => {
                 if (err) {
                     var msg = err.message;
                     if (err.errno) {
                         msg += " errno: " + err.errno.toString();
                     }
-                    logger.msg("Error " + msg + " in stat for file " + watchedFile.filename);
+                    logMessage("Error " + msg + " in stat for file " + watchedFile.filename);
                     if (err.errno == WatchedFileSet.fileDeleted) {
                         this.fileDeleted(watchedFile);
                     }
@@ -601,7 +526,7 @@ module ts.server {
             if (measurePerf) {
                 var elapsed = process.hrtime(start);
                 var elapsedNano = 1e9 * elapsed[0] + elapsed[1];
-                logger.msg("Elapsed time for async stat (in nanoseconds)" + watchedFile.filename + ": " + elapsedNano.toString(), "Perf");
+                logMessage("Elapsed time for async stat (in nanoseconds)" + watchedFile.filename + ": " + elapsedNano.toString(), "Perf");
             }
         }
 
@@ -609,7 +534,7 @@ module ts.server {
         // stat due to inconsistencies of fs.watch
         // and efficiency of stat on modern filesystems
         startWatchTimer() {
-            logger.msg("Start watch timer: " + this.chunkSize.toString(), "Info");
+            logMessage("Start watch timer: " + this.chunkSize.toString(), "Info");
             this.watchTimer = setInterval(() => {
                 var count = 0;
                 var nextToCheck = this.nextFileToCheck;
@@ -654,15 +579,14 @@ module ts.server {
         openFilesReferenced: ScriptInfo[] = [];
         // projects covering open files
         inferredProjects: Project[] = [];
-        psLogger = logger;
         watchedFileSet: WatchedFileSet;
 
-        constructor(public eventHandler?: ProjectServiceEventHandler) {
+        constructor(public host: ServerHost, public psLogger: Logger, public eventHandler?: ProjectServiceEventHandler) {
             if (measurePerf) {
                 calibrateTimer();
             }
             ts.disableIncrementalParsing = true;
-            this.watchedFileSet = new WatchedFileSet((info, eventName) => {
+            this.watchedFileSet = new WatchedFileSet(this.host,(info, eventName) => {
                 if (eventName == "deleted") {
                     this.fileDeletedInFilesystem(info);
                 }
@@ -801,8 +725,8 @@ module ts.server {
             var info = ts.lookUp(this.filenameToScriptInfo, filename);
             if (!info) {
                 var content: string;
-                if (ts.sys.fileExists(filename)) {
-                    content = ts.sys.readFile(filename);
+                if (this.host.fileExists(filename)) {
+                    content = this.host.readFile(filename);
                 }
                 if (!content) {
                     if (openedByClient) {
@@ -810,7 +734,7 @@ module ts.server {
                     }
                 }
                 if (content !== undefined) {
-                    info = new ScriptInfo(filename, content, openedByClient);
+                    info = new ScriptInfo(this.host, filename, content, openedByClient);
                     this.filenameToScriptInfo[filename] = info;
                     if (!info.isOpen) {
                         this.watchedFileSet.addFile(info);
@@ -930,7 +854,7 @@ module ts.server {
                         var rootFilename = parsedCommandLine.fileNames[i];
                         var normRootFilename = ts.normalizePath(rootFilename);
                         normRootFilename = getAbsolutePath(normRootFilename, dirPath);
-                        if (ts.sys.fileExists(normRootFilename)) {
+                        if (this.host.fileExists(normRootFilename)) {
                             var info = this.openFile(normRootFilename);
                             proj.addRoot(info);
                         }
@@ -972,7 +896,7 @@ module ts.server {
         formatCodeOptions: ts.FormatCodeOptions = CompilerService.defaultFormatCodeOptions;
 
         constructor(public project: Project) {
-            this.host = new LSHost(project, this.cancellationToken);
+            this.host = new LSHost(project.projectService.host, project, this.cancellationToken);
             // override default ES6 (remove when compiler default back at ES5)
             this.settings.target = ts.ScriptTarget.ES5;
             this.host.setCompilationSettings(this.settings);
@@ -1549,7 +1473,7 @@ module ts.server {
                 if (this.checkEdits) {
                     var updatedText = this.getText(0, this.root.charCount());
                     if (checkText != updatedText) {
-                        logger.msg("buffer edit mismatch");
+                        globalLogger.msg("buffer edit mismatch");
                     }
                 }
                 return walker.lineIndex;
