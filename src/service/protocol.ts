@@ -87,6 +87,14 @@ module ts.server {
         else return 1;
     }
 
+    function printObject(obj: any) {
+        for (var p in obj) {
+            if (obj.hasOwnProperty(p)) {
+                console.log(p + ": " + obj[p]);
+            }
+        }
+    }
+
     function compareFileStart(a: FileStart, b: FileStart) {
         if (a.file < b.file) {
             return -1;
@@ -125,6 +133,177 @@ module ts.server {
                 return 1;
             }
         })
+    }
+
+    //function SourceInfo(body: NodeJS._debugger.BreakResponse) {
+    //    var result = body.exception ? 'exception in ' : 'break in ';
+
+    //    if (body.script) {
+    //        if (body.script.name) {
+    //            var name = body.script.name,
+    //                dir = path.resolve() + '/';
+
+    //            // Change path to relative, if possible
+    //            if (name.indexOf(dir) === 0) {
+    //                name = name.slice(dir.length);
+    //            }
+
+    //            result += name;
+    //        } else {
+    //            result += '[unnamed]';
+    //        }
+    //    }
+    //    result += ':';
+    //    result += body.sourceLine + 1;
+
+    //    if (body.exception) result += '\n' + body.exception.text;
+
+    //    return result;
+    //}
+
+    class JsDebugSession {
+        host = 'localhost';
+        port = 5858;
+
+        constructor(public client: NodeJS._debugger.Client) {
+            this.init();
+        }
+
+        cont(cb: NodeJS._debugger.RequestHandler) {
+            this.client.reqContinue(cb);
+        }
+
+        listSrc() {
+            this.client.reqScripts((err: any) => {
+                if (err) {
+                    console.log("rscr error: " + err);
+                }
+                else {
+                    console.log("req scripts");
+                    for (var id in this.client.scripts) {
+                        var script = this.client.scripts[id];
+                        if ((typeof script === "object") && script.name) {
+                            console.log(id + ": " + script.name);
+                        }
+                    }
+                }
+            });
+        }
+
+        findScript(file: string) {
+            if (file) {
+                var script: NodeJS._debugger.ScriptDesc;
+                var scripts = this.client.scripts;
+                var keys: any[] = Object.keys(scripts);
+                var ambiguous = false;
+                for (var v = 0; v < keys.length; v++) {
+                    var id = keys[v];
+                    if (scripts[id] &&
+                        scripts[id].name &&
+                        scripts[id].name.indexOf(file) !== -1) {
+                        if (script) {
+                            ambiguous = true;
+                        }
+                        script = scripts[id];
+                    }
+                }
+                return { script: script, ambiguous: ambiguous };
+            }
+        }
+
+        // TODO: condition
+        setBreakpointOnLine(line: number, file?: string) {
+            if (!file) {
+                file = this.client.currentScript;
+            }
+            var script: NodeJS._debugger.ScriptDesc;
+            var scriptResult = this.findScript(file);
+            if (scriptResult) {
+                if (scriptResult.ambiguous) {
+                    // TODO: send back error
+                    script = undefined;
+                }
+                else {
+                    script = scriptResult.script;
+                }
+            }
+            // TODO: set breakpoint when script not loaded
+            if (script) {
+                var brkmsg: NodeJS._debugger.BreakpointMessageBody = {
+                    type: 'scriptId',
+                    target: script.id,
+                    line: line - 1,
+                }
+                this.client.setBreakpoint(brkmsg,(err, bod) => {
+                    // TODO: remember breakpoint
+                    if (err) {
+                        console.log("Error: set breakpoint: " + err);
+                    }
+                });
+            }
+
+        }
+
+        init() {
+            var connectionAttempts = 0;
+            this.client.on('break',(res: NodeJS._debugger.Event) => {
+                this.handleBreak(res.body);
+            });
+            this.client.on('exception',(res: NodeJS._debugger.Event) => {
+                this.handleBreak(res.body);
+            });
+            this.client.on('error',() => {
+                setTimeout(() => {
+                    ++connectionAttempts;
+                    this.client.connect(this.port, this.host);
+                }, 500);
+            });
+            this.client.once('ready',() => {
+            });
+            this.client.on('unhandledResponse',() => {
+            });
+            this.client.connect(this.port, this.host);
+        }
+
+        evaluate(code: string) {
+            var frame = this.client.currentFrame;
+            this.client.reqFrameEval(code, frame,(err, bod) => {
+                if (err) {
+                    console.log("Error: evaluate: " + err);
+                    return;
+                }
+
+                console.log("Value: " + bod.toString());
+                if (typeof bod === "object") {
+                    printObject(bod);
+                }
+
+                // Request object by handles (and it's sub-properties)
+                this.client.mirrorObject(bod, 3,(err, mirror) => {
+                    if (mirror) {
+                        if (typeof mirror === "object") {
+                            printObject(mirror);
+                        }
+                        console.log(mirror.toString());
+                    }
+                    else {
+                        console.log("undefined");
+                    }
+                });
+
+            });
+        }
+
+        handleBreak(breakInfo: NodeJS._debugger.BreakResponse) {
+            this.client.currentSourceLine = breakInfo.sourceLine;
+            this.client.currentSourceLineText = breakInfo.sourceLineText;
+            this.client.currentSourceColumn = breakInfo.sourceColumn;
+            this.client.currentFrame = 0;
+            this.client.currentScript = breakInfo.script && breakInfo.script.name;
+
+            //console.log(SourceInfo(breakInfo));
+            // TODO: watchers        
+        }
     }
 
     interface FileRange {
@@ -181,10 +360,12 @@ module ts.server {
     }
 
     export interface ServerHost extends ts.System {
+        getDebuggerClient? (): NodeJS._debugger.Client;
     }
 
     export class Session {
         projectService: ProjectService;
+        debugSession: JsDebugSession;
         pendingOperation = false;
         fileHash: ts.Map<number> = {};
         abbrevTable: ts.Map<string>;
@@ -879,91 +1060,95 @@ module ts.server {
         }
 
         executeJSONcmd(cmd: string) {
-            var req = <ServerProtocol.Request>JSON.parse(cmd);
-            switch (req.command) {
-                case CommandNames.Definition: {
-                    var defArgs = <ServerProtocol.CodeLocationRequestArgs>req.arguments;
-                    this.goToDefinition(defArgs.line, defArgs.col, defArgs.file, req.seq);
-                    break;
+            try {
+                var req = <ServerProtocol.Request>JSON.parse(cmd);
+                switch (req.command) {
+                    case CommandNames.Definition: {
+                        var defArgs = <ServerProtocol.CodeLocationRequestArgs>req.arguments;
+                        this.goToDefinition(defArgs.line, defArgs.col, defArgs.file, req.seq);
+                        break;
+                    }
+                    case CommandNames.References: {
+                        var refArgs = <ServerProtocol.CodeLocationRequestArgs>req.arguments;
+                        this.findReferences(refArgs.line, refArgs.col, refArgs.file, req.seq);
+                        break;
+                    }
+                    case CommandNames.Rename: {
+                        var renameArgs = <ServerProtocol.CodeLocationRequestArgs>req.arguments;
+                        this.rename(renameArgs.line, renameArgs.col, renameArgs.file, req.seq);
+                        break;
+                    }
+                    case CommandNames.Type: {
+                        var typeArgs = <ServerProtocol.CodeLocationRequestArgs>req.arguments;
+                        this.goToType(typeArgs.line, typeArgs.col, typeArgs.file, req.seq);
+                        break;
+                    }
+                    case CommandNames.Open: {
+                        var openArgs = <ServerProtocol.FileRequestArgs>req.arguments;
+                        this.openClientFile(openArgs.file);
+                        break;
+                    }
+                    case CommandNames.Quickinfo: {
+                        var quickinfoArgs = <ServerProtocol.CodeLocationRequestArgs>req.arguments;
+                        this.quickInfo(quickinfoArgs.line, quickinfoArgs.col, quickinfoArgs.file, req.seq);
+                        break;
+                    }
+                    case CommandNames.Format: {
+                        var formatArgs = <ServerProtocol.FormatRequestArgs>req.arguments;
+                        this.format(formatArgs.line, formatArgs.col, formatArgs.endLine, formatArgs.endCol, formatArgs.file,
+                            cmd, req.seq);
+                        break;
+                    }
+                    case CommandNames.Formatonkey: {
+                        var formatOnKeyArgs = <ServerProtocol.FormatOnKeyRequestArgs>req.arguments;
+                        this.formatOnKey(formatOnKeyArgs.line, formatOnKeyArgs.col, formatOnKeyArgs.key, formatOnKeyArgs.file,
+                            cmd, req.seq);
+                        break;
+                    }
+                    case CommandNames.Completions: {
+                        var completionsArgs = <ServerProtocol.CompletionsRequestArgs>req.arguments;
+                        this.completions(req.arguments.line, req.arguments.col, completionsArgs.prefix, req.arguments.file,
+                            cmd, req.seq);
+                        break;
+                    }
+                    case CommandNames.Geterr: {
+                        var geterrArgs = <ServerProtocol.GeterrRequestArgs>req.arguments;
+                        this.geterr(geterrArgs.delay, geterrArgs.files);
+                        break;
+                    }
+                    case CommandNames.Change: {
+                        var changeArgs = <ServerProtocol.ChangeRequestArgs>req.arguments;
+                        this.change(changeArgs.line, changeArgs.col, changeArgs.deleteLen, changeArgs.insertString,
+                            changeArgs.file);
+                        break;
+                    }
+                    case CommandNames.Reload: {
+                        var reloadArgs = <ServerProtocol.ReloadRequestArgs>req.arguments;
+                        this.reload(reloadArgs.file, reloadArgs.tmpfile, req.seq);
+                        break;
+                    }
+                    case CommandNames.Saveto: {
+                        var savetoArgs = <ServerProtocol.SavetoRequestArgs>req.arguments;
+                        this.saveToTmp(savetoArgs.file, savetoArgs.tmpfile);
+                        break;
+                    }
+                    case CommandNames.Close: {
+                        var closeArgs = <ServerProtocol.FileRequestArgs>req.arguments;
+                        this.closeClientFile(closeArgs.file);
+                        break;
+                    }
+                    case CommandNames.Navto: {
+                        var navtoArgs = <ServerProtocol.NavtoRequestArgs>req.arguments;
+                        this.navto(navtoArgs.searchTerm, navtoArgs.file, cmd, req.seq);
+                        break;
+                    }
+                    default: {
+                        this.projectService.log("Unrecognized JSON command: " + cmd);
+                        break;
+                    }
                 }
-                case CommandNames.References: {
-                    var refArgs = <ServerProtocol.CodeLocationRequestArgs>req.arguments;
-                    this.findReferences(refArgs.line, refArgs.col, refArgs.file, req.seq);
-                    break;
-                }
-                case CommandNames.Rename: {
-                    var renameArgs = <ServerProtocol.CodeLocationRequestArgs>req.arguments;
-                    this.rename(renameArgs.line, renameArgs.col, renameArgs.file, req.seq);
-                    break;
-                }
-                case CommandNames.Type: {
-                    var typeArgs = <ServerProtocol.CodeLocationRequestArgs>req.arguments;
-                    this.goToType(typeArgs.line, typeArgs.col, typeArgs.file, req.seq);
-                    break;
-                }
-                case CommandNames.Open: {
-                    var openArgs = <ServerProtocol.FileRequestArgs>req.arguments;
-                    this.openClientFile(openArgs.file);
-                    break;
-                }
-                case CommandNames.Quickinfo: {
-                    var quickinfoArgs = <ServerProtocol.CodeLocationRequestArgs>req.arguments;
-                    this.quickInfo(quickinfoArgs.line, quickinfoArgs.col, quickinfoArgs.file, req.seq);
-                    break;
-                }
-                case CommandNames.Format: {
-                    var formatArgs = <ServerProtocol.FormatRequestArgs>req.arguments;
-                    this.format(formatArgs.line, formatArgs.col, formatArgs.endLine, formatArgs.endCol, formatArgs.file,
-                        cmd, req.seq);
-                    break;
-                }
-                case CommandNames.Formatonkey: {
-                    var formatOnKeyArgs = <ServerProtocol.FormatOnKeyRequestArgs>req.arguments;
-                    this.formatOnKey(formatOnKeyArgs.line, formatOnKeyArgs.col, formatOnKeyArgs.key, formatOnKeyArgs.file,
-                        cmd, req.seq);
-                    break;
-                }
-                case CommandNames.Completions: {
-                    var completionsArgs = <ServerProtocol.CompletionsRequestArgs>req.arguments;
-                    this.completions(req.arguments.line, req.arguments.col, completionsArgs.prefix, req.arguments.file,
-                        cmd, req.seq);
-                    break;
-                }
-                case CommandNames.Geterr: {
-                    var geterrArgs = <ServerProtocol.GeterrRequestArgs>req.arguments;
-                    this.geterr(geterrArgs.delay, geterrArgs.files);
-                    break;
-                }
-                case CommandNames.Change: {
-                    var changeArgs = <ServerProtocol.ChangeRequestArgs>req.arguments;
-                    this.change(changeArgs.line, changeArgs.col, changeArgs.deleteLen, changeArgs.insertString,
-                        changeArgs.file);
-                    break;
-                }
-                case CommandNames.Reload: {
-                    var reloadArgs = <ServerProtocol.ReloadRequestArgs>req.arguments;
-                    this.reload(reloadArgs.file, reloadArgs.tmpfile, req.seq);
-                    break;
-                }
-                case CommandNames.Saveto: {
-                    var savetoArgs = <ServerProtocol.SavetoRequestArgs>req.arguments;
-                    this.saveToTmp(savetoArgs.file, savetoArgs.tmpfile);
-                    break;
-                }
-                case CommandNames.Close: {
-                    var closeArgs = <ServerProtocol.FileRequestArgs>req.arguments;
-                    this.closeClientFile(closeArgs.file);
-                    break;
-                }
-                case CommandNames.Navto: {
-                    var navtoArgs = <ServerProtocol.NavtoRequestArgs>req.arguments;
-                    this.navto(navtoArgs.searchTerm, navtoArgs.file, cmd, req.seq);
-                    break;
-                }
-                default: {
-                    this.projectService.log("Unrecognized JSON command: " + cmd);
-                    break;
-                }
+            } catch (err) {
+                this.logError(err, cmd);
             }
         }
 
@@ -979,7 +1164,34 @@ module ts.server {
             var m: string[];
 
             try {
-                if (m = cmd.match(/^definition (\d+) (\d+) (.*)$/)) {
+                if (m = cmd.match(/^dbg start$/)) {
+                    this.debugSession = new JsDebugSession(this.host.getDebuggerClient());
+                }
+                else if (m = cmd.match(/^dbg cont$/)) {
+                    if (this.debugSession) {
+                        this.debugSession.cont((err, body, res) => {
+                        });
+                    }
+                }
+                else if (m = cmd.match(/^dbg src$/)) {
+                    if (this.debugSession) {
+                        this.debugSession.listSrc();
+                    }
+                }
+                else if (m = cmd.match(/^dbg brk (\d+) (.*)$/)) {
+                    line = parseInt(m[1]);
+                    file = ts.normalizePath(m[2]);
+                    if (this.debugSession) {
+                        this.debugSession.setBreakpointOnLine(line, file);
+                    }
+                }
+                else if (m = cmd.match(/^dbg eval (.*)$/)) {
+                    var code = m[1];
+                    if (this.debugSession) {
+                        this.debugSession.evaluate(code);
+                    }
+                }
+                else if (m = cmd.match(/^definition (\d+) (\d+) (.*)$/)) {
                     line = parseInt(m[1]);
                     col = parseInt(m[2]);
                     file = m[3];

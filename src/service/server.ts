@@ -27,39 +27,6 @@ module ts.server {
         terminal: false,
     });
 
-    function SourceInfo(body: NodeJS._debugger.BreakResponse) {
-        var result = body.exception ? 'exception in ' : 'break in ';
-
-        if (body.script) {
-            if (body.script.name) {
-                var name = body.script.name,
-                    dir = path.resolve() + '/';
-
-                // Change path to relative, if possible
-                if (name.indexOf(dir) === 0) {
-                    name = name.slice(dir.length);
-                }
-
-                result += name;
-            } else {
-                result += '[unnamed]';
-            }
-        }
-        result += ':';
-        result += body.sourceLine + 1;
-
-        if (body.exception) result += '\n' + body.exception.text;
-
-        return result;
-    }
-
-    function printObject(obj: any) {
-        for (var p in obj) {
-            if (obj.hasOwnProperty(p)) {
-                console.log(p + ": " + obj[p]);
-            }
-        }
-    }
 
     class Logger implements ts.server.Logger {
         fd = -1;
@@ -120,204 +87,7 @@ module ts.server {
         }
     }
 
-    class JsDebugSession {
-        client: NodeJS._debugger.Client;
-        host = 'localhost';
-        port = 5858;
-
-        constructor() {
-            this.init();
-        }
-
-        cont(cb: NodeJS._debugger.RequestHandler) {
-            this.client.reqContinue(cb);
-        }
-
-        listSrc() {
-            this.client.reqScripts((err: any) => {
-                if (err) {
-                    console.log("rscr error: " + err);
-                }
-                else {
-                    console.log("req scripts");
-                    for (var id in this.client.scripts) {
-                        var script = this.client.scripts[id];
-                        if ((typeof script === "object") && script.name) {
-                            console.log(id + ": " + script.name);
-                        }
-                    }
-                }
-            });
-        }
-
-        findScript(file: string) {
-            if (file) {
-                var script: NodeJS._debugger.ScriptDesc;
-                var scripts = this.client.scripts;
-                var keys: any[] = Object.keys(scripts);
-                var ambiguous = false;
-                for (var v = 0; v < keys.length; v++) {
-                    var id = keys[v];
-                    if (scripts[id] &&
-                        scripts[id].name &&
-                        scripts[id].name.indexOf(file) !== -1) {
-                        if (script) {
-                            ambiguous = true;
-                        }
-                        script = scripts[id];
-                    }
-                }
-                return { script: script, ambiguous: ambiguous };
-            }
-        }
-
-        // TODO: condition
-        setBreakpointOnLine(line: number, file?: string) {
-            if (!file) {
-                file = this.client.currentScript;
-            }
-            var script: NodeJS._debugger.ScriptDesc;
-            var scriptResult = this.findScript(file);
-            if (scriptResult) {
-                if (scriptResult.ambiguous) {
-                    // TODO: send back error
-                    script = undefined;
-                }
-                else {
-                    script = scriptResult.script;
-                }
-            }
-            // TODO: set breakpoint when script not loaded
-            if (script) {
-                var brkmsg: NodeJS._debugger.BreakpointMessageBody = {
-                    type: 'scriptId',
-                    target: script.id,
-                    line: line - 1,
-                }
-                this.client.setBreakpoint(brkmsg,(err, bod) => {
-                    // TODO: remember breakpoint
-                    if (err) {
-                        console.log("Error: set breakpoint: " + err);
-                    }
-                });
-            }
-
-        }
-
-        init() {
-            var connectionAttempts = 0;
-            this.client = new nodeproto.Client();
-            this.client.on('break',(res: NodeJS._debugger.Event) => {
-                this.handleBreak(res.body);
-            });
-            this.client.on('exception',(res: NodeJS._debugger.Event) => {
-                this.handleBreak(res.body);
-            });
-            this.client.on('error',() => {
-                setTimeout(() => {
-                    ++connectionAttempts;
-                    this.client.connect(this.port, this.host);
-                }, 500);
-            });
-            this.client.once('ready',() => {
-            });
-            this.client.on('unhandledResponse',() => {
-            });
-            this.client.connect(this.port, this.host);
-        }
-
-        evaluate(code: string) {
-            var frame = this.client.currentFrame;
-            this.client.reqFrameEval(code, frame,(err, bod) => {
-                if (err) {
-                    console.log("Error: evaluate: " + err);
-                    return;
-                }
-
-                console.log("Value: " + bod.toString());
-                if (typeof bod === "object") {
-                    printObject(bod);
-                }
-
-                // Request object by handles (and it's sub-properties)
-                this.client.mirrorObject(bod, 3,(err, mirror) => {
-                    if (mirror) {
-                        if (typeof mirror === "object") {
-                            printObject(mirror);
-                        }
-                        console.log(mirror.toString());
-                    }
-                    else {
-                        console.log("undefined");
-                    }
-                });
-
-            });
-        }
-
-        handleBreak(breakInfo: NodeJS._debugger.BreakResponse) {
-            this.client.currentSourceLine = breakInfo.sourceLine;
-            this.client.currentSourceLineText = breakInfo.sourceLineText;
-            this.client.currentSourceColumn = breakInfo.sourceColumn;
-            this.client.currentFrame = 0;
-            this.client.currentScript = breakInfo.script && breakInfo.script.name;
-
-            console.log(SourceInfo(breakInfo));
-            // TODO: watchers        
-        }
-    }
-
-    class DebuggerSession extends Session {
-        debugSession: JsDebugSession;
-
-        constructor(host: ServerHost, logger: ts.server.Logger, useProtocol: boolean, prettyJSON: boolean) {
-            super(host, logger, useProtocol, prettyJSON);
-        }
-
-        executeCmd(cmd: string) {
-            // Handel debugger commands
-            var line: number, col: number, file: string;
-            var m: string[];
-
-            try {
-                if (m = cmd.match(/^dbg start$/)) {
-                    this.debugSession = new JsDebugSession();
-                }
-                else if (m = cmd.match(/^dbg cont$/)) {
-                    if (this.debugSession) {
-                        this.debugSession.cont((err, body, res) => {
-                        });
-                    }
-                }
-                else if (m = cmd.match(/^dbg src$/)) {
-                    if (this.debugSession) {
-                        this.debugSession.listSrc();
-                    }
-                }
-                else if (m = cmd.match(/^dbg brk (\d+) (.*)$/)) {
-                    line = parseInt(m[1]);
-                    file = ts.normalizePath(m[2]);
-                    if (this.debugSession) {
-                        this.debugSession.setBreakpointOnLine(line, file);
-                    }
-                }
-                else if (m = cmd.match(/^dbg eval (.*)$/)) {
-                    var code = m[1];
-                    if (this.debugSession) {
-                        this.debugSession.evaluate(code);
-                    }
-                }
-                else {
-                    super.executeCmd(cmd);
-                }
-            }
-            catch (err) {
-                this.logError(err, cmd);
-            }
-        }
-    }
-
-    class IOSession extends DebuggerSession {
+    class IOSession extends Session {
         protocol: NodeJS._debugger.Protocol;
 
         constructor(host: ServerHost, logger: ts.server.Logger, useProtocol: boolean, prettyJSON: boolean) {
@@ -367,9 +137,13 @@ module ts.server {
     // TODO: check that this location is writable
     var logger = new Logger(__dirname + "/.log" + process.pid.toString());
     
-    // set the global logger object 
-    globalLogger = logger;
+    var host: ServerHost = ts.sys;
+
+    // Wire the debugging interface
+    if (!host.getDebuggerClient) { 
+        host.getDebuggerClient = () => new nodeproto.Client();
+    }
 
     // Start listening
-    new IOSession(ts.sys, logger, /* useProtocol */ true, /* prettyJSON */ false).listen();
+    new IOSession(host, logger, /* useProtocol */ true, /* prettyJSON */ false).listen();
 }
