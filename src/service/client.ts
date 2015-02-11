@@ -99,8 +99,6 @@ module ts.server {
         }
 
         private processResponse<T extends ServerProtocol.Response>(request: ServerProtocol.Request): T {
-            debugger;
-            
             // Read the content length
             var contentLengthPrefix = "Content-Length: ";
             var lines = this.lastReply.split("\r\n");
