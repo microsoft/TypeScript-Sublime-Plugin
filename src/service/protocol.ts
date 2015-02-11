@@ -87,9 +87,9 @@ module ts.server {
         }
     }
 
-    interface FileMin {
+    interface FileStart {
         file: string;
-        min: ILineInfo;
+        start: ILineInfo;
     }
 
     function compareNumber(a: number, b: number) {
@@ -102,14 +102,14 @@ module ts.server {
         else return 1;
     }
 
-    function compareFileMin(a: FileMin, b: FileMin) {
+    function compareFileStart(a: FileStart, b: FileStart) {
         if (a.file < b.file) {
             return -1;
         }
         else if (a.file == b.file) {
-            var n = compareNumber(a.min.line, b.min.line);
+            var n = compareNumber(a.start.line, b.start.line);
             if (n == 0) {
-                return compareNumber(a.min.col, b.min.col);
+                return compareNumber(a.start.col, b.start.col);
             }
             else return n;
         }
@@ -317,8 +317,8 @@ module ts.server {
 
     interface FileRange {
         file?: string;
-        min: ILineInfo;
-        lim: ILineInfo;
+        start: ILineInfo;
+        end: ILineInfo;
     }
 
     interface FileRanges {
@@ -328,7 +328,7 @@ module ts.server {
 
     function formatDiag(file: string, project: Project, diag: ts.Diagnostic) {
         return {
-            min: project.compilerService.host.positionToLineCol(file, diag.start),
+            start: project.compilerService.host.positionToLineCol(file, diag.start),
             len: diag.length,
             text: diag.messageText,
         };
@@ -337,11 +337,6 @@ module ts.server {
     interface PendingErrorCheck {
         filename: string;
         project: Project;
-    }
-
-    interface IdFile {
-        id: number;
-        fileName: string;
     }
 
     function allEditsBeforePos(edits: ts.TextChange[], pos: number) {
@@ -470,7 +465,9 @@ module ts.server {
                 fileName: "f",
                 containerName: "cn",
                 containerKind: "ck",
-                min: "m",
+                kindModifiers: "km",
+                start: "s",
+                end: "e", 
                 line: "l",
                 col: "c",
                 "interface": "i",
@@ -478,15 +475,20 @@ module ts.server {
             };
         }
 
-        encodeFilename(filename: string): number | IdFile {
-            var id = ts.lookUp(this.fileHash, filename);
-            if (!id) {
-                id = this.nextFileId++;
-                this.fileHash[filename] = id;
-                return { id: id, fileName: filename };
+        encodeFilename(filename: string): ServerProtocol.EncodedFile {
+            if (!this.fetchedAbbrev) {
+                return filename;
             }
             else {
-                return id;
+                var id = ts.lookUp(this.fileHash, filename);
+                if (!id) {
+                    id = this.nextFileId++;
+                    this.fileHash[filename] = id;
+                    return { id: id, file: filename };
+                }
+                else {
+                    return id;
+                }
             }
         }
 
@@ -600,9 +602,9 @@ module ts.server {
                 if (locs) {
                     var info: ServerProtocol.CodeSpan[] = locs.map(def => ({
                         file: def && def.fileName,
-                        min: def &&
+                        start: def &&
                         compilerService.host.positionToLineCol(def.fileName, def.textSpan.start),
-                        lim: def &&
+                        end: def &&
                         compilerService.host.positionToLineCol(def.fileName, ts.textSpanEnd(def.textSpan))
                     }));
                     this.output(info, CommandNames.Definition, reqSeq);
@@ -629,8 +631,8 @@ module ts.server {
                         if (renameLocs) {
                             var bakedRenameLocs = renameLocs.map(loc=> ({
                                 file: loc.fileName,
-                                min: compilerService.host.positionToLineCol(loc.fileName, loc.textSpan.start),
-                                lim: compilerService.host.positionToLineCol(loc.fileName, ts.textSpanEnd(loc.textSpan)),
+                                start: compilerService.host.positionToLineCol(loc.fileName, loc.textSpan.start),
+                                end: compilerService.host.positionToLineCol(loc.fileName, ts.textSpanEnd(loc.textSpan)),
                             })).sort((a, b) => {
                                 if (a.file < b.file) {
                                     return -1;
@@ -640,14 +642,14 @@ module ts.server {
                                 }
                                 else {
                                     // reverse sort assuming no overlap
-                                    if (a.min.line < b.min.line) {
+                                    if (a.start.line < b.start.line) {
                                         return 1;
                                     }
-                                    else if (a.min.line > b.min.line) {
+                                    else if (a.start.line > b.start.line) {
                                         return -1;
                                     }
                                     else {
-                                        return b.min.col - a.min.col;
+                                        return b.start.col - a.start.col;
                                     }
                                 }
                             }).reduce<FileRanges[]>((accum: FileRanges[], cur: FileRange) => {
@@ -662,7 +664,7 @@ module ts.server {
                                     curFileAccum = { file: cur.file, locs: [] };
                                     accum.push(curFileAccum);
                                 }
-                                curFileAccum.locs.push({ min: cur.min, lim: cur.lim });
+                                curFileAccum.locs.push({ start: cur.start, end: cur.end });
                                 return accum;
                             }, []);
                             this.output({ info: renameInfo, locs: bakedRenameLocs }, CommandNames.Rename, reqSeq);
@@ -700,17 +702,17 @@ module ts.server {
                         var nameText =
                             compilerService.host.getScriptSnapshot(file).getText(nameSpan.start, ts.textSpanEnd(nameSpan));
                         var bakedRefs: ServerProtocol.ReferencesResponseItem[] = refs.map((ref) => {
-                            var min = compilerService.host.positionToLineCol(ref.fileName, ref.textSpan.start);
-                            var refLineSpan = compilerService.host.lineToTextSpan(ref.fileName, min.line - 1);
+                            var start = compilerService.host.positionToLineCol(ref.fileName, ref.textSpan.start);
+                            var refLineSpan = compilerService.host.lineToTextSpan(ref.fileName, start.line - 1);
                             var snap = compilerService.host.getScriptSnapshot(ref.fileName);
                             var lineText = snap.getText(refLineSpan.start, ts.textSpanEnd(refLineSpan)).replace(/\r|\n/g, "");
                             return {
                                 file: ref.fileName,
-                                min: min,
+                                start: start,
                                 lineText: lineText,
-                                lim: compilerService.host.positionToLineCol(ref.fileName, ts.textSpanEnd(ref.textSpan)),
+                                end: compilerService.host.positionToLineCol(ref.fileName, ts.textSpanEnd(ref.textSpan)),
                             };
-                        }).sort(compareFileMin);
+                        }).sort(compareFileStart);
                         var response: ServerProtocol.ReferencesResponseBody = {
                             refs: bakedRefs,
                             symbolName: nameText,
@@ -747,9 +749,9 @@ module ts.server {
                         if (navItem) {
                             typeLoc = {
                                 file: navItem.fileName,
-                                min: compilerService.host.positionToLineCol(navItem.fileName,
+                                start: compilerService.host.positionToLineCol(navItem.fileName,
                                     navItem.textSpan.start),
-                                lim: compilerService.host.positionToLineCol(navItem.fileName,
+                                end: compilerService.host.positionToLineCol(navItem.fileName,
                                     ts.textSpanEnd(navItem.textSpan)),
                             };
                         }
@@ -782,10 +784,15 @@ module ts.server {
                 if (quickInfo) {
                     var displayString = ts.displayPartsToString(quickInfo.displayParts);
                     var docString = ts.displayPartsToString(quickInfo.documentation);
-                    this.output({
-                        info: displayString,
-                        doc: docString,
-                    }, CommandNames.Quickinfo, reqSeq);
+                    var qi: ServerProtocol.QuickInfoResponseBody = {
+                        kind: quickInfo.kind,
+                        kindModifiers: quickInfo.kindModifiers,
+                        start: compilerService.host.positionToLineCol(file,quickInfo.textSpan.start),
+                        end: compilerService.host.positionToLineCol(file,ts.textSpanEnd(quickInfo.textSpan)),
+                        displayString: displayString,
+                        documentation: docString,
+                    };
+                    this.output(qi, CommandNames.Quickinfo, reqSeq);
                 }
                 else {
                     this.output(undefined,CommandNames.Quickinfo, reqSeq, "no info")
@@ -813,9 +820,9 @@ module ts.server {
                 if (edits) {
                     var bakedEdits: ServerProtocol.CodeEdit[] = edits.map((edit) => {
                         return {
-                            min: compilerService.host.positionToLineCol(file,
+                            start: compilerService.host.positionToLineCol(file,
                                 edit.span.start),
-                            lim: compilerService.host.positionToLineCol(file,
+                            end: compilerService.host.positionToLineCol(file,
                                 ts.textSpanEnd(edit.span)),
                             newText: edit.newText ? edit.newText : ""
                         };
@@ -860,9 +867,9 @@ module ts.server {
                 if (edits) {
                     var bakedEdits: ServerProtocol.CodeEdit[] = edits.map((edit) => {
                         return {
-                            min: compilerService.host.positionToLineCol(file,
+                            start: compilerService.host.positionToLineCol(file,
                                 edit.span.start),
-                            lim: compilerService.host.positionToLineCol(file,
+                            end: compilerService.host.positionToLineCol(file,
                                 ts.textSpanEnd(edit.span)),
                             newText: edit.newText ? edit.newText : ""
                         };
@@ -907,6 +914,9 @@ module ts.server {
                                     if (details && (details.documentation) && (details.documentation.length > 0)) {
                                         protoEntry.documentation = details.documentation;
                                     }
+                                    if (details && (details.displayParts) && (details.displayParts.length > 0)) {
+                                        protoEntry.displayParts = details.documentation;
+                                    }
                                     accum.push(protoEntry);
                                 }
                                 return accum;
@@ -934,14 +944,18 @@ module ts.server {
             }
         }
 
-        change(line: number, col: number, deleteLen: number, insertLen: number, insertString: string, rawfile: string) {
+        change(line: number, col: number, deleteLen: number, insertString: string, rawfile: string) {
             var file = ts.normalizePath(rawfile);
             var project = this.projectService.getProjectForFile(file);
             if (project) {
                 var compilerService = project.compilerService;
                 var pos = compilerService.host.lineColToPosition(file, line, col);
                 if (pos >= 0) {
-                    compilerService.host.editScript(file, pos, pos + deleteLen, insertString);
+                    var end = pos;
+                    if (deleteLen) {
+                        end += deleteLen;
+                    }
+                    compilerService.host.editScript(file, pos, end, insertString);
                     this.changeSeq++;
                 }
             }
@@ -1033,15 +1047,23 @@ module ts.server {
                 this.pendingOperation = false;
                 if (navItems) {
                     var bakedNavItems: ServerProtocol.NavtoItem[] = navItems.map((navItem) => {
-                        var min = compilerService.host.positionToLineCol(navItem.fileName,
+                        var start = compilerService.host.positionToLineCol(navItem.fileName,
                             navItem.textSpan.start);
-                        this.abbreviate(min);
-                        var bakedItem: any = {
+                        var end = compilerService.host.positionToLineCol(navItem.fileName, ts.textSpanEnd(navItem.textSpan));
+                        this.abbreviate(start);
+                        var bakedItem: ServerProtocol.NavtoItem = {
                             name: navItem.name,
                             kind: navItem.kind,
                             file: this.encodeFilename(navItem.fileName),
-                            min: min,
+                            start: start,
+                            end: end,
                         };
+                        if (navItem.kindModifiers && (navItem.kindModifiers != "")) {
+                            bakedItem.kindModifiers = navItem.kindModifiers;
+                        }
+                        if (navItem.matchKind != 'none') {
+                            bakedItem.matchKind = navItem.matchKind;
+                        }
                         if (navItem.containerName && (navItem.containerName.length > 0)) {
                             bakedItem.containerName = navItem.containerName;
                         }
@@ -1118,7 +1140,7 @@ module ts.server {
                 }
                 case CommandNames.Change: {
                     var changeArgs = <ServerProtocol.ChangeRequestArgs>req.arguments;
-                    this.change(changeArgs.line, changeArgs.col, changeArgs.deleteLen, changeArgs.insertLen, changeArgs.insertString,
+                    this.change(changeArgs.line, changeArgs.col, changeArgs.deleteLen, changeArgs.insertString,
                         changeArgs.file);
                     break;
                 }
@@ -1273,7 +1295,7 @@ module ts.server {
                                 insertString = JSON.parse(m[5].substring(1, m[5].length - 1));
                             }
                             file = m[6];
-                            this.change(line, col, deleteLen, insertLen, insertString, file);
+                            this.change(line, col, deleteLen, insertString, file);
                         }
                         else if (m = cmd.match(/^reload (.*) from (.*)$/)) {
                             this.reload(m[1], m[2]);

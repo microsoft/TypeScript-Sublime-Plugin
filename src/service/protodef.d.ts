@@ -27,7 +27,7 @@ declare module ServerProtocol {
     /** Response by server to client request message */
     export interface Response extends Message {
         /** Sequence number of the request message */
-        request_seq: number;
+        requestSeq: number;
         /** Outcome of the request */
         success: boolean;
         /** The command requested */
@@ -93,9 +93,9 @@ declare module ServerProtocol {
         /** File containing the definition */
         file: string;
         /** First character of the definition */
-        min: LineCol;
+        start: LineCol;
         /** One character past last character of the definition */
-        lim: LineCol;
+        end: LineCol;
     }
 
     /**
@@ -114,15 +114,31 @@ declare module ServerProtocol {
     }
 
     export interface ReferencesResponseItem extends CodeSpan {
-        /** Text of line containing the reference */
+        /** Text of line containing the reference.  Including this
+            with the response avoids latency of editor loading files
+            to show text of reference line (the server already has
+            loaded the referencing files).
+        */
         lineText: string;
     }
 
+    /** The body of a "references" response message. */
     export interface ReferencesResponseBody {
+        /** The code locations referencing the symbol */
         refs: ReferencesResponseItem[];
+        /** The name of the symbol */
         symbolName: string;
+        /**
+           The start column of the symbol (on the line provided by the references request)
+         */
         symbolStartCol: number;
+        /** The full display name of the symbol */
         symbolDisplayString: string;
+    }
+
+    /** Response to "references" request. */
+    export interface ReferencesResponse extends Response {
+        body?: ReferencesResponseBody;
     }
 
     /**
@@ -136,8 +152,18 @@ declare module ServerProtocol {
 
     /** Information about the item to be renamed. */
     export interface RenameInfo {
+        /** True if item can be renamed */
+        canRename: boolean;
+        /** Error message if item can not be renamed */
+        localizedErrorMessage: string;
+        /** Display name of the item to be renamed */
+        displayName: string;
         /** Full display name of item to be renamed */
         fullDisplayName: string;
+        /** The items's kind (such as 'className' or 'parameterName' or plain 'text') */
+        kind: string;
+        /** Optional modifiers for the kind (such as 'public') */
+        kindModifiers: string;
     }
 
     /**
@@ -195,14 +221,25 @@ declare module ServerProtocol {
     export interface QuickInfoRequest extends CodeLocationRequest {
     }
 
+    /** Body of QuickInfoResponse */
+    export interface QuickInfoResponseBody {
+        /** The symbol's kind (such as 'className' or 'parameterName' or plain 'text') */
+        kind: string;
+        /** Optional modifiers for the kind (such as 'public') */
+        kindModifiers: string;
+        /** Starting code location of symbol */
+        start: LineCol;
+        /** One past last character of symbol */
+        end: LineCol;
+        /** Type and kind of symbol */
+        displayString: string;
+        /** Documentation associated with symbol */
+        documentation: string;
+    }
+
     /** Quickinfo response message */
     export interface QuickInfoResponse extends Response {
-        body?: {
-            /** Type and kind of symbol */
-            info: string;
-            /** Documentation associated with symbol */
-            doc: string;
-        };
+        body?: QuickInfoResponseBody;
     }
 
     /** Arguments for format messages */
@@ -227,15 +264,15 @@ declare module ServerProtocol {
     /**
        Object found in response messages defining an editing
        instruction for a span of text in source code.  The effect of
-       this instruction is to replace the text starting at min and
-       ending one character before lim with newText. For an insertion,
+       this instruction is to replace the text starting at start and
+       ending one character before end with newText. For an insertion,
        the text span is empty.  For a deletion, newText is empty.
     */
     export interface CodeEdit {
         /** First character of the text span to edit. */
-        min: LineCol;
+        start: LineCol;
         /** One character past last character of the text span to edit */
-        lim: LineCol;
+        end: LineCol;
         /**
            Replace the span defined above with this string (may be
            the empty string)
@@ -300,6 +337,8 @@ declare module ServerProtocol {
         kind: string;
         /** Optional modifiers for the kind (such as 'public') */
         kindModifiers?: string;
+        /** Display parts of the symbol (similar to quick info) */
+        displayParts?: SymbolDisplayPart[];
         /** Documentation strings for the symbol */
         documentation?: SymbolDisplayPart[];
     }
@@ -339,7 +378,7 @@ declare module ServerProtocol {
     /** Item of diagnostic information found in a DiagEvent message */
     export interface Diagnostic {
         /** Starting code location at which text appies */
-        min: LineCol;
+        start: LineCol;
         /** Length of code location at which text applies */
         len: number;
         /** Text of diagnostic message */
@@ -422,24 +461,35 @@ declare module ServerProtocol {
         arguments: NavtoRequestArgs;
     }
 
-    /** An item found in a navto response */
+    /** An item found in a navto response.  */
     export interface NavtoItem {
         /** The symbol's name */
         name: string;
         /** The symbol's kind (such as 'className' or 'parameterName') */
         kind: string;
-        /** The file in which the symbol is found */
-        file: string;
-        /** The location within file at which the symbol is found */
-        min: LineCol;
-        /** Name of symbol's container symbol (if any); for example,
-            the class name if symbol is a class member
+        /** exact, substring, or prefix */
+        matchKind?: string;
+        /** Optional modifiers for the kind (such as 'public') */        
+        kindModifiers?: string;
+        /** 
+            The file in which the symbol is found; the value of this
+            field will always be a string unless the client opts-in to
+            file encoding by sending the "abbrev" request.
+        */
+        file: EncodedFile;
+        /** The location within file at which the symbol is found*/
+        start: LineCol;
+        /** One past the last character of the symbol */
+        end: LineCol;
+        /**
+           Name of symbol's container symbol (if any); for example,
+           the class name if symbol is a class member
         */
         containerName?: string;
         /** Kind of symbol's container symbol (if any) */        
         containerKind?: string;
     }
-
+    
     /**
        Navto response message. Body is an array of navto items.  Each
        item gives a symbol that matched the search term.
@@ -451,15 +501,10 @@ declare module ServerProtocol {
     /** Arguments for change request message. */
     export interface ChangeRequestArgs extends CodeLocationRequestArgs {
         /**
-           Length of span deleted at location (file, line, col); may
-           be zero.
+           Length of span deleted at location (file, line, col); nothing deleted
+           if this field is zero or undefined.
         */
-        deleteLen: number;
-        /**
-           Length of string to insert at location (file, line, col); may
-           be zero.
-        */
-        insertLen: number;
+        deleteLen?: number;
         /** Optional string to insert at location (file, line col). */
         insertString?: string;
     }
@@ -487,7 +532,8 @@ declare module ServerProtocol {
        the abbreviations, the server may send responses whose field
        names are shortened.  The server may also send file names as
        instances of AssignFileId, or as file ids, if the corresponding
-       id assignment had been previously returned.
+       id assignment had been previously returned.  Currently, only
+       responses to the "navto" request can be encoded.
     */       
     export interface AbbrevRequest extends Request {
     }
@@ -499,12 +545,21 @@ declare module ServerProtocol {
        and interpret the value as if it was the string in the 'file'
        field.
     */
-    export interface AssignFileId {
+    export interface IdFile {
         /** Id to assign to file */
         id: number;
         /** File name that will correspond to id */
         file: string;
     }
+
+    /**
+       The type of an encoded file name.  If of type number, the value
+       is a file id.  If of type IdFile, the value is interpreted as
+       'file' and in addition the mapping 'id' to 'file' is
+       established.  If of type string, the value is simply the file
+       name.
+    */
+    export type EncodedFile = number | IdFile | string;
 
     /**
        Response to abbrev opt-in request message.  This is a map of
