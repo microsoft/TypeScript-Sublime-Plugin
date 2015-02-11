@@ -15,16 +15,7 @@ module ts.server {
         endGroup(): void;
         msg(s: string, type?: string): void;
     }
-
-    // Global process logger
-    export var globalLogger: Logger;
-
-    function logMessage(message: string, type?: string): void {
-        if (globalLogger) {
-            globalLogger.msg(message, type);
-        }
-    }
-
+   
     var measurePerf = false;
     var lineCollectionCapacity = 4;
     var indentStrings: string[] = [];
@@ -68,7 +59,6 @@ module ts.server {
             var elapsedNano = 1e9 * elapsed[0] + elapsed[1];
             total += elapsedNano;
         }
-        logMessage("Estimated precision of high-res timer: " + (total / count).toFixed(3) + " nanoseconds", "Perf");
     }
 
     export class ScriptInfo {
@@ -486,7 +476,6 @@ module ts.server {
             var info = this.watchedFiles[checkedIndex];
             if (info && (!info.isOpen)) {
                 if (info.mtime.getTime() != stats.mtime.getTime()) {
-                    logMessage(info.filename + " changed");
                     info.svc.reloadFromFile(info.filename);
                 }
             }
@@ -514,7 +503,6 @@ module ts.server {
                     if (err.errno) {
                         msg += " errno: " + err.errno.toString();
                     }
-                    logMessage("Error " + msg + " in stat for file " + watchedFile.filename);
                     if (err.errno == WatchedFileSet.fileDeleted) {
                         this.fileDeleted(watchedFile);
                     }
@@ -526,7 +514,6 @@ module ts.server {
             if (measurePerf) {
                 var elapsed = process.hrtime(start);
                 var elapsedNano = 1e9 * elapsed[0] + elapsed[1];
-                logMessage("Elapsed time for async stat (in nanoseconds)" + watchedFile.filename + ": " + elapsedNano.toString(), "Perf");
             }
         }
 
@@ -534,7 +521,6 @@ module ts.server {
         // stat due to inconsistencies of fs.watch
         // and efficiency of stat on modern filesystems
         startWatchTimer() {
-            logMessage("Start watch timer: " + this.chunkSize.toString(), "Info");
             this.watchTimer = setInterval(() => {
                 var count = 0;
                 var nextToCheck = this.nextFileToCheck;
@@ -1472,9 +1458,7 @@ module ts.server {
                 walker.insertLines(newText);
                 if (this.checkEdits) {
                     var updatedText = this.getText(0, this.root.charCount());
-                    if (checkText != updatedText) {
-                        globalLogger.msg("buffer edit mismatch");
-                    }
+                    Debug.assert(checkText == updatedText, "buffer edit mismatch");
                 }
                 return walker.lineIndex;
             }
