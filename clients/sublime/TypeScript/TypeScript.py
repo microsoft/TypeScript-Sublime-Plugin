@@ -441,7 +441,7 @@ class TypeScriptListener(sublime_plugin.EventListener):
             
             # traverse list in reverse b/c MRU always appended to end of list
             # TODO: check if file visible and only add if is visible
-            files = map(lambda mruFile: mruFile.filename, self.mruFileList[::-1])
+            files = [mruFile.filename for mruFile in self.mruFileList[::-1]]
             checkUpdateView(view)
             cli.service.requestGetError(errDelay, files)
 
@@ -490,8 +490,8 @@ class TypeScriptListener(sublime_plugin.EventListener):
                 errRegions = []
                 if diags:
                     for diag in diags:
-                        minlc = diag.min
-                        (l, c) = extractLineCol(minlc)
+                        startlc = diag.start
+                        (l, c) = extractLineCol(startlc)
                         text = diag.text
                         charCount = diag.len
                         start = view.text_point(l, c)
@@ -771,8 +771,8 @@ class TypescriptSave(sublime_plugin.TextCommand):
 class TypescriptQuickInfo(sublime_plugin.TextCommand):
     def handleQuickInfo(self, quickInfoResp):
         if quickInfoResp.success:
-            infoStr = quickInfoResp.body.info
-            docStr = quickInfoResp.body.doc
+            infoStr = quickInfoResp.body.displayString
+            docStr = quickInfoResp.body.documentation
             if len(docStr) > 0:
                 infoStr = infoStr + " (^T^Q for more)"
             self.view.set_status("typescript_info", infoStr)
@@ -798,8 +798,8 @@ class TypescriptShowDoc(sublime_plugin.TextCommand):
 class TypescriptQuickInfoDoc(sublime_plugin.TextCommand):
     def handleQuickInfo(self, quickInfoResp):
         if quickInfoResp.success:
-            infoStr = quickInfoResp.body.info
-            docStr = quickInfoResp.body.doc
+            infoStr = quickInfoResp.body.displayString
+            docStr = quickInfoResp.body.documentation
             if len(docStr) > 0:
                 docPanel = sublime.active_window().get_output_panel("doc")
                 docPanel.run_command('typescript_show_doc', 
@@ -851,8 +851,8 @@ class TypescriptGoToDefinitionCommand(sublime_plugin.TextCommand):
             codeSpan = definitionResp.body[0] if len(definitionResp.body) > 0 else None
             if codeSpan:
                 filename = codeSpan.file
-                minlc = codeSpan.min
-                sublime.active_window().open_file('{0}:{1}:{2}'.format(filename, minlc.line, minlc.col),
+                startlc = codeSpan.start
+                sublime.active_window().open_file('{0}:{1}:{2}'.format(filename, startlc.line, startlc.col),
                                                   sublime.ENCODED_POSITION)
 
 
@@ -866,8 +866,8 @@ class TypescriptGoToTypeCommand(sublime_plugin.TextCommand):
             if len(items) > 0:
                 codeSpan = items[0]
                 filename = codeSpan.file
-                minlc = codeSpan.min
-                sublime.active_window().open_file('{0}:{1}:{2}'.format(filename, minlc.line or 0, minlc.col or 0), 
+                startlc = codeSpan.start
+                sublime.active_window().open_file('{0}:{1}:{2}'.format(filename, startlc.line or 0, startlc.col or 0), 
                                                   sublime.ENCODED_POSITION)
 
 class FinishRenameCommandArgs:
@@ -913,12 +913,12 @@ class TypescriptFinishRenameCommand(sublime_plugin.TextCommand):
                 file = outerLoc.file
                 innerLocs = outerLoc.locs
                 for innerLoc in innerLocs:
-                    minlc = innerLoc.min
-                    (minl, minc) = extractLineCol(minlc)
-                    limlc = innerLoc.lim
-                    (liml, limc) = extractLineCol(limlc)
-                    applyEdit(text, self.view, minl, minc, liml, 
-                              limc, ntext=newName)
+                    startlc = innerLoc.start
+                    (startl, startc) = extractLineCol(startlc)
+                    endlc = innerLoc.end
+                    (endl, endc) = extractLineCol(endlc)
+                    applyEdit(text, self.view, startl, startc, endl, 
+                              endc, ntext=newName)
 
 
 # if the FindReferences view is active, get it
@@ -1071,8 +1071,8 @@ class TypescriptPopulateRefs(sublime_plugin.TextCommand):
                         self.view.insert(text, self.view.sel()[0].begin(), "\n")
                     self.view.insert(text, self.view.sel()[0].begin(), filename + ":\n")
                     prevFilename = filename
-                minlc = ref.min
-                (l, c) = extractLineCol(minlc)
+                startlc = ref.start
+                (l, c) = extractLineCol(startlc)
                 pos = self.view.sel()[0].begin()
                 cursor = self.view.rowcol(pos)
                 line = str(cursor[0])
@@ -1103,9 +1103,9 @@ class TypescriptPopulateRefs(sublime_plugin.TextCommand):
 
 
 # apply a single edit specification to a view
-def applyEdit(text, view, minl, minc, liml, limc, ntext=""):
-    begin = view.text_point(minl, minc)
-    end = view.text_point(liml, limc)
+def applyEdit(text, view, startl, startc, endl, endc, ntext=""):
+    begin = view.text_point(startl, startc)
+    end = view.text_point(endl, endc)
     region = sublime.Region(begin, end)
     sendReplaceChangesForRegions(view, [region], ntext)
     # break replace into two parts to avoid selection changes
@@ -1119,12 +1119,12 @@ def applyEdit(text, view, minl, minc, liml, limc, ntext=""):
 def applyFormattingChanges(text, view, codeEdits):
     if codeEdits:
         for codeEdit in codeEdits[::-1]:
-            minlc = codeEdit.min
-            (minl, minc) = extractLineCol(minlc)
-            limlc = codeEdit.lim
-            (liml, limc) = extractLineCol(limlc)
+            startlc = codeEdit.start
+            (startl, startc) = extractLineCol(startlc)
+            endlc = codeEdit.end
+            (endl, endc) = extractLineCol(endlc)
             newText = codeEdit.newText
-            applyEdit(text, view, minl, minc, liml, limc, ntext=newText)
+            applyEdit(text, view, startl, startc, endl, endc, ntext=newText)
 
 
 # format on ";", "}", or "\n"; called by typing these keys in a ts file

@@ -103,16 +103,16 @@ class LineCol:
 
 
 class CodeSpan(object):
-    def __init__(self, file, min, lim):
+    def __init__(self, file, start, end):
         self.file = file
-        self.min = LineCol(**min)
-        self.lim = LineCol(**lim)
+        self.start = LineCol(**start)
+        self.end = LineCol(**end)
 
 
 class CodeSpanWithinFile:
-    def __init__(self, min, lim):
-        self.min = LineCol(**min)
-        self.lim = LineCol(**lim)
+    def __init__(self, start, end):
+        self.start = LineCol(**start)
+        self.end = LineCol(**end)
 
 
 class DefinitionResponse(Response):
@@ -258,14 +258,18 @@ class QuickInfoRequest(CodeLocationRequest):
 
 
 class QuickInfoResponseBody:
-    def __init__(self, info, doc):
+    def __init__(self, kind,start, end, displayString, documentation, kindModifiers=None, **kwargs):
         """
         Quick info response body details
         ``info`` Type and kind of symbol
         ``doc`` Documentation associated with symbol
         """
-        self.info = info
-        self.doc = doc
+        self.kind = kind
+        self.kindModifiers = kindModifiers
+        self.start = start
+        self.end = end
+        self.displayString = displayString
+        self.documentation = documentation
 
 
 class QuickInfoResponse(Response):
@@ -325,19 +329,19 @@ class FormatOnKeyRequest(CodeLocationRequest):
 
 
 class CodeEdit:
-    def __init__(self, min, lim, newText):
+    def __init__(self, start, end, newText):
         """
         Object found in response messages defining an editing
         instruction for a span of text in source code.  The effect of
-        this instruction is to replace the text starting at min and
-        ending one character before lim with newText. For an insertion,
+        this instruction is to replace the text starting at start and
+        ending one character before end with newText. For an insertion,
         the text span is empty.  For a deletion, newText is empty.
-        ``min`` First character of the text span to edit.
-        ``lim`` One character past last character of the text span to edit
+        ``start`` First character of the text span to edit.
+        ``end`` One character past last character of the text span to edit
         ``newText`` Replace the span defined above with this string (may be the empty string)
         """
-        self.min = LineCol(**min)
-        self.lim = LineCol(**lim)
+        self.start = LineCol(**start)
+        self.end = LineCol(**end)
         self.newText = newText
 
 
@@ -389,7 +393,7 @@ class SymbolDisplayPart:
 
 
 class CompletionItem:
-    def __init__(self, name, kind, kindModifiers=None, documentation=None):
+    def __init__(self, name, kind, kindModifiers=None, displayParts=None, documentation=None, **kwargs):
         """
         An item found in a completion response
         ``name`` The symbol's name
@@ -400,6 +404,7 @@ class CompletionItem:
         self.name = name
         self.kind = kind
         self.kindModifiers = kindModifiers
+        self.displayParts = [SymbolDisplayPart(**dp) for dp in displayParts] if displayParts else None
         self.documentation = [SymbolDisplayPart(**dp) for dp in documentation] if documentation else None
 
 
@@ -413,7 +418,7 @@ class GeterrRequestArgs:
     def __init__(self, files, delay):
         """ 
         Arguments for geterr messages.
-        ``files`` Semi-colon separated list of file names for which to compute compiler errors.
+        ``files`` Array of file names for which to compute compiler errors.
         ``delay`` Delay in milliseconds to wait before starting to compute errors for the files in the file list
         """
         self.files = files
@@ -436,14 +441,14 @@ class GeterrRequest(Request):
 
 
 class Diagnostic:
-    def __init__(self, min, len, text):
+    def __init__(self, start, len, text):
         """
         Item of diagnostic information found in a DiagEvent message
-        ``min`` Starting code location at which text appies
+        ``start`` Starting code location at which text appies
         ``len`` Length of code location at which text applies
         ``text`` Text of diagnostic message
         """
-        self.min = LineCol(**min)
+        self.start = LineCol(**start)
         self.len = len
         self.text = text
 

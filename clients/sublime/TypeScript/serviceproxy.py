@@ -65,12 +65,7 @@ class ServiceProxy:
         return jsonhelpers.decode(servicedefs.RenameResponse, jsonRespStr)
 
     def requestGetError(self, delay=0, pathList=[]):
-        fileList = ""
-        delimit = ""
-        for path in pathList:
-            fileList += delimit + path
-            delimit = ";"
-        req = servicedefs.GeterrRequest(servicedefs.GeterrRequestArgs(fileList, delay))
+        req = servicedefs.GeterrRequest(servicedefs.GeterrRequestArgs(pathList, delay))
         jsonStr = jsonhelpers.encode(req)
         self.__comm.postCmd(jsonStr)
 
