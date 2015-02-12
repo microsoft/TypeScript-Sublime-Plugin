@@ -488,17 +488,18 @@ class TypeScriptListener(sublime_plugin.EventListener):
                 clientInfo = cli.getOrAddFile(filename)
                 clientInfo.errors[regionKey] = []
                 errRegions = []
-                for diag in diags:
-                    minlc = diag.min
-                    (l, c) = extractLineCol(minlc)
-                    text = diag.text
-                    charCount = diag.len
-                    start = view.text_point(l, c)
-                    end = start + charCount
-                    if (end <= view.size()):
-                        region = sublime.Region(start, end + 1)
-                        errRegions.append(region)
-                        clientInfo.errors[regionKey].append((region, text))
+                if diags:
+                    for diag in diags:
+                        minlc = diag.min
+                        (l, c) = extractLineCol(minlc)
+                        text = diag.text
+                        charCount = diag.len
+                        start = view.text_point(l, c)
+                        end = start + charCount
+                        if (end <= view.size()):
+                            region = sublime.Region(start, end + 1)
+                            errRegions.append(region)
+                            clientInfo.errors[regionKey].append((region, text))
                 info.hasErrors = cli.hasErrors(filename)
                 self.update_status(view, info)
                 if cli.ST2():
@@ -1116,13 +1117,14 @@ def applyEdit(text, view, minl, minc, liml, limc, ntext=""):
 
 # apply a set of edits to a view
 def applyFormattingChanges(text, view, codeEdits):
-    for codeEdit in codeEdits[::-1]:
-        minlc = codeEdit.min
-        (minl, minc) = extractLineCol(minlc)
-        limlc = codeEdit.lim
-        (liml, limc) = extractLineCol(limlc)
-        newText = codeEdit.newText
-        applyEdit(text, view, minl, minc, liml, limc, ntext=newText)
+    if codeEdits:
+        for codeEdit in codeEdits[::-1]:
+            minlc = codeEdit.min
+            (minl, minc) = extractLineCol(minlc)
+            limlc = codeEdit.lim
+            (liml, limc) = extractLineCol(limlc)
+            newText = codeEdit.newText
+            applyEdit(text, view, minl, minc, liml, limc, ntext=newText)
 
 
 # format on ";", "}", or "\n"; called by typing these keys in a ts file

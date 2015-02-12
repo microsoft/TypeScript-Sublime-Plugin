@@ -1,5 +1,4 @@
 import collections
-import json
 
 import jsonhelpers
 import servicedefs
@@ -20,27 +19,27 @@ class ServiceProxy:
         req = servicedefs.CompletionsRequest(servicedefs.CompletionsRequestArgs(path, location.line, location.col, prefix))
         jsonStr = jsonhelpers.encode(req)
         def onCompletedJson(json):
-            obj = jsonhelpers.fromDict(servicedefs.CompletionsResponse, json)
+            obj = jsonhelpers.decode(servicedefs.CompletionsResponse, json)
             onCompleted(obj)
         self.__comm.sendCmd(onCompletedJson, jsonStr)
 
     def definition(self, path, location=LineCol(1, 1)):
         req = servicedefs.DefinitionRequest(servicedefs.CodeLocationRequestArgs(path, location.line, location.col))
         jsonStr = jsonhelpers.encode(req)
-        jsonResp = self.__comm.sendCmdSync(jsonStr)
-        return jsonhelpers.fromDict(servicedefs.DefinitionResponse, jsonResp)
+        jsonRespStr = self.__comm.sendCmdSync(jsonStr)
+        return jsonhelpers.decode(servicedefs.DefinitionResponse, jsonRespStr)
 
     def format(self, path, beginLoc=LineCol(1, 1), endLoc=LineCol(1, 1)):
         req = servicedefs.FormatRequest(servicedefs.FormatRequestArgs(path, beginLoc.line, beginLoc.col, endLoc.line, endLoc.col))
         jsonStr = jsonhelpers.encode(req)
-        jsonResp = self.__comm.sendCmdSync(jsonStr)
-        return jsonhelpers.fromDict(servicedefs.FormatResponse, jsonResp)
+        jsonRespStr = self.__comm.sendCmdSync(jsonStr)
+        return jsonhelpers.decode(servicedefs.FormatResponse, jsonRespStr)
 
     def formatOnKey(self, path, location=LineCol(1, 1), key=""):
         req = servicedefs.FormatOnKeyRequest(servicedefs.FormatOnKeyRequestArgs(path, location.line, location.col, key))
         jsonStr = jsonhelpers.encode(req)
-        jsonResp = self.__comm.sendCmdSync(jsonStr)
-        return jsonhelpers.fromDict(servicedefs.FormatResponse, jsonResp)
+        jsonRespStr = self.__comm.sendCmdSync(jsonStr)
+        return jsonhelpers.decode(servicedefs.FormatResponse, jsonRespStr)
 
     def open(self, path):
         req = servicedefs.OpenRequest(servicedefs.FileRequestArgs(path))
@@ -50,20 +49,20 @@ class ServiceProxy:
     def references(self, path, location=LineCol(1, 1)):
         req = servicedefs.ReferencesRequest(servicedefs.CodeLocationRequestArgs(path, location.line, location.col))
         jsonStr = jsonhelpers.encode(req)
-        jsonResp = self.__comm.sendCmdSync(jsonStr)
-        return jsonhelpers.fromDict(servicedefs.ReferencesResponse, jsonResp)
+        jsonRespStr = self.__comm.sendCmdSync(jsonStr)
+        return jsonhelpers.decode(servicedefs.ReferencesResponse, jsonRespStr)
 
     def reload(self, path, alternatePath):
         req = servicedefs.ReloadRequest(servicedefs.ReloadRequestArgs(path, alternatePath))
         jsonStr = jsonhelpers.encode(req)
-        jsonResp = self.__comm.sendCmdSync(jsonStr)
-        return jsonhelpers.fromDict(servicedefs.ReloadResponse, jsonResp)
+        jsonRespStr = self.__comm.sendCmdSync(jsonStr)
+        return jsonhelpers.decode(servicedefs.ReloadResponse, jsonRespStr)
 
     def rename(self, path, location=LineCol(1, 1)):
         req = servicedefs.RenameRequest(servicedefs.CodeLocationRequestArgs(path, location.line, location.col))
         jsonStr = jsonhelpers.encode(req)
-        jsonResp = self.__comm.sendCmdSync(jsonStr)
-        return jsonhelpers.fromDict(servicedefs.RenameResponse, jsonResp)
+        jsonRespStr = self.__comm.sendCmdSync(jsonStr)
+        return jsonhelpers.decode(servicedefs.RenameResponse, jsonRespStr)
 
     def requestGetError(self, delay=0, pathList=[]):
         fileList = ""
@@ -78,24 +77,24 @@ class ServiceProxy:
     def type(self, path, location=LineCol(1, 1)):
         req = servicedefs.TypeRequest(servicedefs.CodeLocationRequestArgs(path, location.line, location.col))
         jsonStr = jsonhelpers.encode(req)
-        jsonResp = self.__comm.sendCmdSync(jsonStr)
-        return jsonhelpers.fromDict(servicedefs.TypeResponse, jsonResp)
+        jsonRespStr = self.__comm.sendCmdSync(jsonStr)
+        return jsonhelpers.decode(servicedefs.TypeResponse, jsonRespStr)
 
     def quickInfo(self, path, location=LineCol(1, 1), onCompleted=None):
         req = servicedefs.QuickInfoRequest(servicedefs.CodeLocationRequestArgs(path, location.line, location.col))
         jsonStr = jsonhelpers.encode(req)
         def onCompletedJson(json):
-            obj = jsonhelpers.fromDict(servicedefs.QuickInfoResponse, json)
+            obj = jsonhelpers.decode(servicedefs.QuickInfoResponse, json)
             onCompleted(obj)
         self.__comm.sendCmd(onCompletedJson, jsonStr)
 
     def getEvent(self):
         event = None
-        evDict = self.__comm.getEvent()
-        if not evDict is None:
-            event = jsonhelpers.fromDict(servicedefs.Event, evDict)
+        evJsonStr = self.__comm.getEvent()
+        if not evJsonStr is None:
+            event = jsonhelpers.decode(servicedefs.Event, evJsonStr)
             if event.event == "syntaxDiag" or event.event == "semanticDiag":
-                event = jsonhelpers.fromDict(servicedefs.DiagEvent, evDict)
+                event = jsonhelpers.decode(servicedefs.DiagEvent, evJsonStr)
         return event
 
 

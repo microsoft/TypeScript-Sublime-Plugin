@@ -1,4 +1,4 @@
-class Message:
+class Message(object):
     def __init__(self, seq, type, **kwargs):
         """
         A TypeScript Server message
@@ -16,7 +16,7 @@ class Request(Message):
         ``command`` The command to execute
         ``arguments`` Object containing arguments for the command
         """
-        super().__init__(0, "request")
+        super(Request, self).__init__(0, "request")
         self.command = command
         self.arguments = arguments
 
@@ -27,7 +27,7 @@ class Event(Message):
         Server-initiated event message
         ``event`` Name of event
         """
-        super().__init__(**kwargs)
+        super(Event, self).__init__(**kwargs)
         self.event = event
 
 
@@ -39,13 +39,13 @@ class Response(Message):
         ``success`` Outcome of the request
         ``message`` Contains error message if success == false.
         """
-        super().__init__(**kwargs)
+        super(Response, self).__init__(**kwargs)
         self.request_seq = request_seq
         self.success = success
         self.message = message
 
 
-class FileRequestArgs:
+class FileRequestArgs(object):
     def __init__(self, file):
         """
         Arguments for FileRequest messages
@@ -59,7 +59,7 @@ class FileRequest(Request):
         """
         Request whose sole parameter is a file name
         """
-        super().__init__(command, fileRequestArgs)
+        super(FileRequest, self).__init__(command, fileRequestArgs)
 
 
 class CodeLocationRequestArgs(FileRequestArgs):
@@ -70,7 +70,7 @@ class CodeLocationRequestArgs(FileRequestArgs):
         ``line`` The line number for the request (1-based)
         ``column`` The column for the request (1-based)
         """
-        super().__init__(file)
+        super(CodeLocationRequestArgs, self).__init__(file)
         self.line = line
         self.col = col
 
@@ -80,7 +80,7 @@ class CodeLocationRequest(Request):
         """
         A request whose arguments specify a code location (file, line, col)
         """
-        super().__init__(command, codeLocationRequestArgs)
+        super(CodeLocationRequest, self).__init__(command, codeLocationRequestArgs)
 
 
 class DefinitionRequest(CodeLocationRequest):
@@ -90,7 +90,7 @@ class DefinitionRequest(CodeLocationRequest):
         "definition". Return response giving the code locations that
         define the symbol found in file at location line, col.
         """
-        super().__init__("definition", codeLocationRequestArgs)
+        super(DefinitionRequest, self).__init__("definition", codeLocationRequestArgs)
 
 
 class LineCol:
@@ -102,7 +102,7 @@ class LineCol:
         self.col = col
 
 
-class CodeSpan:
+class CodeSpan(object):
     def __init__(self, file, min, lim):
         self.file = file
         self.min = LineCol(**min)
@@ -120,7 +120,7 @@ class DefinitionResponse(Response):
         """
         Definition response message.  Gives text range for definition.
         """
-        super().__init__(**kwargs)
+        super(DefinitionResponse, self).__init__(**kwargs)
         self.body = [CodeSpan(**cs) for cs in body] if body else None
 
 
@@ -131,7 +131,7 @@ class ReferencesRequest(CodeLocationRequest):
         "references". Return response giving the code locations that
         reference the symbol found in file at location line, col.
         """
-        super().__init__("references", codeLocationRequestArgs)
+        super(ReferencesRequest, self).__init__("references", codeLocationRequestArgs)
 
 
 class ReferencesResponseItem(CodeSpan):
@@ -139,7 +139,7 @@ class ReferencesResponseItem(CodeSpan):
         """
         Text of line containing the reference
         """
-        super().__init__(**kwargs)
+        super(ReferencesResponseItem, self).__init__(**kwargs)
         self.lineText = lineText
 
 
@@ -156,7 +156,7 @@ class ReferencesResponse(Response):
         """
         References response message.  ``body`` is of type ReferencesResponseBody
         """
-        super().__init__(**kwargs)
+        super(ReferencesResponse, self).__init__(**kwargs)
         self.body = ReferencesResponseBody(**body) if body else None
 
 
@@ -168,7 +168,7 @@ class RenameRequest(CodeLocationRequest):
         found in file at location line, col. Also return full display
         name of the symbol so that client can print it unambiguously.
         """
-        super().__init__("rename", codeLocationRequestArgs)
+        super(RenameRequest, self).__init__("rename", codeLocationRequestArgs)
 
 
 class RenameInfo:
@@ -201,7 +201,7 @@ class RenameResponse(Response):
         """
         Rename response message.
         """
-        super().__init__(**kwargs)
+        super(RenameResponse, self).__init__(**kwargs)
         self.body = RenameResponseBody(**body) if body else None
 
 
@@ -212,12 +212,12 @@ class TypeRequest(CodeLocationRequest):
         giving the code locations that define the type of the symbol
         found in file at location line, col.
         """
-        super().__init__("type", codeLocationRequestArgs)
+        super(TypeRequest, self).__init__("type", codeLocationRequestArgs)
 
 
 class TypeResponse(Response): 
     def __init__(self, body=None, **kwargs):
-        super().__init__(**kwargs)
+        super(TypeResponse, self).__init__(**kwargs)
         self.body = [CodeSpan(**cs) for cs in body] if body else None
 
 
@@ -231,7 +231,7 @@ class OpenRequest(FileRequest):
         reload messages) when the file changes.
         ``fileRequestArgs`` is of type FileRequestArgs
         """
-        super().__init__("open", fileRequestArgs)
+        super(OpenRequest, self).__init__("open", fileRequestArgs)
 
 
 class CloseRequest(FileRequest):
@@ -243,7 +243,7 @@ class CloseRequest(FileRequest):
         monitoring the filesystem for changes to file.
         ``fileRequestArgs`` is of type FileRequestArgs
         """
-        super().__init__("close", fileRequestArgs)
+        super(CloseRequest, self).__init__("close", fileRequestArgs)
 
 
 class QuickInfoRequest(CodeLocationRequest):
@@ -254,7 +254,7 @@ class QuickInfoRequest(CodeLocationRequest):
         documentation string for the symbol found in file at location
         line, col.
         """
-        super().__init__("quickinfo", codeLocationRequestArgs)
+        super(QuickInfoRequest, self).__init__("quickinfo", codeLocationRequestArgs)
 
 
 class QuickInfoResponseBody:
@@ -273,7 +273,7 @@ class QuickInfoResponse(Response):
         """ 
         Quickinfo response message
         """
-        super().__init__(**kwargs)
+        super(QuickInfoResponse, self).__init__(**kwargs)
         self.body = QuickInfoResponseBody(**body) if body else None
 
 
@@ -284,7 +284,7 @@ class FormatRequestArgs(CodeLocationRequestArgs):
         ``endLine`` Last line of range for which to format text in file
         ``endCol`` Last column of range for which to format text in file
         """
-        super().__init__(file, line, col)
+        super(FormatRequestArgs, self).__init__(file, line, col)
         self.endLine = endLine
         self.endCol = endCol
 
@@ -298,7 +298,7 @@ class FormatRequest(CodeLocationRequest):
         instructions in reverse to file will result in correctly
         reformatted text.
         """
-        super().__init__("format", formatRequestArgs)
+        super(FormatRequest, self).__init__("format", formatRequestArgs)
 
 
 class FormatOnKeyRequestArgs(CodeLocationRequestArgs):
@@ -307,7 +307,7 @@ class FormatOnKeyRequestArgs(CodeLocationRequestArgs):
         Arguments for format on key messages
         ``key`` Key pressed (';', '\\n', or '}')
         """
-        super().__init__(file, line, col)
+        super(FormatOnKeyRequestArgs, self).__init__(file, line, col)
         self.key = key
 
 
@@ -321,7 +321,7 @@ class FormatOnKeyRequest(CodeLocationRequest):
         edit instructions in reverse to file will result in correctly
         reformatted text.
         """
-        super().__init__("formatonkey", formatOnKeyRequestArgs)
+        super(FormatOnKeyRequest, self).__init__("formatonkey", formatOnKeyRequestArgs)
 
 
 class CodeEdit:
@@ -346,13 +346,13 @@ class FormatResponse(Response):
         """
         Format and format on key response message
         """
-        super().__init__(**kwargs)
+        super(FormatResponse, self).__init__(**kwargs)
         self.body = [CodeEdit(**ce) for ce in body] if body else None
 
 
 class CompletionsResponse(Response):
     def __init__(self, body=None, **kwargs):
-        super().__init__(**kwargs)
+        super(CompletionsResponse, self).__init__(**kwargs)
         self.body = [CompletionItem(**ci) for ci in body] if body else None
 
 
@@ -362,7 +362,7 @@ class CompletionsRequestArgs(CodeLocationRequestArgs):
         Arguments for completions messages
         ``prefix`` Optional prefix to apply to possible completions.
         """
-        super().__init__(file, line, col)
+        super(CompletionsRequestArgs, self).__init__(file, line, col)
         self.prefix = prefix
 
 
@@ -374,7 +374,7 @@ class CompletionsRequest(CodeLocationRequest):
         be the empty string), return the possible completions that
         begin with prefix.
         """
-        super().__init__("completions", completionsRequestArgs)
+        super(CompletionsRequest, self).__init__("completions", completionsRequestArgs)
 
 
 class SymbolDisplayPart:
@@ -405,7 +405,7 @@ class CompletionItem:
 
 class CompletionsResponse(Response):
     def __init__(self, body=None, **kwargs):
-        super().__init__(**kwargs)
+        super(CompletionsResponse, self).__init__(**kwargs)
         self.body = [CompletionItem(**ci) for ci in body] if body else None
 
 
@@ -432,7 +432,7 @@ class GeterrRequest(Request):
         practice for an editor is to send a file list containing each
         file that is currently visible, in most-recently-used order.
         """
-        super().__init__("geterr", geterrRequestArgs)
+        super(GeterrRequest, self).__init__("geterr", geterrRequestArgs)
 
 
 class Diagnostic:
@@ -464,7 +464,7 @@ class DiagEvent(Event):
         Event message for "syntaxDiag" and "semanticDiag" event types.
         These events provide syntactic and semantic errors for a file.
         """
-        super().__init__(**kwargs)
+        super(DiagEvent, self).__init__(**kwargs)
         self.body = DiagEventBody(**body) if body else None
 
 
@@ -474,7 +474,7 @@ class ReloadRequestArgs(FileRequestArgs):
         Arguments for reload request.
         ``tmpfile`` Name of temporary file from which to reload file contents. May be same as file.
         """
-        super().__init__(file)
+        super(ReloadRequestArgs, self).__init__(file)
         self.tmpfile = tmpfile
 
 
@@ -486,12 +486,12 @@ class ReloadRequest(Request):
         from temporary file with name given by the 'tmpfile' argument.
         The two names can be identical.
         """
-        super().__init__("reload", reloadRequestArgs)
+        super(ReloadRequest, self).__init__("reload", reloadRequestArgs)
 
 
 class ReloadResponse(Response):
     def __init__(self, **kwargs):
-        super().__init__(**kwargs)
+        super(ReloadResponse, self).__init__(**kwargs)
 
 
 class ChangeRequestArgs(CodeLocationRequestArgs):
@@ -502,7 +502,7 @@ class ChangeRequestArgs(CodeLocationRequestArgs):
         ``insertLen`` Length of string to insert at location (file, line, col); may be zero.
         ``insertString`` Optional string to insert at location (file, line col).
         """
-        super().__init__(file, line, col)
+        super(ChangeRequestArgs, self).__init__(file, line, col)
         self.deleteLen = deleteLen
         self.insertLen = insertLen
         self.insertString = insertString
@@ -514,4 +514,4 @@ class ChangeRequest(CodeLocationRequest):
         Change request message; value of command field is "change".
         Update the server's view of the file named by argument 'file'.  
         """
-        super().__init__("change", changeRequestArgs)
+        super(ChangeRequest, self).__init__("change", changeRequestArgs)

@@ -1,4 +1,3 @@
-import json
 import os
 import subprocess
 import threading
@@ -10,6 +9,8 @@ try:
 except ImportError:
    import queue
 
+import jsonhelpers
+import servicedefs
 
 class CommClient:
     def getEvent(self): pass
@@ -117,13 +118,13 @@ class NodeCommClient(CommClient):
         if bodlen > 0:
             data = stream.read(bodlen)
             jsonStr = data.decode("utf-8")
-            jsonObj = json.loads(jsonStr)
-            if jsonObj["type"] == "response":
-                msgq.put(jsonObj)
+            msg = jsonhelpers.decode(servicedefs.Message, jsonStr)
+            if msg.type == "response":
+                msgq.put(jsonStr)
             else:
                 print("event:")
-                print(jsonObj)
-                eventq.put(jsonObj)
+                print(jsonStr)
+                eventq.put(jsonStr)
 
     @staticmethod
     def __reader(stream, msgq, eventq):
