@@ -1,56 +1,68 @@
 import collections
-import json
 
+import jsonhelpers
+import servicedefs
 from nodeclient import CommClient
-
-class Location(collections.namedtuple("Location", "line col")):
-    def __init__(self, line, col): pass
+from servicedefs import LineCol
 
 class ServiceProxy:
     def __init__(self, comm=CommClient()):
         self.__comm = comm
 
-    def change(self, path, location=Location(0, 0), removeLength=0, insertString=""):
-        lineColStr = ServiceProxy.__lineColStr(location)
-        insertLength = len(insertString)
-        if insertLength > 0:
-            encodedInsertStr = json.JSONEncoder().encode(insertString)
-            self.__comm.postCmd("change {0} {1} {2} {{{3}}} {4}".format(lineColStr, removeLength, insertLength, encodedInsertStr, path))
-        else:
-            self.__comm.postCmd("change {0} {1} {2} {3}".format(lineColStr, removeLength, insertLength, path))
+    def change(self, path, location=LineCol(1, 1), removeLength=0, insertString=""):
+        req = servicedefs.ChangeRequest(servicedefs.ChangeRequestArgs(path, location.line, location.col,
+                                                                      removeLength, len(insertString), insertString))
+        jsonStr = jsonhelpers.encode(req)
+        self.__comm.postCmd(jsonStr)
 
-    def completions(self, path, location=Location(0, 0), prefix="", onCompleted=None):
-        lineColStr = ServiceProxy.__lineColStr(location)
-        self.__comm.sendCmd(onCompleted, "completions {0} {{{1}}} {2}".format(lineColStr, prefix, path))
+    def completions(self, path, location=LineCol(1, 1), prefix="", onCompleted=None):
+        req = servicedefs.CompletionsRequest(servicedefs.CompletionsRequestArgs(path, location.line, location.col, prefix))
+        jsonStr = jsonhelpers.encode(req)
+        def onCompletedJson(json):
+            obj = jsonhelpers.decode(servicedefs.CompletionsResponse, json)
+            onCompleted(obj)
+        self.__comm.sendCmd(onCompletedJson, jsonStr)
 
-    def definition(self, path, location=Location(0, 0)):
-        lineColStr = ServiceProxy.__lineColStr(location)
-        return self.__comm.sendCmdSync("definition {0} {1}".format(lineColStr, path))
+    def definition(self, path, location=LineCol(1, 1)):
+        req = servicedefs.DefinitionRequest(servicedefs.CodeLocationRequestArgs(path, location.line, location.col))
+        jsonStr = jsonhelpers.encode(req)
+        jsonRespStr = self.__comm.sendCmdSync(jsonStr)
+        return jsonhelpers.decode(servicedefs.DefinitionResponse, jsonRespStr)
 
-    def format(self, path, beginLoc=Location(0, 0), endLoc=Location(0, 0)):
-        beginLineColStr = ServiceProxy.__lineColStr(beginLoc)
-        endLineColStr = ServiceProxy.__lineColStr(endLoc)
-        return self.__comm.sendCmdSync("format {0} {1} {2}".format(beginLineColStr, endLineColStr, path))
+    def format(self, path, beginLoc=LineCol(1, 1), endLoc=LineCol(1, 1)):
+        req = servicedefs.FormatRequest(servicedefs.FormatRequestArgs(path, beginLoc.line, beginLoc.col, endLoc.line, endLoc.col))
+        jsonStr = jsonhelpers.encode(req)
+        jsonRespStr = self.__comm.sendCmdSync(jsonStr)
+        return jsonhelpers.decode(servicedefs.FormatResponse, jsonRespStr)
 
-    def formatOnKey(self, path, location=Location(0, 0), key=""):
-        lineColStr = ServiceProxy.__lineColStr(location)
-        encodedKey = json.JSONEncoder().encode(key)
-        return self.__comm.sendCmdSync("formatonkey {0} {{{1}}} {2}".format(lineColStr, encodedKey, path))
+    def formatOnKey(self, path, location=LineCol(1, 1), key=""):
+        req = servicedefs.FormatOnKeyRequest(servicedefs.FormatOnKeyRequestArgs(path, location.line, location.col, key))
+        jsonStr = jsonhelpers.encode(req)
+        jsonRespStr = self.__comm.sendCmdSync(jsonStr)
+        return jsonhelpers.decode(servicedefs.FormatResponse, jsonRespStr)
 
     def open(self, path):
-        self.__comm.postCmd("open " + path)
+        req = servicedefs.OpenRequest(servicedefs.FileRequestArgs(path))
+        jsonStr = jsonhelpers.encode(req)
+        self.__comm.postCmd(jsonStr)
 
-    def references(self, path, location=Location(0, 0)):
-        lineColStr = ServiceProxy.__lineColStr(location)
-        return self.__comm.sendCmdSync("references {0} {1}".format(lineColStr, path))
+    def references(self, path, location=LineCol(1, 1)):
+        req = servicedefs.ReferencesRequest(servicedefs.CodeLocationRequestArgs(path, location.line, location.col))
+        jsonStr = jsonhelpers.encode(req)
+        jsonRespStr = self.__comm.sendCmdSync(jsonStr)
+        return jsonhelpers.decode(servicedefs.ReferencesResponse, jsonRespStr)
 
     def reload(self, path, alternatePath):
-        cmd = "reload {0} from {1}".format(path, alternatePath)
-        self.__comm.sendCmdSync(cmd)
+        req = servicedefs.ReloadRequest(servicedefs.ReloadRequestArgs(path, alternatePath))
+        jsonStr = jsonhelpers.encode(req)
+        jsonRespStr = self.__comm.sendCmdSync(jsonStr)
+        return jsonhelpers.decode(servicedefs.ReloadResponse, jsonRespStr)
 
-    def rename(self, path, location=Location(0, 0)):
-        lineColStr = ServiceProxy.__lineColStr(location)
-        return self.__comm.sendCmdSync("rename {0} {1}".format(lineColStr, path))
+    def rename(self, path, location=LineCol(1, 1)):
+        req = servicedefs.RenameRequest(servicedefs.CodeLocationRequestArgs(path, location.line, location.col))
+        jsonStr = jsonhelpers.encode(req)
+        jsonRespStr = self.__comm.sendCmdSync(jsonStr)
+        return jsonhelpers.decode(servicedefs.RenameResponse, jsonRespStr)
 
     def requestGetError(self, delay=0, pathList=[]):
         fileList = ""
@@ -58,18 +70,32 @@ class ServiceProxy:
         for path in pathList:
             fileList += delimit + path
             delimit = ";"
-        self.__comm.postCmd("geterr {0} {1}".format(delay, fileList))
+        req = servicedefs.GeterrRequest(servicedefs.GeterrRequestArgs(fileList, delay))
+        jsonStr = jsonhelpers.encode(req)
+        self.__comm.postCmd(jsonStr)
 
-    def type(self, path, location=Location(0, 0)):
-        lineColStr = ServiceProxy.__lineColStr(location)
-        return self.__comm.sendCmdSync("type {0} {1}".format(lineColStr, path))
+    def type(self, path, location=LineCol(1, 1)):
+        req = servicedefs.TypeRequest(servicedefs.CodeLocationRequestArgs(path, location.line, location.col))
+        jsonStr = jsonhelpers.encode(req)
+        jsonRespStr = self.__comm.sendCmdSync(jsonStr)
+        return jsonhelpers.decode(servicedefs.TypeResponse, jsonRespStr)
 
-    def quickInfo(self, path, location=Location(0, 0), onCompleted=None):
-        lineColStr = ServiceProxy.__lineColStr(location)
-        self.__comm.sendCmd(onCompleted, "quickinfo {0} {1}".format(lineColStr, path))
+    def quickInfo(self, path, location=LineCol(1, 1), onCompleted=None):
+        req = servicedefs.QuickInfoRequest(servicedefs.CodeLocationRequestArgs(path, location.line, location.col))
+        jsonStr = jsonhelpers.encode(req)
+        def onCompletedJson(json):
+            obj = jsonhelpers.decode(servicedefs.QuickInfoResponse, json)
+            onCompleted(obj)
+        self.__comm.sendCmd(onCompletedJson, jsonStr)
 
-    @staticmethod
-    def __lineColStr(location):
-        return "{0} {1}".format(str(location.line + 1), str(location.col + 1))
+    def getEvent(self):
+        event = None
+        evJsonStr = self.__comm.getEvent()
+        if not evJsonStr is None:
+            event = jsonhelpers.decode(servicedefs.Event, evJsonStr)
+            if event.event == "syntaxDiag" or event.event == "semanticDiag":
+                event = jsonhelpers.decode(servicedefs.DiagEvent, evJsonStr)
+        return event
+
 
 
