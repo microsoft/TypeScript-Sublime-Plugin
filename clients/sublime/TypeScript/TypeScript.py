@@ -66,12 +66,22 @@ def getLocationFromRegion(view, region):
 
 def getLocationFromPosition(view, position):
     """
-    Returns the Location tuple of the given text position
+    Returns the LineCol object of the given text position
     """
     cursor = view.rowcol(position)
-    line = cursor[0]
-    col = cursor[1]
-    return Location(line, col)
+    line = cursor[0] + 1
+    col = cursor[1] + 1
+    return LineCol(line, col)
+
+def extractLineCol(lineColumn):
+    """
+    Destructure line and column tuple from LineColumn object
+    convert 1-based line,col to zero-based line,col
+    ``lineColumn`` LineColumn object
+    """
+    line = lineColumn.line - 1
+    col = lineColumn.col - 1
+    return (line, col)
 
 
 # per-file, globally-accessible information
@@ -248,9 +258,6 @@ class EditorClient:
     def hasErrors(self, filename):
         clientInfo = self.getOrAddFile(filename)
         return (len(clientInfo.errors['syntacticDiag']) > 0) or (len(clientInfo.errors['semanticDiag']) > 0)
-
-    def getEvent(self):
-        return self.nodeClient.getEvent()
 
 
 # per-file info that will only be accessible from TypeScriptListener instance
@@ -462,12 +469,12 @@ class TypeScriptListener(sublime_plugin.EventListener):
         return result
 
     # error messages arrived from the server; show them in view
-    def showErrorMsgs(self, errs, syntactic):
-        filename = errs['file']
+    def showErrorMsgs(self, diagEvtBody, syntactic):
+        filename = diagEvtBody.file
         if os.name == 'nt':
            filename = filename.replace('/', '\\')
         print("SEM!!! " + filename)
-        diags = errs['diagnostics']
+        diags = diagEvtBody.diagnostics
         info = self.fileMap.get(filename)
         if info:
             view = info.view
@@ -482,10 +489,10 @@ class TypeScriptListener(sublime_plugin.EventListener):
                 clientInfo.errors[regionKey] = []
                 errRegions = []
                 for diag in diags:
-                    minlc = diag['min']
+                    minlc = diag.min
                     (l, c) = extractLineCol(minlc)
-                    text = diag['text']
-                    charCount = diag['len']
+                    text = diag.text
+                    charCount = diag.len
                     start = view.text_point(l, c)
                     end = start + charCount
                     if (end <= view.size()):
@@ -503,16 +510,16 @@ class TypeScriptListener(sublime_plugin.EventListener):
     # event arrived from the server; call appropriate handler
     def dispatchEvent(self, ev):
         print("dispatch event")
-        evtype = ev['event']
+        evtype = ev.event
         if evtype == 'syntaxDiag':
-            self.showErrorMsgs(ev['body'], True)
+            self.showErrorMsgs(ev.body, syntactic=True)
         elif evtype == 'semanticDiag':
-            self.showErrorMsgs(ev['body'], False)            
+            self.showErrorMsgs(ev.body, syntactic=False)
 
     # set timer to go off when selection is idle
     def setOnSelectionIdleTimer(self, ms):
         self.pendingSelectionTimeout+=1
-        sublime.set_timeout(self.handleSelectionTimeout, ms)                
+        sublime.set_timeout(self.handleSelectionTimeout, ms)
         
     def handleSelectionTimeout(self):
         self.pendingSelectionTimeout-=1
@@ -541,7 +548,7 @@ class TypeScriptListener(sublime_plugin.EventListener):
     # check the event queue and dispatch any events
     def onIdle(self):
         view = active_view()
-        ev = cli.getEvent()
+        ev = cli.service.getEvent()
         if ev is not None:
             print("idle got event")
             self.dispatchEvent(ev)
@@ -862,14 +869,14 @@ class TypescriptGoToTypeCommand(sublime_plugin.TextCommand):
                 sublime.active_window().open_file('{0}:{1}:{2}'.format(filename, minlc.line or 0, minlc.col or 0), 
                                                   sublime.ENCODED_POSITION)
 
-class FinishRenameArgs:
+class FinishRenameCommandArgs:
     def __init__(self, newName, outerLocs):
         self.newName = newName
         self.outerLocs = outerLocs
 
     @staticmethod
     def fromDict(newName, outerLocs):
-        return FinishRenameArgs(
+        return FinishRenameCommandArgs(
             newName, 
             jsonhelpers.fromDict(servicedefs.FileLocations, outerLocs))
 
@@ -885,7 +892,7 @@ class TypescriptRenameCommand(sublime_plugin.TextCommand):
             def on_cancel():
                 return 
             def on_done(newName):
-                args = FinishRenameArgs(newName, outerLocs)
+                args = FinishRenameCommandArgs(newName, outerLocs)
                 argsJsonStr = jsonhelpers.encode(args)
                 self.view.run_command('typescript_finish_rename', { "argsJson": argsJsonStr })
             if len(outerLocs) > 0:
@@ -897,7 +904,7 @@ class TypescriptRenameCommand(sublime_plugin.TextCommand):
 # on_done is called by input panel for new name
 class TypescriptFinishRenameCommand(sublime_plugin.TextCommand):
     def run(self, text, argsJson=""):
-        args = jsonhelpers.decode(FinishRenameArgs, argsJson)
+        args = jsonhelpers.decode(FinishRenameCommandArgs, argsJson)
         newName = args.newName
         outerLocs = args.outerLocs
         if len(outerLocs) > 0:
@@ -906,9 +913,9 @@ class TypescriptFinishRenameCommand(sublime_plugin.TextCommand):
                 innerLocs = outerLoc.locs
                 for innerLoc in innerLocs:
                     minlc = innerLoc.min
-                    (minl, minc) = extractLineCol2(minlc)
+                    (minl, minc) = extractLineCol(minlc)
                     limlc = innerLoc.lim
-                    (liml, limc) = extractLineCol2(limlc)
+                    (liml, limc) = extractLineCol(limlc)
                     applyEdit(text, self.view, minl, minc, liml, 
                               limc, ntext=newName)
 
@@ -927,6 +934,18 @@ def getRefView(create=True):
         refView.set_scratch(True)
         return refView
 
+class FindReferencesCommandArgs:
+    def __init__(self, filename, line, referencesRespBody):
+        self.filename = filename
+        self.line = line
+        self.referencesRespBody = referencesRespBody
+
+    @staticmethod
+    def fromDict(filename, line, referencesRespBody):
+        return FindReferencesCommandArgs(
+            filename,
+            line,
+            jsonhelpers.fromDict(servicedefs.ReferencesResponseBody, referencesRespBody))
 
 # find references command
 class TypescriptFindReferencesCommand(sublime_plugin.TextCommand):
@@ -937,33 +956,11 @@ class TypescriptFindReferencesCommand(sublime_plugin.TextCommand):
             pos = self.view.sel()[0].begin()
             cursor = self.view.rowcol(pos)
             line = str(cursor[0] + 1)
-            refsPlusIdInfo = referencesResp.body
-            refs = refsPlusIdInfo.refs
-            refId = refsPlusIdInfo.symbolName
-            refIdStart = refsPlusIdInfo.symbolStartCol - 1
-            refDisplayString = refsPlusIdInfo.symbolDisplayString
+            args = FindReferencesCommandArgs(self.view.file_name(), line, referencesResp.body)
+            argsJsonStr = jsonhelpers.encode(args)
             refView = getRefView()
-            refView.run_command('typescript_populate_refs', 
-                                {
-                                    "refId" : refId, 
-                                    "refDisplayString" : refDisplayString, 
-                                    "refs": refs, 
-                                    "line": line, 
-                                    "filename" : self.view.file_name()
-                                })
+            refView.run_command('typescript_populate_refs', { "argsJson": argsJsonStr })
 
-
-# destructure line and column tuple from JSON-parsed location info
-# convert 1-based line,col to zero-based line,col
-def extractLineCol(lc):
-    line = lc['line']-1
-    col = lc['col']-1
-    return (line, col)
-
-def extractLineCol2(lc):
-    line = lc.line - 1
-    col = lc.col - 1
-    return (line, col)
 
 # place the caret on the currently-referenced line and
 # update the reference line to go to next
@@ -1040,7 +1037,14 @@ def highlightIds(view, refId):
 # TODO: generalize this to populate any type of references file
 # (such as build errors)
 class TypescriptPopulateRefs(sublime_plugin.TextCommand):
-    def run(self, text, refId="", refDisplayString="", refs=[], line=0, filename=""):
+    def run(self, text, argsJson):
+        args = jsonhelpers.decode(FindReferencesCommandArgs, argsJson)
+        filename = args.filename
+        line = args.line
+        refDisplayString = args.referencesRespBody.symbolDisplayString
+        refId = args.referencesRespBody.symbolName
+        refs = args.referencesRespBody.refs
+
         fileCount = 0
         matchCount = 0
         self.view.set_read_only(False)
@@ -1058,7 +1062,7 @@ class TypescriptPopulateRefs(sublime_plugin.TextCommand):
             openview = None
             prevLine = None
             for ref in refs:
-                filename = ref['file']
+                filename = ref.file
                 if prevFilename != filename:
                     print("refs from " + filename)
                     fileCount+=1
@@ -1066,7 +1070,7 @@ class TypescriptPopulateRefs(sublime_plugin.TextCommand):
                         self.view.insert(text, self.view.sel()[0].begin(), "\n")
                     self.view.insert(text, self.view.sel()[0].begin(), filename + ":\n")
                     prevFilename = filename
-                minlc = ref['min']
+                minlc = ref.min
                 (l, c) = extractLineCol(minlc)
                 pos = self.view.sel()[0].begin()
                 cursor = self.view.rowcol(pos)
@@ -1078,7 +1082,7 @@ class TypescriptPopulateRefs(sublime_plugin.TextCommand):
                     mapping = refInfo.getMapping(prevLine)
                     mapping.setNextLine(line)
                 prevLine = line
-                content = ref['lineText']
+                content = ref.lineText
                 displayRef = "    {0}:  {1}\n".format(l + 1, content)
                 matchCount+=1
                 self.view.insert(text, self.view.sel()[0].begin(), displayRef)
@@ -1108,19 +1112,17 @@ def applyEdit(text, view, minl, minc, liml, limc, ntext=""):
         view.erase(text, region)
     if (len(ntext) > 0):
         view.insert(text, begin, ntext)
-    
+
+
 # apply a set of edits to a view
-def applyFormattingChanges(text, view, changes):
-    n = len(changes)
-    for i in range(n - 1, -1, -1):
-        change = changes[i]
-        minlc = change['min']
-        (minLine, minCol) = extractLineCol(minlc)
-        limlc = change['lim']
-        (limLine, limCol) = extractLineCol(limlc)
-        newText = change['newText']
-        applyEdit(text, view, minLine, minCol, 
-                  limLine, limCol, ntext=newText)
+def applyFormattingChanges(text, view, codeEdits):
+    for codeEdit in codeEdits[::-1]:
+        minlc = codeEdit.min
+        (minl, minc) = extractLineCol(minlc)
+        limlc = codeEdit.lim
+        (liml, limc) = extractLineCol(limlc)
+        newText = codeEdit.newText
+        applyEdit(text, view, minl, minc, liml, limc, ntext=newText)
 
 
 # format on ";", "}", or "\n"; called by typing these keys in a ts file
@@ -1136,19 +1138,19 @@ class TypescriptFormatOnKey(sublime_plugin.TextCommand):
            clientInfo = cli.getOrAddFile(self.view.file_name())
            clientInfo.changeCount = self.view.change_count()
         checkUpdateView(self.view)
-        data = cli.service.formatOnKey(self.view.file_name(), getLocationFromView(self.view), key)
-        if data['success']:
-            changes = data['body']
-            applyFormattingChanges(text, self.view, changes)
+        formatResp = cli.service.formatOnKey(self.view.file_name(), getLocationFromView(self.view), key)
+        if formatResp.success:
+            codeEdits = formatResp.body
+            applyFormattingChanges(text, self.view, codeEdits)
 
 
 # format a range of locations in the view
 def formatRange(text, view, begin, end):
     checkUpdateView(view)
-    data = cli.service.format(view.file_name(), getLocationFromPosition(view, begin), getLocationFromPosition(view, end))
-    if data['success']:
-        changes = data['body']
-        applyFormattingChanges(text, view, changes)
+    formatResp = cli.service.format(view.file_name(), getLocationFromPosition(view, begin), getLocationFromPosition(view, end))
+    if formatResp.success:
+        codeEdits = formatResp.body
+        applyFormattingChanges(text, view, codeEdits)
     if not cli.ST2():
         clientInfo = cli.getOrAddFile(view.file_name())
         clientInfo.changeCount = view.change_count()
