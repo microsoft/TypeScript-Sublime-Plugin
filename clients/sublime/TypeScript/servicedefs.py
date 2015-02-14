@@ -10,13 +10,13 @@ class Message(object):
 
 
 class Request(Message):
-    def __init__(self, command, arguments=None):
+    def __init__(self, command, seq, arguments=None):
         """ 
         Client-initiated request message
         ``command`` The command to execute
         ``arguments`` Object containing arguments for the command
         """
-        super(Request, self).__init__(0, "request")
+        super(Request, self).__init__(seq, "request")
         self.command = command
         self.arguments = arguments
 
@@ -55,11 +55,11 @@ class FileRequestArgs(object):
 
 
 class FileRequest(Request):
-    def __init__(self, command, fileRequestArgs):
+    def __init__(self, command, seq, fileRequestArgs):
         """
         Request whose sole parameter is a file name
         """
-        super(FileRequest, self).__init__(command, fileRequestArgs)
+        super(FileRequest, self).__init__(command, seq, fileRequestArgs)
 
 
 class CodeLocationRequestArgs(FileRequestArgs):
@@ -76,21 +76,21 @@ class CodeLocationRequestArgs(FileRequestArgs):
 
 
 class CodeLocationRequest(Request):
-    def __init__(self, command, codeLocationRequestArgs):
+    def __init__(self, command, seq, codeLocationRequestArgs):
         """
         A request whose arguments specify a code location (file, line, col)
         """
-        super(CodeLocationRequest, self).__init__(command, codeLocationRequestArgs)
+        super(CodeLocationRequest, self).__init__(command, seq, codeLocationRequestArgs)
 
 
 class DefinitionRequest(CodeLocationRequest):
-    def __init__(self, codeLocationRequestArgs):
+    def __init__(self, seq, codeLocationRequestArgs):
         """
         Go to definition request; value of command field is
         "definition". Return response giving the code locations that
         define the symbol found in file at location line, col.
         """
-        super(DefinitionRequest, self).__init__("definition", codeLocationRequestArgs)
+        super(DefinitionRequest, self).__init__("definition", seq, codeLocationRequestArgs)
 
 
 class LineCol:
@@ -125,13 +125,13 @@ class DefinitionResponse(Response):
 
 
 class ReferencesRequest(CodeLocationRequest):
-    def __init__(self, codeLocationRequestArgs):
+    def __init__(self, seq, codeLocationRequestArgs):
         """
         Find references request; value of command field is
         "references". Return response giving the code locations that
         reference the symbol found in file at location line, col.
         """
-        super(ReferencesRequest, self).__init__("references", codeLocationRequestArgs)
+        super(ReferencesRequest, self).__init__("references", seq, codeLocationRequestArgs)
 
 
 class ReferencesResponseItem(CodeSpan):
@@ -161,14 +161,14 @@ class ReferencesResponse(Response):
 
 
 class RenameRequest(CodeLocationRequest):
-    def __init__(self, codeLocationRequestArgs):
+    def __init__(self, seq, codeLocationRequestArgs):
         """
         Rename request; value of command field is "rename". Return
         response giving the code locations that reference the symbol
         found in file at location line, col. Also return full display
         name of the symbol so that client can print it unambiguously.
         """
-        super(RenameRequest, self).__init__("rename", codeLocationRequestArgs)
+        super(RenameRequest, self).__init__("rename", seq, codeLocationRequestArgs)
 
 
 class RenameInfo:
@@ -206,13 +206,13 @@ class RenameResponse(Response):
 
 
 class TypeRequest(CodeLocationRequest):
-    def __init__(self, codeLocationRequestArgs):
+    def __init__(self, seq, codeLocationRequestArgs):
         """
         Type request; value of command field is "type". Return response
         giving the code locations that define the type of the symbol
         found in file at location line, col.
         """
-        super(TypeRequest, self).__init__("type", codeLocationRequestArgs)
+        super(TypeRequest, self).__init__("type", seq, codeLocationRequestArgs)
 
 
 class TypeResponse(Response): 
@@ -222,7 +222,7 @@ class TypeResponse(Response):
 
 
 class OpenRequest(FileRequest):
-    def __init__(self, fileRequestArgs):
+    def __init__(self, seq, fileRequestArgs):
         """
         Open request; value of command field is "open". Notify the
         server that the client has file open.  The server will not
@@ -231,11 +231,11 @@ class OpenRequest(FileRequest):
         reload messages) when the file changes.
         ``fileRequestArgs`` is of type FileRequestArgs
         """
-        super(OpenRequest, self).__init__("open", fileRequestArgs)
+        super(OpenRequest, self).__init__("open", seq, fileRequestArgs)
 
 
 class CloseRequest(FileRequest):
-    def __init__(self, fileRequestArgs):
+    def __init__(self, seq, fileRequestArgs):
         """
         Close request; value of command field is "close". Notify the
         server that the client has closed a previously open file.  If
@@ -243,18 +243,18 @@ class CloseRequest(FileRequest):
         monitoring the filesystem for changes to file.
         ``fileRequestArgs`` is of type FileRequestArgs
         """
-        super(CloseRequest, self).__init__("close", fileRequestArgs)
+        super(CloseRequest, self).__init__("close", seq, fileRequestArgs)
 
 
 class QuickInfoRequest(CodeLocationRequest):
-    def __init__(self, codeLocationRequestArgs):
+    def __init__(self, seq, codeLocationRequestArgs):
         """
         Quickinfo request; value of command field is
         "quickinfo". Return response giving a quick type and
         documentation string for the symbol found in file at location
         line, col.
         """
-        super(QuickInfoRequest, self).__init__("quickinfo", codeLocationRequestArgs)
+        super(QuickInfoRequest, self).__init__("quickinfo", seq, codeLocationRequestArgs)
 
 
 class QuickInfoResponseBody:
@@ -294,7 +294,7 @@ class FormatRequestArgs(CodeLocationRequestArgs):
 
 
 class FormatRequest(CodeLocationRequest):
-    def __init__(self, formatRequestArgs):
+    def __init__(self, seq, formatRequestArgs):
         """
         Format request; value of command field is "format".  Return
         response giving zero or more edit instructions.  The edit
@@ -302,7 +302,7 @@ class FormatRequest(CodeLocationRequest):
         instructions in reverse to file will result in correctly
         reformatted text.
         """
-        super(FormatRequest, self).__init__("format", formatRequestArgs)
+        super(FormatRequest, self).__init__("format", seq, formatRequestArgs)
 
 
 class FormatOnKeyRequestArgs(CodeLocationRequestArgs):
@@ -316,7 +316,7 @@ class FormatOnKeyRequestArgs(CodeLocationRequestArgs):
 
 
 class FormatOnKeyRequest(CodeLocationRequest):
-    def __init__(self, formatOnKeyRequestArgs):
+    def __init__(self, seq, formatOnKeyRequestArgs):
         """
         Format on key request; value of command field is
         "formatonkey". Given file location and key typed (as string),
@@ -325,7 +325,7 @@ class FormatOnKeyRequest(CodeLocationRequest):
         edit instructions in reverse to file will result in correctly
         reformatted text.
         """
-        super(FormatOnKeyRequest, self).__init__("formatonkey", formatOnKeyRequestArgs)
+        super(FormatOnKeyRequest, self).__init__("formatonkey", seq, formatOnKeyRequestArgs)
 
 
 class CodeEdit:
@@ -371,14 +371,14 @@ class CompletionsRequestArgs(CodeLocationRequestArgs):
 
 
 class CompletionsRequest(CodeLocationRequest):
-    def __init__(self, completionsRequestArgs):
+    def __init__(self, seq, completionsRequestArgs):
         """
         Completions request; value of command field is "completions".
         Given a file location (file, line, col) and a prefix (which may
         be the empty string), return the possible completions that
         begin with prefix.
         """
-        super(CompletionsRequest, self).__init__("completions", completionsRequestArgs)
+        super(CompletionsRequest, self).__init__("completions", seq, completionsRequestArgs)
 
 
 class SymbolDisplayPart:
@@ -426,7 +426,7 @@ class GeterrRequestArgs:
 
 
 class GeterrRequest(Request):
-    def __init__(self, geterrRequestArgs):
+    def __init__(self, seq, geterrRequestArgs):
         """
         Geterr request; value of command field is "geterr". Wait for
         delay milliseconds and then, if during the wait no change or
@@ -437,7 +437,7 @@ class GeterrRequest(Request):
         practice for an editor is to send a file list containing each
         file that is currently visible, in most-recently-used order.
         """
-        super(GeterrRequest, self).__init__("geterr", geterrRequestArgs)
+        super(GeterrRequest, self).__init__("geterr", seq, geterrRequestArgs)
 
 
 class Diagnostic:
@@ -484,14 +484,14 @@ class ReloadRequestArgs(FileRequestArgs):
 
 
 class ReloadRequest(Request):
-    def __init__(self, reloadRequestArgs):
+    def __init__(self, seq, reloadRequestArgs):
         """
         Reload request message; value of command field is "reload".
         Reload contents of file with name given by the 'file' argument
         from temporary file with name given by the 'tmpfile' argument.
         The two names can be identical.
         """
-        super(ReloadRequest, self).__init__("reload", reloadRequestArgs)
+        super(ReloadRequest, self).__init__("reload", seq, reloadRequestArgs)
 
 
 class ReloadResponse(Response):
@@ -514,9 +514,9 @@ class ChangeRequestArgs(CodeLocationRequestArgs):
 
 
 class ChangeRequest(CodeLocationRequest):
-    def __init__(self, changeRequestArgs):
+    def __init__(self, seq, changeRequestArgs):
         """
         Change request message; value of command field is "change".
         Update the server's view of the file named by argument 'file'.  
         """
-        super(ChangeRequest, self).__init__("change", changeRequestArgs)
+        super(ChangeRequest, self).__init__("change", seq, changeRequestArgs)

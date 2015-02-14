@@ -2,6 +2,7 @@ import os
 import subprocess
 import threading
 import time
+import json
 
 # queue module name changed from Python 2 to 3
 try: 
@@ -64,23 +65,52 @@ class NodeCommClient(CommClient):
         self.__debugProc = subprocess.Popen(["node", "debug", file],
                                      stdin=subprocess.PIPE, stdout=subprocess.PIPE)
 
-    def sendCmd(self, cb, cmd):
+    def makeTimeoutMsg(self, cmd, seq):
+       jsonDict = json.loads(cmd)
+       timeoutMsg = {
+          "seq": 0,
+          "type": "response",
+          "success": False,
+          "request_seq": seq,
+          "command": jsonDict["command"],
+          "message": "timeout"
+       }
+       return timeoutMsg
+
+    def sendCmd(self, cb, cmd, seq):
         """
         send single-line command string; no sequence number; wait for response
         this assumes stdin/stdout; for TCP, need to add correlation with sequence numbers
         """
         self.postCmd(cmd)
-        data = self.__msgq.get(block=True)
-        if cb:
-            cb(data)
-
-    def sendCmdSync(self, cmd):
+        reqSeq = -1
+        try:
+           while reqSeq < seq:
+              data = self.__msgq.get(True,1)
+              dict = json.loads(data)
+              reqSeq = dict['request_seq']
+           if cb:
+              cb(dict)
+        except queue.Empty:
+           print("queue timeout")
+           if (cb):
+              cb(self.makeTimeoutMsg(cmd, seq))
+     
+    def sendCmdSync(self, cmd, seq):
         """
         Sends the command and wait for the result and returns it
         """
         self.postCmd(cmd)
-        data = self.__msgq.get(block=True)
-        return data
+        reqSeq = -1
+        try: 
+           while reqSeq < seq:
+              data = self.__msgq.get(True,1)
+              dict = json.loads(data)
+              reqSeq = dict['request_seq']
+           return dict
+        except queue.Empty:
+           print("queue timeout")
+           return self.makeTimeoutMsg(cmd)
 
     def postCmd(self, cmd):
         """
