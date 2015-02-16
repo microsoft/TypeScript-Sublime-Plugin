@@ -110,7 +110,7 @@ class NodeCommClient(CommClient):
            return dict
         except queue.Empty:
            print("queue timeout")
-           return self.makeTimeoutMsg(cmd)
+           return self.makeTimeoutMsg(cmd, seq)
 
     def postCmd(self, cmd):
         """
