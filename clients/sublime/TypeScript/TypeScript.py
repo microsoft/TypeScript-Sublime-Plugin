@@ -724,11 +724,15 @@ class TypeScriptListener(sublime_plugin.EventListener):
         if completionsResp.success:
             completions = []
             rawCompletions = completionsResp.body
-            for rawCompletion in rawCompletions:
-                name = rawCompletion.name
-                completion = (name + "\t" + rawCompletion.kind, name)
-                completions.append(completion)
-            self.pendingCompletions = completions
+            if rawCompletions:
+                for rawCompletion in rawCompletions:
+                    name = rawCompletion.name
+                    completion = (name + "\t" + rawCompletion.kind, name)
+                    completions.append(completion)
+                self.pendingCompletions = completions
+            else:
+                print(completionsResp)
+                self.pendingCompletions = []
         else:
             self.pendingCompletions = []
 
