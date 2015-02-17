@@ -209,7 +209,7 @@ class EditorClient:
         procFile = settings.get('typescript_proc_file')
         if not procFile:
             # otherwise, get tsserver.js from package directory
-            procFile = os.path.join(dirpath, "tsserver.js")
+            procFile = os.path.join(dirpath, "tsserver/tsserver.js")
         print("spawning node module: " + procFile)
         
         self.nodeClient = NodeCommClient(procFile)
