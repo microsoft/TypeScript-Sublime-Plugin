@@ -103,4 +103,7 @@ class ServiceProxy:
         return event
 
 
-
+    def saveto(self, path, alternatePath):
+        req = servicedefs.SavetoRequest(self.incrSeq(), servicedefs.ReloadRequestArgs(path, alternatePath))
+        jsonStr = jsonhelpers.encode(req)
+        self.__comm.postCmd(jsonStr)        

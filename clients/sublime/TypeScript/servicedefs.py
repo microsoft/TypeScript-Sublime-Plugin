@@ -135,16 +135,17 @@ class ReferencesRequest(CodeLocationRequest):
 
 
 class ReferencesResponseItem(CodeSpan):
-    def __init__(self, lineText, **kwargs):
+    def __init__(self, lineText, isWriteAccess, **kwargs):
         """
         Text of line containing the reference
         """
         super(ReferencesResponseItem, self).__init__(**kwargs)
         self.lineText = lineText
+        self.isWriteAccess = isWriteAccess
 
 
 class ReferencesResponseBody:
-    def __init__(self, refs, symbolName, symbolStartCol, symbolDisplayString):
+    def __init__(self, refs, symbolName, symbolStartCol, symbolDisplayString, **kwargs):
         self.refs = [ReferencesResponseItem(**ri) for ri in refs]
         self.symbolName = symbolName
         self.symbolStartCol = symbolStartCol
@@ -172,7 +173,7 @@ class RenameRequest(CodeLocationRequest):
 
 
 class RenameInfo:
-    def __init__(self, fullDisplayName, **kwargs):
+    def __init__(self, canRename, displayName, fullDisplayName, kind, kindModifiers, localizedErrorMessage = None, **kwargs):
         """
         Information about the item to be renamed.
         ``fullDisplayName`` Full display name of item to be renamed
@@ -520,3 +521,13 @@ class ChangeRequest(CodeLocationRequest):
         Update the server's view of the file named by argument 'file'.  
         """
         super(ChangeRequest, self).__init__("change", seq, changeRequestArgs)
+
+class SavetoRequest(Request):
+    def __init__(self, seq, reloadRequestArgs):
+        """
+        Reload request message; value of command field is "reload".
+        Reload contents of file with name given by the 'file' argument
+        from temporary file with name given by the 'tmpfile' argument.
+        The two names can be identical.
+        """
+        super(SavetoRequest, self).__init__("saveto", seq, reloadRequestArgs)

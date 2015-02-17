@@ -203,13 +203,13 @@ def buildRefInfo(refInfoV):
 # hold information that must be accessible globally; this is a singleton
 class EditorClient:
     def __init__(self):
-        # retrieve the path to protocol.js
+        # retrieve the path to tsserver.js
         # first see if user set the path to the file
         settings = sublime.load_settings('Preferences.sublime-settings')
         procFile = settings.get('typescript_proc_file')
         if not procFile:
-            # otherwise, get protocol.js from package directory
-            procFile = os.path.join(dirpath, "protocol.js")
+            # otherwise, get tsserver.js from package directory
+            procFile = os.path.join(dirpath, "tsserver.js")
         print("spawning node module: " + procFile)
         
         self.nodeClient = NodeCommClient(procFile)
@@ -731,7 +731,6 @@ class TypeScriptListener(sublime_plugin.EventListener):
                     completions.append(completion)
                 self.pendingCompletions = completions
             else:
-                print(completionsResp)
                 self.pendingCompletions = []
         else:
             self.pendingCompletions = []
@@ -768,8 +767,7 @@ class TypeScriptListener(sublime_plugin.EventListener):
 # TODO: safe temp file name on Windows
 class TypescriptSave(sublime_plugin.TextCommand):
     def run(self, text):
-        cli.nodeClient.postCmd("save {0} to /tmp/curstate".format(self.view.file_name()))
-
+        cli.service.saveto(self.view.file_name(), "/tmp/curstate")
 
 # command currently called only from event handlers
 class TypescriptQuickInfo(sublime_plugin.TextCommand):

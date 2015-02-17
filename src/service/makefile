@@ -9,7 +9,7 @@ it: $(SRC)
 install:
 	-rm -rf ../../clients/sublime/TypeScript/node_modules
 	cp -r ../../node_modules ../../clients/sublime/TypeScript
-	cp protocol.js ../../clients/sublime/TypeScript
+	cp ~/src/TypeScript/built/local/tsserver.js ../../clients/sublime/TypeScript
 
 clean: 
 	-rm *.js
