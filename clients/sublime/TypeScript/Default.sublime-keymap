@@ -105,10 +105,16 @@
           {"key": "selector", "operator": "equal", "operand": "source.ts" }
       ]
     },
+    { "keys": ["tab"], "command": "next_field",
+      "context": [
+	  { "key": "has_next_field", "operator": "equal", "operand": true }
+      ]
+    },
     { "keys": ["tab"], "command": "typescript_format_line",
       "context": [
+	  { "key": "has_next_field", "operator": "equal", "operand": false },
 	  { "key": "auto_complete_visible","operator": "equal", "operand": false },
-          {"key": "selector", "operator": "equal", "operand": "source.ts" }
+          { "key": "selector", "operator": "equal", "operand": "source.ts" }
       ]
     },
     { "keys": ["tab"], "command": "commit_completion",

@@ -29637,6 +29637,7 @@ var ts;
             CommandNames.Change = "change";
             CommandNames.Close = "close";
             CommandNames.Completions = "completions";
+            CommandNames.CompletionDetails = "completionEntryDetails";
             CommandNames.Definition = "definition";
             CommandNames.Format = "format";
             CommandNames.Formatonkey = "formatonkey";
@@ -29987,22 +29988,25 @@ var ts;
                 }
                 return completions.entries.reduce(function (result, entry) {
                     if (completions.isMemberCompletion || entry.name.indexOf(prefix) == 0) {
-                        var protoEntry = {};
-                        protoEntry.name = entry.name;
-                        protoEntry.kind = entry.kind;
-                        if (entry.kindModifiers && (entry.kindModifiers.length > 0)) {
-                            protoEntry.kindModifiers = entry.kindModifiers;
-                        }
-                        var details = compilerService.languageService.getCompletionEntryDetails(file, position, entry.name);
-                        if (details && (details.documentation) && (details.documentation.length > 0)) {
-                            protoEntry.documentation = details.documentation;
-                        }
-                        if (details && (details.displayParts) && (details.displayParts.length > 0)) {
-                            protoEntry.displayParts = details.displayParts;
-                        }
-                        result.push(protoEntry);
+                        result.push(entry);
                     }
                     return result;
+                }, []);
+            };
+            Session.prototype.getCompletionEntryDetails = function (line, col, entryNames, fileName) {
+                var file = ts.normalizePath(fileName);
+                var project = this.projectService.getProjectForFile(file);
+                if (!project) {
+                    throw Errors.NoProject;
+                }
+                var compilerService = project.compilerService;
+                var position = compilerService.host.lineColToPosition(file, line, col);
+                return entryNames.reduce(function (accum, entryName) {
+                    var details = compilerService.languageService.getCompletionEntryDetails(file, position, entryName);
+                    if (details) {
+                        accum.push(details);
+                    }
+                    return accum;
                 }, []);
             };
             Session.prototype.getDiagnostics = function (delay, fileNames) {
@@ -30183,6 +30187,11 @@ var ts;
                         case CommandNames.Completions: {
                             var completionsArgs = request.arguments;
                             response = this.getCompletions(request.arguments.line, request.arguments.col, completionsArgs.prefix, request.arguments.file);
+                            break;
+                        }
+                        case CommandNames.CompletionDetails: {
+                            var completionDetailsArgs = request.arguments;
+                            response = this.getCompletionEntryDetails(request.arguments.line, request.arguments.col, completionDetailsArgs.entryNames, request.arguments.file);
                             break;
                         }
                         case CommandNames.Geterr: {
