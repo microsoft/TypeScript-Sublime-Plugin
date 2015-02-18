@@ -3,7 +3,7 @@ import collections
 import jsonhelpers
 import servicedefs
 from nodeclient import CommClient
-from servicedefs import LineCol
+from servicedefs import Location
 
 class ServiceProxy:
     def __init__(self, comm=CommClient()):
@@ -15,13 +15,14 @@ class ServiceProxy:
         self.seq += 1
         return temp
 
-    def change(self, path, location=LineCol(1, 1), removeLength=0, insertString=""):
+    def change(self, path, location=Location(1, 1), endLocation=Location(1,1), insertString=""):
         req = servicedefs.ChangeRequest(self.incrSeq(),servicedefs.ChangeRequestArgs(path, location.line, location.col,
-                                                                                     removeLength, len(insertString), insertString))
+                                                                                     endLocation.line, endLocation.col,
+                                                                                     insertString))
         jsonStr = jsonhelpers.encode(req)
         self.__comm.postCmd(jsonStr)
 
-    def completions(self, path, location=LineCol(1, 1), prefix="", onCompleted=None):
+    def completions(self, path, location=Location(1, 1), prefix="", onCompleted=None):
         req = servicedefs.CompletionsRequest(self.incrSeq(),
                                              servicedefs.CompletionsRequestArgs(path, location.line, location.col, prefix))
         jsonStr = jsonhelpers.encode(req)
@@ -30,20 +31,20 @@ class ServiceProxy:
             onCompleted(obj)
         self.__comm.sendCmd(onCompletedJson, jsonStr, req.seq)
 
-    def definition(self, path, location=LineCol(1, 1)):
-        req = servicedefs.DefinitionRequest(self.incrSeq(), servicedefs.CodeLocationRequestArgs(path, location.line, location.col))
+    def definition(self, path, location=Location(1, 1)):
+        req = servicedefs.DefinitionRequest(self.incrSeq(), servicedefs.FileLocationRequestArgs(path, location.line, location.col))
         jsonStr = jsonhelpers.encode(req)
         responseDict = self.__comm.sendCmdSync(jsonStr, req.seq)
         return jsonhelpers.fromDict(servicedefs.DefinitionResponse,responseDict)
 
-    def format(self, path, beginLoc=LineCol(1, 1), endLoc=LineCol(1, 1)):
+    def format(self, path, beginLoc=Location(1, 1), endLoc=Location(1, 1)):
         req = servicedefs.FormatRequest(self.incrSeq(),
                                         servicedefs.FormatRequestArgs(path, beginLoc.line, beginLoc.col, endLoc.line, endLoc.col))
         jsonStr = jsonhelpers.encode(req)
         responseDict = self.__comm.sendCmdSync(jsonStr, req.seq)
         return jsonhelpers.fromDict(servicedefs.FormatResponse, responseDict)
 
-    def formatOnKey(self, path, location=LineCol(1, 1), key=""):
+    def formatOnKey(self, path, location=Location(1, 1), key=""):
         req = servicedefs.FormatOnKeyRequest(self.incrSeq(),
                                              servicedefs.FormatOnKeyRequestArgs(path, location.line, location.col, key))
         jsonStr = jsonhelpers.encode(req)
@@ -55,8 +56,8 @@ class ServiceProxy:
         jsonStr = jsonhelpers.encode(req)
         self.__comm.postCmd(jsonStr)
 
-    def references(self, path, location=LineCol(1, 1)):
-        req = servicedefs.ReferencesRequest(self.incrSeq(), servicedefs.CodeLocationRequestArgs(path, location.line, location.col))
+    def references(self, path, location=Location(1, 1)):
+        req = servicedefs.ReferencesRequest(self.incrSeq(), servicedefs.FileLocationRequestArgs(path, location.line, location.col))
         jsonStr = jsonhelpers.encode(req)
         responseDict = self.__comm.sendCmdSync(jsonStr, req.seq)
         return jsonhelpers.fromDict(servicedefs.ReferencesResponse, responseDict)
@@ -67,8 +68,8 @@ class ServiceProxy:
         responseDict = self.__comm.sendCmdSync(jsonStr, req.seq)
         return jsonhelpers.fromDict(servicedefs.ReloadResponse, responseDict)
 
-    def rename(self, path, location=LineCol(1, 1)):
-        req = servicedefs.RenameRequest(self.incrSeq(), servicedefs.CodeLocationRequestArgs(path, location.line, location.col))
+    def rename(self, path, location=Location(1, 1)):
+        req = servicedefs.RenameRequest(self.incrSeq(), servicedefs.FileLocationRequestArgs(path, location.line, location.col))
         jsonStr = jsonhelpers.encode(req)
         responseDict = self.__comm.sendCmdSync(jsonStr, req.seq)
         return jsonhelpers.fromDict(servicedefs.RenameResponse, responseDict)
@@ -78,14 +79,14 @@ class ServiceProxy:
         jsonStr = jsonhelpers.encode(req)
         self.__comm.postCmd(jsonStr)
 
-    def type(self, path, location=LineCol(1, 1)):
-        req = servicedefs.TypeRequest(self.incrSeq(), servicedefs.CodeLocationRequestArgs(path, location.line, location.col))
+    def type(self, path, location=Location(1, 1)):
+        req = servicedefs.TypeRequest(self.incrSeq(), servicedefs.FileLocationRequestArgs(path, location.line, location.col))
         jsonStr = jsonhelpers.encode(req)
         responseDict = self.__comm.sendCmdSync(jsonStr, req.seq)
         return jsonhelpers.fromDict(servicedefs.TypeResponse, responseDict)
 
-    def quickInfo(self, path, location=LineCol(1, 1), onCompleted=None):
-        req = servicedefs.QuickInfoRequest(self.incrSeq(), servicedefs.CodeLocationRequestArgs(path, location.line, location.col))
+    def quickInfo(self, path, location=Location(1, 1), onCompleted=None):
+        req = servicedefs.QuickInfoRequest(self.incrSeq(), servicedefs.FileLocationRequestArgs(path, location.line, location.col))
         jsonStr = jsonhelpers.encode(req)
         def onCompletedJson(json):
             obj = jsonhelpers.fromDict(servicedefs.QuickInfoResponse, json)
@@ -99,7 +100,7 @@ class ServiceProxy:
         if not evJsonStr is None:
             event = jsonhelpers.decode(servicedefs.Event, evJsonStr)
             if event.event == "syntaxDiag" or event.event == "semanticDiag":
-                event = jsonhelpers.decode(servicedefs.DiagEvent, evJsonStr)
+                event = jsonhelpers.decode(servicedefs.DiagnosticEvent, evJsonStr)
         return event
 
 

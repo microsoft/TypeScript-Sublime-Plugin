@@ -71,7 +71,7 @@ def getLocationFromPosition(view, position):
     cursor = view.rowcol(position)
     line = cursor[0] + 1
     col = cursor[1] + 1
-    return LineCol(line, col)
+    return Location(line, col)
 
 def extractLineCol(lineColumn):
     """
@@ -348,8 +348,9 @@ def sendReplaceChangesForRegions(view, regions, insertString):
     if cli.ST2():
        return
     for region in regions:
-        location = getLocationFromRegion(view, region)
-        cli.service.change(view.file_name(), location, region.size(), insertString)
+        location = getLocationFromPosition(view, region.begin())
+        endLocation = getLocationFromPosition(view, region.end())
+        cli.service.change(view.file_name(), location, endLocation, insertString)
 
 def getTempFileName():
    return os.path.join(dirpath, ".tmpbuf")
@@ -491,13 +492,14 @@ class TypeScriptListener(sublime_plugin.EventListener):
                 if diags:
                     for diag in diags:
                         startlc = diag.start
+                        endlc = diag.end
                         (l, c) = extractLineCol(startlc)
+                        (endl, endc) = extractLineCol(endlc)
                         text = diag.text
-                        charCount = diag.len
                         start = view.text_point(l, c)
-                        end = start + charCount
+                        end = view.text_point(endl, endc)
                         if (end <= view.size()):
-                            region = sublime.Region(start, end + 1)
+                            region = sublime.Region(start, end)
                             errRegions.append(region)
                             clientInfo.errors[regionKey].append((region, text))
                 info.hasErrors = cli.hasErrors(filename)

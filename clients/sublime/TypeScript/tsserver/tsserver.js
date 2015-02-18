@@ -1,35 +1,582 @@
-/*! *****************************************************************************
-Copyright (c) Microsoft Corporation. All rights reserved. 
-Licensed under the Apache License, Version 2.0 (the "License"); you may not use
-this file except in compliance with the License. You may obtain a copy of the
-License at http://www.apache.org/licenses/LICENSE-2.0  
- 
-THIS CODE IS PROVIDED ON AN *AS IS* BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
-KIND, EITHER EXPRESS OR IMPLIED, INCLUDING WITHOUT LIMITATION ANY IMPLIED
-WARRANTIES OR CONDITIONS OF TITLE, FITNESS FOR A PARTICULAR PURPOSE, 
-MERCHANTABLITY OR NON-INFRINGEMENT. 
- 
-See the Apache Version 2.0 License for specific language governing permissions
-and limitations under the License.
-***************************************************************************** */
-
 var ts;
 (function (ts) {
+    (function (SyntaxKind) {
+        SyntaxKind[SyntaxKind["Unknown"] = 0] = "Unknown";
+        SyntaxKind[SyntaxKind["EndOfFileToken"] = 1] = "EndOfFileToken";
+        SyntaxKind[SyntaxKind["SingleLineCommentTrivia"] = 2] = "SingleLineCommentTrivia";
+        SyntaxKind[SyntaxKind["MultiLineCommentTrivia"] = 3] = "MultiLineCommentTrivia";
+        SyntaxKind[SyntaxKind["NewLineTrivia"] = 4] = "NewLineTrivia";
+        SyntaxKind[SyntaxKind["WhitespaceTrivia"] = 5] = "WhitespaceTrivia";
+        SyntaxKind[SyntaxKind["ConflictMarkerTrivia"] = 6] = "ConflictMarkerTrivia";
+        SyntaxKind[SyntaxKind["NumericLiteral"] = 7] = "NumericLiteral";
+        SyntaxKind[SyntaxKind["StringLiteral"] = 8] = "StringLiteral";
+        SyntaxKind[SyntaxKind["RegularExpressionLiteral"] = 9] = "RegularExpressionLiteral";
+        SyntaxKind[SyntaxKind["NoSubstitutionTemplateLiteral"] = 10] = "NoSubstitutionTemplateLiteral";
+        SyntaxKind[SyntaxKind["TemplateHead"] = 11] = "TemplateHead";
+        SyntaxKind[SyntaxKind["TemplateMiddle"] = 12] = "TemplateMiddle";
+        SyntaxKind[SyntaxKind["TemplateTail"] = 13] = "TemplateTail";
+        SyntaxKind[SyntaxKind["OpenBraceToken"] = 14] = "OpenBraceToken";
+        SyntaxKind[SyntaxKind["CloseBraceToken"] = 15] = "CloseBraceToken";
+        SyntaxKind[SyntaxKind["OpenParenToken"] = 16] = "OpenParenToken";
+        SyntaxKind[SyntaxKind["CloseParenToken"] = 17] = "CloseParenToken";
+        SyntaxKind[SyntaxKind["OpenBracketToken"] = 18] = "OpenBracketToken";
+        SyntaxKind[SyntaxKind["CloseBracketToken"] = 19] = "CloseBracketToken";
+        SyntaxKind[SyntaxKind["DotToken"] = 20] = "DotToken";
+        SyntaxKind[SyntaxKind["DotDotDotToken"] = 21] = "DotDotDotToken";
+        SyntaxKind[SyntaxKind["SemicolonToken"] = 22] = "SemicolonToken";
+        SyntaxKind[SyntaxKind["CommaToken"] = 23] = "CommaToken";
+        SyntaxKind[SyntaxKind["LessThanToken"] = 24] = "LessThanToken";
+        SyntaxKind[SyntaxKind["GreaterThanToken"] = 25] = "GreaterThanToken";
+        SyntaxKind[SyntaxKind["LessThanEqualsToken"] = 26] = "LessThanEqualsToken";
+        SyntaxKind[SyntaxKind["GreaterThanEqualsToken"] = 27] = "GreaterThanEqualsToken";
+        SyntaxKind[SyntaxKind["EqualsEqualsToken"] = 28] = "EqualsEqualsToken";
+        SyntaxKind[SyntaxKind["ExclamationEqualsToken"] = 29] = "ExclamationEqualsToken";
+        SyntaxKind[SyntaxKind["EqualsEqualsEqualsToken"] = 30] = "EqualsEqualsEqualsToken";
+        SyntaxKind[SyntaxKind["ExclamationEqualsEqualsToken"] = 31] = "ExclamationEqualsEqualsToken";
+        SyntaxKind[SyntaxKind["EqualsGreaterThanToken"] = 32] = "EqualsGreaterThanToken";
+        SyntaxKind[SyntaxKind["PlusToken"] = 33] = "PlusToken";
+        SyntaxKind[SyntaxKind["MinusToken"] = 34] = "MinusToken";
+        SyntaxKind[SyntaxKind["AsteriskToken"] = 35] = "AsteriskToken";
+        SyntaxKind[SyntaxKind["SlashToken"] = 36] = "SlashToken";
+        SyntaxKind[SyntaxKind["PercentToken"] = 37] = "PercentToken";
+        SyntaxKind[SyntaxKind["PlusPlusToken"] = 38] = "PlusPlusToken";
+        SyntaxKind[SyntaxKind["MinusMinusToken"] = 39] = "MinusMinusToken";
+        SyntaxKind[SyntaxKind["LessThanLessThanToken"] = 40] = "LessThanLessThanToken";
+        SyntaxKind[SyntaxKind["GreaterThanGreaterThanToken"] = 41] = "GreaterThanGreaterThanToken";
+        SyntaxKind[SyntaxKind["GreaterThanGreaterThanGreaterThanToken"] = 42] = "GreaterThanGreaterThanGreaterThanToken";
+        SyntaxKind[SyntaxKind["AmpersandToken"] = 43] = "AmpersandToken";
+        SyntaxKind[SyntaxKind["BarToken"] = 44] = "BarToken";
+        SyntaxKind[SyntaxKind["CaretToken"] = 45] = "CaretToken";
+        SyntaxKind[SyntaxKind["ExclamationToken"] = 46] = "ExclamationToken";
+        SyntaxKind[SyntaxKind["TildeToken"] = 47] = "TildeToken";
+        SyntaxKind[SyntaxKind["AmpersandAmpersandToken"] = 48] = "AmpersandAmpersandToken";
+        SyntaxKind[SyntaxKind["BarBarToken"] = 49] = "BarBarToken";
+        SyntaxKind[SyntaxKind["QuestionToken"] = 50] = "QuestionToken";
+        SyntaxKind[SyntaxKind["ColonToken"] = 51] = "ColonToken";
+        SyntaxKind[SyntaxKind["EqualsToken"] = 52] = "EqualsToken";
+        SyntaxKind[SyntaxKind["PlusEqualsToken"] = 53] = "PlusEqualsToken";
+        SyntaxKind[SyntaxKind["MinusEqualsToken"] = 54] = "MinusEqualsToken";
+        SyntaxKind[SyntaxKind["AsteriskEqualsToken"] = 55] = "AsteriskEqualsToken";
+        SyntaxKind[SyntaxKind["SlashEqualsToken"] = 56] = "SlashEqualsToken";
+        SyntaxKind[SyntaxKind["PercentEqualsToken"] = 57] = "PercentEqualsToken";
+        SyntaxKind[SyntaxKind["LessThanLessThanEqualsToken"] = 58] = "LessThanLessThanEqualsToken";
+        SyntaxKind[SyntaxKind["GreaterThanGreaterThanEqualsToken"] = 59] = "GreaterThanGreaterThanEqualsToken";
+        SyntaxKind[SyntaxKind["GreaterThanGreaterThanGreaterThanEqualsToken"] = 60] = "GreaterThanGreaterThanGreaterThanEqualsToken";
+        SyntaxKind[SyntaxKind["AmpersandEqualsToken"] = 61] = "AmpersandEqualsToken";
+        SyntaxKind[SyntaxKind["BarEqualsToken"] = 62] = "BarEqualsToken";
+        SyntaxKind[SyntaxKind["CaretEqualsToken"] = 63] = "CaretEqualsToken";
+        SyntaxKind[SyntaxKind["Identifier"] = 64] = "Identifier";
+        SyntaxKind[SyntaxKind["BreakKeyword"] = 65] = "BreakKeyword";
+        SyntaxKind[SyntaxKind["CaseKeyword"] = 66] = "CaseKeyword";
+        SyntaxKind[SyntaxKind["CatchKeyword"] = 67] = "CatchKeyword";
+        SyntaxKind[SyntaxKind["ClassKeyword"] = 68] = "ClassKeyword";
+        SyntaxKind[SyntaxKind["ConstKeyword"] = 69] = "ConstKeyword";
+        SyntaxKind[SyntaxKind["ContinueKeyword"] = 70] = "ContinueKeyword";
+        SyntaxKind[SyntaxKind["DebuggerKeyword"] = 71] = "DebuggerKeyword";
+        SyntaxKind[SyntaxKind["DefaultKeyword"] = 72] = "DefaultKeyword";
+        SyntaxKind[SyntaxKind["DeleteKeyword"] = 73] = "DeleteKeyword";
+        SyntaxKind[SyntaxKind["DoKeyword"] = 74] = "DoKeyword";
+        SyntaxKind[SyntaxKind["ElseKeyword"] = 75] = "ElseKeyword";
+        SyntaxKind[SyntaxKind["EnumKeyword"] = 76] = "EnumKeyword";
+        SyntaxKind[SyntaxKind["ExportKeyword"] = 77] = "ExportKeyword";
+        SyntaxKind[SyntaxKind["ExtendsKeyword"] = 78] = "ExtendsKeyword";
+        SyntaxKind[SyntaxKind["FalseKeyword"] = 79] = "FalseKeyword";
+        SyntaxKind[SyntaxKind["FinallyKeyword"] = 80] = "FinallyKeyword";
+        SyntaxKind[SyntaxKind["ForKeyword"] = 81] = "ForKeyword";
+        SyntaxKind[SyntaxKind["FunctionKeyword"] = 82] = "FunctionKeyword";
+        SyntaxKind[SyntaxKind["IfKeyword"] = 83] = "IfKeyword";
+        SyntaxKind[SyntaxKind["ImportKeyword"] = 84] = "ImportKeyword";
+        SyntaxKind[SyntaxKind["InKeyword"] = 85] = "InKeyword";
+        SyntaxKind[SyntaxKind["InstanceOfKeyword"] = 86] = "InstanceOfKeyword";
+        SyntaxKind[SyntaxKind["NewKeyword"] = 87] = "NewKeyword";
+        SyntaxKind[SyntaxKind["NullKeyword"] = 88] = "NullKeyword";
+        SyntaxKind[SyntaxKind["ReturnKeyword"] = 89] = "ReturnKeyword";
+        SyntaxKind[SyntaxKind["SuperKeyword"] = 90] = "SuperKeyword";
+        SyntaxKind[SyntaxKind["SwitchKeyword"] = 91] = "SwitchKeyword";
+        SyntaxKind[SyntaxKind["ThisKeyword"] = 92] = "ThisKeyword";
+        SyntaxKind[SyntaxKind["ThrowKeyword"] = 93] = "ThrowKeyword";
+        SyntaxKind[SyntaxKind["TrueKeyword"] = 94] = "TrueKeyword";
+        SyntaxKind[SyntaxKind["TryKeyword"] = 95] = "TryKeyword";
+        SyntaxKind[SyntaxKind["TypeOfKeyword"] = 96] = "TypeOfKeyword";
+        SyntaxKind[SyntaxKind["VarKeyword"] = 97] = "VarKeyword";
+        SyntaxKind[SyntaxKind["VoidKeyword"] = 98] = "VoidKeyword";
+        SyntaxKind[SyntaxKind["WhileKeyword"] = 99] = "WhileKeyword";
+        SyntaxKind[SyntaxKind["WithKeyword"] = 100] = "WithKeyword";
+        SyntaxKind[SyntaxKind["ImplementsKeyword"] = 101] = "ImplementsKeyword";
+        SyntaxKind[SyntaxKind["InterfaceKeyword"] = 102] = "InterfaceKeyword";
+        SyntaxKind[SyntaxKind["LetKeyword"] = 103] = "LetKeyword";
+        SyntaxKind[SyntaxKind["PackageKeyword"] = 104] = "PackageKeyword";
+        SyntaxKind[SyntaxKind["PrivateKeyword"] = 105] = "PrivateKeyword";
+        SyntaxKind[SyntaxKind["ProtectedKeyword"] = 106] = "ProtectedKeyword";
+        SyntaxKind[SyntaxKind["PublicKeyword"] = 107] = "PublicKeyword";
+        SyntaxKind[SyntaxKind["StaticKeyword"] = 108] = "StaticKeyword";
+        SyntaxKind[SyntaxKind["YieldKeyword"] = 109] = "YieldKeyword";
+        SyntaxKind[SyntaxKind["AnyKeyword"] = 110] = "AnyKeyword";
+        SyntaxKind[SyntaxKind["BooleanKeyword"] = 111] = "BooleanKeyword";
+        SyntaxKind[SyntaxKind["ConstructorKeyword"] = 112] = "ConstructorKeyword";
+        SyntaxKind[SyntaxKind["DeclareKeyword"] = 113] = "DeclareKeyword";
+        SyntaxKind[SyntaxKind["GetKeyword"] = 114] = "GetKeyword";
+        SyntaxKind[SyntaxKind["ModuleKeyword"] = 115] = "ModuleKeyword";
+        SyntaxKind[SyntaxKind["RequireKeyword"] = 116] = "RequireKeyword";
+        SyntaxKind[SyntaxKind["NumberKeyword"] = 117] = "NumberKeyword";
+        SyntaxKind[SyntaxKind["SetKeyword"] = 118] = "SetKeyword";
+        SyntaxKind[SyntaxKind["StringKeyword"] = 119] = "StringKeyword";
+        SyntaxKind[SyntaxKind["TypeKeyword"] = 120] = "TypeKeyword";
+        SyntaxKind[SyntaxKind["QualifiedName"] = 121] = "QualifiedName";
+        SyntaxKind[SyntaxKind["ComputedPropertyName"] = 122] = "ComputedPropertyName";
+        SyntaxKind[SyntaxKind["TypeParameter"] = 123] = "TypeParameter";
+        SyntaxKind[SyntaxKind["Parameter"] = 124] = "Parameter";
+        SyntaxKind[SyntaxKind["PropertySignature"] = 125] = "PropertySignature";
+        SyntaxKind[SyntaxKind["PropertyDeclaration"] = 126] = "PropertyDeclaration";
+        SyntaxKind[SyntaxKind["MethodSignature"] = 127] = "MethodSignature";
+        SyntaxKind[SyntaxKind["MethodDeclaration"] = 128] = "MethodDeclaration";
+        SyntaxKind[SyntaxKind["Constructor"] = 129] = "Constructor";
+        SyntaxKind[SyntaxKind["GetAccessor"] = 130] = "GetAccessor";
+        SyntaxKind[SyntaxKind["SetAccessor"] = 131] = "SetAccessor";
+        SyntaxKind[SyntaxKind["CallSignature"] = 132] = "CallSignature";
+        SyntaxKind[SyntaxKind["ConstructSignature"] = 133] = "ConstructSignature";
+        SyntaxKind[SyntaxKind["IndexSignature"] = 134] = "IndexSignature";
+        SyntaxKind[SyntaxKind["TypeReference"] = 135] = "TypeReference";
+        SyntaxKind[SyntaxKind["FunctionType"] = 136] = "FunctionType";
+        SyntaxKind[SyntaxKind["ConstructorType"] = 137] = "ConstructorType";
+        SyntaxKind[SyntaxKind["TypeQuery"] = 138] = "TypeQuery";
+        SyntaxKind[SyntaxKind["TypeLiteral"] = 139] = "TypeLiteral";
+        SyntaxKind[SyntaxKind["ArrayType"] = 140] = "ArrayType";
+        SyntaxKind[SyntaxKind["TupleType"] = 141] = "TupleType";
+        SyntaxKind[SyntaxKind["UnionType"] = 142] = "UnionType";
+        SyntaxKind[SyntaxKind["ParenthesizedType"] = 143] = "ParenthesizedType";
+        SyntaxKind[SyntaxKind["ObjectBindingPattern"] = 144] = "ObjectBindingPattern";
+        SyntaxKind[SyntaxKind["ArrayBindingPattern"] = 145] = "ArrayBindingPattern";
+        SyntaxKind[SyntaxKind["BindingElement"] = 146] = "BindingElement";
+        SyntaxKind[SyntaxKind["ArrayLiteralExpression"] = 147] = "ArrayLiteralExpression";
+        SyntaxKind[SyntaxKind["ObjectLiteralExpression"] = 148] = "ObjectLiteralExpression";
+        SyntaxKind[SyntaxKind["PropertyAccessExpression"] = 149] = "PropertyAccessExpression";
+        SyntaxKind[SyntaxKind["ElementAccessExpression"] = 150] = "ElementAccessExpression";
+        SyntaxKind[SyntaxKind["CallExpression"] = 151] = "CallExpression";
+        SyntaxKind[SyntaxKind["NewExpression"] = 152] = "NewExpression";
+        SyntaxKind[SyntaxKind["TaggedTemplateExpression"] = 153] = "TaggedTemplateExpression";
+        SyntaxKind[SyntaxKind["TypeAssertionExpression"] = 154] = "TypeAssertionExpression";
+        SyntaxKind[SyntaxKind["ParenthesizedExpression"] = 155] = "ParenthesizedExpression";
+        SyntaxKind[SyntaxKind["FunctionExpression"] = 156] = "FunctionExpression";
+        SyntaxKind[SyntaxKind["ArrowFunction"] = 157] = "ArrowFunction";
+        SyntaxKind[SyntaxKind["DeleteExpression"] = 158] = "DeleteExpression";
+        SyntaxKind[SyntaxKind["TypeOfExpression"] = 159] = "TypeOfExpression";
+        SyntaxKind[SyntaxKind["VoidExpression"] = 160] = "VoidExpression";
+        SyntaxKind[SyntaxKind["PrefixUnaryExpression"] = 161] = "PrefixUnaryExpression";
+        SyntaxKind[SyntaxKind["PostfixUnaryExpression"] = 162] = "PostfixUnaryExpression";
+        SyntaxKind[SyntaxKind["BinaryExpression"] = 163] = "BinaryExpression";
+        SyntaxKind[SyntaxKind["ConditionalExpression"] = 164] = "ConditionalExpression";
+        SyntaxKind[SyntaxKind["TemplateExpression"] = 165] = "TemplateExpression";
+        SyntaxKind[SyntaxKind["YieldExpression"] = 166] = "YieldExpression";
+        SyntaxKind[SyntaxKind["SpreadElementExpression"] = 167] = "SpreadElementExpression";
+        SyntaxKind[SyntaxKind["OmittedExpression"] = 168] = "OmittedExpression";
+        SyntaxKind[SyntaxKind["TemplateSpan"] = 169] = "TemplateSpan";
+        SyntaxKind[SyntaxKind["Block"] = 170] = "Block";
+        SyntaxKind[SyntaxKind["VariableStatement"] = 171] = "VariableStatement";
+        SyntaxKind[SyntaxKind["EmptyStatement"] = 172] = "EmptyStatement";
+        SyntaxKind[SyntaxKind["ExpressionStatement"] = 173] = "ExpressionStatement";
+        SyntaxKind[SyntaxKind["IfStatement"] = 174] = "IfStatement";
+        SyntaxKind[SyntaxKind["DoStatement"] = 175] = "DoStatement";
+        SyntaxKind[SyntaxKind["WhileStatement"] = 176] = "WhileStatement";
+        SyntaxKind[SyntaxKind["ForStatement"] = 177] = "ForStatement";
+        SyntaxKind[SyntaxKind["ForInStatement"] = 178] = "ForInStatement";
+        SyntaxKind[SyntaxKind["ContinueStatement"] = 179] = "ContinueStatement";
+        SyntaxKind[SyntaxKind["BreakStatement"] = 180] = "BreakStatement";
+        SyntaxKind[SyntaxKind["ReturnStatement"] = 181] = "ReturnStatement";
+        SyntaxKind[SyntaxKind["WithStatement"] = 182] = "WithStatement";
+        SyntaxKind[SyntaxKind["SwitchStatement"] = 183] = "SwitchStatement";
+        SyntaxKind[SyntaxKind["LabeledStatement"] = 184] = "LabeledStatement";
+        SyntaxKind[SyntaxKind["ThrowStatement"] = 185] = "ThrowStatement";
+        SyntaxKind[SyntaxKind["TryStatement"] = 186] = "TryStatement";
+        SyntaxKind[SyntaxKind["DebuggerStatement"] = 187] = "DebuggerStatement";
+        SyntaxKind[SyntaxKind["VariableDeclaration"] = 188] = "VariableDeclaration";
+        SyntaxKind[SyntaxKind["VariableDeclarationList"] = 189] = "VariableDeclarationList";
+        SyntaxKind[SyntaxKind["FunctionDeclaration"] = 190] = "FunctionDeclaration";
+        SyntaxKind[SyntaxKind["ClassDeclaration"] = 191] = "ClassDeclaration";
+        SyntaxKind[SyntaxKind["InterfaceDeclaration"] = 192] = "InterfaceDeclaration";
+        SyntaxKind[SyntaxKind["TypeAliasDeclaration"] = 193] = "TypeAliasDeclaration";
+        SyntaxKind[SyntaxKind["EnumDeclaration"] = 194] = "EnumDeclaration";
+        SyntaxKind[SyntaxKind["ModuleDeclaration"] = 195] = "ModuleDeclaration";
+        SyntaxKind[SyntaxKind["ModuleBlock"] = 196] = "ModuleBlock";
+        SyntaxKind[SyntaxKind["ImportDeclaration"] = 197] = "ImportDeclaration";
+        SyntaxKind[SyntaxKind["ExportAssignment"] = 198] = "ExportAssignment";
+        SyntaxKind[SyntaxKind["ExternalModuleReference"] = 199] = "ExternalModuleReference";
+        SyntaxKind[SyntaxKind["CaseClause"] = 200] = "CaseClause";
+        SyntaxKind[SyntaxKind["DefaultClause"] = 201] = "DefaultClause";
+        SyntaxKind[SyntaxKind["HeritageClause"] = 202] = "HeritageClause";
+        SyntaxKind[SyntaxKind["CatchClause"] = 203] = "CatchClause";
+        SyntaxKind[SyntaxKind["PropertyAssignment"] = 204] = "PropertyAssignment";
+        SyntaxKind[SyntaxKind["ShorthandPropertyAssignment"] = 205] = "ShorthandPropertyAssignment";
+        SyntaxKind[SyntaxKind["EnumMember"] = 206] = "EnumMember";
+        SyntaxKind[SyntaxKind["SourceFile"] = 207] = "SourceFile";
+        SyntaxKind[SyntaxKind["SyntaxList"] = 208] = "SyntaxList";
+        SyntaxKind[SyntaxKind["Count"] = 209] = "Count";
+        SyntaxKind[SyntaxKind["FirstAssignment"] = 52] = "FirstAssignment";
+        SyntaxKind[SyntaxKind["LastAssignment"] = 63] = "LastAssignment";
+        SyntaxKind[SyntaxKind["FirstReservedWord"] = 65] = "FirstReservedWord";
+        SyntaxKind[SyntaxKind["LastReservedWord"] = 100] = "LastReservedWord";
+        SyntaxKind[SyntaxKind["FirstKeyword"] = 65] = "FirstKeyword";
+        SyntaxKind[SyntaxKind["LastKeyword"] = 120] = "LastKeyword";
+        SyntaxKind[SyntaxKind["FirstFutureReservedWord"] = 101] = "FirstFutureReservedWord";
+        SyntaxKind[SyntaxKind["LastFutureReservedWord"] = 109] = "LastFutureReservedWord";
+        SyntaxKind[SyntaxKind["FirstTypeNode"] = 135] = "FirstTypeNode";
+        SyntaxKind[SyntaxKind["LastTypeNode"] = 143] = "LastTypeNode";
+        SyntaxKind[SyntaxKind["FirstPunctuation"] = 14] = "FirstPunctuation";
+        SyntaxKind[SyntaxKind["LastPunctuation"] = 63] = "LastPunctuation";
+        SyntaxKind[SyntaxKind["FirstToken"] = 0] = "FirstToken";
+        SyntaxKind[SyntaxKind["LastToken"] = 120] = "LastToken";
+        SyntaxKind[SyntaxKind["FirstTriviaToken"] = 2] = "FirstTriviaToken";
+        SyntaxKind[SyntaxKind["LastTriviaToken"] = 6] = "LastTriviaToken";
+        SyntaxKind[SyntaxKind["FirstLiteralToken"] = 7] = "FirstLiteralToken";
+        SyntaxKind[SyntaxKind["LastLiteralToken"] = 10] = "LastLiteralToken";
+        SyntaxKind[SyntaxKind["FirstTemplateToken"] = 10] = "FirstTemplateToken";
+        SyntaxKind[SyntaxKind["LastTemplateToken"] = 13] = "LastTemplateToken";
+        SyntaxKind[SyntaxKind["FirstBinaryOperator"] = 24] = "FirstBinaryOperator";
+        SyntaxKind[SyntaxKind["LastBinaryOperator"] = 63] = "LastBinaryOperator";
+        SyntaxKind[SyntaxKind["FirstNode"] = 121] = "FirstNode";
+    })(ts.SyntaxKind || (ts.SyntaxKind = {}));
+    var SyntaxKind = ts.SyntaxKind;
+    (function (NodeFlags) {
+        NodeFlags[NodeFlags["Export"] = 1] = "Export";
+        NodeFlags[NodeFlags["Ambient"] = 2] = "Ambient";
+        NodeFlags[NodeFlags["Public"] = 16] = "Public";
+        NodeFlags[NodeFlags["Private"] = 32] = "Private";
+        NodeFlags[NodeFlags["Protected"] = 64] = "Protected";
+        NodeFlags[NodeFlags["Static"] = 128] = "Static";
+        NodeFlags[NodeFlags["MultiLine"] = 256] = "MultiLine";
+        NodeFlags[NodeFlags["Synthetic"] = 512] = "Synthetic";
+        NodeFlags[NodeFlags["DeclarationFile"] = 1024] = "DeclarationFile";
+        NodeFlags[NodeFlags["Let"] = 2048] = "Let";
+        NodeFlags[NodeFlags["Const"] = 4096] = "Const";
+        NodeFlags[NodeFlags["OctalLiteral"] = 8192] = "OctalLiteral";
+        NodeFlags[NodeFlags["Modifier"] = 243] = "Modifier";
+        NodeFlags[NodeFlags["AccessibilityModifier"] = 112] = "AccessibilityModifier";
+        NodeFlags[NodeFlags["BlockScoped"] = 6144] = "BlockScoped";
+    })(ts.NodeFlags || (ts.NodeFlags = {}));
+    var NodeFlags = ts.NodeFlags;
+    (function (ParserContextFlags) {
+        ParserContextFlags[ParserContextFlags["StrictMode"] = 1] = "StrictMode";
+        ParserContextFlags[ParserContextFlags["DisallowIn"] = 2] = "DisallowIn";
+        ParserContextFlags[ParserContextFlags["Yield"] = 4] = "Yield";
+        ParserContextFlags[ParserContextFlags["GeneratorParameter"] = 8] = "GeneratorParameter";
+        ParserContextFlags[ParserContextFlags["ThisNodeHasError"] = 16] = "ThisNodeHasError";
+        ParserContextFlags[ParserContextFlags["ParserGeneratedFlags"] = 31] = "ParserGeneratedFlags";
+        ParserContextFlags[ParserContextFlags["ThisNodeOrAnySubNodesHasError"] = 32] = "ThisNodeOrAnySubNodesHasError";
+        ParserContextFlags[ParserContextFlags["HasAggregatedChildData"] = 64] = "HasAggregatedChildData";
+    })(ts.ParserContextFlags || (ts.ParserContextFlags = {}));
+    var ParserContextFlags = ts.ParserContextFlags;
+    (function (RelationComparisonResult) {
+        RelationComparisonResult[RelationComparisonResult["Succeeded"] = 1] = "Succeeded";
+        RelationComparisonResult[RelationComparisonResult["Failed"] = 2] = "Failed";
+        RelationComparisonResult[RelationComparisonResult["FailedAndReported"] = 3] = "FailedAndReported";
+    })(ts.RelationComparisonResult || (ts.RelationComparisonResult = {}));
+    var RelationComparisonResult = ts.RelationComparisonResult;
     (function (ExitStatus) {
         ExitStatus[ExitStatus["Success"] = 0] = "Success";
         ExitStatus[ExitStatus["DiagnosticsPresent_OutputsSkipped"] = 1] = "DiagnosticsPresent_OutputsSkipped";
         ExitStatus[ExitStatus["DiagnosticsPresent_OutputsGenerated"] = 2] = "DiagnosticsPresent_OutputsGenerated";
     })(ts.ExitStatus || (ts.ExitStatus = {}));
     var ExitStatus = ts.ExitStatus;
+    (function (TypeFormatFlags) {
+        TypeFormatFlags[TypeFormatFlags["None"] = 0] = "None";
+        TypeFormatFlags[TypeFormatFlags["WriteArrayAsGenericType"] = 1] = "WriteArrayAsGenericType";
+        TypeFormatFlags[TypeFormatFlags["UseTypeOfFunction"] = 2] = "UseTypeOfFunction";
+        TypeFormatFlags[TypeFormatFlags["NoTruncation"] = 4] = "NoTruncation";
+        TypeFormatFlags[TypeFormatFlags["WriteArrowStyleSignature"] = 8] = "WriteArrowStyleSignature";
+        TypeFormatFlags[TypeFormatFlags["WriteOwnNameForAnyLike"] = 16] = "WriteOwnNameForAnyLike";
+        TypeFormatFlags[TypeFormatFlags["WriteTypeArgumentsOfSignature"] = 32] = "WriteTypeArgumentsOfSignature";
+        TypeFormatFlags[TypeFormatFlags["InElementType"] = 64] = "InElementType";
+        TypeFormatFlags[TypeFormatFlags["UseFullyQualifiedType"] = 128] = "UseFullyQualifiedType";
+    })(ts.TypeFormatFlags || (ts.TypeFormatFlags = {}));
+    var TypeFormatFlags = ts.TypeFormatFlags;
+    (function (SymbolFormatFlags) {
+        SymbolFormatFlags[SymbolFormatFlags["None"] = 0] = "None";
+        SymbolFormatFlags[SymbolFormatFlags["WriteTypeParametersOrArguments"] = 1] = "WriteTypeParametersOrArguments";
+        SymbolFormatFlags[SymbolFormatFlags["UseOnlyExternalAliasing"] = 2] = "UseOnlyExternalAliasing";
+    })(ts.SymbolFormatFlags || (ts.SymbolFormatFlags = {}));
+    var SymbolFormatFlags = ts.SymbolFormatFlags;
+    (function (SymbolAccessibility) {
+        SymbolAccessibility[SymbolAccessibility["Accessible"] = 0] = "Accessible";
+        SymbolAccessibility[SymbolAccessibility["NotAccessible"] = 1] = "NotAccessible";
+        SymbolAccessibility[SymbolAccessibility["CannotBeNamed"] = 2] = "CannotBeNamed";
+    })(ts.SymbolAccessibility || (ts.SymbolAccessibility = {}));
+    var SymbolAccessibility = ts.SymbolAccessibility;
+    (function (SymbolFlags) {
+        SymbolFlags[SymbolFlags["FunctionScopedVariable"] = 1] = "FunctionScopedVariable";
+        SymbolFlags[SymbolFlags["BlockScopedVariable"] = 2] = "BlockScopedVariable";
+        SymbolFlags[SymbolFlags["Property"] = 4] = "Property";
+        SymbolFlags[SymbolFlags["EnumMember"] = 8] = "EnumMember";
+        SymbolFlags[SymbolFlags["Function"] = 16] = "Function";
+        SymbolFlags[SymbolFlags["Class"] = 32] = "Class";
+        SymbolFlags[SymbolFlags["Interface"] = 64] = "Interface";
+        SymbolFlags[SymbolFlags["ConstEnum"] = 128] = "ConstEnum";
+        SymbolFlags[SymbolFlags["RegularEnum"] = 256] = "RegularEnum";
+        SymbolFlags[SymbolFlags["ValueModule"] = 512] = "ValueModule";
+        SymbolFlags[SymbolFlags["NamespaceModule"] = 1024] = "NamespaceModule";
+        SymbolFlags[SymbolFlags["TypeLiteral"] = 2048] = "TypeLiteral";
+        SymbolFlags[SymbolFlags["ObjectLiteral"] = 4096] = "ObjectLiteral";
+        SymbolFlags[SymbolFlags["Method"] = 8192] = "Method";
+        SymbolFlags[SymbolFlags["Constructor"] = 16384] = "Constructor";
+        SymbolFlags[SymbolFlags["GetAccessor"] = 32768] = "GetAccessor";
+        SymbolFlags[SymbolFlags["SetAccessor"] = 65536] = "SetAccessor";
+        SymbolFlags[SymbolFlags["Signature"] = 131072] = "Signature";
+        SymbolFlags[SymbolFlags["TypeParameter"] = 262144] = "TypeParameter";
+        SymbolFlags[SymbolFlags["TypeAlias"] = 524288] = "TypeAlias";
+        SymbolFlags[SymbolFlags["ExportValue"] = 1048576] = "ExportValue";
+        SymbolFlags[SymbolFlags["ExportType"] = 2097152] = "ExportType";
+        SymbolFlags[SymbolFlags["ExportNamespace"] = 4194304] = "ExportNamespace";
+        SymbolFlags[SymbolFlags["Import"] = 8388608] = "Import";
+        SymbolFlags[SymbolFlags["Instantiated"] = 16777216] = "Instantiated";
+        SymbolFlags[SymbolFlags["Merged"] = 33554432] = "Merged";
+        SymbolFlags[SymbolFlags["Transient"] = 67108864] = "Transient";
+        SymbolFlags[SymbolFlags["Prototype"] = 134217728] = "Prototype";
+        SymbolFlags[SymbolFlags["UnionProperty"] = 268435456] = "UnionProperty";
+        SymbolFlags[SymbolFlags["Optional"] = 536870912] = "Optional";
+        SymbolFlags[SymbolFlags["Enum"] = 384] = "Enum";
+        SymbolFlags[SymbolFlags["Variable"] = 3] = "Variable";
+        SymbolFlags[SymbolFlags["Value"] = 107455] = "Value";
+        SymbolFlags[SymbolFlags["Type"] = 793056] = "Type";
+        SymbolFlags[SymbolFlags["Namespace"] = 1536] = "Namespace";
+        SymbolFlags[SymbolFlags["Module"] = 1536] = "Module";
+        SymbolFlags[SymbolFlags["Accessor"] = 98304] = "Accessor";
+        SymbolFlags[SymbolFlags["FunctionScopedVariableExcludes"] = 107454] = "FunctionScopedVariableExcludes";
+        SymbolFlags[SymbolFlags["BlockScopedVariableExcludes"] = 107455] = "BlockScopedVariableExcludes";
+        SymbolFlags[SymbolFlags["ParameterExcludes"] = 107455] = "ParameterExcludes";
+        SymbolFlags[SymbolFlags["PropertyExcludes"] = 107455] = "PropertyExcludes";
+        SymbolFlags[SymbolFlags["EnumMemberExcludes"] = 107455] = "EnumMemberExcludes";
+        SymbolFlags[SymbolFlags["FunctionExcludes"] = 106927] = "FunctionExcludes";
+        SymbolFlags[SymbolFlags["ClassExcludes"] = 899583] = "ClassExcludes";
+        SymbolFlags[SymbolFlags["InterfaceExcludes"] = 792992] = "InterfaceExcludes";
+        SymbolFlags[SymbolFlags["RegularEnumExcludes"] = 899327] = "RegularEnumExcludes";
+        SymbolFlags[SymbolFlags["ConstEnumExcludes"] = 899967] = "ConstEnumExcludes";
+        SymbolFlags[SymbolFlags["ValueModuleExcludes"] = 106639] = "ValueModuleExcludes";
+        SymbolFlags[SymbolFlags["NamespaceModuleExcludes"] = 0] = "NamespaceModuleExcludes";
+        SymbolFlags[SymbolFlags["MethodExcludes"] = 99263] = "MethodExcludes";
+        SymbolFlags[SymbolFlags["GetAccessorExcludes"] = 41919] = "GetAccessorExcludes";
+        SymbolFlags[SymbolFlags["SetAccessorExcludes"] = 74687] = "SetAccessorExcludes";
+        SymbolFlags[SymbolFlags["TypeParameterExcludes"] = 530912] = "TypeParameterExcludes";
+        SymbolFlags[SymbolFlags["TypeAliasExcludes"] = 793056] = "TypeAliasExcludes";
+        SymbolFlags[SymbolFlags["ImportExcludes"] = 8388608] = "ImportExcludes";
+        SymbolFlags[SymbolFlags["ModuleMember"] = 8914931] = "ModuleMember";
+        SymbolFlags[SymbolFlags["ExportHasLocal"] = 944] = "ExportHasLocal";
+        SymbolFlags[SymbolFlags["HasLocals"] = 255504] = "HasLocals";
+        SymbolFlags[SymbolFlags["HasExports"] = 1952] = "HasExports";
+        SymbolFlags[SymbolFlags["HasMembers"] = 6240] = "HasMembers";
+        SymbolFlags[SymbolFlags["IsContainer"] = 262128] = "IsContainer";
+        SymbolFlags[SymbolFlags["PropertyOrAccessor"] = 98308] = "PropertyOrAccessor";
+        SymbolFlags[SymbolFlags["Export"] = 7340032] = "Export";
+    })(ts.SymbolFlags || (ts.SymbolFlags = {}));
+    var SymbolFlags = ts.SymbolFlags;
+    (function (NodeCheckFlags) {
+        NodeCheckFlags[NodeCheckFlags["TypeChecked"] = 1] = "TypeChecked";
+        NodeCheckFlags[NodeCheckFlags["LexicalThis"] = 2] = "LexicalThis";
+        NodeCheckFlags[NodeCheckFlags["CaptureThis"] = 4] = "CaptureThis";
+        NodeCheckFlags[NodeCheckFlags["EmitExtends"] = 8] = "EmitExtends";
+        NodeCheckFlags[NodeCheckFlags["SuperInstance"] = 16] = "SuperInstance";
+        NodeCheckFlags[NodeCheckFlags["SuperStatic"] = 32] = "SuperStatic";
+        NodeCheckFlags[NodeCheckFlags["ContextChecked"] = 64] = "ContextChecked";
+        NodeCheckFlags[NodeCheckFlags["EnumValuesComputed"] = 128] = "EnumValuesComputed";
+    })(ts.NodeCheckFlags || (ts.NodeCheckFlags = {}));
+    var NodeCheckFlags = ts.NodeCheckFlags;
+    (function (TypeFlags) {
+        TypeFlags[TypeFlags["Any"] = 1] = "Any";
+        TypeFlags[TypeFlags["String"] = 2] = "String";
+        TypeFlags[TypeFlags["Number"] = 4] = "Number";
+        TypeFlags[TypeFlags["Boolean"] = 8] = "Boolean";
+        TypeFlags[TypeFlags["Void"] = 16] = "Void";
+        TypeFlags[TypeFlags["Undefined"] = 32] = "Undefined";
+        TypeFlags[TypeFlags["Null"] = 64] = "Null";
+        TypeFlags[TypeFlags["Enum"] = 128] = "Enum";
+        TypeFlags[TypeFlags["StringLiteral"] = 256] = "StringLiteral";
+        TypeFlags[TypeFlags["TypeParameter"] = 512] = "TypeParameter";
+        TypeFlags[TypeFlags["Class"] = 1024] = "Class";
+        TypeFlags[TypeFlags["Interface"] = 2048] = "Interface";
+        TypeFlags[TypeFlags["Reference"] = 4096] = "Reference";
+        TypeFlags[TypeFlags["Tuple"] = 8192] = "Tuple";
+        TypeFlags[TypeFlags["Union"] = 16384] = "Union";
+        TypeFlags[TypeFlags["Anonymous"] = 32768] = "Anonymous";
+        TypeFlags[TypeFlags["FromSignature"] = 65536] = "FromSignature";
+        TypeFlags[TypeFlags["ObjectLiteral"] = 131072] = "ObjectLiteral";
+        TypeFlags[TypeFlags["ContainsUndefinedOrNull"] = 262144] = "ContainsUndefinedOrNull";
+        TypeFlags[TypeFlags["ContainsObjectLiteral"] = 524288] = "ContainsObjectLiteral";
+        TypeFlags[TypeFlags["Intrinsic"] = 127] = "Intrinsic";
+        TypeFlags[TypeFlags["Primitive"] = 510] = "Primitive";
+        TypeFlags[TypeFlags["StringLike"] = 258] = "StringLike";
+        TypeFlags[TypeFlags["NumberLike"] = 132] = "NumberLike";
+        TypeFlags[TypeFlags["ObjectType"] = 48128] = "ObjectType";
+        TypeFlags[TypeFlags["RequiresWidening"] = 786432] = "RequiresWidening";
+    })(ts.TypeFlags || (ts.TypeFlags = {}));
+    var TypeFlags = ts.TypeFlags;
+    (function (SignatureKind) {
+        SignatureKind[SignatureKind["Call"] = 0] = "Call";
+        SignatureKind[SignatureKind["Construct"] = 1] = "Construct";
+    })(ts.SignatureKind || (ts.SignatureKind = {}));
+    var SignatureKind = ts.SignatureKind;
+    (function (IndexKind) {
+        IndexKind[IndexKind["String"] = 0] = "String";
+        IndexKind[IndexKind["Number"] = 1] = "Number";
+    })(ts.IndexKind || (ts.IndexKind = {}));
+    var IndexKind = ts.IndexKind;
     (function (DiagnosticCategory) {
         DiagnosticCategory[DiagnosticCategory["Warning"] = 0] = "Warning";
         DiagnosticCategory[DiagnosticCategory["Error"] = 1] = "Error";
         DiagnosticCategory[DiagnosticCategory["Message"] = 2] = "Message";
     })(ts.DiagnosticCategory || (ts.DiagnosticCategory = {}));
     var DiagnosticCategory = ts.DiagnosticCategory;
+    (function (ModuleKind) {
+        ModuleKind[ModuleKind["None"] = 0] = "None";
+        ModuleKind[ModuleKind["CommonJS"] = 1] = "CommonJS";
+        ModuleKind[ModuleKind["AMD"] = 2] = "AMD";
+    })(ts.ModuleKind || (ts.ModuleKind = {}));
+    var ModuleKind = ts.ModuleKind;
+    (function (ScriptTarget) {
+        ScriptTarget[ScriptTarget["ES3"] = 0] = "ES3";
+        ScriptTarget[ScriptTarget["ES5"] = 1] = "ES5";
+        ScriptTarget[ScriptTarget["ES6"] = 2] = "ES6";
+        ScriptTarget[ScriptTarget["Latest"] = 2] = "Latest";
+    })(ts.ScriptTarget || (ts.ScriptTarget = {}));
+    var ScriptTarget = ts.ScriptTarget;
+    (function (CharacterCodes) {
+        CharacterCodes[CharacterCodes["nullCharacter"] = 0] = "nullCharacter";
+        CharacterCodes[CharacterCodes["maxAsciiCharacter"] = 127] = "maxAsciiCharacter";
+        CharacterCodes[CharacterCodes["lineFeed"] = 10] = "lineFeed";
+        CharacterCodes[CharacterCodes["carriageReturn"] = 13] = "carriageReturn";
+        CharacterCodes[CharacterCodes["lineSeparator"] = 8232] = "lineSeparator";
+        CharacterCodes[CharacterCodes["paragraphSeparator"] = 8233] = "paragraphSeparator";
+        CharacterCodes[CharacterCodes["nextLine"] = 133] = "nextLine";
+        CharacterCodes[CharacterCodes["space"] = 32] = "space";
+        CharacterCodes[CharacterCodes["nonBreakingSpace"] = 160] = "nonBreakingSpace";
+        CharacterCodes[CharacterCodes["enQuad"] = 8192] = "enQuad";
+        CharacterCodes[CharacterCodes["emQuad"] = 8193] = "emQuad";
+        CharacterCodes[CharacterCodes["enSpace"] = 8194] = "enSpace";
+        CharacterCodes[CharacterCodes["emSpace"] = 8195] = "emSpace";
+        CharacterCodes[CharacterCodes["threePerEmSpace"] = 8196] = "threePerEmSpace";
+        CharacterCodes[CharacterCodes["fourPerEmSpace"] = 8197] = "fourPerEmSpace";
+        CharacterCodes[CharacterCodes["sixPerEmSpace"] = 8198] = "sixPerEmSpace";
+        CharacterCodes[CharacterCodes["figureSpace"] = 8199] = "figureSpace";
+        CharacterCodes[CharacterCodes["punctuationSpace"] = 8200] = "punctuationSpace";
+        CharacterCodes[CharacterCodes["thinSpace"] = 8201] = "thinSpace";
+        CharacterCodes[CharacterCodes["hairSpace"] = 8202] = "hairSpace";
+        CharacterCodes[CharacterCodes["zeroWidthSpace"] = 8203] = "zeroWidthSpace";
+        CharacterCodes[CharacterCodes["narrowNoBreakSpace"] = 8239] = "narrowNoBreakSpace";
+        CharacterCodes[CharacterCodes["ideographicSpace"] = 12288] = "ideographicSpace";
+        CharacterCodes[CharacterCodes["mathematicalSpace"] = 8287] = "mathematicalSpace";
+        CharacterCodes[CharacterCodes["ogham"] = 5760] = "ogham";
+        CharacterCodes[CharacterCodes["_"] = 95] = "_";
+        CharacterCodes[CharacterCodes["$"] = 36] = "$";
+        CharacterCodes[CharacterCodes["_0"] = 48] = "_0";
+        CharacterCodes[CharacterCodes["_1"] = 49] = "_1";
+        CharacterCodes[CharacterCodes["_2"] = 50] = "_2";
+        CharacterCodes[CharacterCodes["_3"] = 51] = "_3";
+        CharacterCodes[CharacterCodes["_4"] = 52] = "_4";
+        CharacterCodes[CharacterCodes["_5"] = 53] = "_5";
+        CharacterCodes[CharacterCodes["_6"] = 54] = "_6";
+        CharacterCodes[CharacterCodes["_7"] = 55] = "_7";
+        CharacterCodes[CharacterCodes["_8"] = 56] = "_8";
+        CharacterCodes[CharacterCodes["_9"] = 57] = "_9";
+        CharacterCodes[CharacterCodes["a"] = 97] = "a";
+        CharacterCodes[CharacterCodes["b"] = 98] = "b";
+        CharacterCodes[CharacterCodes["c"] = 99] = "c";
+        CharacterCodes[CharacterCodes["d"] = 100] = "d";
+        CharacterCodes[CharacterCodes["e"] = 101] = "e";
+        CharacterCodes[CharacterCodes["f"] = 102] = "f";
+        CharacterCodes[CharacterCodes["g"] = 103] = "g";
+        CharacterCodes[CharacterCodes["h"] = 104] = "h";
+        CharacterCodes[CharacterCodes["i"] = 105] = "i";
+        CharacterCodes[CharacterCodes["j"] = 106] = "j";
+        CharacterCodes[CharacterCodes["k"] = 107] = "k";
+        CharacterCodes[CharacterCodes["l"] = 108] = "l";
+        CharacterCodes[CharacterCodes["m"] = 109] = "m";
+        CharacterCodes[CharacterCodes["n"] = 110] = "n";
+        CharacterCodes[CharacterCodes["o"] = 111] = "o";
+        CharacterCodes[CharacterCodes["p"] = 112] = "p";
+        CharacterCodes[CharacterCodes["q"] = 113] = "q";
+        CharacterCodes[CharacterCodes["r"] = 114] = "r";
+        CharacterCodes[CharacterCodes["s"] = 115] = "s";
+        CharacterCodes[CharacterCodes["t"] = 116] = "t";
+        CharacterCodes[CharacterCodes["u"] = 117] = "u";
+        CharacterCodes[CharacterCodes["v"] = 118] = "v";
+        CharacterCodes[CharacterCodes["w"] = 119] = "w";
+        CharacterCodes[CharacterCodes["x"] = 120] = "x";
+        CharacterCodes[CharacterCodes["y"] = 121] = "y";
+        CharacterCodes[CharacterCodes["z"] = 122] = "z";
+        CharacterCodes[CharacterCodes["A"] = 65] = "A";
+        CharacterCodes[CharacterCodes["B"] = 66] = "B";
+        CharacterCodes[CharacterCodes["C"] = 67] = "C";
+        CharacterCodes[CharacterCodes["D"] = 68] = "D";
+        CharacterCodes[CharacterCodes["E"] = 69] = "E";
+        CharacterCodes[CharacterCodes["F"] = 70] = "F";
+        CharacterCodes[CharacterCodes["G"] = 71] = "G";
+        CharacterCodes[CharacterCodes["H"] = 72] = "H";
+        CharacterCodes[CharacterCodes["I"] = 73] = "I";
+        CharacterCodes[CharacterCodes["J"] = 74] = "J";
+        CharacterCodes[CharacterCodes["K"] = 75] = "K";
+        CharacterCodes[CharacterCodes["L"] = 76] = "L";
+        CharacterCodes[CharacterCodes["M"] = 77] = "M";
+        CharacterCodes[CharacterCodes["N"] = 78] = "N";
+        CharacterCodes[CharacterCodes["O"] = 79] = "O";
+        CharacterCodes[CharacterCodes["P"] = 80] = "P";
+        CharacterCodes[CharacterCodes["Q"] = 81] = "Q";
+        CharacterCodes[CharacterCodes["R"] = 82] = "R";
+        CharacterCodes[CharacterCodes["S"] = 83] = "S";
+        CharacterCodes[CharacterCodes["T"] = 84] = "T";
+        CharacterCodes[CharacterCodes["U"] = 85] = "U";
+        CharacterCodes[CharacterCodes["V"] = 86] = "V";
+        CharacterCodes[CharacterCodes["W"] = 87] = "W";
+        CharacterCodes[CharacterCodes["X"] = 88] = "X";
+        CharacterCodes[CharacterCodes["Y"] = 89] = "Y";
+        CharacterCodes[CharacterCodes["Z"] = 90] = "Z";
+        CharacterCodes[CharacterCodes["ampersand"] = 38] = "ampersand";
+        CharacterCodes[CharacterCodes["asterisk"] = 42] = "asterisk";
+        CharacterCodes[CharacterCodes["at"] = 64] = "at";
+        CharacterCodes[CharacterCodes["backslash"] = 92] = "backslash";
+        CharacterCodes[CharacterCodes["backtick"] = 96] = "backtick";
+        CharacterCodes[CharacterCodes["bar"] = 124] = "bar";
+        CharacterCodes[CharacterCodes["caret"] = 94] = "caret";
+        CharacterCodes[CharacterCodes["closeBrace"] = 125] = "closeBrace";
+        CharacterCodes[CharacterCodes["closeBracket"] = 93] = "closeBracket";
+        CharacterCodes[CharacterCodes["closeParen"] = 41] = "closeParen";
+        CharacterCodes[CharacterCodes["colon"] = 58] = "colon";
+        CharacterCodes[CharacterCodes["comma"] = 44] = "comma";
+        CharacterCodes[CharacterCodes["dot"] = 46] = "dot";
+        CharacterCodes[CharacterCodes["doubleQuote"] = 34] = "doubleQuote";
+        CharacterCodes[CharacterCodes["equals"] = 61] = "equals";
+        CharacterCodes[CharacterCodes["exclamation"] = 33] = "exclamation";
+        CharacterCodes[CharacterCodes["greaterThan"] = 62] = "greaterThan";
+        CharacterCodes[CharacterCodes["lessThan"] = 60] = "lessThan";
+        CharacterCodes[CharacterCodes["minus"] = 45] = "minus";
+        CharacterCodes[CharacterCodes["openBrace"] = 123] = "openBrace";
+        CharacterCodes[CharacterCodes["openBracket"] = 91] = "openBracket";
+        CharacterCodes[CharacterCodes["openParen"] = 40] = "openParen";
+        CharacterCodes[CharacterCodes["percent"] = 37] = "percent";
+        CharacterCodes[CharacterCodes["plus"] = 43] = "plus";
+        CharacterCodes[CharacterCodes["question"] = 63] = "question";
+        CharacterCodes[CharacterCodes["semicolon"] = 59] = "semicolon";
+        CharacterCodes[CharacterCodes["singleQuote"] = 39] = "singleQuote";
+        CharacterCodes[CharacterCodes["slash"] = 47] = "slash";
+        CharacterCodes[CharacterCodes["tilde"] = 126] = "tilde";
+        CharacterCodes[CharacterCodes["backspace"] = 8] = "backspace";
+        CharacterCodes[CharacterCodes["formFeed"] = 12] = "formFeed";
+        CharacterCodes[CharacterCodes["byteOrderMark"] = 65279] = "byteOrderMark";
+        CharacterCodes[CharacterCodes["tab"] = 9] = "tab";
+        CharacterCodes[CharacterCodes["verticalTab"] = 11] = "verticalTab";
+    })(ts.CharacterCodes || (ts.CharacterCodes = {}));
+    var CharacterCodes = ts.CharacterCodes;
 })(ts || (ts = {}));
 var ts;
 (function (ts) {
+    (function (Ternary) {
+        Ternary[Ternary["False"] = 0] = "False";
+        Ternary[Ternary["Maybe"] = 1] = "Maybe";
+        Ternary[Ternary["True"] = -1] = "True";
+    })(ts.Ternary || (ts.Ternary = {}));
+    var Ternary = ts.Ternary;
+    (function (Comparison) {
+        Comparison[Comparison["LessThan"] = -1] = "LessThan";
+        Comparison[Comparison["EqualTo"] = 0] = "EqualTo";
+        Comparison[Comparison["GreaterThan"] = 1] = "GreaterThan";
+    })(ts.Comparison || (ts.Comparison = {}));
+    var Comparison = ts.Comparison;
     function forEach(array, callback) {
         if (array) {
             for (var i = 0, len = array.length; i < len; i++) {
@@ -594,6 +1141,13 @@ var ts;
         getTypeConstructor: function () { return Type; },
         getSignatureConstructor: function () { return Signature; }
     };
+    (function (AssertionLevel) {
+        AssertionLevel[AssertionLevel["None"] = 0] = "None";
+        AssertionLevel[AssertionLevel["Normal"] = 1] = "Normal";
+        AssertionLevel[AssertionLevel["Aggressive"] = 2] = "Aggressive";
+        AssertionLevel[AssertionLevel["VeryAggressive"] = 3] = "VeryAggressive";
+    })(ts.AssertionLevel || (ts.AssertionLevel = {}));
+    var AssertionLevel = ts.AssertionLevel;
     var Debug;
     (function (Debug) {
         var currentAssertionLevel = 0;
@@ -3861,6 +4415,36 @@ var ts;
         }
     }
     ts.forEachChild = forEachChild;
+    var ParsingContext;
+    (function (ParsingContext) {
+        ParsingContext[ParsingContext["SourceElements"] = 0] = "SourceElements";
+        ParsingContext[ParsingContext["ModuleElements"] = 1] = "ModuleElements";
+        ParsingContext[ParsingContext["BlockStatements"] = 2] = "BlockStatements";
+        ParsingContext[ParsingContext["SwitchClauses"] = 3] = "SwitchClauses";
+        ParsingContext[ParsingContext["SwitchClauseStatements"] = 4] = "SwitchClauseStatements";
+        ParsingContext[ParsingContext["TypeMembers"] = 5] = "TypeMembers";
+        ParsingContext[ParsingContext["ClassMembers"] = 6] = "ClassMembers";
+        ParsingContext[ParsingContext["EnumMembers"] = 7] = "EnumMembers";
+        ParsingContext[ParsingContext["TypeReferences"] = 8] = "TypeReferences";
+        ParsingContext[ParsingContext["VariableDeclarations"] = 9] = "VariableDeclarations";
+        ParsingContext[ParsingContext["ObjectBindingElements"] = 10] = "ObjectBindingElements";
+        ParsingContext[ParsingContext["ArrayBindingElements"] = 11] = "ArrayBindingElements";
+        ParsingContext[ParsingContext["ArgumentExpressions"] = 12] = "ArgumentExpressions";
+        ParsingContext[ParsingContext["ObjectLiteralMembers"] = 13] = "ObjectLiteralMembers";
+        ParsingContext[ParsingContext["ArrayLiteralMembers"] = 14] = "ArrayLiteralMembers";
+        ParsingContext[ParsingContext["Parameters"] = 15] = "Parameters";
+        ParsingContext[ParsingContext["TypeParameters"] = 16] = "TypeParameters";
+        ParsingContext[ParsingContext["TypeArguments"] = 17] = "TypeArguments";
+        ParsingContext[ParsingContext["TupleElementTypes"] = 18] = "TupleElementTypes";
+        ParsingContext[ParsingContext["HeritageClauses"] = 19] = "HeritageClauses";
+        ParsingContext[ParsingContext["Count"] = 20] = "Count";
+    })(ParsingContext || (ParsingContext = {}));
+    var Tristate;
+    (function (Tristate) {
+        Tristate[Tristate["False"] = 0] = "False";
+        Tristate[Tristate["True"] = 1] = "True";
+        Tristate[Tristate["Unknown"] = 2] = "Unknown";
+    })(Tristate || (Tristate = {}));
     function parsingContextErrors(context) {
         switch (context) {
             case 0: return ts.Diagnostics.Declaration_or_statement_expected;
@@ -4130,6 +4714,10 @@ var ts;
         var nodeText = ts.getSourceTextOfNodeFromSourceFile(sourceFile, node.expression);
         return nodeText === '"use strict"' || nodeText === "'use strict'";
     }
+    var InvalidPosition;
+    (function (InvalidPosition) {
+        InvalidPosition[InvalidPosition["Value"] = -1] = "Value";
+    })(InvalidPosition || (InvalidPosition = {}));
     function createSyntaxCursor(sourceFile) {
         var currentArray = sourceFile.statements;
         var currentArrayIndex = 0;
@@ -6809,6 +7397,12 @@ var ts;
 var ts;
 (function (ts) {
     ts.bindTime = 0;
+    (function (ModuleInstanceState) {
+        ModuleInstanceState[ModuleInstanceState["NonInstantiated"] = 0] = "NonInstantiated";
+        ModuleInstanceState[ModuleInstanceState["Instantiated"] = 1] = "Instantiated";
+        ModuleInstanceState[ModuleInstanceState["ConstEnumOnly"] = 2] = "ConstEnumOnly";
+    })(ts.ModuleInstanceState || (ts.ModuleInstanceState = {}));
+    var ModuleInstanceState = ts.ModuleInstanceState;
     function getModuleInstanceState(node) {
         if (node.kind === 192 || node.kind === 193) {
             return 0;
@@ -20781,6 +21375,12 @@ var ts;
     var SignatureHelp;
     (function (SignatureHelp) {
         var emptyArray = [];
+        var ArgumentListKind;
+        (function (ArgumentListKind) {
+            ArgumentListKind[ArgumentListKind["TypeArguments"] = 0] = "TypeArguments";
+            ArgumentListKind[ArgumentListKind["CallArguments"] = 1] = "CallArguments";
+            ArgumentListKind[ArgumentListKind["TaggedTemplateArguments"] = 2] = "TaggedTemplateArguments";
+        })(ArgumentListKind || (ArgumentListKind = {}));
         function getSignatureHelpItems(sourceFile, position, typeInfoResolver, cancellationToken) {
             var startingToken = ts.findTokenOnLeftOfPosition(sourceFile, position);
             if (!startingToken) {
@@ -21439,6 +22039,13 @@ var ts;
     var formatting;
     (function (formatting) {
         var scanner = ts.createScanner(2, false);
+        var ScanAction;
+        (function (ScanAction) {
+            ScanAction[ScanAction["Scan"] = 0] = "Scan";
+            ScanAction[ScanAction["RescanGreaterThanToken"] = 1] = "RescanGreaterThanToken";
+            ScanAction[ScanAction["RescanSlashToken"] = 2] = "RescanSlashToken";
+            ScanAction[ScanAction["RescanTemplateToken"] = 3] = "RescanTemplateToken";
+        })(ScanAction || (ScanAction = {}));
         function getFormattingScanner(sourceFile, startPos, endPos) {
             scanner.setText(sourceFile.text);
             scanner.setTextPos(startPos);
@@ -21685,6 +22292,20 @@ var ts;
 (function (ts) {
     var formatting;
     (function (formatting) {
+        (function (FormattingRequestKind) {
+            FormattingRequestKind[FormattingRequestKind["FormatDocument"] = 0] = "FormatDocument";
+            FormattingRequestKind[FormattingRequestKind["FormatSelection"] = 1] = "FormatSelection";
+            FormattingRequestKind[FormattingRequestKind["FormatOnEnter"] = 2] = "FormatOnEnter";
+            FormattingRequestKind[FormattingRequestKind["FormatOnSemicolon"] = 3] = "FormatOnSemicolon";
+            FormattingRequestKind[FormattingRequestKind["FormatOnClosingCurlyBrace"] = 4] = "FormatOnClosingCurlyBrace";
+        })(formatting.FormattingRequestKind || (formatting.FormattingRequestKind = {}));
+        var FormattingRequestKind = formatting.FormattingRequestKind;
+    })(formatting = ts.formatting || (ts.formatting = {}));
+})(ts || (ts = {}));
+var ts;
+(function (ts) {
+    var formatting;
+    (function (formatting) {
         var Rule = (function () {
             function Rule(Descriptor, Operation, Flag) {
                 if (Flag === void 0) { Flag = 0; }
@@ -21698,6 +22319,19 @@ var ts;
             return Rule;
         })();
         formatting.Rule = Rule;
+    })(formatting = ts.formatting || (ts.formatting = {}));
+})(ts || (ts = {}));
+var ts;
+(function (ts) {
+    var formatting;
+    (function (formatting) {
+        (function (RuleAction) {
+            RuleAction[RuleAction["Ignore"] = 1] = "Ignore";
+            RuleAction[RuleAction["Space"] = 2] = "Space";
+            RuleAction[RuleAction["NewLine"] = 4] = "NewLine";
+            RuleAction[RuleAction["Delete"] = 8] = "Delete";
+        })(formatting.RuleAction || (formatting.RuleAction = {}));
+        var RuleAction = formatting.RuleAction;
     })(formatting = ts.formatting || (ts.formatting = {}));
 })(ts || (ts = {}));
 var ts;
@@ -21727,6 +22361,17 @@ var ts;
             return RuleDescriptor;
         })();
         formatting.RuleDescriptor = RuleDescriptor;
+    })(formatting = ts.formatting || (ts.formatting = {}));
+})(ts || (ts = {}));
+var ts;
+(function (ts) {
+    var formatting;
+    (function (formatting) {
+        (function (RuleFlags) {
+            RuleFlags[RuleFlags["None"] = 0] = "None";
+            RuleFlags[RuleFlags["CanDeleteNewLines"] = 1] = "CanDeleteNewLines";
+        })(formatting.RuleFlags || (formatting.RuleFlags = {}));
+        var RuleFlags = formatting.RuleFlags;
     })(formatting = ts.formatting || (ts.formatting = {}));
 })(ts || (ts = {}));
 var ts;
@@ -22463,6 +23108,10 @@ var ts;
 (function (ts) {
     var formatting;
     (function (formatting) {
+        var Constants;
+        (function (Constants) {
+            Constants[Constants["Unknown"] = -1] = "Unknown";
+        })(Constants || (Constants = {}));
         function formatOnEnter(position, sourceFile, rulesProvider, options) {
             var line = sourceFile.getLineAndCharacterFromPosition(position).line;
             if (line === 1) {
@@ -24075,6 +24724,19 @@ var ts;
         SymbolDisplayPartKind[SymbolDisplayPartKind["regularExpressionLiteral"] = 21] = "regularExpressionLiteral";
     })(ts.SymbolDisplayPartKind || (ts.SymbolDisplayPartKind = {}));
     var SymbolDisplayPartKind = ts.SymbolDisplayPartKind;
+    (function (OutputFileType) {
+        OutputFileType[OutputFileType["JavaScript"] = 0] = "JavaScript";
+        OutputFileType[OutputFileType["SourceMap"] = 1] = "SourceMap";
+        OutputFileType[OutputFileType["Declaration"] = 2] = "Declaration";
+    })(ts.OutputFileType || (ts.OutputFileType = {}));
+    var OutputFileType = ts.OutputFileType;
+    (function (EndOfLineState) {
+        EndOfLineState[EndOfLineState["Start"] = 0] = "Start";
+        EndOfLineState[EndOfLineState["InMultiLineCommentTrivia"] = 1] = "InMultiLineCommentTrivia";
+        EndOfLineState[EndOfLineState["InSingleQuoteStringLiteral"] = 2] = "InSingleQuoteStringLiteral";
+        EndOfLineState[EndOfLineState["InDoubleQuoteStringLiteral"] = 3] = "InDoubleQuoteStringLiteral";
+    })(ts.EndOfLineState || (ts.EndOfLineState = {}));
+    var EndOfLineState = ts.EndOfLineState;
     (function (TokenClass) {
         TokenClass[TokenClass["Punctuation"] = 0] = "Punctuation";
         TokenClass[TokenClass["Keyword"] = 1] = "Keyword";
@@ -24582,6 +25244,21 @@ var ts;
             });
         }
     }
+    var SemanticMeaning;
+    (function (SemanticMeaning) {
+        SemanticMeaning[SemanticMeaning["None"] = 0] = "None";
+        SemanticMeaning[SemanticMeaning["Value"] = 1] = "Value";
+        SemanticMeaning[SemanticMeaning["Type"] = 2] = "Type";
+        SemanticMeaning[SemanticMeaning["Namespace"] = 4] = "Namespace";
+        SemanticMeaning[SemanticMeaning["All"] = 7] = "All";
+    })(SemanticMeaning || (SemanticMeaning = {}));
+    var BreakContinueSearchType;
+    (function (BreakContinueSearchType) {
+        BreakContinueSearchType[BreakContinueSearchType["None"] = 0] = "None";
+        BreakContinueSearchType[BreakContinueSearchType["Unlabeled"] = 1] = "Unlabeled";
+        BreakContinueSearchType[BreakContinueSearchType["Labeled"] = 2] = "Labeled";
+        BreakContinueSearchType[BreakContinueSearchType["All"] = 3] = "All";
+    })(BreakContinueSearchType || (BreakContinueSearchType = {}));
     var keywordCompletions = [];
     for (var i = 65; i <= 120; i++) {
         keywordCompletions.push({
@@ -28943,8 +29620,8 @@ var ts;
         function formatDiag(fileName, project, diag) {
             return {
                 start: project.compilerService.host.positionToLineCol(fileName, diag.start),
-                len: diag.length,
-                text: diag.messageText
+                end: project.compilerService.host.positionToLineCol(fileName, diag.start + diag.length),
+                text: ts.flattenDiagnosticMessageText(diag.messageText, "\n")
             };
         }
         function allEditsBeforePos(edits, pos) {
@@ -29342,18 +30019,15 @@ var ts;
                     this.updateErrorCheck(checkList, this.changeSeq, function (n) { return n == _this.changeSeq; }, delay);
                 }
             };
-            Session.prototype.change = function (line, col, deleteLen, insertString, fileName) {
+            Session.prototype.change = function (line, col, endLine, endCol, insertString, fileName) {
                 var file = ts.normalizePath(fileName);
                 var project = this.projectService.getProjectForFile(file);
                 if (project) {
                     var compilerService = project.compilerService;
-                    var pos = compilerService.host.lineColToPosition(file, line, col);
-                    if (pos >= 0) {
-                        var end = pos;
-                        if (deleteLen) {
-                            end += deleteLen;
-                        }
-                        compilerService.host.editScript(file, pos, end, insertString);
+                    var start = compilerService.host.lineColToPosition(file, line, col);
+                    var end = compilerService.host.lineColToPosition(file, endLine, endCol);
+                    if (start >= 0) {
+                        compilerService.host.editScript(file, start, end, insertString);
                         this.changeSeq++;
                     }
                 }
@@ -29518,7 +30192,7 @@ var ts;
                         }
                         case CommandNames.Change: {
                             var changeArgs = request.arguments;
-                            this.change(changeArgs.line, changeArgs.col, changeArgs.deleteLen, changeArgs.insertString, changeArgs.file);
+                            this.change(changeArgs.line, changeArgs.col, changeArgs.endLine, changeArgs.endCol, changeArgs.insertString, changeArgs.file);
                             break;
                         }
                         case CommandNames.Reload: {
@@ -29749,3 +30423,4 @@ var ts;
         new IOSession(ts.sys, logger).listen();
     })(server = ts.server || (ts.server = {}));
 })(ts || (ts = {}));
+//# sourceMappingURL=file:////Users/steve/src/TypeScript/built/local/tsserver.js.map
