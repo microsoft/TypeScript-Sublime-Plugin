@@ -412,7 +412,7 @@
 		<key>meta-class-member-method</key>
 		<dict>
 			<key>begin</key>
-			<string>\b(?:(get|set)\s+)?([a-zA-Z_$][\w$]*)\s*(?=\()</string>
+			<string>\b(?:(get|set)\s+)?([a-zA-Z_$][\w$]*)\s*\??\s*(?=\()</string>
 			<key>beginCaptures</key>
 			<dict>
 				<key>1</key>
