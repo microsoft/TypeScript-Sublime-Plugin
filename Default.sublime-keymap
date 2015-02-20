@@ -89,7 +89,6 @@
 	  { "key": "auto_complete_visible","operator": "equal", "operand": true }
       ]
     },
-
     { "keys": ["shift+enter"], "command": "typescript_format_on_key", "args": { "key": "\n" },
       "context": [
           {"key": "selector", "operator": "equal", "operand": "source.ts" }
@@ -104,5 +103,5 @@
       "context": [
           {"key": "selector", "operator": "equal", "operand": "source.ts" }
       ]
-    },
+    }
 ]
