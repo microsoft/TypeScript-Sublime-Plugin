@@ -1,4 +1,3 @@
-node_modules/
 .tmpbuf
 .log*
 built/*
@@ -6,4 +5,4 @@ built/*
 src/service/*.js
 src/testsrc/*.js
 src/service/editorServices.d.ts
-!clients/sublime/TypeScript/node_modules
+*.pyc

@@ -6,10 +6,14 @@ import time
 import sublime
 import sublime_plugin
 
+# get the directory path to this file; ST2 requires this to be done at global scope
+pluginDir = os.path.dirname(os.path.realpath(__file__))
+pluginName = os.path.basename(pluginDir)
+
 # Adds the current path, so sublime can load our modules fine in both Sublime 2 & 3
 # Sublime 2 doesn't like relative module references .<module>
 # Sublime 3 requires relative module references to load from the current path
-sys.path.append(os.path.dirname(__file__))
+sys.path.append(pluginDir)
 
 from nodeclient import NodeCommClient
 from serviceproxy import *
@@ -23,10 +27,6 @@ except ImportError:
 
 # globally-accessible information singleton; set in function plugin_loaded
 cli = None
-
-# get the directory path to this file; ST2 requires this to be done
-# at global scope
-dirpath = os.path.dirname(os.path.realpath(__file__))
 
 # currently active view
 def active_view():
@@ -209,7 +209,7 @@ class EditorClient:
         procFile = settings.get('typescript_proc_file')
         if not procFile:
             # otherwise, get tsserver.js from package directory
-            procFile = os.path.join(dirpath, "tsserver/tsserver.js")
+            procFile = os.path.join(pluginDir, "tsserver/tsserver.js")
         print("spawning node module: " + procFile)
         
         self.nodeClient = NodeCommClient(procFile)
@@ -353,7 +353,7 @@ def sendReplaceChangesForRegions(view, regions, insertString):
         cli.service.change(view.file_name(), location, endLocation, insertString)
 
 def getTempFileName():
-   return os.path.join(dirpath, ".tmpbuf")
+   return os.path.join(pluginDir, ".tmpbuf")
 
 # write the buffer of view to a temporary file and have the server reload it
 def reloadBuffer(view, clientInfo=None):
@@ -972,8 +972,10 @@ class TypescriptFindReferencesCommand(sublime_plugin.TextCommand):
 def updateRefLine(refInfo, curLine, view):
     view.erase_regions("curref")
     caretPos = view.text_point(curLine, 0)
+    # sublime 2 doesn't support custom icons
+    icon = "Packages/" + pluginName + "/icons/arrow-right3.png" if not cli.ST2() else ""
     view.add_regions("curref", [sublime.Region(caretPos, caretPos + 1)], 
-                     "keyword", "Packages/TypeScript/icons/arrow-right3.png", 
+                     "keyword", icon, 
                      sublime.HIDDEN)
 
 
@@ -1059,7 +1061,7 @@ class TypescriptPopulateRefs(sublime_plugin.TextCommand):
         self.view.erase(text, sublime.Region(0, self.view.size()))
         header = "References to {0} \n\n".format(refDisplayString)
         self.view.insert(text, self.view.sel()[0].begin(), header)
-        self.view.set_syntax_file('Packages/TypeScript/FindRefs.hidden-tmLanguage')
+        self.view.set_syntax_file("Packages/" + pluginName + "/FindRefs.hidden-tmLanguage")
         window = sublime.active_window()
         refInfo = None
         if len(refs) > 0:
