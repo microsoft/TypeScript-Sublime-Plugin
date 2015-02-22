@@ -73,35 +73,35 @@
           {"key": "selector", "operator": "equal", "operand": "source.ts" }
       ]
     },
-    { "keys": ["enter"], "command": "typescript_format_on_key", "args": { "key": "\n" },
-      "context": [
-	  { "key": "auto_complete_visible", "operator": "equal", "operand": false },
-          {"key": "selector", "operator": "equal", "operand": "source.ts" }
-      ]
+    {
+        "keys": ["enter"], "command": "typescript_format_on_key", "args": { "key": "\n" },
+        "context": [
+	    { "key": "auto_complete_visible", "operator": "equal", "operand": false },
+	    { "key": "following_text", "operator": "not_regex_match", "operand": "^\\}" },
+            { "key": "selector", "operator": "not_equal", "operand": "meta.scope.between-tag-pair" },
+            { "key": "selector", "operator": "equal", "operand": "source.ts" }
+        ]
     },
     { "keys": ["enter"], "command": "typescript_go_to_ref", 
       "context": [
           {"key": "selector", "operator": "equal", "operand": "text.find-refs" }
       ]
     },
-    { "keys": ["enter"], "command": "commit_completion",
+    {
+        "keys": ["enter"], "command": "commit_completion",
+        "context": [
+	    { "key": "auto_complete_visible","operator": "equal", "operand": true }
+        ]
+    },
+    { "keys": ["ctrl+;"], "command": "typescript_format_line",
       "context": [
-	  { "key": "auto_complete_visible","operator": "equal", "operand": true }
+          { "key": "selector", "operator": "equal", "operand": "source.ts" }
       ]
     },
-    { "keys": ["shift+enter"], "command": "typescript_format_on_key", "args": { "key": "\n" },
+    { "keys": ["ctrl+shift+]"], "command": "typescript_format_brackets",
       "context": [
-          {"key": "selector", "operator": "equal", "operand": "source.ts" }
-      ]
-    },
-    { "keys": ["keypad_enter"], "command": "typescript_format_on_key", "args": { "key": "\n" },
-      "context": [
-          {"key": "selector", "operator": "equal", "operand": "source.ts" }
-      ]
-    },
-    { "keys": ["shift+keypad_enter"], "command": "typescript_format_on_key", "args": { "key": "\n" },
-      "context": [
-          {"key": "selector", "operator": "equal", "operand": "source.ts" }
+          { "key": "selector", "operator": "equal", "operand": "source.ts" }
       ]
     }
+
 ]

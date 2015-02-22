@@ -1,4 +1,4 @@
-TS = ../../../TypeScript
+TS = ~/src/TypeScript
 TSLOC = $(TS)/built/local
 BIN = $(TSLOC)/tsserver.js $(TSLOC)/tsserver.js.map $(TSLOC)/lib.d.ts $(TSLOC)/lib.es6.d.ts 
 LTSC = node $(TSLOC)/tsc.js
@@ -8,7 +8,7 @@ it: $(SRC)
 	$(LTSC) node.d.ts editorServices.ts protocol.ts server.ts -m commonjs --noImplicitAny -out protocol.js 
 
 install:
-	cp $(BIN) ../../clients/sublime/TypeScript/tsserver
+	cp $(BIN) ../../tsserver
 
 clean: 
 	-rm *.js

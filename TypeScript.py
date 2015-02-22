@@ -2,6 +2,7 @@ import json
 import os
 import sys
 import time
+import re
 
 import sublime
 import sublime_plugin
@@ -94,7 +95,7 @@ class ClientFileInfo:
             'syntacticDiag': [], 
             'semanticDiag': [], 
         }
-
+        self.loadHandler = None
 
 # a reference to a source file, line, column; next and prev refer to the
 # next and previous reference in a view containing references
@@ -277,7 +278,6 @@ class FileInfo:
         self.lastModChangeCount = cc
         self.modCount = 0
 
-
 # region that will not change as buffer is modified
 class StaticRegion:
     def __init__(self, b, e):
@@ -289,6 +289,9 @@ class StaticRegion:
 
     def begin(self):
         return self.b
+
+    def empty(self):
+        return self.b == self.e
 
 
 # convert a list of static regions to ordinary regions
@@ -334,13 +337,16 @@ def decrLocsToRegions(locs, amt):
         rr.append(sublime.Region(loc - amt, loc - amt))
     return rr
 
-# right now, we must have this setting because no way to guess how to translate
-# tabs on the server side; so burn it in
+# right now, we have this setting because there is no way to know how to translate
+# tabs on the server side
 # TODO: see if we can tolerate tabs by having the editor tell the server how
 # to interpret them
 def setFilePrefs(view):
     settings = view.settings()
-    settings.set('translateTabsToSpaces', True)
+    settings.set('translate_tabs_to_spaces', True)
+    settings.set('tab_size', 4)
+    settings.set('detect_indentation', False)
+    settings.set('use_tab_stops', False)
 
 # given a list of regions and a (possibly zero-length) string to insert, 
 # send the appropriate change information to the server
@@ -474,12 +480,10 @@ class TypeScriptListener(sublime_plugin.EventListener):
         filename = diagEvtBody.file
         if os.name == 'nt':
            filename = filename.replace('/', '\\')
-        print("SEM!!! " + filename)
         diags = diagEvtBody.diagnostics
         info = self.fileMap.get(filename)
         if info:
             view = info.view
-            print("sem: " + str(info.changeCountErrReq) + " " + str(self.change_count(view)))
             if info.changeCountErrReq == self.change_count(view):
                 if syntactic:
                     regionKey = 'syntacticDiag'
@@ -512,7 +516,6 @@ class TypeScriptListener(sublime_plugin.EventListener):
 
     # event arrived from the server; call appropriate handler
     def dispatchEvent(self, ev):
-        print("dispatch event")
         evtype = ev.event
         if evtype == 'syntaxDiag':
             self.showErrorMsgs(ev.body, syntactic=True)
@@ -553,7 +556,6 @@ class TypeScriptListener(sublime_plugin.EventListener):
         view = active_view()
         ev = cli.service.getEvent()
         if ev is not None:
-            print("idle got event")
             self.dispatchEvent(ev)
             self.errRefreshRequested = False
             # reset the timer in case more events are on the queue
@@ -567,6 +569,12 @@ class TypeScriptListener(sublime_plugin.EventListener):
             # request errors
             self.refreshErrors(view, 500)
 
+    def on_load(self, view):
+        clientInfo = cli.getOrAddFile(view.file_name())
+        if clientInfo and clientInfo.loadHandler:
+            clientInfo.loadHandler(view)
+            clientInfo.loadHandler = None
+        
     # ST3 only
     # for certain text commands, learn what changed and notify the
     # server, to avoid sending the whole buffer during completion
@@ -654,15 +662,7 @@ class TypeScriptListener(sublime_plugin.EventListener):
                 # change handled in on_text_command
                 info.clientInfo.changeCount = self.change_count(view)
                 info.preChangeSent = False
-            elif (lastCommand == "insert") and (not "\n" in args['characters']):
-                # single-line insert, use saved cursor information to determine
-                # what was inserted
-                # REVIEW: consider using this only if there is a single cursor, 
-                # and only if that
-                # cursor is an empty region; right now, the code tries to
-                # handle multiple cursors
-                # and non-empty selections (which will be replaced by the
-                # string inserted)
+            elif (lastCommand == "insert") and (not "\n" in args['characters']) and (len(info.prevSel) == 1) and (info.prevSel[0].empty()):
                 info.clientInfo.changeCount = self.change_count(view)
                 prevCursor = info.prevSel[0].begin()
                 cursor = view.sel()[0].begin()
@@ -905,6 +905,12 @@ class TypescriptRenameCommand(sublime_plugin.TextCommand):
                                                          on_done, None, on_cancel)
 
 
+def locsToValue(locs):
+    locsValue = []
+    for loc in locs:
+        locsValue.append(loc.toDict())
+    return locsValue
+
 # called from on_done handler in finish_rename command
 # on_done is called by input panel for new name
 class TypescriptFinishRenameCommand(sublime_plugin.TextCommand):
@@ -916,14 +922,51 @@ class TypescriptFinishRenameCommand(sublime_plugin.TextCommand):
             for outerLoc in outerLocs:
                 file = outerLoc.file
                 innerLocs = outerLoc.locs
-                for innerLoc in innerLocs:
-                    startlc = innerLoc.start
-                    (startl, startc) = extractLineCol(startlc)
-                    endlc = innerLoc.end
-                    (endl, endc) = extractLineCol(endlc)
-                    applyEdit(text, self.view, startl, startc, endl, 
-                              endc, ntext=newName)
+                activeWindow = sublime.active_window()
+                renameView = activeWindow.find_open_file(file)
+                if not renameView:
+                    renameView = activeWindow.open_file(file)
+                if renameView.is_loading():
+                    clientInfo = cli.getOrAddFile(file)
+                    innerLocsValue = locsToValue(innerLocs)
+                    def applyLocs(v):
+                        v.run_command('typescript_delayed_rename_file',
+                                      { "locs" : innerLocsValue, "name" : newName })
+                    clientInfo.loadHandler = applyLocs
+                elif renameView != self.view:
+                    print(" got to " + renameView.file_name())
+                    innerLocsValue = locsToValue(innerLocs)
+                    print(innerLocsValue)
+                    renameView.run_command('typescript_delayed_rename_file',
+                                           { "locs" : innerLocsValue, "name" : newName })
+                else:
+                    for innerLoc in innerLocs:
+                        startlc = innerLoc.start
+                        (startl, startc) = extractLineCol(startlc)
+                        endlc = innerLoc.end
+                        (endl, endc) = extractLineCol(endlc)
+                        applyEdit(text, self.view, startl, startc, endl, 
+                                  endc, ntext = newName)
 
+
+def extractLineColFromDict(lc):
+    line = lc['line'] - 1
+    col = lc['col'] - 1
+    return (line, col)
+
+class TypescriptDelayedRenameFile(sublime_plugin.TextCommand):
+    def run(self, text, locs = None, name = ""):
+        if locs and (len(name) > 0):
+            print(name)
+            print(locs)
+            for innerLoc in locs:
+                startlc = innerLoc['start']
+                (startl, startc) = extractLineColFromDict(startlc)
+                endlc = innerLoc['end']
+                (endl, endc) = extractLineColFromDict(endlc)
+                applyEdit(text, self.view, startl, startc, endl, 
+                          endc, ntext = name)
+            
 
 # if the FindReferences view is active, get it
 # TODO: generalize this so that we can find any scratch view
@@ -1136,16 +1179,17 @@ def applyFormattingChanges(text, view, codeEdits):
 # format on ";", "}", or "\n"; called by typing these keys in a ts file
 # in the case of "\n", this is only called when no completion dialogue visible
 class TypescriptFormatOnKey(sublime_plugin.TextCommand):
-    def run(self, text, key=""):
+    def run(self, text, key = "", insertKey = True):
         if 0 == len(key):
             return
         loc = self.view.sel()[0].begin()
-        self.view.insert(text, loc, key)
-        sendReplaceChangesForRegions(self.view, [sublime.Region(loc, loc)], key)
-        if not cli.ST2():
-           clientInfo = cli.getOrAddFile(self.view.file_name())
-           clientInfo.changeCount = self.view.change_count()
-        checkUpdateView(self.view)
+        if insertKey:
+            self.view.insert(text, loc, key)
+            sendReplaceChangesForRegions(self.view, [sublime.Region(loc, loc)], key)
+            if not cli.ST2():
+                clientInfo = cli.getOrAddFile(self.view.file_name())
+                clientInfo.changeCount = self.view.change_count()
+            checkUpdateView(self.view)
         formatResp = cli.service.formatOnKey(self.view.file_name(), getLocationFromView(self.view), key)
         if formatResp.success:
             codeEdits = formatResp.body
@@ -1176,14 +1220,38 @@ class TypescriptFormatDocument(sublime_plugin.TextCommand):
     def run(self, text):
         formatRange(text, self.view, 0, self.view.size())
 
+nonBlankLinePattern = re.compile("[\S]+")
 
 # command to format the current line
 class TypescriptFormatLine(sublime_plugin.TextCommand):
     def run(self, text):
         lineRegion = self.view.line(self.view.sel()[0])
-        formatRange(text, self.view, lineRegion.begin(), lineRegion.end())
+        lineText = self.view.substr(lineRegion)
+        if (nonBlankLinePattern.search(lineText)):
+            formatRange(text, self.view, lineRegion.begin(), lineRegion.end())
+        else:
+            position = self.view.sel()[0].begin()
+            cursor = self.view.rowcol(position)
+            line = cursor[0]
+            if line > 0:
+                self.view.run_command('typescript_format_on_key', { "key": "\n", "insertKey": False });
 
-
+class TypescriptFormatBrackets(sublime_plugin.TextCommand):
+    def run(self, text):
+        sel=self.view.sel()
+        if (len(sel) == 1):
+            print('format brackets')
+            originalPos = sel[0].begin()
+            bracketChar = self.view.substr(originalPos)
+            if bracketChar != "}":
+                self.view.run_command('move_to', { "to": "brackets" });
+                bracketPos = self.view.sel()[0].begin()
+                bracketChar = self.view.substr(bracketPos)
+            if bracketChar == "}":
+                self.view.run_command('move', { "by": "characters", "forward": True })
+                self.view.run_command('typescript_format_on_key', { "key": "}", "insertKey": False });
+                self.view.run_command('move', { "by": "characters", "forward": True })
+        
 # this is not always called on startup by Sublime, so we call it
 # from on_activated or on_close if necessary
 # TODO: get abbrev message and set up dictionary

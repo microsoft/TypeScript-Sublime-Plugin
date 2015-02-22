@@ -101,6 +101,8 @@ class Location:
         self.line = line
         self.col = col
 
+    def toDict(self):
+        return { "line": self.line, "col": self.col }
 
 class FileSpan(object):
     def __init__(self, file, start, end):
@@ -108,12 +110,16 @@ class FileSpan(object):
         self.start = Location(**start)
         self.end = Location(**end)
 
-
 class FileSpanWithinFile:
     def __init__(self, start, end):
         self.start = Location(**start)
         self.end = Location(**end)
 
+    def toDict(self):
+        return {
+            "start": self.start.toDict(),
+            "end": self.end.toDict()
+        }
 
 class DefinitionResponse(Response):
     def __init__(self, body=None, **kwargs):
