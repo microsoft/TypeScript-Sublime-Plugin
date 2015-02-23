@@ -1,4 +1,6 @@
-TypeScript-Service
+TypeScript-Sublime-Service
 ==================
 
-IO wrapper around TypeScript language services, allowing for easy consumption by editor plugins
+TypeScript Plugin for Sublime Text
+
+The plugin uses an IO wrapper around TypeScript language services
