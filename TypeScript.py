@@ -11,10 +11,9 @@ import sublime_plugin
 pluginDir = os.path.dirname(os.path.realpath(__file__))
 pluginName = os.path.basename(pluginDir)
 
-# Adds the current path, so sublime can load our modules fine in both Sublime 2 & 3
-# Sublime 2 doesn't like relative module references .<module>
-# Sublime 3 requires relative module references to load from the current path
-sys.path.append(pluginDir)
+libsDir = os.path.join(pluginDir, 'libs')
+if libsDir not in sys.path:
+    sys.path.insert(0, libsDir)
 
 from nodeclient import NodeCommClient
 from serviceproxy import *
