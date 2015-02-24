@@ -7,16 +7,16 @@
     <key>patterns</key>
     <array>
       <dict>
-	<key>match</key>
-	<string>^([^ ].*:)$</string>
-	<key>captures</key>
-	<dict>
-	  <key>1</key>
-	  <dict>
-	    <key>name</key>
-	    <string>entity.name.filename.find-refs</string>
-	  </dict>
-	</dict>
+        <key>match</key>
+        <string>^([^ ].*:)$</string>
+        <key>captures</key>
+        <dict>
+          <key>1</key>
+          <dict>
+            <key>name</key>
+            <string>entity.name.filename.find-refs</string>
+          </dict>
+        </dict>
       </dict>
       <dict>
         <key>match</key>
@@ -31,135 +31,135 @@
         <string>text.find-refs</string>
       </dict>
       <dict>
-	<key>match</key>
-	<string>^ +([0-9]+) </string>
-	<key>captures</key>
-	<dict>
-	  <key>1</key>
-	  <dict>
-	    <key>name</key>
-	    <string>constant.numeric.line-number.find-refs</string>
-	  </dict>
-	</dict>
+        <key>match</key>
+        <string>^ +([0-9]+) </string>
+        <key>captures</key>
+        <dict>
+          <key>1</key>
+          <dict>
+            <key>name</key>
+            <string>constant.numeric.line-number.find-refs</string>
+          </dict>
+        </dict>
       </dict>
       <dict>
-	<key>match</key>
-	<string>^ +([0-9]+):</string>
-	<key>captures</key>
-	<dict>
-	  <key>1</key>
-	  <dict>
-	    <key>name</key>
-	    <string>constant.numeric.line-number.match.find-refs</string>
-	  </dict>
-	</dict>
+        <key>match</key>
+        <string>^ +([0-9]+):</string>
+        <key>captures</key>
+        <dict>
+          <key>1</key>
+          <dict>
+            <key>name</key>
+            <string>constant.numeric.line-number.match.find-refs</string>
+          </dict>
+        </dict>
       </dict>
       <dict>
         <key>include</key>
         <string>source.ts#misc-highlighting</string>
       </dict>
       <dict>
-	<key>begin</key>
-	<string>"</string>
-	<key>beginCaptures</key>
-	<dict>
-	  <key>0</key>
-	  <dict>
-	    <key>name</key>
-	    <string>punctuation.definition.string.begin.ts</string>
-	  </dict>
-	</dict>
-	<key>end</key>
-	<string>"</string>
-	<key>endCaptures</key>
-	<dict>
-	  <key>0</key>
-	  <dict>
-	    <key>name</key>
-	    <string>punctuation.definition.string.end.ts</string>
-	  </dict>
-	</dict>
-	<key>name</key>
-	<string>string.quoted.double.ts</string>
-	<key>patterns</key>
-	<array>
-	  <dict>
-	    <key>match</key>
-	    <string>\\(x\h{2}|[0-2][0-7]{,2}|3[0-6][0-7]?|37[0-7]?|[4-7][0-7]?|.)</string>
-	    <key>name</key>
-	    <string>constant.character.escape.ts</string>
-	  </dict>
-	</array>
+        <key>begin</key>
+        <string>"</string>
+        <key>beginCaptures</key>
+        <dict>
+          <key>0</key>
+          <dict>
+            <key>name</key>
+            <string>punctuation.definition.string.begin.ts</string>
+          </dict>
+        </dict>
+        <key>end</key>
+        <string>"</string>
+        <key>endCaptures</key>
+        <dict>
+          <key>0</key>
+          <dict>
+            <key>name</key>
+            <string>punctuation.definition.string.end.ts</string>
+          </dict>
+        </dict>
+        <key>name</key>
+        <string>string.quoted.double.ts</string>
+        <key>patterns</key>
+        <array>
+          <dict>
+            <key>match</key>
+            <string>\\(x\h{2}|[0-2][0-7]{,2}|3[0-6][0-7]?|37[0-7]?|[4-7][0-7]?|.)</string>
+            <key>name</key>
+            <string>constant.character.escape.ts</string>
+          </dict>
+        </array>
       </dict>
       <dict>
-	<key>comment</key>
+        <key>comment</key>
         <string>start misc ts patterns for lex highlighting</string>
-	<key>begin</key>
-	<string>'</string>
-	<key>beginCaptures</key>
-	<dict>
-	  <key>0</key>
-	  <dict>
-	    <key>name</key>
-	    <string>punctuation.definition.string.begin.ts</string>
-	  </dict>
-	</dict>
-	<key>end</key>
-	<string>'</string>
-	<key>endCaptures</key>
-	<dict>
-	  <key>0</key>
-	  <dict>
-	    <key>name</key>
-	    <string>punctuation.definition.string.end.ts</string>
-	  </dict>
-	</dict>
-	<key>name</key>
-	<string>string.quoted.single.ts</string>
-	<key>patterns</key>
-	<array>
-	  <dict>
-	    <key>match</key>
-	    <string>\\(x\h{2}|[0-2][0-7]{,2}|3[0-6][0-7]?|37[0-7]?|[4-7][0-7]?|.)</string>
-	    <key>name</key>
-	    <string>constant.character.escape.ts</string>
-	  </dict>
-	</array>
+        <key>begin</key>
+        <string>'</string>
+        <key>beginCaptures</key>
+        <dict>
+          <key>0</key>
+          <dict>
+            <key>name</key>
+            <string>punctuation.definition.string.begin.ts</string>
+          </dict>
+        </dict>
+        <key>end</key>
+        <string>'</string>
+        <key>endCaptures</key>
+        <dict>
+          <key>0</key>
+          <dict>
+            <key>name</key>
+            <string>punctuation.definition.string.end.ts</string>
+          </dict>
+        </dict>
+        <key>name</key>
+        <string>string.quoted.single.ts</string>
+        <key>patterns</key>
+        <array>
+          <dict>
+            <key>match</key>
+            <string>\\(x\h{2}|[0-2][0-7]{,2}|3[0-6][0-7]?|37[0-7]?|[4-7][0-7]?|.)</string>
+            <key>name</key>
+            <string>constant.character.escape.ts</string>
+          </dict>
+        </array>
       </dict>
       <dict>
         <key>match</key>
         <string>(var)[^=]*;</string>
         <key>captures</key>
         <dict>
-	  <key>1</key>
-	  <dict>
-	    <key>name</key>
-	    <string>storage.type.ts</string>
-	  </dict>
+          <key>1</key>
+          <dict>
+            <key>name</key>
+            <string>storage.type.ts</string>
+          </dict>
         </dict>
-	<key>name</key>
-	<string>text.find-refs</string>
+        <key>name</key>
+        <string>text.find-refs</string>
       </dict>
       <dict>
         <key>match</key>
         <string>\b(function)(?:\s+([a-zA-Z_$][\w$]*))?\s*</string>
         <key>captures</key>
         <dict>
-	  <key>0</key>
-	  <dict>
-	    <key>name</key>
-	    <string>meta.function.ts</string>
-	  </dict>
-	  <key>1</key>
-	  <dict>
-	    <key>name</key>
-	    <string>storage.type.function.ts</string>
-	  </dict>
-	  <key>2</key>
-	  <dict>
-	    <key>name</key>
-	    <string>entity.name.function.ts</string>
-	  </dict>
+          <key>0</key>
+          <dict>
+            <key>name</key>
+            <string>meta.function.ts</string>
+          </dict>
+          <key>1</key>
+          <dict>
+            <key>name</key>
+            <string>storage.type.function.ts</string>
+          </dict>
+          <key>2</key>
+          <dict>
+            <key>name</key>
+            <string>entity.name.function.ts</string>
+          </dict>
         </dict>
       </dict>
       <dict>
@@ -175,64 +175,64 @@
         </dict>
       </dict>
       <dict>
-	<key>match</key>
-	<string>!|\$|%|&amp;|\*|\-\-|\-|\+\+|\+|~|===|==|=|!=|!==|&lt;=|&gt;=|&lt;&lt;=|&gt;&gt;=|&gt;&gt;&gt;=|&lt;&gt;|&lt;|&gt;|!|&amp;&amp;|\|\||\*=|\?:|(?&lt;!\()/=|%=|\+=|\-=|&amp;=|\^=|\b(in|instanceof|new|delete|typeof|void)\b</string>
-	<key>name</key>
-	<string>keyword.operator.ts</string>
+        <key>match</key>
+        <string>!|\$|%|&amp;|\*|\-\-|\-|\+\+|\+|~|===|==|=|!=|!==|&lt;=|&gt;=|&lt;&lt;=|&gt;&gt;=|&gt;&gt;&gt;=|&lt;&gt;|&lt;|&gt;|!|&amp;&amp;|\|\||\*=|\?:|(?&lt;!\()/=|%=|\+=|\-=|&amp;=|\^=|\b(in|instanceof|new|delete|typeof|void)\b</string>
+        <key>name</key>
+        <string>keyword.operator.ts</string>
       </dict>
       <dict>
-	<key>match</key>
-	<string>\b(Infinity|NaN|undefined)\b</string>
-	<key>name</key>
-	<string>constant.language.ts</string>
+        <key>match</key>
+        <string>\b(Infinity|NaN|undefined)\b</string>
+        <key>name</key>
+        <string>constant.language.ts</string>
       </dict>
       <dict>
-	<key>match</key>
-	<string>\bnull\b</string>
-	<key>name</key>
-	<string>constant.language.null.ts</string>
+        <key>match</key>
+        <string>\bnull\b</string>
+        <key>name</key>
+        <string>constant.language.null.ts</string>
       </dict>
       <dict>
-	<key>match</key>
-	<string>\b(super|this)\b</string>
-	<key>name</key>
-	<string>support.constant.ts</string>
+        <key>match</key>
+        <string>\b(super|this)\b</string>
+        <key>name</key>
+        <string>support.constant.ts</string>
       </dict>
       <dict>
-	<key>match</key>
-	<string>\btrue\b</string>
-	<key>name</key>
-	<string>constant.language.boolean.true.ts</string>
+        <key>match</key>
+        <string>\btrue\b</string>
+        <key>name</key>
+        <string>constant.language.boolean.true.ts</string>
       </dict>
       <dict>
-	<key>match</key>
-	<string>\bfalse\b</string>
-	<key>name</key>
-	<string>constant.language.boolean.false.ts</string>
+        <key>match</key>
+        <string>\bfalse\b</string>
+        <key>name</key>
+        <string>constant.language.boolean.false.ts</string>
       </dict>
       <dict>
-	<key>match</key>
-	<string>\b(break|case|catch|continue|declare|default|do|else|finally|for|goto|if|import|package|return|switch|throw|try|while)\b</string>
-	<key>name</key>
-	<string>keyword.control.ts</string>
+        <key>match</key>
+        <string>\b(break|case|catch|continue|declare|default|do|else|finally|for|goto|if|import|package|return|switch|throw|try|while)\b</string>
+        <key>name</key>
+        <string>keyword.control.ts</string>
       </dict>
       <dict>
-	<key>match</key>
-	<string>\b(boolean|byte|char|class|double|enum|float|function|int|interface|long|number|short|string|var|void)\b</string>
-	<key>name</key>
-	<string>storage.type.ts</string>
+        <key>match</key>
+        <string>\b(boolean|byte|char|class|double|enum|float|function|int|interface|long|number|short|string|var|void)\b</string>
+        <key>name</key>
+        <string>storage.type.ts</string>
       </dict>
       <dict>
-	<key>match</key>
-	<string>\b(const|export|extends|final|implements|native|private|protected|public|static|synchronized|throws|transient|volatile)\b</string>
-	<key>name</key>
-	<string>storage.modifier.ts</string>
+        <key>match</key>
+        <string>\b(const|export|extends|final|implements|native|private|protected|public|static|synchronized|throws|transient|volatile)\b</string>
+        <key>name</key>
+        <string>storage.modifier.ts</string>
       </dict>
       <dict>
-	<key>match</key>
-	<string>\b((0(x|X)[0-9a-fA-F]+)|([0-9]+(\.[0-9]+)?))\b</string>
-	<key>name</key>
-	<string>constant.numeric.ts</string>
+        <key>match</key>
+        <string>\b((0(x|X)[0-9a-fA-F]+)|([0-9]+(\.[0-9]+)?))\b</string>
+        <key>name</key>
+        <string>constant.numeric.ts</string>
       </dict>
     </array>
     <key>scopeName</key>

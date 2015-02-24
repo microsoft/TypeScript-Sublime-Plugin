@@ -1,0 +1,10 @@
+[
+    {
+        "button": "button1",
+        "count": 2,
+        "press_command": "typescript_go_to_ref",
+        "context": [
+            { "key": "auto_complete_visible", "operator": "equal", "operand": true }
+        ]
+    }
+]

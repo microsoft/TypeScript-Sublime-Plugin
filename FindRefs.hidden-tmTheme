@@ -7,46 +7,46 @@
     <key>settings</key>
     <array>
       <dict>
-	<key>settings</key>
-	<dict>
-	  <key>background</key>
-	  <string>#272822</string>
-	  <key>foreground</key>
-	  <string>#ffffff</string>
-	  <key>caret</key>
-	  <string>#FFFFFF</string>
-	  <key>lineHighlight</key>
-	  <string>#3E3D32</string>
-	</dict>
+        <key>settings</key>
+        <dict>
+          <key>background</key>
+          <string>#272822</string>
+          <key>foreground</key>
+          <string>#ffffff</string>
+          <key>caret</key>
+          <string>#FFFFFF</string>
+          <key>lineHighlight</key>
+          <string>#3E3D32</string>
+        </dict>
       </dict>
       <dict>
-	<key>scope</key>
-	<string>constant.numeric.line-number.find-refs</string>
-	<key>settings</key>
-	<dict>
-	  <key>foreground</key>
-	  <string>#745FAC</string>
-	</dict>
-      </dict>
-
-      <dict>
-	<key>scope</key>
-	<string>constant.numeric.line-number.match.find-refs</string>
-	<key>settings</key>
-	<dict>
-	  <key>foreground</key>
-	  <string>#AA81FF</string>
-	</dict>
+        <key>scope</key>
+        <string>constant.numeric.line-number.find-refs</string>
+        <key>settings</key>
+        <dict>
+          <key>foreground</key>
+          <string>#745FAC</string>
+        </dict>
       </dict>
 
       <dict>
-	<key>scope</key>
-	<string>entity.name.filename.find-refs</string>
-	<key>settings</key>
-	<dict>
-	  <key>foreground</key>
-	  <string>#E6D762</string>
-	</dict>
+        <key>scope</key>
+        <string>constant.numeric.line-number.match.find-refs</string>
+        <key>settings</key>
+        <dict>
+          <key>foreground</key>
+          <string>#AA81FF</string>
+        </dict>
+      </dict>
+
+      <dict>
+        <key>scope</key>
+        <string>entity.name.filename.find-refs</string>
+        <key>settings</key>
+        <dict>
+          <key>foreground</key>
+          <string>#E6D762</string>
+        </dict>
       </dict>
 
     </array>
