@@ -87,12 +87,27 @@
             { "key": "selector", "operator": "equal", "operand": "source.ts" }
         ]
     },
+    // In case when auto match is enabled, only format if not within {}
     {
         "keys": [ "}" ],
         "command": "typescript_format_on_key",
         "args": { "key": "}" },
         "context": [
-            { "key": "selector", "operator": "equal", "operand": "source.ts" }
+            { "key": "selector", "operator": "equal", "operand": "source.ts" },
+            { "key": "setting.auto_match_enabled", "operator": "equal", "operand": true },
+            { "key": "selection_empty", "operator": "equal", "operand": true },
+            { "key": "preceding_text", "operator": "not_regex_contains", "operand": "\\{$" },
+            { "key": "following_text", "operator": "not_regex_contains", "operand": "^\\}" }
+        ]
+    },
+    // In case when auto match is disabled, format the block regardless
+    {
+        "keys": [ "}" ],
+        "command": "typescript_format_on_key",
+        "args": { "key": "}" },
+        "context": [
+            { "key": "selector", "operator": "equal", "operand": "source.ts" },
+            { "key": "setting.auto_match_enabled", "operator": "equal", "operand": false }
         ]
     },
     {
@@ -142,5 +157,4 @@
             { "key": "selector", "operator": "equal", "operand": "source.ts" }
         ]
     }
-
 ]
