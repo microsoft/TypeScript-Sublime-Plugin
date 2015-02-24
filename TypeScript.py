@@ -396,25 +396,17 @@ class TypeScriptListener(sublime_plugin.EventListener):
         self.pendingSelectionTimeout = 0
         self.errRefreshRequested = False
 
-    def change_count(self, view):
-       info = self.fileMap.get(view.file_name())
-       if info:
-          if cli.ST2():
-             return info.modCount
-          else:
-             return view.change_count()
-
-    # called by Sublime when a view receives focus
-    def on_activated(self, view):
+    def getInfo(self, view):
+        info = None
         if view.file_name() is not None:
             if is_typescript(view):
-                if not cli:
-                    plugin_loaded()
-                    print("ST2: " + str(cli.ST2()))
                 info = self.fileMap.get(view.file_name())
                 if not info:
-                    info = FileInfo(view.file_name(), self.change_count(view))
+                    if not cli:
+                        plugin_loaded()
+                    info = FileInfo(view.file_name(), None)
                     info.view = view
+                    settings = view.settings()
                     info.clientInfo = cli.getOrAddFile(view.file_name())
                     setFilePrefs(view)
                     self.fileMap[view.file_name()] = info
@@ -424,24 +416,38 @@ class TypeScriptListener(sublime_plugin.EventListener):
                           reloadBuffer(view, info.clientInfo)
                        else:
                           info.clientInfo.pendingChanges = True
-                else:
-                    self.mruFileList.remove(info)
-                self.mruFileList.append(info)
-                # save cursor in case we need to read what was inserted
-                info.prevSel = copyRegionsStatic(view.sel())
-                # ask server for initial error diagnostics
-                self.refreshErrors(view, 200)
-                # set modified and selection idle timers, so we can read
-                # diagnostics and update
-                # status line
-                self.setOnIdleTimer(20)
-                self.setOnSelectionIdleTimer(20)
+                    if (info in self.mruFileList):
+                        self.mruFileList.remove(info)
+                    self.mruFileList.append(info)
+        return info
+           
+    def change_count(self, view):
+        info = self.getInfo(view)
+        if info:
+            if cli.ST2():
+                return info.modCount
+            else:
+                return view.change_count()
+
+    # called by Sublime when a view receives focus
+    def on_activated(self, view):
+        info = self.getInfo(view)
+        if info:
+            # save cursor in case we need to read what was inserted
+            info.prevSel = copyRegionsStatic(view.sel())
+            # ask server for initial error diagnostics
+            self.refreshErrors(view, 200)
+            # set modified and selection idle timers, so we can read
+            # diagnostics and update
+            # status line
+            self.setOnIdleTimer(20)
+            self.setOnSelectionIdleTimer(20)
 
     # ask the server for diagnostic information on all opened ts files in
     # most-recently-used order
     # TODO: limit this request to ts files currently visible in views
     def refreshErrors(self, view, errDelay):
-        info = self.fileMap.get(view.file_name())
+        info = self.getInfo(view)
         if info and (info.changeCountErrReq < self.change_count(view)):
             info.changeCountErrReq = self.change_count(view)
             
@@ -535,7 +541,7 @@ class TypeScriptListener(sublime_plugin.EventListener):
     # update the status line (error message or quick info, if any)
     def onSelectionIdle(self):
         view = active_view()
-        info = self.fileMap.get(view.file_name())
+        info = self.getInfo(view)
         if info:
             self.update_status(view, info)
 
@@ -563,7 +569,7 @@ class TypeScriptListener(sublime_plugin.EventListener):
             # reset the timer if we haven't gotten an event
             # since the last time errors were requested
             self.setOnIdleTimer(50)
-        info = self.fileMap.get(view.file_name())
+        info = self.getInfo(view)
         if info:
             # request errors
             self.refreshErrors(view, 500)
@@ -580,7 +586,7 @@ class TypeScriptListener(sublime_plugin.EventListener):
     # or when key can be held down and repeated
     # called by ST3 for some, but not all, text commands
     def on_text_command(self, view, command_name, args):
-        info = self.fileMap.get(view.file_name())
+        info = self.getInfo(view)
         if info:
             info.changeSent = True
             info.preChangeSent = True
@@ -618,17 +624,26 @@ class TypeScriptListener(sublime_plugin.EventListener):
         else:
             view.run_command('typescript_quick_info')
 
-    # TODO: send close message to service for ts files
     def on_close(self, view):
        if not cli:
-          plugin_loaded()
+           plugin_loaded()
        if view.is_scratch() and (view.name() == "Find References"):
-          cli.disposeRefInfo()
+           cli.disposeRefInfo()
+       else:
+           info = self.getInfo(view)
+           if info:
+               if (info in self.mruFileList):
+                   self.mruFileList.remove(info)
+               # make sure we know the latest state of the file
+               reloadBuffer(view, info.clientInfo)
+               # notify the server that the file is closed
+               cli.service.close(view.file_name())
+          
 
     # called by Sublime when the cursor moves (or when text is selected)
     # called after on_modified (when on_modified is called)
     def on_selection_modified(self, view):
-        info = self.fileMap.get(view.file_name())
+        info = self.getInfo(view)
         if info:
             if not info.clientInfo:
                 info.clientInfo = cli.getOrAddFile(view.file_name())
@@ -649,7 +664,7 @@ class TypeScriptListener(sublime_plugin.EventListener):
     # usually called by Sublime when the buffer is modified
     # not called for undo, redo
     def on_modified(self, view):
-        info = self.fileMap.get(view.file_name())
+        info = self.getInfo(view)
         if info:
             info.modified = True
             if cli.ST2():
@@ -682,7 +697,7 @@ class TypeScriptListener(sublime_plugin.EventListener):
                 rr.append(sublime.Region(emptyRegionsA[i].begin(), emptyRegionsB[i].begin()))
             return rr
 
-        info = self.fileMap.get(view.file_name())
+        info = self.getInfo(view)
         if info:
             if (not info.changeSent) and info.modified:
                 # file is modified but on_text_command and on_modified did not
@@ -702,7 +717,7 @@ class TypeScriptListener(sublime_plugin.EventListener):
                     insertionString = view.substr(sublime.Region(info.completionPrefixSel[0].begin(), apresCompReg[0].begin()))
                     sendReplaceChangesForRegions(view, buildReplaceRegions(info.completionPrefixSel, info.completionSel), insertionString)
                     view.erase_regions("apresComp")
-                elif ((command_name == "typescript_format_on_key") or (command_name == "typescript_format_document") or (command_name == "typescript_format_selection") or (command_name == "typescript_format_line")):
+                elif ((command_name == "typescript_format_on_key") or (command_name == "typescript_format_document") or (command_name == "typescript_format_selection") or (command_name == "typescript_format_line") or (command_name == "typescript_paste_and_format")):
                      # changes were sent by the command so no need to
                      print("handled changes for " + command_name)
                 else:
@@ -748,7 +763,7 @@ class TypeScriptListener(sublime_plugin.EventListener):
     # synchronous for now; can change to async by adding hide/show from the
     # handler
     def on_query_completions(self, view, prefix, locations):
-        info = self.fileMap.get(view.file_name())
+        info = self.getInfo(view)
         if info:
             print("complete with: " + prefix)
             info.completionPrefixSel = decrLocsToRegions(locations, len(prefix))
@@ -1250,7 +1265,22 @@ class TypescriptFormatBrackets(sublime_plugin.TextCommand):
                 self.view.run_command('move', { "by": "characters", "forward": True })
                 self.view.run_command('typescript_format_on_key', { "key": "}", "insertKey": False });
                 self.view.run_command('move', { "by": "characters", "forward": True })
-        
+
+class TypescriptPasteAndFormat(sublime_plugin.TextCommand):
+    def run(self, text):
+        view = self.view
+        beforePaste = copyRegionsStatic(view.sel())
+        view.add_regions("apresPaste", copyRegions(view.sel()), flags = sublime.HIDDEN)
+        view.run_command("paste")
+        afterPaste = view.get_regions("apresPaste")
+        view.erase_regions("apresPaste")
+        for i in range(len(beforePaste)):
+            rb = beforePaste[i]
+            ra = afterPaste[i]
+            rblineStart = view.line(rb.begin()).begin()
+            ralineEnd = view.line(ra.begin()).end()
+            formatRange(text, view, rblineStart, ralineEnd)
+
 # this is not always called on startup by Sublime, so we call it
 # from on_activated or on_close if necessary
 # TODO: get abbrev message and set up dictionary

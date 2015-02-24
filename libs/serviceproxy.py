@@ -56,6 +56,11 @@ class ServiceProxy:
         jsonStr = jsonhelpers.encode(req)
         self.__comm.postCmd(jsonStr)
 
+    def close(self, path):
+        req = servicedefs.CloseRequest(self.incrSeq(), servicedefs.FileRequestArgs(path))
+        jsonStr = jsonhelpers.encode(req)
+        self.__comm.postCmd(jsonStr)
+
     def references(self, path, location=Location(1, 1)):
         req = servicedefs.ReferencesRequest(self.incrSeq(), servicedefs.FileLocationRequestArgs(path, location.line, location.col))
         jsonStr = jsonhelpers.encode(req)
