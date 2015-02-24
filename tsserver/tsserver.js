@@ -21933,7 +21933,7 @@ var ts;
             return items;
             var baseSensitivity = { sensitivity: "base" };
             function compareNavigateToItems(i1, i2) {
-                return (i1.matchKind - i2.matchKind) ||
+                return i1.matchKind - i2.matchKind ||
                     i1.name.localeCompare(i2.name, undefined, baseSensitivity) ||
                     i1.name.localeCompare(i2.name);
             }
@@ -26343,59 +26343,33 @@ var ts;
             var file = this.getEntry(fileName);
             return file && file.scriptSnapshot;
         };
-        HostCache.prototype.getChangeRange = function (fileName, lastKnownVersion, oldScriptSnapshot) {
-            var currentVersion = this.getVersion(fileName);
-            if (lastKnownVersion === currentVersion) {
-                return ts.unchangedTextChangeRange;
-            }
-            var scriptSnapshot = this.getScriptSnapshot(fileName);
-            return scriptSnapshot.getChangeRange(oldScriptSnapshot);
-        };
         return HostCache;
     })();
     var SyntaxTreeCache = (function () {
         function SyntaxTreeCache(host) {
             this.host = host;
-            this.currentFileName = "";
-            this.currentFileVersion = null;
-            this.currentSourceFile = null;
         }
-        SyntaxTreeCache.prototype.log = function (message) {
-            if (this.host.log) {
-                this.host.log(message);
+        SyntaxTreeCache.prototype.getCurrentSourceFile = function (fileName) {
+            var scriptSnapshot = this.host.getScriptSnapshot(fileName);
+            if (!scriptSnapshot) {
+                throw new Error("Could not find file: '" + fileName + "'.");
             }
-        };
-        SyntaxTreeCache.prototype.initialize = function (fileName) {
-            var start = new Date().getTime();
-            this.hostCache = new HostCache(this.host);
-            this.log("SyntaxTreeCache.Initialize: new HostCache: " + (new Date().getTime() - start));
-            var version = this.hostCache.getVersion(fileName);
+            var version = this.host.getScriptVersion(fileName);
             var sourceFile;
             if (this.currentFileName !== fileName) {
-                var scriptSnapshot = this.hostCache.getScriptSnapshot(fileName);
-                var start = new Date().getTime();
                 sourceFile = createLanguageServiceSourceFile(fileName, scriptSnapshot, 2, version, true);
-                this.log("SyntaxTreeCache.Initialize: createSourceFile: " + (new Date().getTime() - start));
             }
             else if (this.currentFileVersion !== version) {
-                var scriptSnapshot = this.hostCache.getScriptSnapshot(fileName);
-                var editRange = this.hostCache.getChangeRange(fileName, this.currentFileVersion, this.currentSourceFile.scriptSnapshot);
-                var start = new Date().getTime();
+                var editRange = scriptSnapshot.getChangeRange(this.currentFileScriptSnapshot);
                 sourceFile = updateLanguageServiceSourceFile(this.currentSourceFile, scriptSnapshot, version, editRange);
-                this.log("SyntaxTreeCache.Initialize: updateSourceFile: " + (new Date().getTime() - start));
             }
             if (sourceFile) {
                 this.currentFileVersion = version;
                 this.currentFileName = fileName;
+                this.currentFileScriptSnapshot = scriptSnapshot;
                 this.currentSourceFile = sourceFile;
             }
-        };
-        SyntaxTreeCache.prototype.getCurrentSourceFile = function (fileName) {
-            this.initialize(fileName);
             return this.currentSourceFile;
-        };
-        SyntaxTreeCache.prototype.getCurrentScriptSnapshot = function (fileName) {
-            return this.getCurrentSourceFile(fileName).scriptSnapshot;
         };
         return SyntaxTreeCache;
     })();
@@ -26761,6 +26735,7 @@ var ts;
             return useCaseSensitivefileNames ? fileName : fileName.toLowerCase();
         }
         function getValidSourceFile(fileName) {
+            fileName = ts.normalizeSlashes(fileName);
             var sourceFile = program.getSourceFile(getCanonicalFileName(fileName));
             if (!sourceFile) {
                 throw new Error("Could not find file: '" + fileName + "'.");
@@ -26815,7 +26790,7 @@ var ts;
                         if (sourceFileUpToDate(oldSourceFile)) {
                             return oldSourceFile;
                         }
-                        var textChangeRange = hostCache.getChangeRange(fileName, oldSourceFile.version, oldSourceFile.scriptSnapshot);
+                        var textChangeRange = hostFileInformation.scriptSnapshot.getChangeRange(oldSourceFile.scriptSnapshot);
                         return documentRegistry.updateDocument(oldSourceFile, fileName, newSettings, hostFileInformation.scriptSnapshot, hostFileInformation.version, textChangeRange);
                     }
                 }
@@ -26856,12 +26831,10 @@ var ts;
         }
         function getSyntacticDiagnostics(fileName) {
             synchronizeHostData();
-            fileName = ts.normalizeSlashes(fileName);
             return program.getSyntacticDiagnostics(getValidSourceFile(fileName));
         }
         function getSemanticDiagnostics(fileName) {
             synchronizeHostData();
-            fileName = ts.normalizeSlashes(fileName);
             var targetSourceFile = getValidSourceFile(fileName);
             var semanticDiagnostics = program.getSemanticDiagnostics(targetSourceFile);
             if (!program.getCompilerOptions().declaration) {
@@ -26908,7 +26881,6 @@ var ts;
         }
         function getCompletionsAtPosition(fileName, position) {
             synchronizeHostData();
-            fileName = ts.normalizeSlashes(fileName);
             var syntacticStart = new Date().getTime();
             var sourceFile = getValidSourceFile(fileName);
             var start = new Date().getTime();
@@ -27223,7 +27195,6 @@ var ts;
             }
         }
         function getCompletionEntryDetails(fileName, position, entryName) {
-            fileName = ts.normalizeSlashes(fileName);
             var sourceFile = getValidSourceFile(fileName);
             var session = activeCompletionSession;
             if (!session || session.fileName !== fileName || session.position !== position) {
@@ -27641,7 +27612,6 @@ var ts;
         }
         function getQuickInfoAtPosition(fileName, position) {
             synchronizeHostData();
-            fileName = ts.normalizeSlashes(fileName);
             var sourceFile = getValidSourceFile(fileName);
             var node = ts.getTouchingPropertyName(sourceFile, position);
             if (!node) {
@@ -27679,7 +27649,6 @@ var ts;
         }
         function getDefinitionAtPosition(fileName, position) {
             synchronizeHostData();
-            fileName = ts.normalizeSlashes(fileName);
             var sourceFile = getValidSourceFile(fileName);
             var node = ts.getTouchingPropertyName(sourceFile, position);
             if (!node) {
@@ -27783,7 +27752,6 @@ var ts;
         }
         function getOccurrencesAtPosition(fileName, position) {
             synchronizeHostData();
-            fileName = ts.normalizeSlashes(fileName);
             var sourceFile = getValidSourceFile(fileName);
             var node = ts.getTouchingWord(sourceFile, position);
             if (!node) {
@@ -28209,7 +28177,6 @@ var ts;
         }
         function findReferences(fileName, position, findInStrings, findInComments) {
             synchronizeHostData();
-            fileName = ts.normalizeSlashes(fileName);
             var sourceFile = getValidSourceFile(fileName);
             var node = ts.getTouchingPropertyName(sourceFile, position);
             if (!node) {
@@ -28726,7 +28693,6 @@ var ts;
         }
         function getEmitOutput(fileName) {
             synchronizeHostData();
-            fileName = ts.normalizeSlashes(fileName);
             var sourceFile = getValidSourceFile(fileName);
             var outputFiles = [];
             function writeFile(fileName, data, writeByteOrderMark) {
@@ -28840,18 +28806,15 @@ var ts;
         }
         function getSignatureHelpItems(fileName, position) {
             synchronizeHostData();
-            fileName = ts.normalizeSlashes(fileName);
             var sourceFile = getValidSourceFile(fileName);
             return ts.SignatureHelp.getSignatureHelpItems(sourceFile, position, typeInfoResolver, cancellationToken);
         }
-        function getCurrentSourceFile(fileName) {
-            fileName = ts.normalizeSlashes(fileName);
-            var currentSourceFile = syntaxTreeCache.getCurrentSourceFile(fileName);
-            return currentSourceFile;
+        function getSourceFile(fileName) {
+            return syntaxTreeCache.getCurrentSourceFile(fileName);
         }
         function getNameOrDottedNameSpan(fileName, startPos, endPos) {
-            fileName = ts.normalizeSlashes(fileName);
-            var node = ts.getTouchingPropertyName(getCurrentSourceFile(fileName), startPos);
+            var sourceFile = syntaxTreeCache.getCurrentSourceFile(fileName);
+            var node = ts.getTouchingPropertyName(sourceFile, startPos);
             if (!node) {
                 return;
             }
@@ -28890,16 +28853,15 @@ var ts;
             return ts.createTextSpanFromBounds(nodeForStartPos.getStart(), node.getEnd());
         }
         function getBreakpointStatementAtPosition(fileName, position) {
-            fileName = ts.normalizeSlashes(fileName);
-            return ts.BreakpointResolver.spanInSourceFileAtLocation(getCurrentSourceFile(fileName), position);
+            var sourceFile = syntaxTreeCache.getCurrentSourceFile(fileName);
+            return ts.BreakpointResolver.spanInSourceFileAtLocation(sourceFile, position);
         }
         function getNavigationBarItems(fileName) {
-            fileName = ts.normalizeSlashes(fileName);
-            return ts.NavigationBar.getNavigationBarItems(getCurrentSourceFile(fileName));
+            var sourceFile = syntaxTreeCache.getCurrentSourceFile(fileName);
+            return ts.NavigationBar.getNavigationBarItems(sourceFile);
         }
         function getSemanticClassifications(fileName, span) {
             synchronizeHostData();
-            fileName = ts.normalizeSlashes(fileName);
             var sourceFile = getValidSourceFile(fileName);
             var result = [];
             processNode(sourceFile);
@@ -28955,8 +28917,7 @@ var ts;
             }
         }
         function getSyntacticClassifications(fileName, span) {
-            fileName = ts.normalizeSlashes(fileName);
-            var sourceFile = getCurrentSourceFile(fileName);
+            var sourceFile = syntaxTreeCache.getCurrentSourceFile(fileName);
             var triviaScanner = ts.createScanner(2, false, sourceFile.text);
             var mergeConflictScanner = ts.createScanner(2, false, sourceFile.text);
             var result = [];
@@ -29127,12 +29088,11 @@ var ts;
             }
         }
         function getOutliningSpans(fileName) {
-            fileName = ts.normalizeSlashes(fileName);
-            var sourceFile = getCurrentSourceFile(fileName);
+            var sourceFile = syntaxTreeCache.getCurrentSourceFile(fileName);
             return ts.OutliningElementsCollector.collectElements(sourceFile);
         }
         function getBraceMatchingAtPosition(fileName, position) {
-            var sourceFile = getCurrentSourceFile(fileName);
+            var sourceFile = syntaxTreeCache.getCurrentSourceFile(fileName);
             var result = [];
             var token = ts.getTouchingToken(sourceFile, position);
             if (token.getStart(sourceFile) === position) {
@@ -29172,9 +29132,8 @@ var ts;
             }
         }
         function getIndentationAtPosition(fileName, position, editorOptions) {
-            fileName = ts.normalizeSlashes(fileName);
             var start = new Date().getTime();
-            var sourceFile = getCurrentSourceFile(fileName);
+            var sourceFile = syntaxTreeCache.getCurrentSourceFile(fileName);
             log("getIndentationAtPosition: getCurrentSourceFile: " + (new Date().getTime() - start));
             var start = new Date().getTime();
             var result = ts.formatting.SmartIndenter.getIndentation(position, sourceFile, editorOptions);
@@ -29182,18 +29141,15 @@ var ts;
             return result;
         }
         function getFormattingEditsForRange(fileName, start, end, options) {
-            fileName = ts.normalizeSlashes(fileName);
-            var sourceFile = getCurrentSourceFile(fileName);
+            var sourceFile = syntaxTreeCache.getCurrentSourceFile(fileName);
             return ts.formatting.formatSelection(start, end, sourceFile, getRuleProvider(options), options);
         }
         function getFormattingEditsForDocument(fileName, options) {
-            fileName = ts.normalizeSlashes(fileName);
-            var sourceFile = getCurrentSourceFile(fileName);
+            var sourceFile = syntaxTreeCache.getCurrentSourceFile(fileName);
             return ts.formatting.formatDocument(sourceFile, getRuleProvider(options), options);
         }
         function getFormattingEditsAfterKeystroke(fileName, position, key, options) {
-            fileName = ts.normalizeSlashes(fileName);
-            var sourceFile = getCurrentSourceFile(fileName);
+            var sourceFile = syntaxTreeCache.getCurrentSourceFile(fileName);
             if (key === "}") {
                 return ts.formatting.formatOnClosingCurly(position, sourceFile, getRuleProvider(options), options);
             }
@@ -29207,7 +29163,6 @@ var ts;
         }
         function getTodoComments(fileName, descriptors) {
             synchronizeHostData();
-            fileName = ts.normalizeSlashes(fileName);
             var sourceFile = getValidSourceFile(fileName);
             cancellationToken.throwIfCancellationRequested();
             var fileContents = sourceFile.text;
@@ -29267,7 +29222,6 @@ var ts;
         }
         function getRenameInfo(fileName, position) {
             synchronizeHostData();
-            fileName = ts.normalizeSlashes(fileName);
             var sourceFile = getValidSourceFile(fileName);
             var node = ts.getTouchingWord(sourceFile, position);
             if (node && node.kind === 64) {
@@ -29341,7 +29295,7 @@ var ts;
             getFormattingEditsForDocument: getFormattingEditsForDocument,
             getFormattingEditsAfterKeystroke: getFormattingEditsAfterKeystroke,
             getEmitOutput: getEmitOutput,
-            getSourceFile: getCurrentSourceFile,
+            getSourceFile: getSourceFile,
             getProgram: getProgram
         };
     }
@@ -29571,7 +29525,8 @@ var ts;
                 case 52:
                 case 23:
                     return true;
-                default: return false;
+                default:
+                    return false;
             }
         }
         function isPrefixUnaryExpressionOperatorToken(token) {
@@ -29612,6 +29567,7 @@ var ts;
                 case 2:
                     return 3;
                 case 5:
+                case 4:
                     return 4;
                 case 64:
                 default:
@@ -29701,6 +29657,7 @@ var ts;
                 this.project = project;
                 this.ls = null;
                 this.filenameToScript = {};
+                this.roots = [];
             }
             LSHost.prototype.getDefaultLibFileName = function () {
                 var nodeModuleBinDir = ts.getDirectoryPath(ts.normalizePath(this.host.getExecutingFilePath()));
@@ -29727,13 +29684,7 @@ var ts;
                 return this.compilationSettings;
             };
             LSHost.prototype.getScriptFileNames = function () {
-                var filenames = [];
-                for (var filename in this.filenameToScript) {
-                    if (this.filenameToScript[filename] && this.filenameToScript[filename].isOpen) {
-                        filenames.push(filename);
-                    }
-                }
-                return filenames;
+                return this.roots.map(function (root) { return root.fileName; });
             };
             LSHost.prototype.getScriptVersion = function (filename) {
                 return this.getScriptInfo(filename).svc.latestVersion().toString();
@@ -29765,7 +29716,7 @@ var ts;
                 var scriptInfo = ts.lookUp(this.filenameToScript, info.fileName);
                 if (!scriptInfo) {
                     this.filenameToScript[info.fileName] = info;
-                    return info;
+                    this.roots.push(info);
                 }
             };
             LSHost.prototype.saveTo = function (filename, tmpfilename) {
@@ -29867,10 +29818,12 @@ var ts;
             Project.prototype.getSourceFile = function (info) {
                 return this.filenameToSourceFile[info.fileName];
             };
-            Project.prototype.getSourceFileFromName = function (filename) {
+            Project.prototype.getSourceFileFromName = function (filename, requireOpen) {
                 var info = this.projectService.getScriptInfo(filename);
                 if (info) {
-                    return this.getSourceFile(info);
+                    if ((!requireOpen) || info.isOpen) {
+                        return this.getSourceFile(info);
+                    }
                 }
             };
             Project.prototype.removeReferencedFile = function (info) {
@@ -29898,7 +29851,7 @@ var ts;
             };
             Project.prototype.addRoot = function (info) {
                 info.defaultProject = this;
-                return this.compilerService.host.addRoot(info);
+                this.compilerService.host.addRoot(info);
             };
             Project.prototype.filesToString = function () {
                 var strBuilder = "";
@@ -29973,6 +29926,18 @@ var ts;
                     for (var i = 0, len = referencingProjects.length; i < len; i++) {
                         referencingProjects[i].removeReferencedFile(info);
                     }
+                    for (var j = 0, flen = this.openFileRoots.length; j < flen; j++) {
+                        var openFile = this.openFileRoots[j];
+                        if (this.eventHandler) {
+                            this.eventHandler("context", openFile.defaultProject, openFile.fileName);
+                        }
+                    }
+                    for (var j = 0, flen = this.openFilesReferenced.length; j < flen; j++) {
+                        var openFile = this.openFilesReferenced[j];
+                        if (this.eventHandler) {
+                            this.eventHandler("context", openFile.defaultProject, openFile.fileName);
+                        }
+                    }
                 }
                 this.printProjects();
             };
@@ -30036,17 +30001,56 @@ var ts;
                 }
                 info.close();
             };
-            ProjectService.prototype.findReferencingProjects = function (info) {
+            ProjectService.prototype.findReferencingProjects = function (info, excludedProject) {
                 var referencingProjects = [];
                 info.defaultProject = undefined;
                 for (var i = 0, len = this.inferredProjects.length; i < len; i++) {
                     this.inferredProjects[i].updateGraph();
-                    if (this.inferredProjects[i].getSourceFile(info)) {
-                        info.defaultProject = this.inferredProjects[i];
-                        referencingProjects.push(this.inferredProjects[i]);
+                    if (this.inferredProjects[i] != excludedProject) {
+                        if (this.inferredProjects[i].getSourceFile(info)) {
+                            info.defaultProject = this.inferredProjects[i];
+                            referencingProjects.push(this.inferredProjects[i]);
+                        }
                     }
                 }
                 return referencingProjects;
+            };
+            ProjectService.prototype.updateProjectStructure = function () {
+                this.log("updating project structure from ...", "Info");
+                this.printProjects();
+                var openFilesReferenced = [];
+                var unattachedOpenFiles = [];
+                for (var i = 0, len = this.openFilesReferenced.length; i < len; i++) {
+                    var referencedFile = this.openFilesReferenced[i];
+                    referencedFile.defaultProject.updateGraph();
+                    var sourceFile = referencedFile.defaultProject.getSourceFile(referencedFile);
+                    if (sourceFile) {
+                        openFilesReferenced.push(referencedFile);
+                    }
+                    else {
+                        unattachedOpenFiles.push(referencedFile);
+                    }
+                }
+                this.openFilesReferenced = openFilesReferenced;
+                var openFileRoots = [];
+                for (var i = 0, len = this.openFileRoots.length; i < len; i++) {
+                    var rootFile = this.openFileRoots[i];
+                    var rootedProject = rootFile.defaultProject;
+                    var referencingProjects = this.findReferencingProjects(rootFile, rootedProject);
+                    if (referencingProjects.length == 0) {
+                        rootFile.defaultProject = rootedProject;
+                        openFileRoots.push(rootFile);
+                    }
+                    else {
+                        this.inferredProjects = copyListRemovingItem(rootedProject, this.inferredProjects);
+                        this.openFilesReferenced.push(rootFile);
+                    }
+                }
+                this.openFileRoots = openFileRoots;
+                for (var i = 0, len = unattachedOpenFiles.length; i < len; i++) {
+                    this.addOpenFile(unattachedOpenFiles[i]);
+                }
+                this.printProjects();
             };
             ProjectService.prototype.getScriptInfo = function (filename) {
                 filename = ts.normalizePath(filename);
@@ -30133,6 +30137,7 @@ var ts;
                 this.psLogger.startGroup();
                 for (var i = 0, len = this.inferredProjects.length; i < len; i++) {
                     var project = this.inferredProjects[i];
+                    project.updateGraph();
                     this.psLogger.info("Project " + i.toString());
                     this.psLogger.info(project.filesToString());
                     this.psLogger.info("-----------------------------------------------");
@@ -31119,18 +31124,28 @@ var ts;
         var Errors;
         (function (Errors) {
             Errors.NoProject = new Error("No Project.");
-            Errors.NoContent = new Error("No Content.");
         })(Errors || (Errors = {}));
         var Session = (function () {
             function Session(host, logger) {
+                var _this = this;
                 this.host = host;
                 this.logger = logger;
                 this.pendingOperation = false;
                 this.fileHash = {};
                 this.nextFileId = 1;
                 this.changeSeq = 0;
-                this.projectService = new server.ProjectService(host, logger);
+                this.projectService =
+                    new server.ProjectService(host, logger, function (eventName, project, fileName) {
+                        _this.handleEvent(eventName, project, fileName);
+                    });
             }
+            Session.prototype.handleEvent = function (eventName, project, fileName) {
+                var _this = this;
+                if (eventName == "context") {
+                    this.projectService.log("got context event, updating diagnostics for" + fileName, "Info");
+                    this.updateErrorCheck([{ fileName: fileName, project: project }], this.changeSeq, function (n) { return n == _this.changeSeq; }, 100);
+                }
+            };
             Session.prototype.logError = function (err, cmd) {
                 var typedErr = err;
                 var msg = "Exception on executing command " + cmd;
@@ -31181,22 +31196,41 @@ var ts;
                 this.response(body, commandName, requestSequence, errorMessage);
             };
             Session.prototype.semanticCheck = function (file, project) {
-                var diags = project.compilerService.languageService.getSemanticDiagnostics(file);
-                if (diags) {
-                    var bakedDiags = diags.map(function (diag) { return formatDiag(file, project, diag); });
-                    this.event({ file: file, diagnostics: bakedDiags }, "semanticDiag");
+                try {
+                    var diags = project.compilerService.languageService.getSemanticDiagnostics(file);
+                    if (diags) {
+                        var bakedDiags = diags.map(function (diag) { return formatDiag(file, project, diag); });
+                        this.event({ file: file, diagnostics: bakedDiags }, "semanticDiag");
+                    }
+                }
+                catch (err) {
+                    this.logError(err, "semantic check");
                 }
             };
             Session.prototype.syntacticCheck = function (file, project) {
-                var diags = project.compilerService.languageService.getSyntacticDiagnostics(file);
-                if (diags) {
-                    var bakedDiags = diags.map(function (diag) { return formatDiag(file, project, diag); });
-                    this.event({ file: file, diagnostics: bakedDiags }, "syntaxDiag");
+                try {
+                    var diags = project.compilerService.languageService.getSyntacticDiagnostics(file);
+                    if (diags) {
+                        var bakedDiags = diags.map(function (diag) { return formatDiag(file, project, diag); });
+                        this.event({ file: file, diagnostics: bakedDiags }, "syntaxDiag");
+                    }
+                }
+                catch (err) {
+                    this.logError(err, "syntactic check");
                 }
             };
             Session.prototype.errorCheck = function (file, project) {
                 this.syntacticCheck(file, project);
                 this.semanticCheck(file, project);
+            };
+            Session.prototype.updateProjectStructure = function (seq, matchSeq, ms) {
+                var _this = this;
+                if (ms === void 0) { ms = 1500; }
+                setTimeout(function () {
+                    if (matchSeq(seq)) {
+                        _this.projectService.updateProjectStructure();
+                    }
+                }, ms);
             };
             Session.prototype.updateErrorCheck = function (checkList, seq, matchSeq, ms, followMs) {
                 var _this = this;
@@ -31216,7 +31250,7 @@ var ts;
                 var checkOne = function () {
                     if (matchSeq(seq)) {
                         var checkSpec = checkList[index++];
-                        if (checkSpec.project.getSourceFileFromName(checkSpec.fileName)) {
+                        if (checkSpec.project.getSourceFileFromName(checkSpec.fileName, true)) {
                             _this.syntacticCheck(checkSpec.fileName, checkSpec.project);
                             _this.immediateId = setImmediate(function () {
                                 _this.semanticCheck(checkSpec.fileName, checkSpec.project);
@@ -31245,7 +31279,7 @@ var ts;
                 var position = compilerService.host.lineColToPosition(file, line, col);
                 var definitions = compilerService.languageService.getDefinitionAtPosition(file, position);
                 if (!definitions) {
-                    throw Errors.NoContent;
+                    return undefined;
                 }
                 return definitions.map(function (def) { return ({
                     file: def.fileName,
@@ -31263,7 +31297,7 @@ var ts;
                 var position = compilerService.host.lineColToPosition(file, line, col);
                 var renameInfo = compilerService.languageService.getRenameInfo(file, position);
                 if (!renameInfo) {
-                    throw Errors.NoContent;
+                    return undefined;
                 }
                 if (!renameInfo.canRename) {
                     return {
@@ -31273,7 +31307,7 @@ var ts;
                 }
                 var renameLocations = compilerService.languageService.findRenameLocations(file, position, findInStrings, findInComments);
                 if (!renameLocations) {
-                    throw Errors.NoContent;
+                    return undefined;
                 }
                 var bakedRenameLocs = renameLocations.map(function (location) { return {
                     file: location.fileName,
@@ -31324,11 +31358,11 @@ var ts;
                 var position = compilerService.host.lineColToPosition(file, line, col);
                 var references = compilerService.languageService.getReferencesAtPosition(file, position);
                 if (!references) {
-                    throw Errors.NoContent;
+                    return undefined;
                 }
                 var nameInfo = compilerService.languageService.getQuickInfoAtPosition(file, position);
                 if (!nameInfo) {
-                    throw Errors.NoContent;
+                    return undefined;
                 }
                 var displayString = ts.displayPartsToString(nameInfo.displayParts);
                 var nameSpan = nameInfo.textSpan;
@@ -31392,7 +31426,7 @@ var ts;
                 var endPosition = compilerService.host.lineColToPosition(file, endLine, endCol);
                 var edits = compilerService.languageService.getFormattingEditsForRange(file, startPosition, endPosition, compilerService.formatCodeOptions);
                 if (!edits) {
-                    throw Errors.NoContent;
+                    return undefined;
                 }
                 return edits.map(function (edit) {
                     return {
@@ -31425,7 +31459,7 @@ var ts;
                     }
                 }
                 if (!edits) {
-                    throw Errors.NoContent;
+                    return undefined;
                 }
                 return edits.map(function (edit) {
                     return {
@@ -31448,7 +31482,7 @@ var ts;
                 var position = compilerService.host.lineColToPosition(file, line, col);
                 var completions = compilerService.languageService.getCompletionsAtPosition(file, position);
                 if (!completions) {
-                    throw Errors.NoContent;
+                    return undefined;
                 }
                 return completions.entries.reduce(function (result, entry) {
                     if (completions.isMemberCompletion || entry.name.indexOf(prefix) == 0) {
@@ -31488,6 +31522,7 @@ var ts;
                 }
             };
             Session.prototype.change = function (line, col, endLine, endCol, insertString, fileName) {
+                var _this = this;
                 var file = ts.normalizePath(fileName);
                 var project = this.projectService.getProjectForFile(file);
                 if (project) {
@@ -31498,6 +31533,7 @@ var ts;
                         compilerService.host.editScript(file, start, end, insertString);
                         this.changeSeq++;
                     }
+                    this.updateProjectStructure(this.changeSeq, function (n) { return n == _this.changeSeq; });
                 }
             };
             Session.prototype.reload = function (fileName, tempFileName, reqSeq) {
@@ -31551,7 +31587,7 @@ var ts;
                 var compilerService = project.compilerService;
                 var items = compilerService.languageService.getNavigationBarItems(file);
                 if (!items) {
-                    throw Errors.NoContent;
+                    return undefined;
                 }
                 return this.decorateNavigationBarItem(project, fileName, items);
             };
@@ -31564,7 +31600,7 @@ var ts;
                 var compilerService = project.compilerService;
                 var navItems = compilerService.languageService.getNavigateToItems(searchValue, maxResultCount);
                 if (!navItems) {
-                    throw Errors.NoContent;
+                    return undefined;
                 }
                 return navItems.map(function (navItem) {
                     var start = compilerService.host.positionToLineCol(navItem.fileName, navItem.textSpan.start);
@@ -31601,7 +31637,7 @@ var ts;
                 var position = compilerService.host.lineColToPosition(file, line, col);
                 var spans = compilerService.languageService.getBraceMatchingAtPosition(file, position);
                 if (!spans) {
-                    throw Errors.NoContent;
+                    return undefined;
                 }
                 return spans.map(function (span) { return ({
                     start: compilerService.host.positionToLineCol(file, span.start),
@@ -31613,6 +31649,7 @@ var ts;
                     var request = JSON.parse(message);
                     var response;
                     var errorMessage;
+                    var responseRequired = true;
                     switch (request.command) {
                         case CommandNames.Definition: {
                             var defArgs = request.arguments;
@@ -31632,14 +31669,12 @@ var ts;
                         case CommandNames.Open: {
                             var openArgs = request.arguments;
                             this.openClientFile(openArgs.file);
+                            responseRequired = false;
                             break;
                         }
                         case CommandNames.Quickinfo: {
                             var quickinfoArgs = request.arguments;
                             response = this.getQuickInfo(quickinfoArgs.line, quickinfoArgs.col, quickinfoArgs.file);
-                            if (!response) {
-                                errorMessage = "No info at this location";
-                            }
                             break;
                         }
                         case CommandNames.Format: {
@@ -31665,11 +31700,13 @@ var ts;
                         case CommandNames.Geterr: {
                             var geterrArgs = request.arguments;
                             response = this.getDiagnostics(geterrArgs.delay, geterrArgs.files);
+                            responseRequired = false;
                             break;
                         }
                         case CommandNames.Change: {
                             var changeArgs = request.arguments;
                             this.change(changeArgs.line, changeArgs.col, changeArgs.endLine, changeArgs.endCol, changeArgs.insertString, changeArgs.file);
+                            responseRequired = false;
                             break;
                         }
                         case CommandNames.Reload: {
@@ -31680,11 +31717,13 @@ var ts;
                         case CommandNames.Saveto: {
                             var savetoArgs = request.arguments;
                             this.saveToTmp(savetoArgs.file, savetoArgs.tmpfile);
+                            responseRequired = false;
                             break;
                         }
                         case CommandNames.Close: {
                             var closeArgs = request.arguments;
                             this.closeClientFile(closeArgs.file);
+                            responseRequired = false;
                             break;
                         }
                         case CommandNames.Navto: {
@@ -31711,8 +31750,8 @@ var ts;
                     if (response) {
                         this.output(response, request.command, request.seq);
                     }
-                    else if (errorMessage) {
-                        this.output(undefined, request.command, request.seq, errorMessage);
+                    else if (responseRequired) {
+                        this.output(undefined, request.command, request.seq, "No content available.");
                     }
                 }
                 catch (err) {
@@ -31821,13 +31860,7 @@ var ts;
                 }
                 fs.stat(watchedFile.fileName, function (err, stats) {
                     if (err) {
-                        var msg = err.message;
-                        if (err.errno) {
-                            msg += " errno: " + err.errno.toString();
-                        }
-                        if (err.errno == WatchedFileSet.fileDeleted) {
-                            watchedFile.callback(watchedFile.fileName);
-                        }
+                        watchedFile.callback(watchedFile.fileName);
                     }
                     else if (watchedFile.mtime.getTime() != stats.mtime.getTime()) {
                         watchedFile.mtime = WatchedFileSet.getModifiedTime(watchedFile.fileName);
@@ -31870,7 +31903,6 @@ var ts;
             WatchedFileSet.prototype.removeFile = function (file) {
                 this.watchedFiles = WatchedFileSet.copyListRemovingItem(file, this.watchedFiles);
             };
-            WatchedFileSet.fileDeleted = 34;
             return WatchedFileSet;
         })();
         var IOSession = (function (_super) {
@@ -31900,7 +31932,11 @@ var ts;
                 close: function () { return watchedFileSet.removeFile(watchedFile); }
             };
         };
-        new IOSession(ts.sys, logger).listen();
+        var ioSession = new IOSession(ts.sys, logger);
+        process.on('uncaughtException', function (err) {
+            ioSession.logError(err, "unknown");
+        });
+        ioSession.listen();
     })(server = ts.server || (ts.server = {}));
 })(ts || (ts = {}));
 //# sourceMappingURL=file:////Users/steve/src/TypeScript/built/local/tsserver.js.map
