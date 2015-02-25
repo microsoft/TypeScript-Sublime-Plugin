@@ -1,6 +1,6 @@
 [
     {
-        "button": "button1", "count": 1,
+        "button": "button1", "count": 2,
         "press_command": "typescript_go_to_ref",
         "context": [
             { "key": "selector", "operator": "equal", "operand": "text.find-refs" }

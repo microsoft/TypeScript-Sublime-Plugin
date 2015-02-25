@@ -7,6 +7,13 @@
         ]
     },
     {
+        "keys": [ "f12" ],
+        "command": "typescript_go_to_definition",
+        "context": [
+            { "key": "selector", "operator": "equal", "operand": "source.ts" }
+        ]
+    },
+    {
         "keys": [ "ctrl+t", "ctrl+f" ],
         "command": "typescript_format_selection",
         "context": [
