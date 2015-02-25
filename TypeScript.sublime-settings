@@ -1,6 +1,5 @@
 {
     "auto_complete_triggers" : [ {"selector": "source.ts", "characters": "."} ],
-    "auto_insert": false,
     "translate_tabs_to_spaces" : true,
     "tab_size": 4,
     "detect_indentation": false,
