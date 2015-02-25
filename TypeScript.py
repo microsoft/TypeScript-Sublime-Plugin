@@ -3,6 +3,7 @@ import os
 import sys
 import time
 import re
+import codecs
 
 import sublime
 import sublime_plugin
@@ -365,8 +366,9 @@ def reloadBuffer(view, clientInfo=None):
    if not view.is_loading():
       t = time.time()
       tmpfileName = getTempFileName()
-      tmpfile = open(tmpfileName, "w")
-      tmpfile.write(view.substr(sublime.Region(0, view.size())))
+      tmpfile = codecs.open(tmpfileName, "w", "utf-8")
+      text = view.substr(sublime.Region(0, view.size()))
+      tmpfile.write(text)
       tmpfile.flush()
       cli.service.reload(view.file_name(), tmpfileName)
       et = time.time()
