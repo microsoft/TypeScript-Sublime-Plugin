@@ -163,5 +163,20 @@
         "context": [
             { "key": "selector", "operator": "equal", "operand": "source.ts" }
         ]
+    },
+    {
+        "keys": [ "super+v" ],
+        "command": "typescript_paste_and_format",
+        "context": [
+            { "key": "selector", "operator": "equal", "operand": "source.ts" }
+        ]
+    },
+    {
+        "keys": [ "ctrl+v" ],
+        "command": "typescript_paste_and_format",
+        "context": [
+            { "key": "selector", "operator": "equal", "operand": "source.ts" }
+        ]
     }
+
 ]

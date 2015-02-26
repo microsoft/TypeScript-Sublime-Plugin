@@ -6,6 +6,7 @@
  { "caption" : "TypeScript: FormatSelection", "command": "typescript_format_selection" },
  { "caption" : "TypeScript: FormatDocument", "command": "typescript_format_document" },
  { "caption" : "TypeScript: FindReferences", "command": "typescript_find_references" },
- { "caption" : "TypeScript: Rename", "command": "typescript_rename" }
+ { "caption" : "TypeScript: Rename", "command": "typescript_rename" },
+ { "caption" : "TypeScript: PasteAndFormat", "command": "typescript_paste_and_format" }
 ]
 
