@@ -397,6 +397,7 @@ class TypeScriptListener(sublime_plugin.EventListener):
         self.pendingTimeout = 0
         self.pendingSelectionTimeout = 0
         self.errRefreshRequested = False
+        self.changeFocus = False
 
     def getInfo(self, view):
         info = None
@@ -444,13 +445,15 @@ class TypeScriptListener(sublime_plugin.EventListener):
             # status line
             self.setOnIdleTimer(20)
             self.setOnSelectionIdleTimer(20)
+            self.changeFocus = True
 
     # ask the server for diagnostic information on all opened ts files in
     # most-recently-used order
     # TODO: limit this request to ts files currently visible in views
     def refreshErrors(self, view, errDelay):
         info = self.getInfo(view)
-        if info and (info.changeCountErrReq < self.change_count(view)):
+        if info and (self.changeFocus or (info.changeCountErrReq < self.change_count(view))):
+            self.changeFocus = False
             info.changeCountErrReq = self.change_count(view)
             window = sublime.active_window()
             numGroups = window.num_groups()
