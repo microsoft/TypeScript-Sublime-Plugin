@@ -462,7 +462,7 @@
       <key>meta-function</key>
       <dict>
         <key>begin</key>
-        <string>\b(function)(?:\s+([a-zA-Z_$][\w$]*))?\s*</string>
+        <string>\b(function)(?:\s+([a-zA-Z_$][\w$]*)?)\s*</string>
         <key>beginCaptures</key>
         <dict>
           <key>0</key>
@@ -730,31 +730,6 @@
             <string>meta.class.instance.constructor</string>
           </dict>
           <dict>
-            <key>captures</key>
-            <dict>
-              <key>1</key>
-              <dict>
-                <key>name</key>
-                <string>entity.name.type.object.ts.firebug</string>
-              </dict>
-              <key>2</key>
-              <dict>
-                <key>name</key>
-                <string>support.function.ts.firebug</string>
-              </dict>
-            </dict>
-            <key>match</key>
-            <string>\b(console)\.(warn|info|log|error|time|timeEnd|assert)\b</string>
-            <key>name</key>
-            <string>meta.object.ts.firebug</string>
-          </dict>
-          <dict>
-            <key>match</key>
-            <string>\b(console)\b</string>
-            <key>name</key>
-            <string>entity.name.type.object.ts.firebug</string>
-          </dict>
-          <dict>
             <key>match</key>
             <string>\b((0(x|X)[0-9a-fA-F]+)|([0-9]+(\.[0-9]+)?))\b</string>
             <key>name</key>
@@ -762,7 +737,7 @@
           </dict>
           <dict>
             <key>match</key>
-            <string>\b(boolean|byte|char|class|double|enum|float|function|int|interface|long|number|short|string|var|void)\b</string>
+            <string>\b(boolean|class|enum|interface|number|string|var|void)\b</string>
             <key>name</key>
             <string>storage.type.ts</string>
           </dict>
@@ -772,7 +747,7 @@
           </dict>
           <dict>
             <key>match</key>
-            <string>\b(break|case|catch|continue|declare|default|do|else|finally|for|goto|if|import|package|return|switch|throw|try|while)\b</string>
+            <string>\b(break|case|catch|continue|declare|default|do|else|finally|for|if|import|return|switch|throw|try|while)\b</string>
             <key>name</key>
             <string>keyword.control.ts</string>
           </dict>
