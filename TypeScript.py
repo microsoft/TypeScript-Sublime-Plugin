@@ -1272,7 +1272,10 @@ class TypescriptPasteAndFormat(sublime_plugin.TextCommand):
     def run(self, text):
         view = self.view
         beforePaste = copyRegionsStatic(view.sel())
-        view.add_regions("apresPaste", copyRegions(view.sel()), flags = sublime.HIDDEN)
+        if cli.ST2():
+            view.add_regions("apresPaste", copyRegions(view.sel()), "", "", sublime.HIDDEN)
+        else:
+            view.add_regions("apresPaste", copyRegions(view.sel()), flags = sublime.HIDDEN)
         view.run_command("paste")
         afterPaste = view.get_regions("apresPaste")
         view.erase_regions("apresPaste")
