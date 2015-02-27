@@ -180,5 +180,4 @@
             { "key": "selector", "operator": "equal", "operand": "source.ts" }
         ]
     }
-
 ]

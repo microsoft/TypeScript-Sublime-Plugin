@@ -452,13 +452,17 @@ class TypeScriptListener(sublime_plugin.EventListener):
         info = self.getInfo(view)
         if info and (info.changeCountErrReq < self.change_count(view)):
             info.changeCountErrReq = self.change_count(view)
-            
-            # traverse list in reverse b/c MRU always appended to end of list
-            # TODO: check if file visible and only add if is visible
-            files = [mruFile.filename for mruFile in self.mruFileList[::-1]]
-            checkUpdateView(view)
-            cli.service.requestGetError(errDelay, files)
-
+            window = sublime.active_window()
+            numGroups = window.num_groups()
+            files = []
+            for i in range(numGroups):
+                groupActiveView = window.active_view_in_group(i)
+                info = self.getInfo(groupActiveView)
+                if info:
+                    files.append(groupActiveView.file_name())
+                    checkUpdateView(groupActiveView)
+            if len(files) > 0:
+                cli.service.requestGetError(errDelay, files)
             self.errRefreshRequested = True
             self.setOnIdleTimer(errDelay + 300)
 
@@ -491,7 +495,9 @@ class TypeScriptListener(sublime_plugin.EventListener):
         info = self.fileMap.get(filename)
         if info:
             view = info.view
-            if info.changeCountErrReq == self.change_count(view):
+            if not (info.changeCountErrReq == self.change_count(view)):
+                self.setOnIdleTimer(200)                
+            else:
                 if syntactic:
                     regionKey = 'syntacticDiag'
                 else:
