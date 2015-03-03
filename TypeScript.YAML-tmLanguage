@@ -137,20 +137,17 @@ repository:
     end: \)
     patterns:
       - include: '#comment'
-      - include: '#visibility-modifier'  
       - include: '#parameter-name'
       - include: '#type-annotation'
       - include: '#variable-initializer'
-  visibility-modifier:
-    name: storage.modifier
-    match: \b(public|private)\b
   parameter-name:
     name: parameter.name.ts
-    match: '(\.\.\.)?\s*([a-zA-Z_$][\w$]*)(\??)'
+    match: '(?:\s*\b(public|private)\b\s+)?(\.\.\.)?\s*([a-zA-Z_$][\w$]*)\s*(\??)'
     captures:
-      '1': { name: keyword.operator.ts }
-      '2': { name: variable.parameter.ts }
-      '3': { name: keyword.operator.ts }
+      '1': { name: storage.modifier.ts }
+      '2': { name: keyword.operator.ts }
+      '3': { name: variable.parameter.ts }
+      '4': { name: keyword.operator.ts }
   return-type:
     name: meta.return.type.ts
     begin: '(?<=\)):'
@@ -238,7 +235,7 @@ repository:
     - include: '#expression'
   expression-operator:
     name: keyword.operator.ts
-    match: =>|\b(in|instanceof|delete|typeof|void)\b
+    match: =>|\b(delete|in|instanceof|new|typeof|void)\b
   arithmetic-operator:
     name: keyword.operator.ts
     match: \*|/|\-\-|\-|\+\+|\+|%
