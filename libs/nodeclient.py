@@ -116,7 +116,7 @@ class NodeCommClient(CommClient):
         """
         Post command to server; no response needed
         """
-        print(cmd)
+        print("request: "+cmd)
         cmd = cmd + "\n"
         self.__serverProc.stdin.write(cmd.encode())
         self.__serverProc.stdin.flush()
@@ -150,10 +150,10 @@ class NodeCommClient(CommClient):
             jsonStr = data.decode("utf-8")
             msg = jsonhelpers.decode(servicedefs.Message, jsonStr)
             if msg.type == "response":
+                print("response: "+jsonStr)
                 msgq.put(jsonStr)
             else:
-                print("event:")
-                print(jsonStr)
+                print("event: "+jsonStr)
                 eventq.put(jsonStr)
 
     @staticmethod
