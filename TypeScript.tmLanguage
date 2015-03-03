@@ -272,7 +272,7 @@
 		<key>expression-operator</key>
 		<dict>
 			<key>match</key>
-			<string>=&gt;|\b(delete|in|instanceof|new|typeof|void)\b</string>
+			<string>=&gt;|\b(delete|export|import|in|instanceof|module|new|typeof|void)\b</string>
 			<key>name</key>
 			<string>keyword.operator.ts</string>
 		</dict>

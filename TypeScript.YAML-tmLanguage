@@ -235,7 +235,7 @@ repository:
     - include: '#expression'
   expression-operator:
     name: keyword.operator.ts
-    match: =>|\b(delete|in|instanceof|new|typeof|void)\b
+    match: =>|\b(delete|export|import|in|instanceof|module|new|typeof|void)\b
   arithmetic-operator:
     name: keyword.operator.ts
     match: \*|/|\-\-|\-|\+\+|\+|%
