@@ -208,6 +208,7 @@ repository:
     - include: '#var-expr'
     - include: '#declaration'
     - include: '#cast'
+    - include: '#new-expr'
     - include: '#block'
     - include: '#expression-operator'
     - include: '#relational-operator'
@@ -220,7 +221,14 @@ repository:
     name: cast.expr.ts
     match: '<\s*([a-zA-Z_$][.\w$]*)\s*>'
     captures:
-       '1': { name: storage.type.ts } 
+       '1': { name: storage.type.ts }
+  new-expr:
+    name: new.expr.ts
+    match: '\b(new)\b\s*([a-zA-Z_$][.\w$]*)'
+    captures:
+       '1': { name: keyword.operator.ts }
+       '2': { name: storage.type.ts }
+     
   # TODO: object members with quoted or numric lhs
   object-member:
     name: meta.object.member.ts

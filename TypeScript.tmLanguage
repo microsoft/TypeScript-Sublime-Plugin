@@ -233,6 +233,10 @@
 				</dict>
 				<dict>
 					<key>include</key>
+					<string>#new-expr</string>
+				</dict>
+				<dict>
+					<key>include</key>
 					<string>#block</string>
 				</dict>
 				<dict>
@@ -482,6 +486,26 @@
 					<string>#decl-block</string>
 				</dict>
 			</array>
+		</dict>
+		<key>new-expr</key>
+		<dict>
+			<key>captures</key>
+			<dict>
+				<key>1</key>
+				<dict>
+					<key>name</key>
+					<string>keyword.operator.ts</string>
+				</dict>
+				<key>2</key>
+				<dict>
+					<key>name</key>
+					<string>storage.type.ts</string>
+				</dict>
+			</dict>
+			<key>match</key>
+			<string>\b(new)\b\s*([a-zA-Z_$][.\w$]*)</string>
+			<key>name</key>
+			<string>new.expr.ts</string>
 		</dict>
 		<key>null-literal</key>
 		<dict>
