@@ -622,16 +622,21 @@
 				<key>1</key>
 				<dict>
 					<key>name</key>
-					<string>variable.parameter.ts</string>
+					<string>keyword.operator.ts</string>
 				</dict>
 				<key>2</key>
+				<dict>
+					<key>name</key>
+					<string>variable.parameter.ts</string>
+				</dict>
+				<key>3</key>
 				<dict>
 					<key>name</key>
 					<string>keyword.operator.ts</string>
 				</dict>
 			</dict>
 			<key>match</key>
-			<string>([a-zA-Z_$][\w$]*)(\??)</string>
+			<string>(\.\.\.)?\s*([a-zA-Z_$][\w$]*)(\??)</string>
 			<key>name</key>
 			<string>parameter.name.ts</string>
 		</dict>

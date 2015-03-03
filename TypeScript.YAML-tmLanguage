@@ -146,10 +146,11 @@ repository:
     match: \b(public|private)\b
   parameter-name:
     name: parameter.name.ts
-    match: '([a-zA-Z_$][\w$]*)(\??)'
+    match: '(\.\.\.)?\s*([a-zA-Z_$][\w$]*)(\??)'
     captures:
-        '1': { name: variable.parameter.ts }
-        '2': { name: keyword.operator.ts }
+      '1': { name: keyword.operator.ts }
+      '2': { name: variable.parameter.ts }
+      '3': { name: keyword.operator.ts }
   return-type:
     name: meta.return.type.ts
     begin: '(?<=\)):'
