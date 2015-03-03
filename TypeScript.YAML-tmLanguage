@@ -1,0 +1,334 @@
+# [PackageDev] target_format: plist, ext: tmLanguage
+---
+name: TypeScript
+scopeName: source.ts
+fileTypes: [ts]
+uuid: ef98eb90-bf9b-11e4-bb52-0800200c9a66
+
+patterns:
+- include: '#expression'
+
+repository:
+  var-expr:
+    name: meta.var.expr.ts
+    begin: (?<!\()\s*\b(var)\s+([a-zA-Z_$][\w$]*) 
+    beginCaptures:
+      '1': { name: storage.type.ts }
+      '2': { name: variable.ts }
+    end: (?=;|var)
+    patterns:
+    - include: '#type-annotation'
+    - include: '#variable-initializer'
+  control-statement:
+    name: keyword.control.ts
+    match: \b(break|catch|continue|declare|do|else|finally|for|if|return|switch|throw|try|while)\b
+  switch-case: 
+    name: case.expr.ts
+    begin: '\b(case|default)\b'
+    beginCaptures:
+      '1': { name: keyword.control.ts }
+    end: ':'  
+    patterns:
+    - include: '#expression'
+  declaration:
+    name: meta.declaration.ts
+    patterns:
+     - include: '#function-declaration'
+     - include: '#object-declaration'
+     - include: '#type-declaration'
+  type-declaration:
+    name: meta.typea.declaration.ts
+    begin: \b(type)\b\s+([a-zA-Z_$][\w$]*)\s*=\s*
+    beginCaptures:
+      '1': { name: keyword.other.ts }
+      '2': { name: storage.type.ts }
+    end: (?=[,);>]|var|type|function|class|interface)
+    patterns:
+      - include: '#type'
+  object-declaration:
+    name: meta.declaration.object.ts
+    begin: '\b(?:(export)\s+)?(class|interface)\b(?:\s+([a-zA-Z_$][\w$]*))'
+    beginCaptures:
+      '1': { name: storage.modifier.ts }
+      '2': { name: keyword.other.ts }
+      '3': { name: storage.type.ts }
+    end: (?=\})
+    endCaptures:
+      '1': { name: brace.curly.ts }
+    patterns:
+    - include: '#type-parameters'
+    - include: '#object-heritage'
+    - include: '#object-body'
+    - include: '#comment'
+  object-heritage:
+    name: meta.object.heritage.ts
+    match: (?:\b(extends|implements)\b|,)(?:\s+([a-zA-Z_$][.\w$]*))
+    captures:
+       '1': { name: storage.modifier.ts }
+       '2': { name: storage.type.ts } 
+  object-body:
+    name: meta.object.body.ts
+    begin: \{
+    end: (?=\})
+    patterns:
+    - include: '#comment'
+    - include: '#field-declaration'
+    - include: '#method-declaration'
+    - include: '#indexer-declaration'
+  field-declaration:
+    name: meta.field.declaration.ts
+    begin: '\b(static)?\[?\b([a-zA-Z_$][\w$]*)\s*\]?\s*(\?\s*)?(?=(=|:))'
+    beginCaptures:
+      '3': { name: keyword.other.ts }
+    end: '(?=;|,|\})'
+    patterns:
+    - include: '#type-annotation'
+    - include: '#variable-initializer'
+  method-declaration:
+    name: meta.method.declaration.ts
+    begin: '\b(?:(get|set)\s+)?\[?([a-zA-Z_$][\.\w$]*)\s*\]?\s*(\??)\s*(?=\()'
+    beginCaptures:
+      '1': { name: storage.type.property.ts }
+      '2': { name: entity.name.function.ts }
+      '3': { name: keyword.operator.ts }
+    end: '\}|[;,]'
+    patterns:
+    - include: '#comment'
+    - include: '#function-parameters'
+    - include: '#type-annotation'
+    - include: '#decl-block'
+  indexer-declaration:
+    name: meta.indexer.declaration.ts
+    begin: \[\s*([a-zA-Z_$][\w$]*)\s*:\s*(string|number)\s*\]
+    beginCaptures:
+      '1': { name: variable.parameter.ts }
+      '2': { name: storage.type.ts }
+    end: (?=[,;]) 
+    patterns:
+    - include: '#type-annotation'
+  function-declaration:
+    name: meta.function.ts
+    begin: \b(function)\b(?:\s+([a-zA-Z_$][\w$]*))?\s*
+    beginCaptures:
+      '1': { name: storage.type.function.ts }
+      '2': { name: entity.name.function.ts }
+    end: (?=\}|;)
+    patterns:
+    - include: '#comment'
+    - include: '#function-parameters'
+    - include: '#return-type'
+    - include: '#decl-block'
+  block:
+    name: meta.block.ts
+    begin: \{
+    end: \}
+    patterns:
+    - include: '#expression'
+    - include: '#object-member'
+  decl-block:
+    name: meta.decl.block.ts
+    begin: \{
+    end: (?=\})
+    patterns:
+    - include: '#expression'
+  function-parameters:
+    name: meta.function-parameters.ts
+    begin: \(
+    end: \)
+    patterns:
+      - include: '#comment'
+      - include: '#visibility-modifier'  
+      - include: '#parameter-name'
+      - include: '#type-annotation'
+      - include: '#variable-initializer'
+  visibility-modifier:
+    name: storage.modifier
+    match: \b(public|private)\b
+  parameter-name:
+    name: parameter.name.ts
+    match: '([a-zA-Z_$][\w$]*)(\??)'
+    captures:
+        '1': { name: variable.parameter.ts }
+        '2': { name: keyword.operator.ts }
+  return-type:
+    name: meta.return.type.ts
+    begin: '(?<=\)):'
+    end: $|(?=\{)
+    patterns:
+    - include: '#type'
+  type-annotation:
+    name: meta.type.annotation.ts
+    begin: ":"
+    end: (?=[,);=>}\[])|(?<=[a-z]|>)\s*(?=\{|$)
+    patterns:
+      - include: '#type'
+  type:
+    name: meta.type.ts
+    patterns:
+    - include: '#type-name'
+    - include: '#type-parameters'
+    - include: '#type-union'
+    - include: '#object-body'
+  type-union:
+    name: meta.type.union.ts
+    begin: '(\|)'
+    beginCaptures:
+      '1': { name: keyword.operator.ts }
+    end: '([a-zA-Z_$][.\w$]*)'
+    endCaptures:
+      '1': { name: storage.type.ts }
+    patterns:
+    - include: '#comment'
+  type-name:
+    name: storage.type.ts
+    match: '[a-zA-Z_$][.\w$]*'
+  type-parameters:
+    name: meta.type.parameters.ts
+    begin: '<'
+    end: '(?=var|type|function|class|interface)|>'  
+    patterns:
+    - include: '#comment'
+    - include: '#type'
+  variable-initializer:
+    begin: (=)
+    beginCaptures:
+      '1': { name: keyword.operator.ts }
+    end: (?=[,);=])
+    patterns:
+      - include: '#expression'  
+  expression:
+    name: meta.expression.ts
+    patterns:
+    - include: '#string'
+    - include: '#regex'
+    - include: '#comment'
+    - include: '#literal'
+    - include: '#paren-expression'
+    - include: '#var-expr'
+    - include: '#declaration'
+    - include: '#cast'
+    - include: '#block'
+    - include: '#expression-operator'
+    - include: '#relational-operator'
+    - include: '#arithmetic-operator'
+    - include: '#logic-operator'
+    - include: '#assignment-operator'
+    - include: '#control-statement'
+    - include: '#switch-case'
+  cast:
+    name: cast.expr.ts
+    match: '<\s*([a-zA-Z_$][.\w$]*)\s*>'
+    captures:
+       '1': { name: storage.type.ts } 
+  # TODO: object members with quoted or numric lhs
+  object-member:
+    name: meta.object.member.ts
+    begin: '[a-zA-Z_$][\w$]*\s*:'
+    end: (?=,|\})
+    patterns:
+    - include: '#expression'
+  expression-operator:
+    name: keyword.operator.ts
+    match: =>|\b(in|instanceof|delete|typeof|void)\b
+  arithmetic-operator:
+    name: keyword.operator.ts
+    match: \*|/|\-\-|\-|\+\+|\+|%
+  relational-operator:
+    name: keyword.operator.ts
+    match: ===|==|=|!=|!==|<=|>=|<>|<|>
+  assignment-operator:
+    name: keyword.operator.ts
+    match: <<=|>>=|>>>=|\*=|(?<!\()/=|%=|\+=|\-=|&=|\^=
+  logic-operator:
+    name: keyword.operator.ts
+    match: \!|&|~|\||&&|\|\|
+  paren-expression:
+    begin: \(
+    beginCaptures:
+      '0': {name: brace.paren.ts }
+    end: \)
+    endCaptures:
+      '0': {name: brace.paren.ts }
+    patterns:
+    - include: '#expression'
+  qstring-double:
+    name: string.double.ts
+    begin: '"'
+    end: '"'
+    patterns:
+    - name: constant.character.escape.ts
+      match: \\(x\h{2}|[0-2][0-7]{,2}|3[0-6][0-7]?|37[0-7]?|[4-7][0-7]?|.)
+
+  qstring-single:
+    name: string.single.ts
+    begin: "'"
+    end: "'"
+    patterns:
+    - match: \\(x\h{2}|[0-2][0-7]{,2}|3[0-6][0-7]?|37[0-7]?|[4-7][0-7]?|.)
+      name: constant.character.escape.ts
+
+  regex:
+    name: string.regex.ts
+    begin: (?<=[=(:,\[]|^|return|&&|\|\||!)\s*(/)(?![/*+{}?])
+    end: $|(/)[igm]*
+    patterns:
+    - name: constant.character.escape.ts
+      match: \\.
+    - name: constant.character.class.ts
+      match: \[(\\\]|[^\]])*\]
+
+  string:
+    name: string.ts
+    patterns:
+    - include: '#qstring-single'
+    - include: '#qstring-double'
+  comment:
+    name: comment.ts
+    patterns:
+    - include: '#comment-block-doc'
+    - include: '#comment-block'
+    - include: '#comment-line'
+  comment-block-doc:
+    name: comment.block.documentation.ts
+    begin: /\*\*(?!/)
+    end: \*/
+  comment-block:
+    name: comment.block.ts
+    begin: /\*
+    end: \*/
+  comment-line:
+    name: comment.line.ts
+    match: (//).*$\n?
+  literal:
+    name: literal.ts
+    patterns:
+    - include: '#numeric-literal'
+    - include: '#boolean-literal'
+    - include: '#null-literal'
+    - include: '#undefined-literal'
+    - include: '#array-literal'
+  array-literal:
+    name: meta.array.literal.ts
+    begin: \[
+    beginCaptures:
+      '0': { name: brace.square.ts }
+    end: \]
+    endCaptures:
+      '0': { name: brace.square.ts }
+    patterns:
+    - include: '#expression'
+  numeric-literal:
+    name: constant.numeric.ts 
+    match: \b((0(x|X)[0-9a-fA-F]+)|([0-9]+(\.[0-9]+)?))\b
+  boolean-literal:
+    name: constant.language.boolean.ts
+    match: \b(false|true)\b
+  null-literal:
+    name: constant.language.null.ts
+    match: \b(null)\b
+  undefined-literal:
+    name: constant.language.ts
+    match: \b(undefined)\b
+...
+
+
