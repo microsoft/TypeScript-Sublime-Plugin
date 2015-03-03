@@ -147,7 +147,7 @@
           <key>2</key>
           <dict>
             <key>name</key>
-            <string>entity.name.type.class.ts</string>
+            <string>entity.name.class.ts</string>
           </dict>
         </dict>
         <key>end</key>
@@ -235,26 +235,6 @@
         <string>\*/</string>
         <key>name</key>
         <string>comment.block.documentation.ts</string>
-      </dict>
-      <key>comment-block-html</key>
-      <dict>
-        <key>captures</key>
-        <dict>
-          <key>0</key>
-          <dict>
-            <key>name</key>
-            <string>punctuation.definition.comment.html.js</string>
-          </dict>
-          <key>2</key>
-          <dict>
-            <key>name</key>
-            <string>punctuation.definition.comment.html.js</string>
-          </dict>
-        </dict>
-        <key>match</key>
-        <string>(&lt;!--|--&gt;)</string>
-        <key>name</key>
-        <string>comment.block.html.js</string>
       </dict>
       <key>comment-line</key>
       <dict>
@@ -462,7 +442,7 @@
       <key>meta-function</key>
       <dict>
         <key>begin</key>
-        <string>\b(function)(?:\s+([a-zA-Z_$][\w$]*)?)\s*</string>
+        <string>\b(function)\b(?:\s+([a-zA-Z_$][\w$]*))?\s*</string>
         <key>beginCaptures</key>
         <dict>
           <key>0</key>
@@ -662,7 +642,7 @@
       <key>meta-storage-modifier</key>
       <dict>
         <key>match</key>
-        <string>\b(const|export|extends|final|implements|native|private|protected|public|static|synchronized|throws|transient|volatile)\b</string>
+        <string>\b(const|export|extends|implements|private|public|static)\b</string>
         <key>name</key>
         <string>storage.modifier.ts</string>
       </dict>
@@ -721,7 +701,7 @@
               <key>2</key>
               <dict>
                 <key>name</key>
-                <string>entity.name.type.instance.ts</string>
+                <string>entity.name.class.ts</string>
               </dict>
             </dict>
             <key>match</key>
@@ -737,7 +717,7 @@
           </dict>
           <dict>
             <key>match</key>
-            <string>\b(boolean|class|enum|interface|number|string|var|void)\b</string>
+            <string>\b(boolean|class|enum|type|interface|number|string|var|void)\b</string>
             <key>name</key>
             <string>storage.type.ts</string>
           </dict>
@@ -853,7 +833,7 @@
       <key>module-expression</key>
       <dict>
         <key>begin</key>
-        <string>\b(module)\b(?:\s+([a-zA-Z_$][\w$]*))?</string>
+        <string>(?&lt;!var )\b(module)\b(?:\s+([a-zA-Z_$][\w$]*))?</string>
         <key>beginCaptures</key>
         <dict>
           <key>1</key>
