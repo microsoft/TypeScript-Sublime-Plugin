@@ -776,7 +776,7 @@
 			<key>begin</key>
 			<string>"</string>
 			<key>end</key>
-			<string>"</string>
+			<string>"|(?=$)</string>
 			<key>name</key>
 			<string>string.double.ts</string>
 			<key>patterns</key>
@@ -794,7 +794,7 @@
 			<key>begin</key>
 			<string>'</string>
 			<key>end</key>
-			<string>'</string>
+			<string>'|(?=$)</string>
 			<key>name</key>
 			<string>string.single.ts</string>
 			<key>patterns</key>
