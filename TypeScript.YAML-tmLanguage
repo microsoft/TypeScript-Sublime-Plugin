@@ -287,10 +287,11 @@ repository:
       '0': {name: brace.paren.ts }
     patterns:
     - include: '#expression'
+  
   qstring-double:
     name: string.double.ts
     begin: '"'
-    end: '"'
+    end: '"|(?=$)'
     patterns:
     - name: constant.character.escape.ts
       match: \\(x\h{2}|[0-2][0-7]{,2}|3[0-6][0-7]?|37[0-7]?|[4-7][0-7]?|.)
@@ -298,7 +299,7 @@ repository:
   qstring-single:
     name: string.single.ts
     begin: "'"
-    end: "'"
+    end: "'|(?=$)"
     patterns:
     - match: \\(x\h{2}|[0-2][0-7]{,2}|3[0-6][0-7]?|37[0-7]?|[4-7][0-7]?|.)
       name: constant.character.escape.ts
@@ -318,6 +319,7 @@ repository:
     patterns:
     - include: '#qstring-single'
     - include: '#qstring-double'
+
   comment:
     name: comment.ts
     patterns:
