@@ -52,29 +52,15 @@ module ts.server {
         }
 
         // insert past end of file
-        /*
-        var pos = lineColToPosition(snapshot, 21, 2)
+        var pos = lineColToPosition(lineIndex, 21, 2)
         insertString = "e";
-        checkText = editFlat(pos, 0, insertString, checkText);
-        snapshot = snapshot.edit(pos, 0, insertString);
-        editedText = snapshot.getText(0, checkText.length);
-        if (editedText != checkText) {
-            recordError();
-            return;
-        }
-*/
+        var tmpSnapshot = lineIndex.edit(pos, 0, insertString);
+
         // delete past end of file
-        /*
-        var pos = lineColToPosition(snapshot, 21, 2)
-        insertString = "e";
-        checkText = editFlat(pos, 1, insertString, checkText);
-        snapshot = snapshot.edit(pos, 1, insertString);
-        editedText = snapshot.getText(0, checkText.length);
-        if (editedText != checkText) {
-            recordError();
-            return;
-        }
-        */
+        var pos = lineColToPosition(lineIndex, 21, 2)
+        insertString = "";
+        var tmpSnapshot = lineIndex.edit(pos, 1, insertString);
+
         // change 9 2 0 1 {"."}
         var pos = lineColToPosition(snapshot, 9, 2);
         insertString = ".";
