@@ -131,7 +131,6 @@
         "args": { "key": "\n" },
         "context": [
             { "key": "auto_complete_visible", "operator": "equal", "operand": false },
-            { "key": "following_text", "operator": "not_regex_match", "operand": "^\\}" },
             { "key": "selector", "operator": "not_equal", "operand": "meta.scope.between-tag-pair" },
             { "key": "selection_empty", "operator": "equal", "operand": true, "match_all": true },
             { "key": "num_selections", "operator": "equal", "operand": 1},
@@ -150,6 +149,16 @@
         "command": "commit_completion",
         "context": [
             { "key": "auto_complete_visible", "operator": "equal", "operand": true }
+        ]
+    },
+    {
+        "keys": [ "enter" ],
+        "command": "typescript_auto_indent_on_enter_between_curly_brackets",
+        "context": [
+            { "key": "auto_complete_visible", "operator": "equal", "operand": false },
+            { "key": "selection_empty", "operator": "equal", "operand": true },
+            { "key": "preceding_text", "operator": "regex_contains", "operand": "\\{$" },
+            { "key": "following_text", "operator": "regex_contains", "operand": "^\\}" }
         ]
     },
     {

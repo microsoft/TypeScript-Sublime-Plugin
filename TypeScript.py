@@ -347,6 +347,7 @@ def setFilePrefs(view):
     settings.set('tab_size', 4)
     settings.set('detect_indentation', False)
     settings.set('use_tab_stops', False)
+    settings.set('auto_indent', False)
 
 # given a list of regions and a (possibly zero-length) string to insert, 
 # send the appropriate change information to the server
@@ -1074,8 +1075,7 @@ class TypescriptNextRefCommand(sublime_plugin.TextCommand):
             refInfo = cli.getRefInfo()
             line = refInfo.nextRefLine()
             pos = refView.text_point(int(line), 0)
-            refView.sel().clear()
-            refView.sel().add(sublime.Region(pos, pos))
+            setCaretPos(refView, pos)
             refView.run_command('typescript_go_to_ref')
 
 
@@ -1091,8 +1091,7 @@ class TypescriptPrevRefCommand(sublime_plugin.TextCommand):
             refInfo = cli.getRefInfo()
             line = refInfo.prevRefLine()
             pos = refView.text_point(int(line), 0)
-            refView.sel().clear()
-            refView.sel().add(sublime.Region(pos, pos))
+            setCaretPos(refView, pos)
             refView.run_command('typescript_go_to_ref')
 
 
@@ -1168,9 +1167,7 @@ class TypescriptPopulateRefs(sublime_plugin.TextCommand):
         if matchCount > 0:
             highlightIds(self.view, refId)
         window.focus_view(self.view)
-        self.view.sel().clear()
-        caretPos = self.view.text_point(2, 0)
-        self.view.sel().add(sublime.Region(caretPos, caretPos))
+        setCaretPos(self.view, self.view.text_point(2, 0))
         # serialize the reference info into the settings
         self.view.settings().set('refinfo', refInfo.asValue())
         self.view.set_read_only(True)
@@ -1201,6 +1198,20 @@ def applyFormattingChanges(text, view, codeEdits):
             applyEdit(text, view, startl, startc, endl, endc, ntext=newText)
 
 
+def insertText(view, edit, loc, text):
+    view.insert(edit, loc, text)
+    sendReplaceChangesForRegions(view, [sublime.Region(loc, loc)], text)
+    if not cli.ST2():
+        clientInfo = cli.getOrAddFile(view.file_name())
+        clientInfo.changeCount = view.change_count()
+    checkUpdateView(view)
+
+
+def setCaretPos(view, pos):
+    view.sel().clear()
+    view.sel().add(pos)
+
+
 # format on ";", "}", or "\n"; called by typing these keys in a ts file
 # in the case of "\n", this is only called when no completion dialogue visible
 class TypescriptFormatOnKey(sublime_plugin.TextCommand):
@@ -1209,12 +1220,7 @@ class TypescriptFormatOnKey(sublime_plugin.TextCommand):
             return
         loc = self.view.sel()[0].begin()
         if insertKey:
-            self.view.insert(text, loc, key)
-            sendReplaceChangesForRegions(self.view, [sublime.Region(loc, loc)], key)
-            if not cli.ST2():
-                clientInfo = cli.getOrAddFile(self.view.file_name())
-                clientInfo.changeCount = self.view.change_count()
-            checkUpdateView(self.view)
+            insertText(self.view, text, loc, key)
         formatResp = cli.service.formatOnKey(self.view.file_name(), getLocationFromView(self.view), key)
         if formatResp.success:
             codeEdits = formatResp.body
@@ -1245,7 +1251,9 @@ class TypescriptFormatDocument(sublime_plugin.TextCommand):
     def run(self, text):
         formatRange(text, self.view, 0, self.view.size())
 
+
 nonBlankLinePattern = re.compile("[\S]+")
+
 
 # command to format the current line
 class TypescriptFormatLine(sublime_plugin.TextCommand):
@@ -1260,6 +1268,7 @@ class TypescriptFormatLine(sublime_plugin.TextCommand):
             line = cursor[0]
             if line > 0:
                 self.view.run_command('typescript_format_on_key', { "key": "\n", "insertKey": False });
+
 
 class TypescriptFormatBrackets(sublime_plugin.TextCommand):
     def run(self, text):
@@ -1276,6 +1285,7 @@ class TypescriptFormatBrackets(sublime_plugin.TextCommand):
                 self.view.run_command('move', { "by": "characters", "forward": True })
                 self.view.run_command('typescript_format_on_key', { "key": "}", "insertKey": False });
                 self.view.run_command('move', { "by": "characters", "forward": True })
+
 
 class TypescriptPasteAndFormat(sublime_plugin.TextCommand):
     def run(self, text):
@@ -1294,6 +1304,38 @@ class TypescriptPasteAndFormat(sublime_plugin.TextCommand):
             rblineStart = view.line(rb.begin()).begin()
             ralineEnd = view.line(ra.begin()).end()
             formatRange(text, view, rblineStart, ralineEnd)
+
+
+class TypescriptAutoIndentOnEnterBetweenCurlyBrackets(sublime_plugin.TextCommand):
+    """
+    handle the case of hitting enter between {} to auto indent and format
+    """
+    def run(self, text):
+        view = self.view
+        loc = view.sel()[0].begin()
+        rowCol = view.rowcol(loc)
+
+        # insert the enter
+        insertText(view, text, loc, "\n")
+
+        # set the caret back to the end of the original line
+        firstLine = view.line(view.text_point(rowCol[0], 0))
+        caretPos = firstLine.end()
+        setCaretPos(view, caretPos)
+
+        # format the lines from the location of the enter to the closing curly
+        lastLine = view.line(view.text_point(rowCol[0] + 1, 0))
+        formatRange(text, self.view, firstLine.begin(), lastLine.end())
+
+        # move the caret to the end of the original line (query the line again since formatting might have moved it around)
+        firstLine = view.line(view.sel()[0].begin())
+        caretPos = firstLine.end()
+        setCaretPos(view, caretPos)
+                
+        # insert a new line and cause auto indent
+        view.run_command('typescript_format_on_key', { "key": "\n", "insertKey": True });
+
+
 
 # this is not always called on startup by Sublime, so we call it
 # from on_activated or on_close if necessary
