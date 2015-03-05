@@ -304,6 +304,11 @@ repository:
  
   cast:
     name: cast.expr.ts
+
+    # To differentiate a cast vs a relational <, this regexp tries to use the surrounding context
+    # If < is preceeded by 'return', 'throw', 'yield' its most likely a type assertion
+    # An '=', '(', ',', ':', or '>' character followed by '<' is likely a type assertion, as otherwise its a syntax error
+    # '<=' and '<<=' are definately not type assertions, as they are assignment operators.
     begin: '(?:(?<=return|throw|yield|[=(,:>]))\s*(<)(?!<?\=)'
     beginCaptures:
       '1': { name: keyword.operator.type.ts }
@@ -318,7 +323,9 @@ repository:
     begin: '\b(new)\b'
     beginCaptures:
       '1': { name: keyword.operator.ts }
-    end: '(?=[<(;\r\n])'
+    
+    # new-expr ends just before any type or call arguments. Type arguments will be picked up by #cast.
+    end: '(?=[<(;]|$)'
     patterns:
     - include: '#type'
      

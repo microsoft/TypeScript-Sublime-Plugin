@@ -556,7 +556,7 @@
 				</dict>
 			</dict>
 			<key>end</key>
-			<string>(?=[&lt;(;\r\n])</string>
+			<string>(?=[&lt;(;]|$)</string>
 			<key>name</key>
 			<string>new.expr.ts</string>
 			<key>patterns</key>
