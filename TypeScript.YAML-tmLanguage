@@ -121,7 +121,9 @@ repository:
   indexer-declaration:
     name: meta.indexer.declaration.ts
     begin: \[
-    end: \]|$
+    end: \]\s*(\?\s*)?|$
+    endCaptures:
+      '1': { name: keyword.operator.ts }
     patterns:
     - include: '#type-annotation'
     - include: '#indexer-parameter'
@@ -217,7 +219,7 @@ repository:
   function-type-return-type:
     name: meta.function.type.return.ts
     begin: '=>'
-    end: (?=,|\))
+    end: (?=[,\){])
     patterns:
     - include: '#type'
 

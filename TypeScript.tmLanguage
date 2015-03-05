@@ -404,7 +404,7 @@
 			<key>begin</key>
 			<string>=&gt;</string>
 			<key>end</key>
-			<string>(?=,|\))</string>
+			<string>(?=[,\){])</string>
 			<key>name</key>
 			<string>meta.function.type.return.ts</string>
 			<key>patterns</key>
@@ -420,7 +420,15 @@
 			<key>begin</key>
 			<string>\[</string>
 			<key>end</key>
-			<string>\]|$</string>
+			<string>\]\s*(\?\s*)?|$</string>
+			<key>endCaptures</key>
+			<dict>
+				<key>1</key>
+				<dict>
+					<key>name</key>
+					<string>keyword.operator.ts</string>
+				</dict>
+			</dict>
 			<key>name</key>
 			<string>meta.indexer.declaration.ts</string>
 			<key>patterns</key>
