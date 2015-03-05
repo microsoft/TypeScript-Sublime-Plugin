@@ -787,7 +787,7 @@
 			<array>
 				<dict>
 					<key>match</key>
-					<string>\\(x\h{2}|[0-2][0-7]{,2}|3[0-6][0-7]?|37[0-7]?|[4-7][0-7]?|.)</string>
+					<string>\\(x\h{2}|[0-2][0-7]{,2}|3[0-6][0-7]?|37[0-7]?|[4-7][0-7]?|.|$)</string>
 					<key>name</key>
 					<string>constant.character.escape.ts</string>
 				</dict>
@@ -805,7 +805,7 @@
 			<array>
 				<dict>
 					<key>match</key>
-					<string>\\(x\h{2}|[0-2][0-7]{,2}|3[0-6][0-7]?|37[0-7]?|[4-7][0-7]?|.)</string>
+					<string>\\(x\h{2}|[0-2][0-7]{,2}|3[0-6][0-7]?|37[0-7]?|[4-7][0-7]?|.|$)</string>
 					<key>name</key>
 					<string>constant.character.escape.ts</string>
 				</dict>
@@ -943,23 +943,21 @@
 		</dict>
 		<key>template-string-contents</key>
 		<dict>
-			<key>captures</key>
-			<dict>
-				<key>0</key>
-				<dict>
-					<key>name</key>
-					<string>string.template.ts</string>
-				</dict>
-				<key>2</key>
-				<dict>
-					<key>name</key>
-					<string>constant.character.escape.ts</string>
-				</dict>
-			</dict>
-			<key>match</key>
-			<string>((\\(x\h{2}|[0-2][0-7]{,2}|3[0-6][0-7]?|37[0-7]?|[4-7][0-7]?|.))|.)*?((?=(\$\{|`|$)))</string>
+			<key>begin</key>
+			<string>.*?</string>
+			<key>end</key>
+			<string>(?=(\$\{|`))</string>
 			<key>name</key>
-			<string>meta.string.template.ts</string>
+			<string>string.template.ts</string>
+			<key>patterns</key>
+			<array>
+				<dict>
+					<key>match</key>
+					<string>\\(x\h{2}|[0-2][0-7]{,2}|3[0-6][0-7]?|37[0-7]?|[4-7][0-7]?|.|$)</string>
+					<key>name</key>
+					<string>constant.character.escape</string>
+				</dict>
+			</array>
 		</dict>
 		<key>template-substitution-element</key>
 		<dict>
