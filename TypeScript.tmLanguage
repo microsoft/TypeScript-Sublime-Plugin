@@ -209,6 +209,10 @@
 				</dict>
 				<dict>
 					<key>include</key>
+					<string>#template</string>
+				</dict>
+				<dict>
+					<key>include</key>
 					<string>#comment</string>
 				</dict>
 				<dict>
@@ -893,6 +897,94 @@
 			<string>:</string>
 			<key>name</key>
 			<string>case.expr.ts</string>
+			<key>patterns</key>
+			<array>
+				<dict>
+					<key>include</key>
+					<string>#expression</string>
+				</dict>
+			</array>
+		</dict>
+		<key>template</key>
+		<dict>
+			<key>begin</key>
+			<string>`</string>
+			<key>beginCaptures</key>
+			<dict>
+				<key>0</key>
+				<dict>
+					<key>name</key>
+					<string>string.template.ts</string>
+				</dict>
+			</dict>
+			<key>end</key>
+			<string>`</string>
+			<key>endCaptures</key>
+			<dict>
+				<key>0</key>
+				<dict>
+					<key>name</key>
+					<string>string.template.ts</string>
+				</dict>
+			</dict>
+			<key>name</key>
+			<string>meta.template.ts</string>
+			<key>patterns</key>
+			<array>
+				<dict>
+					<key>include</key>
+					<string>#template-substitution-element</string>
+				</dict>
+				<dict>
+					<key>include</key>
+					<string>#template-string-contents</string>
+				</dict>
+			</array>
+		</dict>
+		<key>template-string-contents</key>
+		<dict>
+			<key>captures</key>
+			<dict>
+				<key>0</key>
+				<dict>
+					<key>name</key>
+					<string>string.template.ts</string>
+				</dict>
+				<key>2</key>
+				<dict>
+					<key>name</key>
+					<string>constant.character.escape.ts</string>
+				</dict>
+			</dict>
+			<key>match</key>
+			<string>((\\(x\h{2}|[0-2][0-7]{,2}|3[0-6][0-7]?|37[0-7]?|[4-7][0-7]?|.))|.)*?((?=(\$\{|`|$)))</string>
+			<key>name</key>
+			<string>meta.string.template.ts</string>
+		</dict>
+		<key>template-substitution-element</key>
+		<dict>
+			<key>begin</key>
+			<string>\$\{</string>
+			<key>beginCaptures</key>
+			<dict>
+				<key>0</key>
+				<dict>
+					<key>name</key>
+					<string>keyword.operator.ts</string>
+				</dict>
+			</dict>
+			<key>end</key>
+			<string>\}</string>
+			<key>endCaptures</key>
+			<dict>
+				<key>0</key>
+				<dict>
+					<key>name</key>
+					<string>keyword.operator.ts</string>
+				</dict>
+			</dict>
+			<key>name</key>
+			<string>template.element.ts</string>
 			<key>patterns</key>
 			<array>
 				<dict>

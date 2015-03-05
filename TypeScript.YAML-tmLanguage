@@ -250,6 +250,7 @@ repository:
     patterns:
     - include: '#string'
     - include: '#regex'
+    - include: '#template'
     - include: '#comment'
     - include: '#literal'
     - include: '#paren-expression'
@@ -353,6 +354,36 @@ repository:
     patterns:
     - include: '#qstring-single'
     - include: '#qstring-double'
+
+  template:
+    name: meta.template.ts
+    begin: '`'
+    beginCaptures:
+      '0': { name: string.template.ts}
+    end: '`'
+    endCaptures:
+      '0': { name: string.template.ts}
+    patterns:
+     - include: '#template-substitution-element'
+     - include: '#template-string-contents'
+
+  template-string-contents:
+    name: meta.string.template.ts
+    match: '((\\(x\h{2}|[0-2][0-7]{,2}|3[0-6][0-7]?|37[0-7]?|[4-7][0-7]?|.))|.)*?((?=(\$\{|`|$)))'
+    captures:
+      '0': { name: string.template.ts }
+      '2': { name: constant.character.escape.ts }
+
+  template-substitution-element:
+    name: template.element.ts
+    begin: \$\{
+    beginCaptures:
+      '0': {name: keyword.operator.ts}
+    end: \}
+    endCaptures:
+      '0': {name: keyword.operator.ts}
+    patterns:
+      - include: '#expression'
 
   comment:
     name: comment.ts
