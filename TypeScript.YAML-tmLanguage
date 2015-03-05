@@ -81,9 +81,14 @@ repository:
     - include: '#field-declaration'
     - include: '#method-declaration'
     - include: '#indexer-declaration'
+    - include: '#type-annotation'
+    - include: '#variable-initializer'
+    - include: '#access-modifier'
+    - include: '#static-modifier'
+    - include: '#property-accessor'
 
   object-type:
-    name: meta.object.body.ts
+    name: meta.object.type.ts
     begin: \{
     end: \}
     patterns:
@@ -91,16 +96,13 @@ repository:
     - include: '#field-declaration'
     - include: '#method-declaration'
     - include: '#indexer-declaration'
+    - include: '#type-annotation'
 
   field-declaration:
     name: meta.field.declaration.ts
-    begin: '\b(static)?\[?\b([a-zA-Z_$][\w$]*)\s*\]?\s*(\?\s*)?(?=(=|:))'
-    beginCaptures:
-      '3': { name: keyword.other.ts }
-    end: '(?=;|,|\})'
-    patterns:
-    - include: '#type-annotation'
-    - include: '#variable-initializer'
+    match: '\b([a-zA-Z_$][\w$]*)\s*(\?\s*)?(?=(=|:))'
+    captures:
+      '2': { name: keyword.operator.ts }
 
   method-declaration:
     name: meta.method.declaration.ts
@@ -118,14 +120,19 @@ repository:
 
   indexer-declaration:
     name: meta.indexer.declaration.ts
-    begin: \[\s*([a-zA-Z_$][\w$]*)\s*:\s*(string|number)\s*\]
-    beginCaptures:
-      '1': { name: variable.parameter.ts }
-      '2': { name: storage.type.ts }
-    end: (?=[,;]) 
+    begin: \[
+    end: \]|$
     patterns:
     - include: '#type-annotation'
+    - include: '#indexer-parameter'
+    - include: '#expression'
 
+  indexer-parameter:
+    name: meta.indexer.parameter.ts
+    match: ([a-zA-Z_$][\w$]*)(?=\:)
+    captures:
+      '1': { name: variable.parameter.ts}
+      
   function-declaration:
     name: meta.function.ts
     begin: \b(function)\b(?:\s+([a-zA-Z_$][\w$]*))?\s*
@@ -193,7 +200,7 @@ repository:
   type-annotation:
     name: meta.type.annotation.ts
     begin: ":"
-    end: (?=[,);=>}\[])|(?<=[a-z]|>)\s*(?=\{|$)
+    end: (?=[,);=>}\]\[])|(?<=[a-z]|>)\s*(?=\{|$)
     patterns:
       - include: '#type'
 
@@ -411,6 +418,16 @@ repository:
     name: constant.language.ts
     match: \b(undefined)\b
 
+  access-modifier:
+    name: storage.modifier.ts
+    match: \b(public|protected|private)\b
+    
+  static-modifier:
+    name: keyword.other.ts
+    match: \b(static)\b
+
+  property-accessor:
+    name: storage.type.property.ts
+    match: \b(get|set)\b
+
 ...
-
-

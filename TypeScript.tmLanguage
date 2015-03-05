@@ -17,6 +17,13 @@
 	</array>
 	<key>repository</key>
 	<dict>
+		<key>access-modifier</key>
+		<dict>
+			<key>match</key>
+			<string>\b(public|protected|private)\b</string>
+			<key>name</key>
+			<string>storage.modifier.ts</string>
+		</dict>
 		<key>arithmetic-operator</key>
 		<dict>
 			<key>match</key>
@@ -282,31 +289,18 @@
 		</dict>
 		<key>field-declaration</key>
 		<dict>
-			<key>begin</key>
-			<string>\b(static)?\[?\b([a-zA-Z_$][\w$]*)\s*\]?\s*(\?\s*)?(?=(=|:))</string>
-			<key>beginCaptures</key>
+			<key>captures</key>
 			<dict>
-				<key>3</key>
+				<key>2</key>
 				<dict>
 					<key>name</key>
-					<string>keyword.other.ts</string>
+					<string>keyword.operator.ts</string>
 				</dict>
 			</dict>
-			<key>end</key>
-			<string>(?=;|,|\})</string>
+			<key>match</key>
+			<string>\b([a-zA-Z_$][\w$]*)\s*(\?\s*)?(?=(=|:))</string>
 			<key>name</key>
 			<string>meta.field.declaration.ts</string>
-			<key>patterns</key>
-			<array>
-				<dict>
-					<key>include</key>
-					<string>#type-annotation</string>
-				</dict>
-				<dict>
-					<key>include</key>
-					<string>#variable-initializer</string>
-				</dict>
-			</array>
 		</dict>
 		<key>function-declaration</key>
 		<dict>
@@ -424,22 +418,9 @@
 		<key>indexer-declaration</key>
 		<dict>
 			<key>begin</key>
-			<string>\[\s*([a-zA-Z_$][\w$]*)\s*:\s*(string|number)\s*\]</string>
-			<key>beginCaptures</key>
-			<dict>
-				<key>1</key>
-				<dict>
-					<key>name</key>
-					<string>variable.parameter.ts</string>
-				</dict>
-				<key>2</key>
-				<dict>
-					<key>name</key>
-					<string>storage.type.ts</string>
-				</dict>
-			</dict>
+			<string>\[</string>
 			<key>end</key>
-			<string>(?=[,;])</string>
+			<string>\]|$</string>
 			<key>name</key>
 			<string>meta.indexer.declaration.ts</string>
 			<key>patterns</key>
@@ -448,7 +429,30 @@
 					<key>include</key>
 					<string>#type-annotation</string>
 				</dict>
+				<dict>
+					<key>include</key>
+					<string>#indexer-parameter</string>
+				</dict>
+				<dict>
+					<key>include</key>
+					<string>#expression</string>
+				</dict>
 			</array>
+		</dict>
+		<key>indexer-parameter</key>
+		<dict>
+			<key>captures</key>
+			<dict>
+				<key>1</key>
+				<dict>
+					<key>name</key>
+					<string>variable.parameter.ts</string>
+				</dict>
+			</dict>
+			<key>match</key>
+			<string>([a-zA-Z_$][\w$]*)(?=\:)</string>
+			<key>name</key>
+			<string>meta.indexer.parameter.ts</string>
 		</dict>
 		<key>literal</key>
 		<dict>
@@ -591,6 +595,26 @@
 					<key>include</key>
 					<string>#indexer-declaration</string>
 				</dict>
+				<dict>
+					<key>include</key>
+					<string>#type-annotation</string>
+				</dict>
+				<dict>
+					<key>include</key>
+					<string>#variable-initializer</string>
+				</dict>
+				<dict>
+					<key>include</key>
+					<string>#access-modifier</string>
+				</dict>
+				<dict>
+					<key>include</key>
+					<string>#static-modifier</string>
+				</dict>
+				<dict>
+					<key>include</key>
+					<string>#property-accessor</string>
+				</dict>
 			</array>
 		</dict>
 		<key>object-declaration</key>
@@ -690,7 +714,7 @@
 			<key>end</key>
 			<string>\}</string>
 			<key>name</key>
-			<string>meta.object.body.ts</string>
+			<string>meta.object.type.ts</string>
 			<key>patterns</key>
 			<array>
 				<dict>
@@ -708,6 +732,10 @@
 				<dict>
 					<key>include</key>
 					<string>#indexer-declaration</string>
+				</dict>
+				<dict>
+					<key>include</key>
+					<string>#type-annotation</string>
 				</dict>
 			</array>
 		</dict>
@@ -770,6 +798,13 @@
 					<string>#expression</string>
 				</dict>
 			</array>
+		</dict>
+		<key>property-accessor</key>
+		<dict>
+			<key>match</key>
+			<string>\b(get|set)\b</string>
+			<key>name</key>
+			<string>storage.type.property.ts</string>
 		</dict>
 		<key>qstring-double</key>
 		<dict>
@@ -853,6 +888,13 @@
 					<string>#type</string>
 				</dict>
 			</array>
+		</dict>
+		<key>static-modifier</key>
+		<dict>
+			<key>match</key>
+			<string>\b(static)\b</string>
+			<key>name</key>
+			<string>keyword.other.ts</string>
 		</dict>
 		<key>storage-keyword</key>
 		<dict>
@@ -938,7 +980,7 @@
 			<key>begin</key>
 			<string>:</string>
 			<key>end</key>
-			<string>(?=[,);=&gt;}\[])|(?&lt;=[a-z]|&gt;)\s*(?=\{|$)</string>
+			<string>(?=[,);=&gt;}\]\[])|(?&lt;=[a-z]|&gt;)\s*(?=\{|$)</string>
 			<key>name</key>
 			<string>meta.type.annotation.ts</string>
 			<key>patterns</key>
