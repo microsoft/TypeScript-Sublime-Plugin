@@ -11,11 +11,11 @@ patterns:
 repository:
   var-expr:
     name: meta.var.expr.ts
-    begin: (?<!\()\s*\b(var)\s+([a-zA-Z_$][\w$]*) 
+    begin: (?<!\()\s*\b(var|let|const(?!\s+enum))\s+([a-zA-Z_$][\w$]*) 
     beginCaptures:
       '1': { name: storage.type.ts }
       '2': { name: variable.ts }
-    end: (?=;|=|\})|(?<=\})
+    end: (?=[;=\}\{}])|(?<=\})
     patterns:
     - include: '#type-annotation'
 
@@ -51,11 +51,12 @@ repository:
 
   object-declaration:
     name: meta.declaration.object.ts
-    begin: '\b(?:(export)\s+)?(class|interface)\b(?:\s+([a-zA-Z_$][\w$]*))'
+    begin: '\b(?:(export)\s+)?\b(?:(const)\s+)?(class|interface|enum)\b(?:\s+([a-zA-Z_$][\w$]*))'
     beginCaptures:
       '1': { name: storage.modifier.ts }
-      '2': { name: keyword.other.ts }
-      '3': { name: storage.type.ts }
+      '2': { name: storage.modifier.ts }
+      '3': { name: keyword.other.ts }
+      '4': { name: storage.type.ts }
     end: (?=\})
     endCaptures:
       '1': { name: brace.curly.ts }

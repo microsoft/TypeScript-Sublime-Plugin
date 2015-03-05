@@ -628,7 +628,7 @@
 		<key>object-declaration</key>
 		<dict>
 			<key>begin</key>
-			<string>\b(?:(export)\s+)?(class|interface)\b(?:\s+([a-zA-Z_$][\w$]*))</string>
+			<string>\b(?:(export)\s+)?\b(?:(const)\s+)?(class|interface|enum)\b(?:\s+([a-zA-Z_$][\w$]*))</string>
 			<key>beginCaptures</key>
 			<dict>
 				<key>1</key>
@@ -639,9 +639,14 @@
 				<key>2</key>
 				<dict>
 					<key>name</key>
-					<string>keyword.other.ts</string>
+					<string>storage.modifier.ts</string>
 				</dict>
 				<key>3</key>
+				<dict>
+					<key>name</key>
+					<string>keyword.other.ts</string>
+				</dict>
+				<key>4</key>
 				<dict>
 					<key>name</key>
 					<string>storage.type.ts</string>
@@ -1097,7 +1102,7 @@
 		<key>var-expr</key>
 		<dict>
 			<key>begin</key>
-			<string>(?&lt;!\()\s*\b(var)\s+([a-zA-Z_$][\w$]*)</string>
+			<string>(?&lt;!\()\s*\b(var|let|const(?!\s+enum))\s+([a-zA-Z_$][\w$]*)</string>
 			<key>beginCaptures</key>
 			<dict>
 				<key>1</key>
@@ -1112,7 +1117,7 @@
 				</dict>
 			</dict>
 			<key>end</key>
-			<string>(?=;|=|\})|(?&lt;=\})</string>
+			<string>(?=[;=\}\{}])|(?&lt;=\})</string>
 			<key>name</key>
 			<string>meta.var.expr.ts</string>
 			<key>patterns</key>
