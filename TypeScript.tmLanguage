@@ -198,7 +198,36 @@
 					<key>include</key>
 					<string>#type-declaration</string>
 				</dict>
+				<dict>
+					<key>include</key>
+					<string>#enum-declaration</string>
+				</dict>
 			</array>
+		</dict>
+		<key>enum-declaration</key>
+		<dict>
+			<key>captures</key>
+			<dict>
+				<key>1</key>
+				<dict>
+					<key>name</key>
+					<string>storage.modifier.ts</string>
+				</dict>
+				<key>2</key>
+				<dict>
+					<key>name</key>
+					<string>keyword.other.ts</string>
+				</dict>
+				<key>3</key>
+				<dict>
+					<key>name</key>
+					<string>storage.type.ts</string>
+				</dict>
+			</dict>
+			<key>match</key>
+			<string>(?:\b(const)\s+)?\b(enum)\s+([a-zA-Z_$][\w$]*)</string>
+			<key>name</key>
+			<string>meta.enum.declaration.ts</string>
 		</dict>
 		<key>expression</key>
 		<dict>
@@ -632,7 +661,7 @@
 		<key>object-declaration</key>
 		<dict>
 			<key>begin</key>
-			<string>\b(?:(export)\s+)?\b(?:(const)\s+)?(class|interface|enum)\b(?:\s+([a-zA-Z_$][\w$]*))</string>
+			<string>\b(?:(export)\s+)?\b(class|interface)\b(?:\s+([a-zA-Z_$][\w$]*))</string>
 			<key>beginCaptures</key>
 			<dict>
 				<key>1</key>
@@ -643,14 +672,9 @@
 				<key>2</key>
 				<dict>
 					<key>name</key>
-					<string>storage.modifier.ts</string>
-				</dict>
-				<key>3</key>
-				<dict>
-					<key>name</key>
 					<string>keyword.other.ts</string>
 				</dict>
-				<key>4</key>
+				<key>3</key>
 				<dict>
 					<key>name</key>
 					<string>storage.type.ts</string>
@@ -1115,7 +1139,7 @@
 			<key>end</key>
 			<string>(?=[,);&gt;]|var|type|function|class|interface)</string>
 			<key>name</key>
-			<string>meta.typea.declaration.ts</string>
+			<string>meta.type.declaration.ts</string>
 			<key>patterns</key>
 			<array>
 				<dict>
@@ -1208,7 +1232,7 @@
 				</dict>
 			</dict>
 			<key>end</key>
-			<string>(?=[;=\}\{}])|(?&lt;=\})</string>
+			<string>(?&lt;!,)$|(?=[;=\}\{])|(?&lt;=\})</string>
 			<key>name</key>
 			<string>meta.var.expr.ts</string>
 			<key>patterns</key>
