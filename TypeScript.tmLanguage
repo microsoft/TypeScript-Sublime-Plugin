@@ -108,7 +108,7 @@
 				</dict>
 			</dict>
 			<key>match</key>
-			<string>&lt;\s*([a-zA-Z_$][.\w$]*)\s*&gt;</string>
+			<string>&lt;\s*([a-zA-Z_$][.\w$]*)(\[\])*\s*&gt;</string>
 			<key>name</key>
 			<string>cast.expr.ts</string>
 		</dict>
@@ -1232,7 +1232,7 @@
 				</dict>
 			</dict>
 			<key>end</key>
-			<string>(?&lt;!,)$|(?=[;=\}\{])|(?&lt;=\})</string>
+			<string>$|(?=[;=\}\{])|(?&lt;=\})</string>
 			<key>name</key>
 			<string>meta.var.expr.ts</string>
 			<key>patterns</key>

@@ -288,7 +288,7 @@ repository:
 
   cast:
     name: cast.expr.ts
-    match: '<\s*([a-zA-Z_$][.\w$]*)\s*>'
+    match: '<\s*([a-zA-Z_$][.\w$]*)(\[\])*\s*>'
     captures:
        '1': { name: storage.type.ts }
 
