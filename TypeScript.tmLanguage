@@ -786,10 +786,8 @@
 			<key>patterns</key>
 			<array>
 				<dict>
-					<key>match</key>
-					<string>\\(x\h{2}|[0-2][0-7]{,2}|3[0-6][0-7]?|37[0-7]?|[4-7][0-7]?|.|$)</string>
-					<key>name</key>
-					<string>constant.character.escape.ts</string>
+					<key>include</key>
+					<string>#string-character-escape</string>
 				</dict>
 			</array>
 		</dict>
@@ -804,10 +802,8 @@
 			<key>patterns</key>
 			<array>
 				<dict>
-					<key>match</key>
-					<string>\\(x\h{2}|[0-2][0-7]{,2}|3[0-6][0-7]?|37[0-7]?|[4-7][0-7]?|.|$)</string>
-					<key>name</key>
-					<string>constant.character.escape.ts</string>
+					<key>include</key>
+					<string>#string-character-escape</string>
 				</dict>
 			</array>
 		</dict>
@@ -881,6 +877,13 @@
 				</dict>
 			</array>
 		</dict>
+		<key>string-character-escape</key>
+		<dict>
+			<key>match</key>
+			<string>\\(x\h{2}|[0-2][0-7]{,2}|3[0-6][0-7]?|37[0-7]?|[4-7][0-7]?|.|$)</string>
+			<key>name</key>
+			<string>constant.character.escape</string>
+		</dict>
 		<key>switch-case</key>
 		<dict>
 			<key>begin</key>
@@ -952,10 +955,8 @@
 			<key>patterns</key>
 			<array>
 				<dict>
-					<key>match</key>
-					<string>\\(x\h{2}|[0-2][0-7]{,2}|3[0-6][0-7]?|37[0-7]?|[4-7][0-7]?|.|$)</string>
-					<key>name</key>
-					<string>constant.character.escape</string>
+					<key>include</key>
+					<string>#string-character-escape</string>
 				</dict>
 			</array>
 		</dict>
