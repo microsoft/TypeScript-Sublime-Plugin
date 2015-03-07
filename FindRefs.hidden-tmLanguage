@@ -228,12 +228,12 @@
 				<key>2</key>
 				<dict>
 					<key>name</key>
-					<string>keyword.other.ts</string>
+					<string>storage.type.ts</string>
 				</dict>
 				<key>3</key>
 				<dict>
 					<key>name</key>
-					<string>storage.type.ts</string>
+					<string>entity.name.type.ts</string>
 				</dict>
 			</dict>
 			<key>match</key>
@@ -737,12 +737,12 @@
 				<key>2</key>
 				<dict>
 					<key>name</key>
-					<string>keyword.other.ts</string>
+					<string>storage.type.ts</string>
 				</dict>
 				<key>3</key>
 				<dict>
 					<key>name</key>
-					<string>storage.type.ts</string>
+					<string>entity.name.type.ts</string>
 				</dict>
 			</dict>
 			<key>end</key>
@@ -980,7 +980,7 @@
 			<key>begin</key>
 			<string>(?&lt;=\)):</string>
 			<key>end</key>
-			<string>$|(?=\{)</string>
+			<string>$|(?=\{|;)</string>
 			<key>name</key>
 			<string>meta.return.type.ts</string>
 			<key>patterns</key>

@@ -55,16 +55,16 @@ repository:
     match: (?:\b(const)\s+)?\b(enum)\s+([a-zA-Z_$][\w$]*)
     captures:
       '1': { name: storage.modifier.ts}
-      '2': { name: keyword.other.ts }
-      '3': { name: storage.type.ts }
+      '2': { name: storage.type.ts }
+      '3': { name: entity.name.type.ts }
 
   object-declaration:
     name: meta.declaration.object.ts
     begin: '\b(?:(export)\s+)?\b(class|interface)\b(?:\s+([a-zA-Z_$][\w$]*))'
     beginCaptures:
       '1': { name: storage.modifier.ts }
-      '2': { name: keyword.other.ts }
-      '3': { name: storage.type.ts }
+      '2': { name: storage.type.ts }
+      '3': { name: entity.name.type.ts }
     end: (?=\})
     endCaptures:
       '1': { name: brace.curly.ts }
@@ -150,7 +150,7 @@ repository:
     beginCaptures:
       '1': { name: storage.type.function.ts }
       '2': { name: entity.name.function.ts }
-    end: (?=\}|;)
+    end: (?=;|\})
     patterns:
     - include: '#comment'
     - include: '#type-parameters'
@@ -209,7 +209,7 @@ repository:
   return-type:
     name: meta.return.type.ts
     begin: '(?<=\)):'
-    end: $|(?=\{)
+    end: $|(?=\{|;)
     patterns:
     - include: '#type'
 
@@ -233,7 +233,7 @@ repository:
   function-type-return-type:
     name: meta.function.type.return.ts
     begin: '=>'
-    end: (?=[,\){])
+    end: (?=[,\){=;])
     patterns:
     - include: '#type'
 
