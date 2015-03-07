@@ -240,7 +240,7 @@ repository:
   type-annotation:
     name: meta.type.annotation.ts
     begin: ":"
-    end: (?=[,);=>}\]\[])|(?<=[a-z]|>)\s*(?=\{|$)
+    end: (?=[,);}\[])|(?==[^>])|(?<=[a-z]|>)\s*(?=\{|$)
     patterns:
       - include: '#type'
 
