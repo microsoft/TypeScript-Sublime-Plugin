@@ -364,6 +364,10 @@
 				</dict>
 				<dict>
 					<key>include</key>
+					<string>#type-parameters</string>
+				</dict>
+				<dict>
+					<key>include</key>
 					<string>#function-parameters</string>
 				</dict>
 				<dict>
@@ -407,9 +411,25 @@
 		<key>function-type-parameters</key>
 		<dict>
 			<key>begin</key>
-			<string>\(</string>
+			<string>(\()</string>
+			<key>beginCaptures</key>
+			<dict>
+				<key>1</key>
+				<dict>
+					<key>name</key>
+					<string>brace.round.ts</string>
+				</dict>
+			</dict>
 			<key>end</key>
 			<string>\)</string>
+			<key>endCaptures</key>
+			<dict>
+				<key>1</key>
+				<dict>
+					<key>name</key>
+					<string>brace.round.ts</string>
+				</dict>
+			</dict>
 			<key>name</key>
 			<string>meta.function.type.ts</string>
 			<key>patterns</key>
@@ -719,7 +739,7 @@
 				<key>1</key>
 				<dict>
 					<key>name</key>
-					<string>storage.modifier.ts</string>
+					<string>keyword.other.ts</string>
 				</dict>
 				<key>2</key>
 				<dict>
@@ -1165,6 +1185,12 @@
 			<string>meta.type.parameters.ts</string>
 			<key>patterns</key>
 			<array>
+				<dict>
+					<key>match</key>
+					<string>\b(extends)\b</string>
+					<key>name</key>
+					<string>keyword.other.ts</string>
+				</dict>
 				<dict>
 					<key>include</key>
 					<string>#comment</string>

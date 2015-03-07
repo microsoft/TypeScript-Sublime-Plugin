@@ -181,6 +181,7 @@ repository:
     end: $|(?=\}|;)
     patterns:
     - include: '#comment'
+    - include: '#type-parameters'
     - include: '#function-parameters'
     - include: '#return-type'
     - include: '#decl-block'
@@ -280,6 +281,8 @@ repository:
     begin: '<'
     end: '$|(?=var|type|function|class|interface)|>'  
     patterns:
+    - name: keyword.other.ts
+      match: '\b(extends)\b'
     - include: '#comment'
     - include: '#type'
 

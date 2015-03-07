@@ -396,6 +396,10 @@
 				</dict>
 				<dict>
 					<key>include</key>
+					<string>#type-parameters</string>
+				</dict>
+				<dict>
+					<key>include</key>
 					<string>#function-parameters</string>
 				</dict>
 				<dict>
@@ -1238,6 +1242,12 @@
 			<string>meta.type.parameters.ts</string>
 			<key>patterns</key>
 			<array>
+				<dict>
+					<key>match</key>
+					<string>\b(extends)\b</string>
+					<key>name</key>
+					<string>keyword.other.ts</string>
+				</dict>
 				<dict>
 					<key>include</key>
 					<string>#comment</string>
