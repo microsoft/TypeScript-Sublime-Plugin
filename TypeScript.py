@@ -347,7 +347,6 @@ def setFilePrefs(view):
     settings.set('tab_size', 4)
     settings.set('detect_indentation', False)
     settings.set('use_tab_stops', False)
-    settings.set('auto_indent', False)
 
 # given a list of regions and a (possibly zero-length) string to insert, 
 # send the appropriate change information to the server
@@ -447,6 +446,7 @@ class TypeScriptListener(sublime_plugin.EventListener):
             self.setOnIdleTimer(20)
             self.setOnSelectionIdleTimer(20)
             self.changeFocus = True
+            print("auto indent "+str(view.settings().get('auto_indent')))
 
     # ask the server for diagnostic information on all opened ts files in
     # most-recently-used order
@@ -1312,29 +1312,20 @@ class TypescriptAutoIndentOnEnterBetweenCurlyBrackets(sublime_plugin.TextCommand
     """
     def run(self, text):
         view = self.view
+        view.run_command('typescript_format_on_key', { "key": "\n" });
         loc = view.sel()[0].begin()
         rowCol = view.rowcol(loc)
-
-        # insert the enter
-        insertText(view, text, loc, "\n")
-
-        # set the caret back to the end of the original line
-        firstLine = view.line(view.text_point(rowCol[0], 0))
-        caretPos = firstLine.end()
-        setCaretPos(view, caretPos)
-
-        # format the lines from the location of the enter to the closing curly
-        lastLine = view.line(view.text_point(rowCol[0] + 1, 0))
-        formatRange(text, self.view, firstLine.begin(), lastLine.end())
-
-        # move the caret to the end of the original line (query the line again since formatting might have moved it around)
-        firstLine = view.line(view.sel()[0].begin())
-        caretPos = firstLine.end()
-        setCaretPos(view, caretPos)
-                
-        # insert a new line and cause auto indent
-        view.run_command('typescript_format_on_key', { "key": "\n", "insertKey": True });
-
+        tabSize = view.settings().get('tab_size')
+        braceCol = rowCol[1]
+        ws = ""
+        for i in range(tabSize):
+           ws += ' '
+        ws += "\n"
+        for i in range(braceCol):
+            ws += ' '
+        # insert the whitespace
+        insertText(view, text, loc, ws)
+        setCaretPos(view, loc + tabSize)
 
 
 # this is not always called on startup by Sublime, so we call it
