@@ -324,6 +324,11 @@
 		<dict>
 			<key>captures</key>
 			<dict>
+				<key>1</key>
+				<dict>
+					<key>name</key>
+					<string>variable.ts</string>
+				</dict>
 				<key>2</key>
 				<dict>
 					<key>name</key>
@@ -697,7 +702,7 @@
 				<key>3</key>
 				<dict>
 					<key>name</key>
-					<string>entity.name.type.ts</string>
+					<string>entity.name.class.ts</string>
 				</dict>
 			</dict>
 			<key>end</key>
@@ -1128,7 +1133,7 @@
 			<key>begin</key>
 			<string>:</string>
 			<key>end</key>
-			<string>(?=[,);}\[])|(?==[^&gt;])|(?&lt;=[a-z]|&gt;)\s*(?=\{|$)</string>
+			<string>(?=[,);}\[\]])|(?==[^&gt;])|(?&lt;=[a-z]|&gt;)\s*(?=\{|$)</string>
 			<key>name</key>
 			<string>meta.type.annotation.ts</string>
 			<key>patterns</key>
