@@ -606,6 +606,52 @@
 				</dict>
 			</array>
 		</dict>
+		<key>method-declaration-no-body</key>
+		<dict>
+			<key>begin</key>
+			<string>\b(?:(get|set)\s+)?([a-zA-Z_$][\.\w$]*)(\??)\s*(?=\()</string>
+			<key>beginCaptures</key>
+			<dict>
+				<key>1</key>
+				<dict>
+					<key>name</key>
+					<string>storage.type.property.ts</string>
+				</dict>
+				<key>2</key>
+				<dict>
+					<key>name</key>
+					<string>entity.name.function.ts</string>
+				</dict>
+				<key>3</key>
+				<dict>
+					<key>name</key>
+					<string>keyword.operator.ts</string>
+				</dict>
+			</dict>
+			<key>end</key>
+			<string>[;,]|(?=\})</string>
+			<key>name</key>
+			<string>meta.method.declaration.ts</string>
+			<key>patterns</key>
+			<array>
+				<dict>
+					<key>include</key>
+					<string>#comment</string>
+				</dict>
+				<dict>
+					<key>include</key>
+					<string>#function-parameters</string>
+				</dict>
+				<dict>
+					<key>include</key>
+					<string>#type-annotation</string>
+				</dict>
+				<dict>
+					<key>include</key>
+					<string>#decl-block</string>
+				</dict>
+			</array>
+		</dict>
 		<key>new-expr</key>
 		<dict>
 			<key>captures</key>
@@ -798,7 +844,7 @@
 				</dict>
 				<dict>
 					<key>include</key>
-					<string>#method-declaration</string>
+					<string>#method-declaration-no-body</string>
 				</dict>
 				<dict>
 					<key>include</key>
@@ -1146,6 +1192,10 @@
 				<dict>
 					<key>include</key>
 					<string>#type</string>
+				</dict>
+				<dict>
+					<key>include</key>
+					<string>#comment</string>
 				</dict>
 			</array>
 		</dict>
