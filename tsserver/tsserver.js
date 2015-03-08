@@ -32694,6 +32694,9 @@ var ts;
             };
             Session.prototype.send = function (msg) {
                 var json = JSON.stringify(msg);
+                if (this.logger.isVerbose()) {
+                    this.logger.info(msg.type + ": " + json);
+                }
                 this.sendLineToClient('Content-Length: ' + (1 + Buffer.byteLength(json, 'utf8')) +
                     '\r\n\r\n' + json);
             };
@@ -33200,6 +33203,10 @@ var ts;
                 }); });
             };
             Session.prototype.onMessage = function (message) {
+                if (this.logger.isVerbose()) {
+                    this.logger.info("request: " + message);
+                    var start = process.hrtime();
+                }
                 try {
                     var request = JSON.parse(message);
                     var response;
@@ -33302,6 +33309,17 @@ var ts;
                             break;
                         }
                     }
+                    if (this.logger.isVerbose()) {
+                        var elapsed = process.hrtime(start);
+                        var seconds = elapsed[0];
+                        var nanoseconds = elapsed[1];
+                        var elapsedMs = ((1e9 * seconds) + nanoseconds) / 1000000.0;
+                        var leader = "Elapsed time (in milliseconds)";
+                        if (!responseRequired) {
+                            leader = "Async elapsed time (in milliseconds)";
+                        }
+                        this.logger.msg(leader + ": " + elapsedMs.toFixed(4).toString(), "Perf");
+                    }
                     if (response) {
                         this.output(response, request.command, request.seq);
                     }
@@ -33335,8 +33353,9 @@ var ts;
             terminal: false
         });
         var Logger = (function () {
-            function Logger(logFilename) {
+            function Logger(logFilename, level) {
                 this.logFilename = logFilename;
+                this.level = level;
                 this.fd = -1;
                 this.seq = 0;
                 this.inGroup = false;
@@ -33365,10 +33384,18 @@ var ts;
                 this.seq++;
                 this.firstInGroup = true;
             };
+            Logger.prototype.enabled = function () {
+                return !!this.logFilename;
+            };
+            Logger.prototype.isVerbose = function () {
+                return this.enabled() && (this.level == "verbose");
+            };
             Logger.prototype.msg = function (s, type) {
                 if (type === void 0) { type = "Err"; }
                 if (this.fd < 0) {
-                    this.fd = fs.openSync(this.logFilename, "w");
+                    if (this.logFilename) {
+                        this.fd = fs.openSync(this.logFilename, "w");
+                    }
                 }
                 if (this.fd >= 0) {
                     s = s + "\n";
@@ -33472,14 +33499,51 @@ var ts;
                     _this.onMessage(message);
                 });
                 rl.on('close', function () {
-                    _this.projectService.closeLog();
                     _this.projectService.log("Exiting...");
+                    _this.projectService.closeLog();
                     process.exit(0);
                 });
             };
             return IOSession;
         })(server.Session);
-        var logger = new Logger(__dirname + "/.log" + process.pid.toString());
+        function parseLogEnv(logEnvStr) {
+            var logEnv = {};
+            var args = logEnvStr.split(' ');
+            for (var i = 0, len = args.length; i < (len - 1); i += 2) {
+                var option = args[i];
+                var value = args[i + 1];
+                if (option && value) {
+                    switch (option) {
+                        case "-file":
+                            logEnv.file = value;
+                            break;
+                        case "-level":
+                            logEnv.detailLevel = value;
+                            break;
+                    }
+                }
+            }
+            return logEnv;
+        }
+        function createLoggerFromEnv() {
+            var fileName = undefined;
+            var detailLevel = "normal";
+            var logEnvStr = process.env["TSS_LOG"];
+            if (logEnvStr) {
+                var logEnv = parseLogEnv(logEnvStr);
+                if (logEnv.file) {
+                    fileName = logEnv.file;
+                }
+                else {
+                    fileName = __dirname + "/.log" + process.pid.toString();
+                }
+                if (logEnv.detailLevel) {
+                    detailLevel = logEnv.detailLevel;
+                }
+            }
+            return new Logger(fileName, detailLevel);
+        }
+        var logger = createLoggerFromEnv();
         var watchedFileSet = new WatchedFileSet();
         ts.sys.watchFile = function (fileName, callback) {
             var watchedFile = watchedFileSet.addFile(fileName, callback);

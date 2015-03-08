@@ -56,7 +56,7 @@ repository:
     captures:
       '1': { name: storage.modifier.ts}
       '2': { name: storage.type.ts }
-      '3': { name: entity.name.type.ts }
+      '3': { name: entity.name.class.ts }
 
   object-declaration:
     name: meta.declaration.object.ts
@@ -296,10 +296,10 @@ repository:
 
   cast:
     name: cast.expr.ts
-    match: '<\s*([a-zA-Z_$][.\w$]*)(\[\])*\s*>'
+    match: '<\s*([a-zA-Z_$][.\w$]*)\s*(?:<([a-zA-Z_$][.\w$]*)>)?\s*(\[\])*\s*>'
     captures:
        '1': { name: storage.type.ts }
-
+       '2': { name: storage.type.ts }
   new-expr:
     name: new.expr.ts
     match: '\b(new)\b\s*([a-zA-Z_$][.\w$]*)'

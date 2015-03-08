@@ -118,9 +118,14 @@
 					<key>name</key>
 					<string>storage.type.ts</string>
 				</dict>
+				<key>2</key>
+				<dict>
+					<key>name</key>
+					<string>storage.type.ts</string>
+				</dict>
 			</dict>
 			<key>match</key>
-			<string>&lt;\s*([a-zA-Z_$][.\w$]*)(\[\])*\s*&gt;</string>
+			<string>&lt;\s*([a-zA-Z_$][.\w$]*)\s*(?:&lt;([a-zA-Z_$][.\w$]*)&gt;)?\s*(\[\])*\s*&gt;</string>
 			<key>name</key>
 			<string>cast.expr.ts</string>
 		</dict>
@@ -233,7 +238,7 @@
 				<key>3</key>
 				<dict>
 					<key>name</key>
-					<string>entity.name.type.ts</string>
+					<string>entity.name.class.ts</string>
 				</dict>
 			</dict>
 			<key>match</key>
