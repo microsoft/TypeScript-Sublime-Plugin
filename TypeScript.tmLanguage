@@ -40,7 +40,7 @@
 				<key>0</key>
 				<dict>
 					<key>name</key>
-					<string>brace.square.ts</string>
+					<string>meta.brace.square.ts</string>
 				</dict>
 			</dict>
 			<key>end</key>
@@ -50,7 +50,7 @@
 				<key>0</key>
 				<dict>
 					<key>name</key>
-					<string>brace.square.ts</string>
+					<string>meta.brace.square.ts</string>
 				</dict>
 			</dict>
 			<key>name</key>
@@ -74,8 +74,24 @@
 		<dict>
 			<key>begin</key>
 			<string>\{</string>
+			<key>beginCaptures</key>
+			<dict>
+				<key>0</key>
+				<dict>
+					<key>name</key>
+					<string>meta.brace.curly.ts</string>
+				</dict>
+			</dict>
 			<key>end</key>
 			<string>\}</string>
+			<key>endCaptures</key>
+			<dict>
+				<key>0</key>
+				<dict>
+					<key>name</key>
+					<string>meta.brace.curly.ts</string>
+				</dict>
+			</dict>
 			<key>name</key>
 			<string>meta.block.ts</string>
 			<key>patterns</key>
@@ -173,8 +189,24 @@
 		<dict>
 			<key>begin</key>
 			<string>\{</string>
+			<key>beginCaptures</key>
+			<dict>
+				<key>0</key>
+				<dict>
+					<key>name</key>
+					<string>meta.brace.curly.ts</string>
+				</dict>
+			</dict>
 			<key>end</key>
-			<string>(?=\})</string>
+			<string>\}</string>
+			<key>endCaptures</key>
+			<dict>
+				<key>0</key>
+				<dict>
+					<key>name</key>
+					<string>meta.brace.curly.ts</string>
+				</dict>
+			</dict>
 			<key>name</key>
 			<string>meta.decl.block.ts</string>
 			<key>patterns</key>
@@ -341,7 +373,7 @@
 				</dict>
 			</dict>
 			<key>match</key>
-			<string>\b([a-zA-Z_$][\w$]*)\s*(\?\s*)?(?=(=|:))</string>
+			<string>(?&lt;!\()\s*\b([a-zA-Z_$][\w$]*)\s*(\?\s*)?(?=(=|:))</string>
 			<key>name</key>
 			<string>meta.field.declaration.ts</string>
 		</dict>
@@ -363,7 +395,7 @@
 				</dict>
 			</dict>
 			<key>end</key>
-			<string>(?=;|\})</string>
+			<string>(?=;|\})|(?&lt;=\})</string>
 			<key>name</key>
 			<string>meta.function.ts</string>
 			<key>patterns</key>
@@ -394,8 +426,24 @@
 		<dict>
 			<key>begin</key>
 			<string>\(</string>
+			<key>beginCaptures</key>
+			<dict>
+				<key>0</key>
+				<dict>
+					<key>name</key>
+					<string>meta.brace.round.ts</string>
+				</dict>
+			</dict>
 			<key>end</key>
 			<string>\)</string>
+			<key>endCaptures</key>
+			<dict>
+				<key>0</key>
+				<dict>
+					<key>name</key>
+					<string>meta.brace.round.ts</string>
+				</dict>
+			</dict>
 			<key>name</key>
 			<string>meta.function-parameters.ts</string>
 			<key>patterns</key>
@@ -427,17 +475,17 @@
 				<key>1</key>
 				<dict>
 					<key>name</key>
-					<string>brace.round.ts</string>
+					<string>meta.brace.round.ts</string>
 				</dict>
 			</dict>
 			<key>end</key>
-			<string>\)</string>
+			<string>(\))</string>
 			<key>endCaptures</key>
 			<dict>
 				<key>1</key>
 				<dict>
 					<key>name</key>
-					<string>brace.round.ts</string>
+					<string>meta.brace.round.ts</string>
 				</dict>
 			</dict>
 			<key>name</key>
@@ -466,8 +514,16 @@
 		<dict>
 			<key>begin</key>
 			<string>=&gt;</string>
+			<key>beginCaptures</key>
+			<dict>
+				<key>0</key>
+				<dict>
+					<key>name</key>
+					<string>keyword.operator.ts</string>
+				</dict>
+			</dict>
 			<key>end</key>
-			<string>(?=[,\){=;])</string>
+			<string>(?=[,\)\{=;])</string>
 			<key>name</key>
 			<string>meta.function.type.return.ts</string>
 			<key>patterns</key>
@@ -482,11 +538,24 @@
 		<dict>
 			<key>begin</key>
 			<string>\[</string>
+			<key>beginCaptures</key>
+			<dict>
+				<key>0</key>
+				<dict>
+					<key>name</key>
+					<string>meta.brace.square.ts</string>
+				</dict>
+			</dict>
 			<key>end</key>
-			<string>\]\s*(\?\s*)?|$</string>
+			<string>(\])\s*(\?\s*)?|$</string>
 			<key>endCaptures</key>
 			<dict>
 				<key>1</key>
+				<dict>
+					<key>name</key>
+					<string>meta.brace.square.ts</string>
+				</dict>
+				<key>2</key>
 				<dict>
 					<key>name</key>
 					<string>keyword.operator.ts</string>
@@ -563,7 +632,7 @@
 		<key>method-declaration</key>
 		<dict>
 			<key>begin</key>
-			<string>\b(?:(get|set)\s+)?\[?([a-zA-Z_$][\.\w$]*)\s*\]?\s*(\??)\s*(?=\()</string>
+			<string>(?:\b(get|set)\s+)?(?:(new)|(?:([a-zA-Z_$][\.\w$]*)\s*(\??)))?\s*(?=\()</string>
 			<key>beginCaptures</key>
 			<dict>
 				<key>1</key>
@@ -574,62 +643,21 @@
 				<key>2</key>
 				<dict>
 					<key>name</key>
-					<string>entity.name.function.ts</string>
+					<string>keyword.operator.ts</string>
 				</dict>
 				<key>3</key>
+				<dict>
+					<key>name</key>
+					<string>entity.name.function.ts</string>
+				</dict>
+				<key>4</key>
 				<dict>
 					<key>name</key>
 					<string>keyword.operator.ts</string>
 				</dict>
 			</dict>
 			<key>end</key>
-			<string>\}|[;,]</string>
-			<key>name</key>
-			<string>meta.method.declaration.ts</string>
-			<key>patterns</key>
-			<array>
-				<dict>
-					<key>include</key>
-					<string>#comment</string>
-				</dict>
-				<dict>
-					<key>include</key>
-					<string>#function-parameters</string>
-				</dict>
-				<dict>
-					<key>include</key>
-					<string>#type-annotation</string>
-				</dict>
-				<dict>
-					<key>include</key>
-					<string>#decl-block</string>
-				</dict>
-			</array>
-		</dict>
-		<key>method-declaration-no-body</key>
-		<dict>
-			<key>begin</key>
-			<string>\b(?:(get|set)\s+)?([a-zA-Z_$][\.\w$]*)(\??)\s*(?=\()</string>
-			<key>beginCaptures</key>
-			<dict>
-				<key>1</key>
-				<dict>
-					<key>name</key>
-					<string>storage.type.property.ts</string>
-				</dict>
-				<key>2</key>
-				<dict>
-					<key>name</key>
-					<string>entity.name.function.ts</string>
-				</dict>
-				<key>3</key>
-				<dict>
-					<key>name</key>
-					<string>keyword.operator.ts</string>
-				</dict>
-			</dict>
-			<key>end</key>
-			<string>[;,]|(?=\})</string>
+			<string>(?=\}|;|,)|(?&lt;=\})</string>
 			<key>name</key>
 			<string>meta.method.declaration.ts</string>
 			<key>patterns</key>
@@ -690,8 +718,24 @@
 		<dict>
 			<key>begin</key>
 			<string>\{</string>
+			<key>beginCaptures</key>
+			<dict>
+				<key>0</key>
+				<dict>
+					<key>name</key>
+					<string>meta.brace.curly.ts</string>
+				</dict>
+			</dict>
 			<key>end</key>
-			<string>(?=\})</string>
+			<string>\}</string>
+			<key>endCaptures</key>
+			<dict>
+				<key>0</key>
+				<dict>
+					<key>name</key>
+					<string>meta.brace.curly.ts</string>
+				</dict>
+			</dict>
 			<key>name</key>
 			<string>meta.object.body.ts</string>
 			<key>patterns</key>
@@ -757,7 +801,7 @@
 				</dict>
 			</dict>
 			<key>end</key>
-			<string>(?=\})</string>
+			<string>(?&lt;=\})</string>
 			<key>endCaptures</key>
 			<dict>
 				<key>1</key>
@@ -828,8 +872,24 @@
 		<dict>
 			<key>begin</key>
 			<string>\{</string>
+			<key>beginCaptures</key>
+			<dict>
+				<key>0</key>
+				<dict>
+					<key>name</key>
+					<string>meta.brace.curly.ts</string>
+				</dict>
+			</dict>
 			<key>end</key>
 			<string>\}</string>
+			<key>endCaptures</key>
+			<dict>
+				<key>0</key>
+				<dict>
+					<key>name</key>
+					<string>meta.brace.curly.ts</string>
+				</dict>
+			</dict>
 			<key>name</key>
 			<string>meta.object.type.ts</string>
 			<key>patterns</key>
@@ -844,7 +904,7 @@
 				</dict>
 				<dict>
 					<key>include</key>
-					<string>#method-declaration-no-body</string>
+					<string>#method-declaration</string>
 				</dict>
 				<dict>
 					<key>include</key>
@@ -895,7 +955,7 @@
 				<key>0</key>
 				<dict>
 					<key>name</key>
-					<string>brace.paren.ts</string>
+					<string>meta.brace.paren.ts</string>
 				</dict>
 			</dict>
 			<key>end</key>
@@ -905,7 +965,7 @@
 				<key>0</key>
 				<dict>
 					<key>name</key>
-					<string>brace.paren.ts</string>
+					<string>meta.brace.paren.ts</string>
 				</dict>
 			</dict>
 			<key>patterns</key>
@@ -991,7 +1051,7 @@
 			<key>begin</key>
 			<string>(?&lt;=\)):</string>
 			<key>end</key>
-			<string>$|(?=\{|;)</string>
+			<string>(?=$)|(?=\{|;)</string>
 			<key>name</key>
 			<string>meta.return.type.ts</string>
 			<key>patterns</key>
@@ -1184,7 +1244,7 @@
 			<key>begin</key>
 			<string>:</string>
 			<key>end</key>
-			<string>(?=[,);}\[\]])|(?==[^&gt;])|(?&lt;=[a-z]|&gt;)\s*(?=\{|$)</string>
+			<string>(?=$|[,);\}\[\]])|(?==[^&gt;])|(?&lt;=\}|[a-z]|&gt;)\s*(?=\{)</string>
 			<key>name</key>
 			<string>meta.type.annotation.ts</string>
 			<key>patterns</key>
@@ -1239,8 +1299,24 @@
 		<dict>
 			<key>begin</key>
 			<string>&lt;</string>
+			<key>beginCaptures</key>
+			<dict>
+				<key>0</key>
+				<dict>
+					<key>name</key>
+					<string>meta.brace.angle.ts</string>
+				</dict>
+			</dict>
 			<key>end</key>
-			<string>(?=var|type|function|class|interface)|&gt;</string>
+			<string>(?=$)|(&gt;)</string>
+			<key>endCaptures</key>
+			<dict>
+				<key>2</key>
+				<dict>
+					<key>name</key>
+					<string>meta.brace.angle.ts</string>
+				</dict>
+			</dict>
 			<key>name</key>
 			<string>meta.type.parameters.ts</string>
 			<key>patterns</key>
@@ -1318,7 +1394,7 @@
 				</dict>
 			</dict>
 			<key>end</key>
-			<string>$|(?=[;=\}\{])|(?&lt;=\})</string>
+			<string>(?=$|[;=\}\{])|(?&lt;=\})</string>
 			<key>name</key>
 			<string>meta.var.expr.ts</string>
 			<key>patterns</key>
@@ -1342,7 +1418,7 @@
 				</dict>
 			</dict>
 			<key>end</key>
-			<string>(?=[,);=])</string>
+			<string>(?=$|[,);=])</string>
 			<key>patterns</key>
 			<array>
 				<dict>

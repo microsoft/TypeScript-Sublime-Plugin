@@ -15,7 +15,7 @@ repository:
     beginCaptures:
       '1': { name: storage.type.ts }
       '2': { name: variable.ts }
-    end: '$|(?=[;=\}\{])|(?<=\})'
+    end: '(?=$|[;=\}\{])|(?<=\})'
     patterns:
     - include: '#type-annotation'
 
@@ -65,7 +65,7 @@ repository:
       '1': { name: storage.modifier.ts }
       '2': { name: storage.type.ts }
       '3': { name: entity.name.class.ts }
-    end: (?=\})
+    end: (?<=\})
     endCaptures:
       '1': { name: brace.curly.ts }
     patterns:
@@ -84,7 +84,11 @@ repository:
   object-body:
     name: meta.object.body.ts
     begin: \{
-    end: (?=\})
+    beginCaptures:
+      '0': { name: meta.brace.curly.ts }
+    end: \}
+    endCaptures:
+      '0': { name: meta.brace.curly.ts }
     patterns:
     - include: '#comment'
     - include: '#field-declaration'
@@ -99,43 +103,34 @@ repository:
   object-type:
     name: meta.object.type.ts
     begin: \{
+    beginCaptures:
+      '0': { name: meta.brace.curly.ts }
     end: \}
+    endCaptures:
+      '0': { name: meta.brace.curly.ts }
     patterns:
     - include: '#comment'
     - include: '#field-declaration'
-    - include: '#method-declaration-no-body'
+    - include: '#method-declaration'
     - include: '#indexer-declaration'
     - include: '#type-annotation'
 
   field-declaration:
     name: meta.field.declaration.ts
-    match: '\b([a-zA-Z_$][\w$]*)\s*(\?\s*)?(?=(=|:))'
+    match: '(?<!\()\s*\b([a-zA-Z_$][\w$]*)\s*(\?\s*)?(?=(=|:))'
     captures:
       '1': { name: variable.ts }
       '2': { name: keyword.operator.ts }
 
   method-declaration:
     name: meta.method.declaration.ts
-    begin: '\b(?:(get|set)\s+)?\[?([a-zA-Z_$][\.\w$]*)\s*\]?\s*(\??)\s*(?=\()'
+    begin: '(?:\b(get|set)\s+)?(?:(new)|(?:([a-zA-Z_$][\.\w$]*)\s*(\??)))?\s*(?=\()'
     beginCaptures:
       '1': { name: storage.type.property.ts }
-      '2': { name: entity.name.function.ts }
-      '3': { name: keyword.operator.ts }
-    end: '\}|[;,]'
-    patterns:
-    - include: '#comment'
-    - include: '#function-parameters'
-    - include: '#type-annotation'
-    - include: '#decl-block'
-
-  method-declaration-no-body:
-    name: meta.method.declaration.ts
-    begin: '\b(?:(get|set)\s+)?([a-zA-Z_$][\.\w$]*)(\??)\s*(?=\()'
-    beginCaptures:
-      '1': { name: storage.type.property.ts }
-      '2': { name: entity.name.function.ts }
-      '3': { name: keyword.operator.ts }
-    end: '[;,]|(?=\})'
+      '2': { name: keyword.operator.ts }
+      '3': { name: entity.name.function.ts }
+      '4': { name: keyword.operator.ts }
+    end: '(?=\}|;|,)|(?<=\})'
     patterns:
     - include: '#comment'
     - include: '#function-parameters'
@@ -145,9 +140,12 @@ repository:
   indexer-declaration:
     name: meta.indexer.declaration.ts
     begin: \[
-    end: \]\s*(\?\s*)?|$
+    beginCaptures:
+      '0': { name: meta.brace.square.ts }
+    end: (\])\s*(\?\s*)?|$
     endCaptures:
-      '1': { name: keyword.operator.ts }
+      '1': { name: meta.brace.square.ts }
+      '2': { name: keyword.operator.ts }
     patterns:
     - include: '#type-annotation'
     - include: '#indexer-parameter'
@@ -165,7 +163,7 @@ repository:
     beginCaptures:
       '1': { name: storage.type.function.ts }
       '2': { name: entity.name.function.ts }
-    end: (?=;|\})
+    end: (?=;|\})|(?<=\})
     patterns:
     - include: '#comment'
     - include: '#type-parameters'
@@ -176,7 +174,11 @@ repository:
   block:
     name: meta.block.ts
     begin: \{
+    beginCaptures:
+      '0': { name: meta.brace.curly.ts }
     end: \}
+    endCaptures:
+      '0': { name: meta.brace.curly.ts }
     patterns:
     - include: '#expression'
     - include: '#object-member'
@@ -184,14 +186,22 @@ repository:
   decl-block:
     name: meta.decl.block.ts
     begin: \{
-    end: (?=\})
+    beginCaptures:
+      '0': { name: meta.brace.curly.ts }
+    end: \}
+    endCaptures:
+      '0': { name: meta.brace.curly.ts }
     patterns:
     - include: '#expression'
 
   function-parameters:
     name: meta.function-parameters.ts
     begin: \(
+    beginCaptures:
+      '0': { name: meta.brace.round.ts }
     end: \)
+    endCaptures:
+      '0': { name: meta.brace.round.ts }
     patterns:
       - include: '#comment'
       - include: '#parameter-name'
@@ -202,10 +212,10 @@ repository:
     name: meta.function.type.ts
     begin: (\()
     beginCaptures:
-      '1': { name: brace.round.ts }
-    end: \)
+      '1': { name: meta.brace.round.ts }
+    end: (\))
     endCaptures:
-      '1': { name: brace.round.ts }
+      '1': { name: meta.brace.round.ts }
     patterns:
     - include: '#comment'
     - include: '#parameter-name'
@@ -224,14 +234,14 @@ repository:
   return-type:
     name: meta.return.type.ts
     begin: '(?<=\)):'
-    end: $|(?=\{|;)
+    end: (?=$)|(?=\{|;)
     patterns:
     - include: '#type'
 
   type-annotation:
     name: meta.type.annotation.ts
     begin: ":"
-    end: (?=[,);}\[\]])|(?==[^>])|(?<=[a-z]|>)\s*(?=\{|$)
+    end: (?=$|[,);\}\[\]])|(?==[^>])|(?<=\}|[a-z]|>)\s*(?=\{)
     patterns:
       - include: '#type'
       - include: '#comment'
@@ -249,7 +259,9 @@ repository:
   function-type-return-type:
     name: meta.function.type.return.ts
     begin: '=>'
-    end: (?=[,\){=;])
+    beginCaptures:
+      '0': { name: keyword.operator.ts }
+    end: (?=[,\)\{=;])
     patterns:
     - include: '#type'
 
@@ -271,7 +283,11 @@ repository:
   type-parameters:
     name: meta.type.parameters.ts
     begin: '<'
-    end: '(?=var|type|function|class|interface)|>'  
+    beginCaptures:
+      '0': { name: meta.brace.angle.ts }
+    end: '(?=$)|(>)'  
+    endCaptures:
+      '2': { name: meta.brace.angle.ts }
     patterns:
     - name: keyword.other.ts
       match: '\b(extends)\b'
@@ -282,7 +298,7 @@ repository:
     begin: (=)
     beginCaptures:
       '1': { name: keyword.operator.ts }
-    end: (?=[,);=])
+    end: (?=$|[,);=])
     patterns:
       - include: '#expression'  
 
@@ -321,8 +337,6 @@ repository:
     captures:
        '1': { name: keyword.operator.ts }
        '2': { name: storage.type.ts }
-     
-  # TODO: object members with quoted or numric lhs
   object-member:
     name: meta.object.member.ts
     begin: '[a-zA-Z_$][\w$]*\s*:'
@@ -357,10 +371,10 @@ repository:
   paren-expression:
     begin: \(
     beginCaptures:
-      '0': {name: brace.paren.ts }
+      '0': {name: meta.brace.paren.ts }
     end: \)
     endCaptures:
-      '0': {name: brace.paren.ts }
+      '0': {name: meta.brace.paren.ts }
     patterns:
     - include: '#expression'
 
@@ -462,10 +476,10 @@ repository:
     name: meta.array.literal.ts
     begin: \[
     beginCaptures:
-      '0': { name: brace.square.ts }
+      '0': { name: meta.brace.square.ts }
     end: \]
     endCaptures:
-      '0': { name: brace.square.ts }
+      '0': { name: meta.brace.square.ts }
     patterns:
     - include: '#expression'
 
