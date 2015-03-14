@@ -483,7 +483,7 @@
 			<key>begin</key>
 			<string>=&gt;</string>
 			<key>end</key>
-			<string>$|(?=[,\){])</string>
+			<string>$|(?=[,\){]|//)</string>
 			<key>name</key>
 			<string>meta.function.type.return.ts</string>
 			<key>patterns</key>
@@ -1036,7 +1036,7 @@
 			<key>begin</key>
 			<string>(?&lt;=\)):</string>
 			<key>end</key>
-			<string>$|(?=\{|;)</string>
+			<string>$|(?=\{|;|//)</string>
 			<key>name</key>
 			<string>meta.return.type.ts</string>
 			<key>patterns</key>
@@ -1241,7 +1241,7 @@
 			<key>begin</key>
 			<string>:</string>
 			<key>end</key>
-			<string>(?=[,);}\[\]])|(?==[^&gt;])|(?&lt;=[a-z]|&gt;)\s*(?=\{|$)</string>
+			<string>(?=[,);}\[\]])|(?==[^&gt;])|(?&lt;=[a-z]|&gt;)\s*(?=\{|$|//)</string>
 			<key>name</key>
 			<string>meta.type.annotation.ts</string>
 			<key>patterns</key>

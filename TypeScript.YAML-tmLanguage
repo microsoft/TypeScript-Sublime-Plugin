@@ -234,14 +234,14 @@ repository:
   return-type:
     name: meta.return.type.ts
     begin: '(?<=\)):'
-    end: (?=$)|(?=\{|;)
+    end: (?=$)|(?=\{|;|//)
     patterns:
     - include: '#type'
 
   type-annotation:
     name: meta.type.annotation.ts
     begin: ":"
-    end: (?=$|[,);\}\[\]])|(?==[^>])|(?<=\}|[a-z]|>)\s*(?=\{)
+    end: (?=$|[,);\}\[\]]|//)|(?==[^>])|(?<=\}|[a-z]|>)\s*(?=\{)
     patterns:
       - include: '#type'
       - include: '#comment'
@@ -261,7 +261,7 @@ repository:
     begin: '=>'
     beginCaptures:
       '0': { name: keyword.operator.ts }
-    end: (?=[,\)\{=;])
+    end: (?=[,\)\{=;]|//)
     patterns:
     - include: '#type'
 

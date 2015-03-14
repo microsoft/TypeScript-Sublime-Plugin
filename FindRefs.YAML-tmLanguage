@@ -248,14 +248,14 @@ repository:
   return-type:
     name: meta.return.type.ts
     begin: '(?<=\)):'
-    end: $|(?=\{|;)
+    end: $|(?=\{|;|//)
     patterns:
     - include: '#type'
 
   type-annotation:
     name: meta.type.annotation.ts
     begin: ":"
-    end: (?=[,);}\[\]])|(?==[^>])|(?<=[a-z]|>)\s*(?=\{|$)
+    end: (?=[,);}\[\]])|(?==[^>])|(?<=[a-z]|>)\s*(?=\{|$|//)
     patterns:
       - include: '#type'
       - include: '#comment'
@@ -273,7 +273,7 @@ repository:
   function-type-return-type:
     name: meta.function.type.return.ts
     begin: '=>'
-    end: $|(?=[,\){])
+    end: $|(?=[,\){]|//)
     patterns:
     - include: '#type'
 
