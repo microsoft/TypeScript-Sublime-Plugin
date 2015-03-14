@@ -398,6 +398,7 @@ class TypeScriptListener(sublime_plugin.EventListener):
         self.pendingSelectionTimeout = 0
         self.errRefreshRequested = False
         self.changeFocus = False
+        self.mod = False
 
     def getInfo(self, view):
         info = None
@@ -667,7 +668,11 @@ class TypeScriptListener(sublime_plugin.EventListener):
             # save the current cursor position so that we can see (in
             # on_modified) what was inserted
             info.prevSel = copyRegionsStatic(view.sel())
-            self.setOnSelectionIdleTimer(50)
+            if self.mod:
+                self.setOnSelectionIdleTimer(250)
+            else:
+                self.setOnSelectionIdleTimer(50)
+            self.mod = False    
             # hide the doc info output panel if it's up
             panelView = sublime.active_window().get_output_panel("doc")
             if panelView.window():
@@ -682,6 +687,7 @@ class TypeScriptListener(sublime_plugin.EventListener):
             if cli.ST2():
                info.modCount+=1
             info.lastModChangeCount = self.change_count(view)
+            self.mod = True
             print("modified " + view.file_name())
             (lastCommand, args, rept) = view.command_history(0)
             if info.preChangeSent:
@@ -797,6 +803,8 @@ class TypescriptSave(sublime_plugin.TextCommand):
     def run(self, text):
         cli.service.saveto(self.view.file_name(), "/tmp/curstate")
 
+sublimeWordMask = 515
+
 # command currently called only from event handlers
 class TypescriptQuickInfo(sublime_plugin.TextCommand):
     def handleQuickInfo(self, quickInfoResp):
@@ -811,8 +819,11 @@ class TypescriptQuickInfo(sublime_plugin.TextCommand):
 
     def run(self, text):
         checkUpdateView(self.view)
-        print(str(self.view.classify(self.view.sel()[0].begin())))
-        cli.service.quickInfo(self.view.file_name(), getLocationFromView(self.view), self.handleQuickInfo)
+        wordAtSel = self.view.classify(self.view.sel()[0].begin())
+        if (wordAtSel & sublimeWordMask):
+            cli.service.quickInfo(self.view.file_name(), getLocationFromView(self.view), self.handleQuickInfo)
+        else:
+            self.view.erase_status("typescript_info")
              
     def is_enabled(self):
         return is_typescript(self.view)
@@ -846,7 +857,7 @@ class TypescriptQuickInfoDoc(sublime_plugin.TextCommand):
     def run(self, text):
         checkUpdateView(self.view)
         wordAtSel = self.view.classify(self.view.sel()[0].begin())
-        if (wordAtSel & 515):
+        if (wordAtSel & sublimeWordMask):
             cli.service.quickInfo(self.view.file_name(), getLocationFromView(self.view), self.handleQuickInfo)
         else:
             self.view.erase_status("typescript_info")
