@@ -811,6 +811,7 @@ class TypescriptQuickInfo(sublime_plugin.TextCommand):
 
     def run(self, text):
         checkUpdateView(self.view)
+        print(str(self.view.classify(self.view.sel()[0].begin())))
         cli.service.quickInfo(self.view.file_name(), getLocationFromView(self.view), self.handleQuickInfo)
              
     def is_enabled(self):
@@ -844,7 +845,11 @@ class TypescriptQuickInfoDoc(sublime_plugin.TextCommand):
 
     def run(self, text):
         checkUpdateView(self.view)
-        cli.service.quickInfo(self.view.file_name(), getLocationFromView(self.view), self.handleQuickInfo)
+        wordAtSel = self.view.classify(self.view.sel()[0].begin())
+        if (wordAtSel & 515):
+            cli.service.quickInfo(self.view.file_name(), getLocationFromView(self.view), self.handleQuickInfo)
+        else:
+            self.view.erase_status("typescript_info")
 
     def is_enabled(self):
         return is_typescript(self.view)

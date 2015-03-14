@@ -87,13 +87,6 @@
             { "key": "selector", "operator": "equal", "operand": "source.ts" }
         ]
     },
-    {
-        "keys": [ "ctrl+t", "ctrl+t" ],
-        "command": "typescript_go_to_type",
-        "context": [
-            { "key": "selector", "operator": "equal", "operand": "source.ts" }
-        ]
-    },
     // In case when auto match is enabled, only format if not within {}
     {
         "keys": [ "}" ],
@@ -135,6 +128,7 @@
         "command": "typescript_format_on_key",
         "args": { "key": "\n" },
         "context": [
+            { "key": "setting.typescript_auto_format", "operator": "equal", "operand": true },
             { "key": "auto_complete_visible", "operator": "equal", "operand": false },
             { "key": "selector", "operator": "not_equal", "operand": "meta.scope.between-tag-pair" },
             { "key": "selection_empty", "operator": "equal", "operand": true, "match_all": true },
@@ -160,6 +154,7 @@
         "keys": [ "enter" ],
         "command": "typescript_auto_indent_on_enter_between_curly_brackets",
         "context": [
+            { "key": "setting.typescript_auto_format", "operator": "equal", "operand": true },
             { "key": "auto_complete_visible", "operator": "equal", "operand": false },
             { "key": "selection_empty", "operator": "equal", "operand": true },
             { "key": "preceding_text", "operator": "regex_contains", "operand": "\\{$" },
