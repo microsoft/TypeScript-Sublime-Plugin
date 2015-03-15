@@ -795,8 +795,6 @@ class TypeScriptListener(sublime_plugin.EventListener):
                 if (((len(prefix)-1)+info.lastCompletionLoc == locations[0]) and (prefix.startswith(info.lastCompletionPrefix))):
                     return (info.lastCompletions,
                             sublime.INHIBIT_WORD_COMPLETIONS | sublime.INHIBIT_EXPLICIT_COMPLETIONS)
-                else:
-                    info.lastCompletionLoc = None
             location = getLocationFromPosition(view, locations[0])
             checkUpdateView(view)
             cli.service.completions(view.file_name(), location, prefix, self.handleCompletionInfo)
