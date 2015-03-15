@@ -669,7 +669,7 @@ class TypeScriptListener(sublime_plugin.EventListener):
             # on_modified) what was inserted
             info.prevSel = copyRegionsStatic(view.sel())
             if self.mod:
-                self.setOnSelectionIdleTimer(250)
+                self.setOnSelectionIdleTimer(1250)
             else:
                 self.setOnSelectionIdleTimer(50)
             self.mod = False    
@@ -1227,7 +1227,6 @@ def setCaretPos(view, pos):
     view.sel().clear()
     view.sel().add(pos)
 
-
 # format on ";", "}", or "\n"; called by typing these keys in a ts file
 # in the case of "\n", this is only called when no completion dialogue visible
 class TypescriptFormatOnKey(sublime_plugin.TextCommand):
@@ -1365,7 +1364,7 @@ def plugin_loaded():
            highlightIds(refView, refInfo.getRefId())
            curLine = refInfo.getRefLine()
            if curLine:
-              updateRefLine(refInfo, curLine, refView)
+              updateRefLine(refInfo, int(curLine), refView)
            else:
               print("no current ref line")
         else:
