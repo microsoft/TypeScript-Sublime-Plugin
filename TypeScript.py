@@ -270,6 +270,9 @@ class FileInfo:
         self.modified = False
         self.completionPrefixSel = None
         self.completionSel = None
+        self.lastCompletionLoc = None
+        self.lastCompletions = None
+        self.lastCompletionPrefix = None
         self.prevSel = None
         self.view = None
         self.hasErrors = False
@@ -437,6 +440,7 @@ class TypeScriptListener(sublime_plugin.EventListener):
     def on_activated(self, view):
         info = self.getInfo(view)
         if info:
+            info.lastCompletionLoc = None
             # save cursor in case we need to read what was inserted
             info.prevSel = copyRegionsStatic(view.sel())
             # ask server for initial error diagnostics
@@ -447,7 +451,6 @@ class TypeScriptListener(sublime_plugin.EventListener):
             self.setOnIdleTimer(20)
             self.setOnSelectionIdleTimer(20)
             self.changeFocus = True
-            print("auto indent "+str(view.settings().get('auto_indent')))
 
     # ask the server for diagnostic information on all opened ts files in
     # most-recently-used order
@@ -735,6 +738,7 @@ class TypeScriptListener(sublime_plugin.EventListener):
                     insertionString = view.substr(sublime.Region(info.completionPrefixSel[0].begin(), apresCompReg[0].begin()))
                     sendReplaceChangesForRegions(view, buildReplaceRegions(info.completionPrefixSel, info.completionSel), insertionString)
                     view.erase_regions("apresComp")
+                    info.lastCompletionLoc = None
                 elif ((command_name == "typescript_format_on_key") or (command_name == "typescript_format_document") or (command_name == "typescript_format_selection") or (command_name == "typescript_format_line") or (command_name == "typescript_paste_and_format")):
                      # changes were sent by the command so no need to
                      print("handled changes for " + command_name)
@@ -787,12 +791,20 @@ class TypeScriptListener(sublime_plugin.EventListener):
             info.completionPrefixSel = decrLocsToRegions(locations, len(prefix))
             if not cli.ST2():
                view.add_regions("apresComp", decrLocsToRegions(locations, 0), flags=sublime.HIDDEN)
-
+            if info.lastCompletionLoc:
+                if (((len(prefix)-1)+info.lastCompletionLoc == locations[0]) and (prefix.startswith(info.lastCompletionPrefix))):
+                    return (info.lastCompletions,
+                            sublime.INHIBIT_WORD_COMPLETIONS | sublime.INHIBIT_EXPLICIT_COMPLETIONS)
+                else:
+                    info.lastCompletionLoc = None
             location = getLocationFromPosition(view, locations[0])
             checkUpdateView(view)
             cli.service.completions(view.file_name(), location, prefix, self.handleCompletionInfo)
             
             completions = self.pendingCompletions
+            info.lastCompletions = completions
+            info.lastCompletionLoc = locations[0]
+            info.lastCompletionPrefix = prefix
             self.pendingCompletions = None
             return (completions, sublime.INHIBIT_WORD_COMPLETIONS | sublime.INHIBIT_EXPLICIT_COMPLETIONS)
 
