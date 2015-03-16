@@ -44,6 +44,18 @@ class Response(Message):
         self.success = success
         self.message = message
 
+class ConfigureRequestArgs(object):
+    def __init__(self, hostInfo, tabSize, indentSize):
+        """
+        Arguments for ConfigureRequest messages 
+        """
+        self.hostInfo = hostInfo
+        self.tabSize = tabSize
+        self.indentSize = indentSize
+
+class ConfigureRequest(Request):
+    def __init__(self, seq, configureRequestArgs):
+        super(ConfigureRequest, self).__init__("configure", seq, configureRequestArgs)        
 
 class FileRequestArgs(object):
     def __init__(self, file):
@@ -505,6 +517,10 @@ class ReloadResponse(Response):
     def __init__(self, **kwargs):
         super(ReloadResponse, self).__init__(**kwargs)
 
+
+class ConfigureResponse(Response):
+    def __init__(self, **kwargs):
+        super(ConfigureResponse, self).__init__(**kwargs)
 
 class ChangeRequestArgs(FormatRequestArgs):
     def __init__(self, file, line, col, endLine, endCol, insertString=""):

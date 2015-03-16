@@ -332,6 +332,14 @@ repository:
     - include: '#storage-keyword'
     - include: '#control-statement'
     - include: '#switch-case'
+    - include: '#for-in-simple'
+
+  for-in-simple:
+    name: forin.expr.ts
+    match: (?<=\()\s*\b(var|let)\s+([a-zA-Z_$][\w$]*)\s+(in)\b
+    captures:
+      '1': { name: storage.type.ts }
+      '3': { name: keyword.operator.ts }
 
   cast:
     name: cast.expr.ts

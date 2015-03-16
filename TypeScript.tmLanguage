@@ -348,6 +348,10 @@
 					<key>include</key>
 					<string>#switch-case</string>
 				</dict>
+				<dict>
+					<key>include</key>
+					<string>#for-in-simple</string>
+				</dict>
 			</array>
 		</dict>
 		<key>expression-operator</key>
@@ -376,6 +380,26 @@
 			<string>(?&lt;!\()\s*\b([a-zA-Z_$][\w$]*)\s*(\?\s*)?(?=(=|:))</string>
 			<key>name</key>
 			<string>meta.field.declaration.ts</string>
+		</dict>
+		<key>for-in-simple</key>
+		<dict>
+			<key>captures</key>
+			<dict>
+				<key>1</key>
+				<dict>
+					<key>name</key>
+					<string>storage.type.ts</string>
+				</dict>
+				<key>3</key>
+				<dict>
+					<key>name</key>
+					<string>keyword.operator.ts</string>
+				</dict>
+			</dict>
+			<key>match</key>
+			<string>(?&lt;=\()\s*\b(var|let|const)\s+([a-zA-Z_$][\w$]*)\s+(in)\b</string>
+			<key>name</key>
+			<string>forin.expr.ts</string>
 		</dict>
 		<key>function-declaration</key>
 		<dict>
@@ -1072,7 +1096,7 @@
 		<key>storage-keyword</key>
 		<dict>
 			<key>match</key>
-			<string>\b(number|boolean|string)\b</string>
+			<string>\b(number|boolean|string|var|let|function|const)\b</string>
 			<key>name</key>
 			<string>storage.type.ts</string>
 		</dict>

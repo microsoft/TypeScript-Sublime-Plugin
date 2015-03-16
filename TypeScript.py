@@ -228,6 +228,12 @@ class EditorClient:
     def setFeatures(self):
        if int(sublime.version()) < 3000:
           self.versionST2 = True
+       hostInfo = "Sublime Text version " + str(sublime.version())
+       # Preferences Settings
+       pref_settings = sublime.load_settings('Preferences.sublime-settings')
+       tabSize = pref_settings.get('tab_size', 4)
+       indentSize = pref_settings.get('indent_size', 4)
+       self.service.configure(hostInfo, tabSize, indentSize)
 
     def reloadRequired(self, view):
        clientInfo = self.getOrAddFile(view.file_name())
@@ -349,7 +355,6 @@ def decrLocsToRegions(locs, amt):
 def setFilePrefs(view):
     settings = view.settings()
     settings.set('translate_tabs_to_spaces', True)
-    settings.set('tab_size', 4)
     settings.set('detect_indentation', False)
     settings.set('use_tab_stops', False)
 

@@ -15,6 +15,13 @@ class ServiceProxy:
         self.seq += 1
         return temp
 
+    def configure(self, hostInfo="Sublime Text", tabSize=4, indentSize=4):
+        req = servicedefs.ConfigureRequest(self.incrSeq(), 
+            servicedefs.ConfigureRequestArgs(hostInfo, tabSize, indentSize))
+        jsonStr = jsonhelpers.encode(req)
+        responseDict = self.__comm.sendCmdSync(jsonStr, req.seq)
+        return jsonhelpers.fromDict(servicedefs.ConfigureResponse, responseDict)
+
     def change(self, path, location=Location(1, 1), endLocation=Location(1,1), insertString=""):
         req = servicedefs.ChangeRequest(self.incrSeq(),servicedefs.ChangeRequestArgs(path, location.line, location.col,
                                                                                      endLocation.line, endLocation.col,
