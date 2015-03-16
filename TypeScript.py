@@ -26,6 +26,8 @@ try:
 except ImportError:
     pass
 
+TOOLTIP_SUPPORT = int(sublime.version()) >= 3072
+
 # globally-accessible information singleton; set in function plugin_loaded
 cli = None
 
@@ -851,16 +853,23 @@ class TypescriptQuickInfoDoc(sublime_plugin.TextCommand):
     def handleQuickInfo(self, quickInfoResp):
         if quickInfoResp.success:
             infoStr = quickInfoResp.body.displayString
+            finfoStr = infoStr
             docStr = quickInfoResp.body.documentation
             if len(docStr) > 0:
-                docPanel = sublime.active_window().get_output_panel("doc")
-                docPanel.run_command('typescript_show_doc', 
-                                     { 'infoStr': infoStr, 
-                                       'docStr': docStr })
-                docPanel.settings().set('color_scheme', "Packages/Color Scheme - Default/Blackboard.tmTheme")
-                sublime.active_window().run_command('show_panel', { 'panel': 'output.doc' })
-                infoStr = infoStr + " (^T^Q for more)"
-            self.view.set_status("typescript_info", infoStr)
+                if not TOOLTIP_SUPPORT:
+                    docPanel = sublime.active_window().get_output_panel("doc")
+                    docPanel.run_command('typescript_show_doc', 
+                                         { 'infoStr': infoStr, 
+                                           'docStr': docStr })
+                    docPanel.settings().set('color_scheme', "Packages/Color Scheme - Default/Blackboard.tmTheme")
+                    sublime.active_window().run_command('show_panel', { 'panel': 'output.doc' })
+                finfoStr = infoStr + " (^T^Q for more)"
+            self.view.set_status("typescript_info", finfoStr)
+            if TOOLTIP_SUPPORT:
+                html = "<div>"+infoStr+"</div>"
+                if len(docStr) > 0:
+                    html += "<div>"+docStr+"</div>"
+                self.view.show_popup(html, location = -1, max_width = 600)
         else:
             self.view.erase_status("typescript_info")
 
