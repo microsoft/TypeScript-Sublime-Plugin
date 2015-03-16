@@ -33691,7 +33691,8 @@ var ts;
                 }
                 var compilerService = project.compilerService;
                 var position = compilerService.host.lineColToPosition(file, line, col);
-                var edits = compilerService.languageService.getFormattingEditsAfterKeystroke(file, position, key, this.projectService.getFormatCodeOptions());
+                var formatOptions = this.projectService.getFormatCodeOptions();
+                var edits = compilerService.languageService.getFormattingEditsAfterKeystroke(file, position, key, formatOptions);
                 if ((key == "\n") && ((!edits) || (edits.length == 0) || allEditsBeforePos(edits, position))) {
                     var scriptInfo = compilerService.host.getScriptInfo(file);
                     if (scriptInfo) {
@@ -33700,8 +33701,8 @@ var ts;
                             var lineText = lineInfo.leaf.text;
                             if (lineText.search("\\S") < 0) {
                                 var editorOptions = {
-                                    IndentSize: 4,
-                                    TabSize: 4,
+                                    IndentSize: formatOptions.IndentSize,
+                                    TabSize: formatOptions.TabSize,
                                     NewLineCharacter: "\n",
                                     ConvertTabsToSpaces: true
                                 };
