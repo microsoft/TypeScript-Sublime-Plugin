@@ -9,20 +9,15 @@ module ts {
         displayString?: string;
         docString?: string;
     }
+
+    export interface System { 
+        getModififedTime? (fileName: string): Date;
+        stat? (path: string, callback?: (err: any, stats: any) => any): void;
+    }
 }
 
 module ts.server {
     var ts: typeof typescript = require('typescript');
-    var nodeproto: typeof NodeJS._debugger = require('_debugger');
-    var readline: NodeJS.ReadLine = require('readline');
-    var path: NodeJS.Path = require('path');
-
-    var rl = readline.createInterface({
-        input: process.stdin,
-        output: process.stdout,
-        terminal: false,
-    });
-
     var paddedLength = 8;
 
     var typeNames = ["interface", "class", "enum", "module", "alias", "type"];
@@ -33,8 +28,6 @@ module ts.server {
         stack?: string;
     }
 
-
-
     function generateSpaces(n: number): string {
         if (!spaceCache[n]) {
             var strBuilder = "";
@@ -44,14 +37,6 @@ module ts.server {
             spaceCache[n] = strBuilder;
         }
         return spaceCache[n];
-    }
-
-    function printObject(obj: any) {
-        for (var p in obj) {
-            if (obj.hasOwnProperty(p)) {
-                console.log(p + ": " + obj[p]);
-            }
-        }
     }
 
     function isTypeName(name: string, suffix?: string) {
@@ -102,6 +87,14 @@ module ts.server {
         else return 1;
     }
 
+    function printObject(obj: any) {
+        for (var p in obj) {
+            if (obj.hasOwnProperty(p)) {
+                console.log(p + ": " + obj[p]);
+            }
+        }
+    }
+
     function compareFileStart(a: FileStart, b: FileStart) {
         if (a.file < b.file) {
             return -1;
@@ -142,38 +135,37 @@ module ts.server {
         })
     }
 
-    function SourceInfo(body: NodeJS._debugger.BreakResponse) {
-        var result = body.exception ? 'exception in ' : 'break in ';
+    //function SourceInfo(body: NodeJS._debugger.BreakResponse) {
+    //    var result = body.exception ? 'exception in ' : 'break in ';
 
-        if (body.script) {
-            if (body.script.name) {
-                var name = body.script.name,
-                    dir = path.resolve() + '/';
+    //    if (body.script) {
+    //        if (body.script.name) {
+    //            var name = body.script.name,
+    //                dir = path.resolve() + '/';
 
-                // Change path to relative, if possible
-                if (name.indexOf(dir) === 0) {
-                    name = name.slice(dir.length);
-                }
+    //            // Change path to relative, if possible
+    //            if (name.indexOf(dir) === 0) {
+    //                name = name.slice(dir.length);
+    //            }
 
-                result += name;
-            } else {
-                result += '[unnamed]';
-            }
-        }
-        result += ':';
-        result += body.sourceLine + 1;
+    //            result += name;
+    //        } else {
+    //            result += '[unnamed]';
+    //        }
+    //    }
+    //    result += ':';
+    //    result += body.sourceLine + 1;
 
-        if (body.exception) result += '\n' + body.exception.text;
+    //    if (body.exception) result += '\n' + body.exception.text;
 
-        return result;
-    }
+    //    return result;
+    //}
 
     class JsDebugSession {
-        client: NodeJS._debugger.Client;
         host = 'localhost';
         port = 5858;
 
-        constructor() {
+        constructor(public client: NodeJS._debugger.Client) {
             this.init();
         }
 
@@ -254,8 +246,7 @@ module ts.server {
 
         init() {
             var connectionAttempts = 0;
-            this.client = new nodeproto.Client();
-            this.client.on('break', (res: NodeJS._debugger.Event) => {
+            this.client.on('break',(res: NodeJS._debugger.Event) => {
                 this.handleBreak(res.body);
             });
             this.client.on('exception',(res: NodeJS._debugger.Event) => {
@@ -310,7 +301,7 @@ module ts.server {
             this.client.currentFrame = 0;
             this.client.currentScript = breakInfo.script && breakInfo.script.name;
 
-            console.log(SourceInfo(breakInfo));
+            //console.log(SourceInfo(breakInfo));
             // TODO: watchers        
         }
     }
@@ -368,25 +359,25 @@ module ts.server {
         export var Unknown = "unknown";
     }
 
+    export interface ServerHost extends ts.System {
+        getDebuggerClient? (): NodeJS._debugger.Client;
+    }
+
     export class Session {
-        projectService = new ProjectService();
-        prettyJSON = false;
+        projectService: ProjectService;
+        debugSession: JsDebugSession;
         pendingOperation = false;
         fileHash: ts.Map<number> = {};
         abbrevTable: ts.Map<string>;
         fetchedAbbrev = false;
         nextFileId = 1;
-        debugSession: JsDebugSession;
-        protocol: NodeJS._debugger.Protocol;
         errorTimer: NodeJS.Timer;
         immediateId: any;
         changeSeq = 0;
 
-        constructor(useProtocol = false) {
+        constructor(private host: ServerHost, private logger: Logger, protected useProtocol: boolean, protected prettyJSON: boolean) {
+            this.projectService = new ProjectService(host, logger);
             this.initAbbrevTable();
-            if (useProtocol) {
-                this.initProtocol();
-            }
         }
 
         logError(err: Error, cmd: string) {
@@ -401,22 +392,8 @@ module ts.server {
             this.projectService.log(msg);
         }
 
-        initProtocol() {
-            this.protocol = new nodeproto.Protocol();
-            // note: onResponse was named by nodejs authors; we are re-purposing the Protocol
-            // class in this case so that it supports a server instead of a client
-            this.protocol.onResponse = (pkt) => {
-                this.handleRequest(pkt);
-            };
-        }
-
-        handleRequest(req: NodeJS._debugger.Packet) {
-            console.log("Got JSON msg:\n" + req.raw);
-        }
-
         sendLineToClient(line: string) {
-            // this will use the sys host
-            console.log(line);
+            this.host.write(line + this.host.newLine);
         }
 
         send(msg: NodeJS._debugger.Message) {
@@ -467,7 +444,7 @@ module ts.server {
                 containerKind: "ck",
                 kindModifiers: "km",
                 start: "s",
-                end: "e", 
+                end: "e",
                 line: "l",
                 col: "c",
                 "interface": "i",
@@ -507,7 +484,7 @@ module ts.server {
         }
 
         output(info: any, cmdName: string, reqSeq = 0, errorMsg?: string) {
-            if (this.protocol) {
+            if (this.useProtocol) {
                 this.response(info, cmdName, reqSeq, errorMsg);
             }
             else if (this.prettyJSON) {
@@ -678,7 +655,7 @@ module ts.server {
                     }
                 }
                 else {
-                    this.output(undefined,CommandNames.Rename, reqSeq, "no rename information at cursor");
+                    this.output(undefined, CommandNames.Rename, reqSeq, "no rename information at cursor");
                 }
             }
         }
@@ -758,14 +735,14 @@ module ts.server {
                     }
                 }
                 if (typeLoc) {
-                    this.output([typeLoc],CommandNames.Type, reqSeq);
+                    this.output([typeLoc], CommandNames.Type, reqSeq);
                 }
                 else {
-                    this.output(undefined,CommandNames.Type, reqSeq, "no info at this location");
+                    this.output(undefined, CommandNames.Type, reqSeq, "no info at this location");
                 }
             }
             else {
-                this.output(undefined,CommandNames.Type, reqSeq, "no project for " + file);
+                this.output(undefined, CommandNames.Type, reqSeq, "no project for " + file);
             }
         }
 
@@ -787,15 +764,15 @@ module ts.server {
                     var qi: ServerProtocol.QuickInfoResponseBody = {
                         kind: quickInfo.kind,
                         kindModifiers: quickInfo.kindModifiers,
-                        start: compilerService.host.positionToLineCol(file,quickInfo.textSpan.start),
-                        end: compilerService.host.positionToLineCol(file,ts.textSpanEnd(quickInfo.textSpan)),
+                        start: compilerService.host.positionToLineCol(file, quickInfo.textSpan.start),
+                        end: compilerService.host.positionToLineCol(file, ts.textSpanEnd(quickInfo.textSpan)),
                         displayString: displayString,
                         documentation: docString,
                     };
                     this.output(qi, CommandNames.Quickinfo, reqSeq);
                 }
                 else {
-                    this.output(undefined,CommandNames.Quickinfo, reqSeq, "no info")
+                    this.output(undefined, CommandNames.Quickinfo, reqSeq, "no info")
                 }
             }
         }
@@ -827,10 +804,10 @@ module ts.server {
                             newText: edit.newText ? edit.newText : ""
                         };
                     });
-                    this.output(bakedEdits,CommandNames.Format, reqSeq);
+                    this.output(bakedEdits, CommandNames.Format, reqSeq);
                 }
                 else {
-                    this.output(undefined,CommandNames.Format, reqSeq, "no edits")
+                    this.output(undefined, CommandNames.Format, reqSeq, "no edits")
                 }
             }
         }
@@ -874,10 +851,10 @@ module ts.server {
                             newText: edit.newText ? edit.newText : ""
                         };
                     });
-                    this.output(bakedEdits,CommandNames.Formatonkey, reqSeq);
+                    this.output(bakedEdits, CommandNames.Formatonkey, reqSeq);
                 }
                 else {
-                    this.output(undefined,CommandNames.Formatonkey, reqSeq, "no edits")
+                    this.output(undefined, CommandNames.Formatonkey, reqSeq, "no edits")
                 }
             }
         }
@@ -921,12 +898,12 @@ module ts.server {
                                 }
                                 return accum;
                             }, []);
-                        this.output(compressedEntries,CommandNames.Completions, reqSeq);
+                        this.output(compressedEntries, CommandNames.Completions, reqSeq);
                     }
                 }
             }
             if (!completions) {
-                this.output(undefined,CommandNames.Completions, reqSeq, "no completions");
+                this.output(undefined, CommandNames.Completions, reqSeq, "no completions");
             }
         }
 
@@ -1021,7 +998,7 @@ module ts.server {
                 var compilerService = project.compilerService;
                 var navBarItems = compilerService.languageService.getNavigationBarItems(file);
                 var bakedNavBarItems = navBarItems.map(navBarItem => this.decorateNavBarItem(navBarItem, compilerService, file));
-                console.log(JSON.stringify(bakedNavBarItems, null, " "));
+                this.sendLineToClient(JSON.stringify(bakedNavBarItems, null, " "));
             }
         }
 
@@ -1074,274 +1051,260 @@ module ts.server {
                         return bakedItem;
                     });
 
-                    this.output(bakedNavItems,CommandNames.Navto, reqSeq);
+                    this.output(bakedNavItems, CommandNames.Navto, reqSeq);
                 }
                 else {
-                    this.output(undefined,CommandNames.Navto, reqSeq, "no nav items");
+                    this.output(undefined, CommandNames.Navto, reqSeq, "no nav items");
                 }
             }
         }
 
         executeJSONcmd(cmd: string) {
-            var req = <ServerProtocol.Request>JSON.parse(cmd);
-            switch (req.command) {
-                case CommandNames.Definition: {
-                    var defArgs = <ServerProtocol.CodeLocationRequestArgs>req.arguments;
-                    this.goToDefinition(defArgs.line, defArgs.col, defArgs.file, req.seq);
-                    break;
+            try {
+                var req = <ServerProtocol.Request>JSON.parse(cmd);
+                switch (req.command) {
+                    case CommandNames.Definition: {
+                        var defArgs = <ServerProtocol.CodeLocationRequestArgs>req.arguments;
+                        this.goToDefinition(defArgs.line, defArgs.col, defArgs.file, req.seq);
+                        break;
+                    }
+                    case CommandNames.References: {
+                        var refArgs = <ServerProtocol.CodeLocationRequestArgs>req.arguments;
+                        this.findReferences(refArgs.line, refArgs.col, refArgs.file, req.seq);
+                        break;
+                    }
+                    case CommandNames.Rename: {
+                        var renameArgs = <ServerProtocol.CodeLocationRequestArgs>req.arguments;
+                        this.rename(renameArgs.line, renameArgs.col, renameArgs.file, req.seq);
+                        break;
+                    }
+                    case CommandNames.Type: {
+                        var typeArgs = <ServerProtocol.CodeLocationRequestArgs>req.arguments;
+                        this.goToType(typeArgs.line, typeArgs.col, typeArgs.file, req.seq);
+                        break;
+                    }
+                    case CommandNames.Open: {
+                        var openArgs = <ServerProtocol.FileRequestArgs>req.arguments;
+                        this.openClientFile(openArgs.file);
+                        break;
+                    }
+                    case CommandNames.Quickinfo: {
+                        var quickinfoArgs = <ServerProtocol.CodeLocationRequestArgs>req.arguments;
+                        this.quickInfo(quickinfoArgs.line, quickinfoArgs.col, quickinfoArgs.file, req.seq);
+                        break;
+                    }
+                    case CommandNames.Format: {
+                        var formatArgs = <ServerProtocol.FormatRequestArgs>req.arguments;
+                        this.format(formatArgs.line, formatArgs.col, formatArgs.endLine, formatArgs.endCol, formatArgs.file,
+                            cmd, req.seq);
+                        break;
+                    }
+                    case CommandNames.Formatonkey: {
+                        var formatOnKeyArgs = <ServerProtocol.FormatOnKeyRequestArgs>req.arguments;
+                        this.formatOnKey(formatOnKeyArgs.line, formatOnKeyArgs.col, formatOnKeyArgs.key, formatOnKeyArgs.file,
+                            cmd, req.seq);
+                        break;
+                    }
+                    case CommandNames.Completions: {
+                        var completionsArgs = <ServerProtocol.CompletionsRequestArgs>req.arguments;
+                        this.completions(req.arguments.line, req.arguments.col, completionsArgs.prefix, req.arguments.file,
+                            cmd, req.seq);
+                        break;
+                    }
+                    case CommandNames.Geterr: {
+                        var geterrArgs = <ServerProtocol.GeterrRequestArgs>req.arguments;
+                        this.geterr(geterrArgs.delay, geterrArgs.files);
+                        break;
+                    }
+                    case CommandNames.Change: {
+                        var changeArgs = <ServerProtocol.ChangeRequestArgs>req.arguments;
+                        this.change(changeArgs.line, changeArgs.col, changeArgs.deleteLen, changeArgs.insertString,
+                            changeArgs.file);
+                        break;
+                    }
+                    case CommandNames.Reload: {
+                        var reloadArgs = <ServerProtocol.ReloadRequestArgs>req.arguments;
+                        this.reload(reloadArgs.file, reloadArgs.tmpfile, req.seq);
+                        break;
+                    }
+                    case CommandNames.Saveto: {
+                        var savetoArgs = <ServerProtocol.SavetoRequestArgs>req.arguments;
+                        this.saveToTmp(savetoArgs.file, savetoArgs.tmpfile);
+                        break;
+                    }
+                    case CommandNames.Close: {
+                        var closeArgs = <ServerProtocol.FileRequestArgs>req.arguments;
+                        this.closeClientFile(closeArgs.file);
+                        break;
+                    }
+                    case CommandNames.Navto: {
+                        var navtoArgs = <ServerProtocol.NavtoRequestArgs>req.arguments;
+                        this.navto(navtoArgs.searchTerm, navtoArgs.file, cmd, req.seq);
+                        break;
+                    }
+                    default: {
+                        this.projectService.log("Unrecognized JSON command: " + cmd);
+                        break;
+                    }
                 }
-                case CommandNames.References: {
-                    var refArgs = <ServerProtocol.CodeLocationRequestArgs>req.arguments;
-                    this.findReferences(refArgs.line, refArgs.col, refArgs.file, req.seq);
-                    break;
-                }
-                case CommandNames.Rename: {
-                    var renameArgs = <ServerProtocol.CodeLocationRequestArgs>req.arguments;
-                    this.rename(renameArgs.line, renameArgs.col, renameArgs.file, req.seq);
-                    break;
-                }
-                case CommandNames.Type: {
-                    var typeArgs = <ServerProtocol.CodeLocationRequestArgs>req.arguments;
-                    this.goToType(typeArgs.line, typeArgs.col, typeArgs.file, req.seq);
-                    break;
-                }
-                case CommandNames.Open: {
-                    var openArgs = <ServerProtocol.FileRequestArgs>req.arguments;
-                    this.openClientFile(openArgs.file);
-                    break;
-                }
-                case CommandNames.Quickinfo: {
-                    var quickinfoArgs = <ServerProtocol.CodeLocationRequestArgs>req.arguments;
-                    this.quickInfo(quickinfoArgs.line, quickinfoArgs.col, quickinfoArgs.file, req.seq);
-                    break;
-                }
-                case CommandNames.Format: {
-                    var formatArgs = <ServerProtocol.FormatRequestArgs>req.arguments;
-                    this.format(formatArgs.line, formatArgs.col, formatArgs.endLine, formatArgs.endCol, formatArgs.file,
-                        cmd, req.seq);
-                    break;
-                }
-                case CommandNames.Formatonkey: {
-                    var formatOnKeyArgs = <ServerProtocol.FormatOnKeyRequestArgs>req.arguments;
-                    this.formatOnKey(formatOnKeyArgs.line, formatOnKeyArgs.col, formatOnKeyArgs.key, formatOnKeyArgs.file,
-                        cmd, req.seq);
-                    break;
-                }
-                case CommandNames.Completions: {
-                    var completionsArgs = <ServerProtocol.CompletionsRequestArgs>req.arguments;
-                    this.completions(req.arguments.line, req.arguments.col, completionsArgs.prefix, req.arguments.file,
-                        cmd, req.seq);
-                    break;
-                }
-                case CommandNames.Geterr: {
-                    var geterrArgs = <ServerProtocol.GeterrRequestArgs>req.arguments;
-                    this.geterr(geterrArgs.delay, geterrArgs.files);
-                    break;
-                }
-                case CommandNames.Change: {
-                    var changeArgs = <ServerProtocol.ChangeRequestArgs>req.arguments;
-                    this.change(changeArgs.line, changeArgs.col, changeArgs.deleteLen, changeArgs.insertString,
-                        changeArgs.file);
-                    break;
-                }
-                case CommandNames.Reload: {
-                    var reloadArgs = <ServerProtocol.ReloadRequestArgs>req.arguments;
-                    this.reload(reloadArgs.file, reloadArgs.tmpfile, req.seq);
-                    break;
-                }
-                case CommandNames.Saveto: {
-                    var savetoArgs = <ServerProtocol.SavetoRequestArgs>req.arguments;
-                    this.saveToTmp(savetoArgs.file, savetoArgs.tmpfile);
-                    break;
-                }
-                case CommandNames.Close: {
-                    var closeArgs = <ServerProtocol.FileRequestArgs>req.arguments;
-                    this.closeClientFile(closeArgs.file);
-                    break;
-                }
-                case CommandNames.Navto: {
-                    var navtoArgs = <ServerProtocol.NavtoRequestArgs>req.arguments;
-                    this.navto(navtoArgs.searchTerm, navtoArgs.file, cmd, req.seq);
-                    break;
-                }
-                default: {
-                    this.projectService.log("Unrecognized JSON command: " + cmd);
-                    break;
-                }
+            } catch (err) {
+                this.logError(err, cmd);
             }
         }
 
         sendAbbrev(reqSeq = 0) {
             if (!this.fetchedAbbrev) {
-                this.output(this.abbrevTable,CommandNames.Abbrev, reqSeq);
+                this.output(this.abbrevTable, CommandNames.Abbrev, reqSeq);
             }
             this.fetchedAbbrev = true;
         }
 
-        listen() {
-            rl.on('line',(input: string) => {
-                var cmd = input.trim();
-                if (cmd.indexOf("{") == 0) {
-                    // assumption is JSON on single line
-                    // plan is to also carry this protocol
-                    // over tcp, in which case JSON would
-                    // have a Content-Length header
-                    this.executeJSONcmd(cmd);
+        executeCmd(cmd: string) {
+            var line: number, col: number, file: string;
+            var m: string[];
+
+            try {
+                if (m = cmd.match(/^dbg start$/)) {
+                    this.debugSession = new JsDebugSession(this.host.getDebuggerClient());
+                }
+                else if (m = cmd.match(/^dbg cont$/)) {
+                    if (this.debugSession) {
+                        this.debugSession.cont((err, body, res) => {
+                        });
+                    }
+                }
+                else if (m = cmd.match(/^dbg src$/)) {
+                    if (this.debugSession) {
+                        this.debugSession.listSrc();
+                    }
+                }
+                else if (m = cmd.match(/^dbg brk (\d+) (.*)$/)) {
+                    line = parseInt(m[1]);
+                    file = ts.normalizePath(m[2]);
+                    if (this.debugSession) {
+                        this.debugSession.setBreakpointOnLine(line, file);
+                    }
+                }
+                else if (m = cmd.match(/^dbg eval (.*)$/)) {
+                    var code = m[1];
+                    if (this.debugSession) {
+                        this.debugSession.evaluate(code);
+                    }
+                }
+                else if (m = cmd.match(/^definition (\d+) (\d+) (.*)$/)) {
+                    line = parseInt(m[1]);
+                    col = parseInt(m[2]);
+                    file = m[3];
+                    this.goToDefinition(line, col, file);
+                }
+                else if (m = cmd.match(/^rename (\d+) (\d+) (.*)$/)) {
+                    line = parseInt(m[1]);
+                    col = parseInt(m[2]);
+                    file = m[3];
+                    this.rename(line, col, file);
+                }
+                else if (m = cmd.match(/^type (\d+) (\d+) (.*)$/)) {
+                    line = parseInt(m[1]);
+                    col = parseInt(m[2]);
+                    file = m[3];
+                    this.goToType(line, col, file);
+                }
+                else if (m = cmd.match(/^open (.*)$/)) {
+                    file = m[1];
+                    this.openClientFile(file);
+                }
+                else if (m = cmd.match(/^references (\d+) (\d+) (.*)$/)) {
+                    line = parseInt(m[1]);
+                    col = parseInt(m[2]);
+                    file = m[3];
+                    this.findReferences(line, col, file);
+                }
+                else if (m = cmd.match(/^quickinfo (\d+) (\d+) (.*)$/)) {
+                    line = parseInt(m[1]);
+                    col = parseInt(m[2]);
+                    file = m[3];
+                    this.quickInfo(line, col, file);
+                }
+                else if (m = cmd.match(/^format (\d+) (\d+) (\d+) (\d+) (.*)$/)) {
+                    // format line col endLine endCol file
+                    line = parseInt(m[1]);
+                    col = parseInt(m[2]);
+                    var endLine = parseInt(m[3]);
+                    var endCol = parseInt(m[4]);
+                    file = m[5];
+                    this.format(line, col, endLine, endCol, file, cmd);
+                }
+                else if (m = cmd.match(/^formatonkey (\d+) (\d+) (\{\".*\"\})\s* (.*)$/)) {
+                    line = parseInt(m[1]);
+                    col = parseInt(m[2]);
+                    var key = JSON.parse(m[3].substring(1, m[3].length - 1));
+                    file = m[4];
+                    this.formatOnKey(line, col, key, file, cmd);
+                }
+                else if (m = cmd.match(/^completions (\d+) (\d+) (\{.*\})?\s*(.*)$/)) {
+                    line = parseInt(m[1]);
+                    col = parseInt(m[2]);
+                    var prefix = "";
+                    file = m[4];
+                    if (m[3]) {
+                        prefix = m[3].substring(1, m[3].length - 1);
+                    }
+                    this.completions(line, col, prefix, file, cmd);
+                }
+                else if (m = cmd.match(/^geterr (\d+) (.*)$/)) {
+                    var ms = parseInt(m[1]);
+                    var rawFiles = m[2];
+                    this.geterr(ms, rawFiles.split(';'));
+                }
+                else if (m = cmd.match(/^change (\d+) (\d+) (\d+) (\d+) (\{\".*\"\})?\s*(.*)$/)) {
+                    line = parseInt(m[1]);
+                    col = parseInt(m[2]);
+                    var deleteLen = parseInt(m[3]);
+                    var insertLen = parseInt(m[4]);
+                    var insertString: string;
+                    if (insertLen) {
+                        insertString = JSON.parse(m[5].substring(1, m[5].length - 1));
+                    }
+                    file = m[6];
+                    this.change(line, col, deleteLen, insertString, file);
+                }
+                else if (m = cmd.match(/^reload (.*) from (.*)$/)) {
+                    this.reload(m[1], m[2]);
+                }
+                // TODO: change this to saveto
+                else if (m = cmd.match(/^save (.*) to (.*)$/)) {
+                    this.saveToTmp(m[1], m[2]);
+                }
+                else if (m = cmd.match(/^close (.*)$/)) {
+                    this.closeClientFile(m[1]);
+                }
+                else if (m = cmd.match(/^navto (\{.*\}) (.*)$/)) {
+                    var searchTerm = m[1];
+                    searchTerm = searchTerm.substring(1, searchTerm.length - 1);
+                    this.navto(searchTerm, m[2], cmd);
+                }
+                else if (m = cmd.match(/^navbar (.*)$/)) {
+                    this.navbar(m[1]);
+                }
+                else if (m = cmd.match(/^abbrev/)) {
+                    this.sendAbbrev();
+                }
+                else if (m = cmd.match(/^pretty/)) {
+                    this.prettyJSON = true;
+                }
+                else if (m = cmd.match(/^printproj/)) {
+                    this.projectService.printProjects();
+                }
+                else if (m = cmd.match(/^fileproj (.*)$/)) {
+                    file = ts.normalizePath(m[1]);
+                    this.projectService.printProjectsForFile(file);
                 }
                 else {
-                    var line: number, col: number, file: string;
-                    var m: string[];
-
-                    try {
-                        if (m = cmd.match(/^definition (\d+) (\d+) (.*)$/)) {
-                            line = parseInt(m[1]);
-                            col = parseInt(m[2]);
-                            file = m[3];
-                            this.goToDefinition(line, col, file);
-                        }
-                        else if (m = cmd.match(/^dbg start$/)) {
-                            this.debugSession = new JsDebugSession();
-                        }
-                        else if (m = cmd.match(/^dbg cont$/)) {
-                            if (this.debugSession) {
-                                this.debugSession.cont((err, body, res) => {
-                                });
-                            }
-                        }
-                        else if (m = cmd.match(/^dbg src$/)) {
-                            if (this.debugSession) {
-                                this.debugSession.listSrc();
-                            }
-                        }
-                        else if (m = cmd.match(/^dbg brk (\d+) (.*)$/)) {
-                            line = parseInt(m[1]);
-                            file = ts.normalizePath(m[2]);
-                            if (this.debugSession) {
-                                this.debugSession.setBreakpointOnLine(line, file);
-                            }
-                        }
-                        else if (m = cmd.match(/^dbg eval (.*)$/)) {
-                            var code = m[1];
-                            if (this.debugSession) {
-                                this.debugSession.evaluate(code);
-                            }
-                        }
-                        else if (m = cmd.match(/^rename (\d+) (\d+) (.*)$/)) {
-                            line = parseInt(m[1]);
-                            col = parseInt(m[2]);
-                            file = m[3];
-                            this.rename(line, col, file);
-                        }
-                        else if (m = cmd.match(/^type (\d+) (\d+) (.*)$/)) {
-                            line = parseInt(m[1]);
-                            col = parseInt(m[2]);
-                            file = m[3];
-                            this.goToType(line, col, file);
-                        }
-                        else if (m = cmd.match(/^open (.*)$/)) {
-                            file = m[1];
-                            this.openClientFile(file);
-                        }
-                        else if (m = cmd.match(/^references (\d+) (\d+) (.*)$/)) {
-                            line = parseInt(m[1]);
-                            col = parseInt(m[2]);
-                            file = m[3];
-                            this.findReferences(line, col, file);
-                        }
-                        else if (m = cmd.match(/^quickinfo (\d+) (\d+) (.*)$/)) {
-                            line = parseInt(m[1]);
-                            col = parseInt(m[2]);
-                            file = m[3];
-                            this.quickInfo(line, col, file);
-                        }
-                        else if (m = cmd.match(/^format (\d+) (\d+) (\d+) (\d+) (.*)$/)) {
-                            // format line col endLine endCol file
-                            line = parseInt(m[1]);
-                            col = parseInt(m[2]);
-                            var endLine = parseInt(m[3]);
-                            var endCol = parseInt(m[4]);
-                            file = m[5];
-                            this.format(line, col, endLine, endCol, file, cmd);
-                        }
-                        else if (m = cmd.match(/^formatonkey (\d+) (\d+) (\{\".*\"\})\s* (.*)$/)) {
-                            line = parseInt(m[1]);
-                            col = parseInt(m[2]);
-                            var key = JSON.parse(m[3].substring(1, m[3].length - 1));
-                            file = m[4];
-                            this.formatOnKey(line, col, key, file, cmd);
-                        }
-                        else if (m = cmd.match(/^completions (\d+) (\d+) (\{.*\})?\s*(.*)$/)) {
-                            line = parseInt(m[1]);
-                            col = parseInt(m[2]);
-                            var prefix = "";
-                            file = m[4];
-                            if (m[3]) {
-                                prefix = m[3].substring(1, m[3].length - 1);
-                            }
-                            this.completions(line, col, prefix, file, cmd);
-                        }
-                        else if (m = cmd.match(/^geterr (\d+) (.*)$/)) {
-                            var ms = parseInt(m[1]);
-                            var rawFiles = m[2];
-                            this.geterr(ms, rawFiles.split(';'));
-                        }
-                        else if (m = cmd.match(/^change (\d+) (\d+) (\d+) (\d+) (\{\".*\"\})?\s*(.*)$/)) {
-                            line = parseInt(m[1]);
-                            col = parseInt(m[2]);
-                            var deleteLen = parseInt(m[3]);
-                            var insertLen = parseInt(m[4]);
-                            var insertString: string;
-                            if (insertLen) {
-                                insertString = JSON.parse(m[5].substring(1, m[5].length - 1));
-                            }
-                            file = m[6];
-                            this.change(line, col, deleteLen, insertString, file);
-                        }
-                        else if (m = cmd.match(/^reload (.*) from (.*)$/)) {
-                            this.reload(m[1], m[2]);
-                        }
-                        // TODO: change this to saveto
-                        else if (m = cmd.match(/^save (.*) to (.*)$/)) {
-                            this.saveToTmp(m[1], m[2]);
-                        }
-                        else if (m = cmd.match(/^close (.*)$/)) {
-                            this.closeClientFile(m[1]);
-                        }
-                        else if (m = cmd.match(/^navto (\{.*\}) (.*)$/)) {
-                            var searchTerm = m[1];
-                            searchTerm = searchTerm.substring(1, searchTerm.length - 1);
-                            this.navto(searchTerm, m[2], cmd);
-                        }
-                        else if (m = cmd.match(/^navbar (.*)$/)) {
-                            this.navbar(m[1]);
-                        }
-                        else if (m = cmd.match(/^abbrev/)) {
-                            this.sendAbbrev();
-                        }
-                        else if (m = cmd.match(/^pretty/)) {
-                            this.prettyJSON = true;
-                        }
-                        else if (m = cmd.match(/^printproj/)) {
-                            this.projectService.printProjects();
-                        }
-                        else if (m = cmd.match(/^fileproj (.*)$/)) {
-                            file = ts.normalizePath(m[1]);
-                            this.projectService.printProjectsForFile(file);
-                        }
-                        else {
-                            this.output(undefined,CommandNames.Unknown, 0, "Unrecognized command " + cmd);
-                        }
-                    }
-                    catch (err) {
-                        this.logError(err, cmd);
-                    }
+                    this.output(undefined, CommandNames.Unknown, 0, "Unrecognized command " + cmd);
                 }
-            });
-
-            rl.on('close',() => {
-                this.projectService.closeLog();
-                process.exit(0);
-            });
+            } catch (err) {
+                this.logError(err, cmd);
+            }
         }
     }
 }
