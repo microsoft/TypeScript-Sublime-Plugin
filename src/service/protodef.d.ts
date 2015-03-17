@@ -38,6 +38,31 @@ declare module ServerProtocol {
         body?: any;
     }
 
+    /**
+       Object containing line and column (one-based) of a position inside a text.
+       A position always denotes a position between two characters, never
+       the character itself. Think about a position as the blinking cursor
+       in an editor.
+    */
+    export interface Position {
+        line: number;
+        column: number;
+    }
+    
+    /**
+      A range denotes a portion of a text. That range starts to the 
+      right of the start position and ends to the left of the end
+      position.
+      
+      Example: 'TypeScript is cool'
+      {start: { line: 1, column: 5 }, end: { line: 1, column: 5} } describes the empty text ''
+      {start: { line: 1, column: 5 }, end: { line: 1, column: 11} } describes the text 'Script'
+     */
+    export interface Range {
+        start: Position;
+        end: Position;
+    }
+
     /** Arguments for FileRequest messages */
     export interface FileRequestArgs {
         /** The file for the request (absolute pathname required) */
@@ -56,10 +81,8 @@ declare module ServerProtocol {
        (file, line, col), where line and column are 1-based.
     */
     export interface CodeLocationRequestArgs extends FileRequestArgs {
-        /** The line number for the request (1-based) */
-        line: number;
-        /** The column for the request (1-based) */
-        col: number;
+        /** The location inside the code */
+        position: Position;
     }
 
     /**
@@ -78,24 +101,12 @@ declare module ServerProtocol {
     }
 
     /**
-       Object containing line and column (one-based) of code location
-    */
-    export interface LineCol {
-        line: number;
-        col: number;
-    }
-
-    /**
        Object found in response messages defining a span of text in
        source code.
     */
-    export interface CodeSpan {
+    export interface CodeSpan extends Range {
         /** File containing the definition */
         file: string;
-        /** First character of the definition */
-        start: LineCol;
-        /** One character past last character of the definition */
-        end: LineCol;
     }
 
     /**
@@ -131,7 +142,7 @@ declare module ServerProtocol {
         /**
            The start column of the symbol (on the line provided by the references request)
          */
-        symbolStartCol: number;
+        symbolStartColumn: number;
         /** The full display name of the symbol */
         symbolDisplayString: string;
     }
@@ -166,19 +177,21 @@ declare module ServerProtocol {
         kindModifiers: string;
     }
 
+    export interface RenameResponseBody {
+        /** Information about the item to be renamed */
+        info: RenameInfo;
+        /**
+           An array of code locations that refer to the
+           item to be renamed.
+        */
+        locs: CodeSpan[];        
+    }
+
     /**
        Rename response message.  
     */
     export interface RenameResponse extends Response {
-        body?: {
-            /** Information about the item to be renamed */
-            info: RenameInfo;
-            /**
-               An array of code locations that refer to the
-               item to be renamed.
-            */
-            locs: CodeSpan[];
-        }
+        body?: RenameResponseBody;
     }
 
     /**
@@ -230,9 +243,9 @@ declare module ServerProtocol {
         /** Optional modifiers for the kind (such as 'public') */
         kindModifiers: string;
         /** Starting code location of symbol */
-        start: LineCol;
+        start: Position;
         /** One past last character of symbol */
-        end: LineCol;
+        end: Position;
         /** Type and kind of symbol */
         displayString: string;
         /** Documentation associated with symbol */
@@ -246,10 +259,8 @@ declare module ServerProtocol {
 
     /** Arguments for format messages */
     export interface FormatRequestArgs extends CodeLocationRequestArgs {
-        /** Last line of range for which to format text in file */
-        endLine: number;
-        /** Last column of range for which to format text in file */
-        endCol: number;
+        /** The end location for which to format text in file */
+        end: Position;
     }
 
     /**
@@ -271,10 +282,10 @@ declare module ServerProtocol {
        the text span is empty.  For a deletion, newText is empty.
     */
     export interface CodeEdit {
-        /** First character of the text span to edit. */
-        start: LineCol;
-        /** One character past last character of the text span to edit */
-        end: LineCol;
+        /** Position left to the first character of the text span to edit. */
+        start: Position;
+        /** Position right to the last character of the text span to edit */
+        end: Position;
         /**
            Replace the span defined above with this string (may be
            the empty string)
@@ -379,24 +390,26 @@ declare module ServerProtocol {
 
     /** Item of diagnostic information found in a DiagEvent message */
     export interface Diagnostic {
-        /** Starting code location at which text appies */
-        start: LineCol;
-        /** Length of code location at which text applies */
-        len: number;
+        /** Starting code position at which text applies */
+        start: Position;    
+        /** End code position at which text applies */        
+        end: Position;
         /** Text of diagnostic message */
         text: string;
     }
+    
+    export interface DiagnosticEventBody {
+        /** The file for which diagnostic information is reported */
+        file: string;
+        /** An array of diagnostic information items */
+        diagnostics: Diagnostic[];        
+    }
 
-    /** Event message for "syntaxDiag" and "semanticDiag" event types.
+    /** Event message for "syntaxDiagnostic" and "semanticDiagnostic" event types.
         These events provide syntactic and semantic errors for a file.
     */
-    export interface DiagEvent extends Event {
-        body?: {
-            /** The file for which diagnostic information is reported */
-            file: string;
-            /** An array of diagnostic information items */
-            diagnostics: Diagnostic[];
-        };
+    export interface DiagnosticEvent extends Event {
+        body?: DiagnosticEventBody;
     }
 
     /** Arguments for reload request. */
@@ -481,9 +494,9 @@ declare module ServerProtocol {
         */
         file: EncodedFile;
         /** The location within file at which the symbol is found*/
-        start: LineCol;
-        /** One past the last character of the symbol */
-        end: LineCol;
+        start: Position;
+        /** Position right to the last character of the symbol */
+        end: Position;
         /**
            Name of symbol's container symbol (if any); for example,
            the class name if symbol is a class member
@@ -503,13 +516,13 @@ declare module ServerProtocol {
 
     /** Arguments for change request message. */
     export interface ChangeRequestArgs extends CodeLocationRequestArgs {
-        /**
-           Length of span deleted at location (file, line, col); nothing deleted
-           if this field is zero or undefined.
-        */
-        deleteLen?: number;
-        /** Optional string to insert at location (file, line col). */
-        insertString?: string;
+        /** The end position of the text to be replaced; nothing deleted 
+            if this property is null or undefined
+         */
+        end?: Position
+        
+        /** Optional string to insert at location (file, position). */
+        text?: string;
     }
 
     /**
@@ -565,6 +578,12 @@ declare module ServerProtocol {
     */
     export type EncodedFile = number | IdFile | string;
 
+    export interface AbbrevMap {
+        /** Map from full string (either field name or string
+            field value) to shortened string */
+        [fullString: string]: string;        
+    }
+
     /**
        Response to abbrev opt-in request message.  This is a map of
        string field names and common string field values to shortened
@@ -576,16 +595,6 @@ declare module ServerProtocol {
        may send the file id (a number) in place of the file name.
     */       
     export interface AbbrevResponse extends Response {
-        body?: {
-            /** Map from full string (either field name or string
-                field value) to shortened string */
-            [fullString: string]: string;
-        }
+        body?: AbbrevMap;
     }
 }
-
-
-
-
-
-
