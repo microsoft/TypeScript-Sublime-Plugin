@@ -45,13 +45,14 @@ class Response(Message):
         self.message = message
 
 class ConfigureRequestArgs(object):
-    def __init__(self, hostInfo, tabSize, indentSize):
+    def __init__(self, hostInfo, tabSize, indentSize, file):
         """
         Arguments for ConfigureRequest messages 
         """
         self.hostInfo = hostInfo
         self.tabSize = tabSize
         self.indentSize = indentSize
+        self.file = file
 
 class ConfigureRequest(Request):
     def __init__(self, seq, configureRequestArgs):
@@ -74,23 +75,29 @@ class FileRequest(Request):
         super(FileRequest, self).__init__(command, seq, fileRequestArgs)
 
 
+class OpenRequestArgs(FileRequestArgs):
+    def __init__(self, file, tabSize, indentSize):
+        super(OpenRequestArgs, self).__init__(file)
+        self.tabSize = tabSize
+        self.indentSize = indentSize
+        
 class FileLocationRequestArgs(FileRequestArgs):
-    def __init__(self, file, line, col):
+    def __init__(self, file, line, offset):
         """
         Instances of this interface specify a file location:
-        (file, line, col), where line and column are 1-based.
+        (file, line, offset), where line and offset are 1-based.
         ``line`` The line number for the request (1-based)
-        ``column`` The column for the request (1-based)
+        ``offset`` The offset for the request (1-based)
         """
         super(FileLocationRequestArgs, self).__init__(file)
         self.line = line
-        self.col = col
+        self.offset = offset
 
 
 class FileLocationRequest(Request):
     def __init__(self, command, seq, fileLocationRequestArgs):
         """
-        A request whose arguments specify a file location (file, line, col)
+        A request whose arguments specify a file location (file, line, offset)
         """
         super(FileLocationRequest, self).__init__(command, seq, fileLocationRequestArgs)
 
@@ -100,21 +107,21 @@ class DefinitionRequest(FileLocationRequest):
         """
         Go to definition request; value of command field is
         "definition". Return response giving the file locations that
-        define the symbol found in file at location line, col.
+        define the symbol found in file at location line, offset.
         """
         super(DefinitionRequest, self).__init__("definition", seq, fileLocationRequestArgs)
 
 
 class Location:
-    def __init__(self, line, col):
+    def __init__(self, line, offset):
         """
-        Object containing line and column (one-based) of file location
+        Object containing line and offset (one-based) of file location
         """
         self.line = line
-        self.col = col
+        self.offset = offset
 
     def toDict(self):
-        return { "line": self.line, "col": self.col }
+        return { "line": self.line, "offset": self.offset }
 
 class FileSpan(object):
     def __init__(self, file, start, end):
@@ -147,7 +154,7 @@ class ReferencesRequest(FileLocationRequest):
         """
         Find references request; value of command field is
         "references". Return response giving the file locations that
-        reference the symbol found in file at location line, col.
+        reference the symbol found in file at location line, offset.
         """
         super(ReferencesRequest, self).__init__("references", seq, fileLocationRequestArgs)
 
@@ -163,10 +170,10 @@ class ReferencesResponseItem(FileSpan):
 
 
 class ReferencesResponseBody:
-    def __init__(self, refs, symbolName, symbolStartCol, symbolDisplayString, **kwargs):
+    def __init__(self, refs, symbolName, symbolStartOffset, symbolDisplayString, **kwargs):
         self.refs = [ReferencesResponseItem(**ri) for ri in refs]
         self.symbolName = symbolName
-        self.symbolStartCol = symbolStartCol
+        self.symbolStartOffset = symbolStartOffset
         self.symbolDisplayString = symbolDisplayString
 
 
@@ -184,7 +191,7 @@ class RenameRequest(FileLocationRequest):
         """
         Rename request; value of command field is "rename". Return
         response giving the file locations that reference the symbol
-        found in file at location line, col. Also return full display
+        found in file at location line, offset. Also return full display
         name of the symbol so that client can print it unambiguously.
         """
         super(RenameRequest, self).__init__("rename", seq, fileLocationRequestArgs)
@@ -229,7 +236,7 @@ class TypeRequest(FileLocationRequest):
         """
         Type request; value of command field is "type". Return response
         giving the file locations that define the type of the symbol
-        found in file at location line, col.
+        found in file at location line, offset.
         """
         super(TypeRequest, self).__init__("type", seq, fileLocationRequestArgs)
 
@@ -241,7 +248,7 @@ class TypeResponse(Response):
 
 
 class OpenRequest(FileRequest):
-    def __init__(self, seq, fileRequestArgs):
+    def __init__(self, seq, openRequestArgs):
         """
         Open request; value of command field is "open". Notify the
         server that the client has file open.  The server will not
@@ -250,7 +257,7 @@ class OpenRequest(FileRequest):
         reload messages) when the file changes.
         ``fileRequestArgs`` is of type FileRequestArgs
         """
-        super(OpenRequest, self).__init__("open", seq, fileRequestArgs)
+        super(OpenRequest, self).__init__("open", seq, openRequestArgs)
 
 
 class CloseRequest(FileRequest):
@@ -271,7 +278,7 @@ class QuickInfoRequest(FileLocationRequest):
         Quickinfo request; value of command field is
         "quickinfo". Return response giving a quick type and
         documentation string for the symbol found in file at location
-        line, col.
+        line, offset.
         """
         super(QuickInfoRequest, self).__init__("quickinfo", seq, fileLocationRequestArgs)
 
@@ -301,15 +308,15 @@ class QuickInfoResponse(Response):
 
 
 class FormatRequestArgs(FileLocationRequestArgs):
-    def __init__(self, file, line, col, endLine, endCol):
+    def __init__(self, file, line, offset, endLine, endOffset):
         """
         Arguments for format messages
         ``endLine`` Last line of range for which to format text in file
-        ``endCol`` Last column of range for which to format text in file
+        ``endOffset`` Last offset of range for which to format text in file
         """
-        super(FormatRequestArgs, self).__init__(file, line, col)
+        super(FormatRequestArgs, self).__init__(file, line, offset)
         self.endLine = endLine
-        self.endCol = endCol
+        self.endOffset = endOffset
 
 
 class FormatRequest(FileLocationRequest):
@@ -325,12 +332,12 @@ class FormatRequest(FileLocationRequest):
 
 
 class FormatOnKeyRequestArgs(FileLocationRequestArgs):
-    def __init__(self, file, line, col, key):
+    def __init__(self, file, line, offset, key):
         """
         Arguments for format on key messages
         ``key`` Key pressed (';', '\\n', or '}')
         """
-        super(FormatOnKeyRequestArgs, self).__init__(file, line, col)
+        super(FormatOnKeyRequestArgs, self).__init__(file, line, offset)
         self.key = key
 
 
@@ -380,12 +387,12 @@ class CompletionsResponse(Response):
 
 
 class CompletionsRequestArgs(FileLocationRequestArgs):
-    def __init__(self, file, line, col, prefix=""):
+    def __init__(self, file, line, offset, prefix=""):
         """
         Arguments for completions messages
         ``prefix`` Optional prefix to apply to possible completions.
         """
-        super(CompletionsRequestArgs, self).__init__(file, line, col)
+        super(CompletionsRequestArgs, self).__init__(file, line, offset)
         self.prefix = prefix
 
 
@@ -393,7 +400,7 @@ class CompletionsRequest(FileLocationRequest):
     def __init__(self, seq, completionsRequestArgs):
         """
         Completions request; value of command field is "completions".
-        Given a file location (file, line, col) and a prefix (which may
+        Given a file location (file, line, offset) and a prefix (which may
         be the empty string), return the possible completions that
         begin with prefix.
         """
@@ -523,12 +530,12 @@ class ConfigureResponse(Response):
         super(ConfigureResponse, self).__init__(**kwargs)
 
 class ChangeRequestArgs(FormatRequestArgs):
-    def __init__(self, file, line, col, endLine, endCol, insertString=""):
+    def __init__(self, file, line, offset, endLine, endOffset, insertString=""):
         """
         Arguments for change request message.
-        ``insertString`` Optional string to insert at location (file, line col).
+        ``insertString`` Optional string to insert at location (file, line offset).
         """
-        super(ChangeRequestArgs, self).__init__(file, line, col, endLine, endCol)
+        super(ChangeRequestArgs, self).__init__(file, line, offset, endLine, endOffset)
         self.insertString = insertString
 
 

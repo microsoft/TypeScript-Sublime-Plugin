@@ -69,22 +69,22 @@ def getLocationFromRegion(view, region):
 
 def getLocationFromPosition(view, position):
     """
-    Returns the LineCol object of the given text position
+    Returns the LineOffset object of the given text position
     """
     cursor = view.rowcol(position)
     line = cursor[0] + 1
-    col = cursor[1] + 1
-    return Location(line, col)
+    offset = cursor[1] + 1
+    return Location(line, offset)
 
-def extractLineCol(lineColumn):
+def extractLineOffset(lineOffset):
     """
-    Destructure line and column tuple from LineColumn object
-    convert 1-based line,col to zero-based line,col
-    ``lineColumn`` LineColumn object
+    Destructure line and offset tuple from LineOffset object
+    convert 1-based line, offset to zero-based line, offset
+    ``lineOffset`` LineOffset object
     """
-    line = lineColumn.line - 1
-    col = lineColumn.col - 1
-    return (line, col)
+    line = lineOffset.line - 1
+    offset = lineOffset.offset - 1
+    return (line, offset)
 
 
 # per-file, globally-accessible information
@@ -99,13 +99,13 @@ class ClientFileInfo:
         }
         self.loadHandler = None
 
-# a reference to a source file, line, column; next and prev refer to the
+# a reference to a source file, line, offset; next and prev refer to the
 # next and previous reference in a view containing references
 class Ref:
-    def __init__(self, filename, line, col, prevLine):
+    def __init__(self, filename, line, offset, prevLine):
         self.filename = filename
         self.line = line
-        self.col = col
+        self.offset = offset
         self.nextLine = None
         self.prevLine = prevLine
 
@@ -113,10 +113,10 @@ class Ref:
         self.nextLine = n
 
     def asTuple(self):
-        return (self.filename, self.line, self.col, self.prevLine, self.nextLine)
+        return (self.filename, self.line, self.offset, self.prevLine, self.nextLine)
 
 
-# maps (line in view containing references) to (filename, line, column)
+# maps (line in view containing references) to (filename, line, offset)
 # referenced
 class RefInfo:
     def __init__(self, firstLine, refId):
@@ -187,8 +187,8 @@ class RefInfo:
 
 # build a reference from a serialized reference
 def buildRef(refTuple):
-    (filename, line, col, prevLine, nextLine) = refTuple
-    ref = Ref(filename, line, col, prevLine)
+    (filename, line, offset, prevLine, nextLine) = refTuple
+    ref = Ref(filename, line, offset, prevLine)
     ref.setNextLine(nextLine)
     return ref
 
@@ -232,8 +232,8 @@ class EditorClient:
        # Preferences Settings
        pref_settings = sublime.load_settings('Preferences.sublime-settings')
        tabSize = pref_settings.get('tab_size', 4)
-       indentSize = pref_settings.get('indent_size', 4)
-       self.service.configure(hostInfo, tabSize, indentSize)
+       indentSize = pref_settings.get('indent_size', tabSize)
+       self.service.configure(hostInfo, tabSize, indentSize, None)
 
     def reloadRequired(self, view):
        clientInfo = self.getOrAddFile(view.file_name())
@@ -348,15 +348,33 @@ def decrLocsToRegions(locs, amt):
         rr.append(sublime.Region(loc - amt, loc - amt))
     return rr
 
-# right now, we have this setting because there is no way to know how to translate
-# tabs on the server side
-# TODO: see if we can tolerate tabs by having the editor tell the server how
-# to interpret them
+def reconfig_file(view):
+    hostInfo = "Sublime Text version " + str(sublime.version())
+    # Preferences Settings
+    view_settings = view.settings()
+    tabSize = view_settings.get('tab_size', 4)
+    indentSize = view_settings.get('indent_size', tabSize)
+    cli.service.configure(hostInfo, tabSize, indentSize, view.file_name())
+
+def open_file(view):
+    hostInfo = "Sublime Text version " + str(sublime.version())
+    # Preferences Settings
+    view_settings = view.settings()
+    tabSize = view_settings.get('tab_size', 4)
+    indentSize = view_settings.get('indent_size', tabSize)
+    cli.service.open(view.file_name(), tabSize, indentSize)
+
+def tab_size_changed(view):
+    print("tab size changed for " + view.file_name() + " to " + str(view.settings().get('tab_size')))
+    reconfig_file(view)
+    clientInfo = cli.getOrAddFile(view.file_name())
+    clientInfo.pendingChanges = True
+
 def setFilePrefs(view):
     settings = view.settings()
-    settings.set('translate_tabs_to_spaces', True)
-    settings.set('detect_indentation', False)
     settings.set('use_tab_stops', False)
+    settings.set('translate_tabs_to_spaces', True)
+    settings.add_on_change('tab_size',lambda: tab_size_changed(view))
 
 # given a list of regions and a (possibly zero-length) string to insert, 
 # send the appropriate change information to the server
@@ -424,7 +442,7 @@ class TypeScriptListener(sublime_plugin.EventListener):
                     info.clientInfo = cli.getOrAddFile(view.file_name())
                     setFilePrefs(view)
                     self.fileMap[view.file_name()] = info
-                    cli.service.open(view.file_name())
+                    open_file(view)
                     if view.is_dirty():
                        if not view.is_loading():
                           reloadBuffer(view, info.clientInfo)
@@ -525,8 +543,8 @@ class TypeScriptListener(sublime_plugin.EventListener):
                     for diag in diags:
                         startlc = diag.start
                         endlc = diag.end
-                        (l, c) = extractLineCol(startlc)
-                        (endl, endc) = extractLineCol(endlc)
+                        (l, c) = extractLineOffset(startlc)
+                        (endl, endc) = extractLineOffset(endlc)
                         text = diag.text
                         start = view.text_point(l, c)
                         end = view.text_point(endl, endc)
@@ -698,21 +716,25 @@ class TypeScriptListener(sublime_plugin.EventListener):
                info.modCount+=1
             info.lastModChangeCount = self.change_count(view)
             self.mod = True
-            print("modified " + view.file_name())
             (lastCommand, args, rept) = view.command_history(0)
+            print("modified " + view.file_name() + " command " + lastCommand + " args " + str(args) + " rept " + str(rept))
             if info.preChangeSent:
                 # change handled in on_text_command
                 info.clientInfo.changeCount = self.change_count(view)
                 info.preChangeSent = False
-            elif (lastCommand == "insert") and (not "\n" in args['characters']) and (len(info.prevSel) == 1) and (info.prevSel[0].empty()):
-                info.clientInfo.changeCount = self.change_count(view)
-                prevCursor = info.prevSel[0].begin()
-                cursor = view.sel()[0].begin()
-                key = view.substr(sublime.Region(prevCursor, cursor))
-                sendReplaceChangesForRegions(view, staticRegionsToRegions(info.prevSel), key)
-                # mark change as handled so that on_post_text_command doesn't
-                # try to handle it
-                info.changeSent = True
+            elif lastCommand == "insert":
+                if (not "\n" in args['characters']) and (len(info.prevSel) == 1) and (info.prevSel[0].empty()) and (not info.clientInfo.pendingChanges):
+                    info.clientInfo.changeCount = self.change_count(view)
+                    prevCursor = info.prevSel[0].begin()
+                    cursor = view.sel()[0].begin()
+                    key = view.substr(sublime.Region(prevCursor, cursor))
+                    sendReplaceChangesForRegions(view, staticRegionsToRegions(info.prevSel), key)
+                    # mark change as handled so that on_post_text_command doesn't
+                    # try to handle it
+                    info.changeSent = True
+                else:
+                    # request reload because we have strange insert
+                    info.clientInfo.pendingChanges = True
             self.setOnIdleTimer(100)
 
     # ST3 only
@@ -733,7 +755,7 @@ class TypeScriptListener(sublime_plugin.EventListener):
                 # handle insertion of string from completion menu, so that
                 # it is fast to type completedName1.completedName2 (avoid a lag
                 # when completedName1 is committed)
-                if ((command_name == "commit_completion") or command_name == ("insert_best_completion")) and (len(view.sel()) == 1):
+                if ((command_name == "commit_completion") or command_name == ("insert_best_completion")) and (len(view.sel()) == 1) and (not info.clientInfo.pendingChanges):
                     # get saved region that was pushed forward by insertion of
                     # the completion
                     apresCompReg = view.get_regions("apresComp")
@@ -922,7 +944,7 @@ class TypescriptGoToDefinitionCommand(sublime_plugin.TextCommand):
             if codeSpan:
                 filename = codeSpan.file
                 startlc = codeSpan.start
-                sublime.active_window().open_file('{0}:{1}:{2}'.format(filename, startlc.line, startlc.col),
+                sublime.active_window().open_file('{0}:{1}:{2}'.format(filename, startlc.line, startlc.offset),
                                                   sublime.ENCODED_POSITION)
 
 
@@ -937,7 +959,7 @@ class TypescriptGoToTypeCommand(sublime_plugin.TextCommand):
                 codeSpan = items[0]
                 filename = codeSpan.file
                 startlc = codeSpan.start
-                sublime.active_window().open_file('{0}:{1}:{2}'.format(filename, startlc.line or 0, startlc.col or 0), 
+                sublime.active_window().open_file('{0}:{1}:{2}'.format(filename, startlc.line or 0, startlc.offset or 0), 
                                                   sublime.ENCODED_POSITION)
 
 class FinishRenameCommandArgs:
@@ -1008,17 +1030,17 @@ class TypescriptFinishRenameCommand(sublime_plugin.TextCommand):
                 else:
                     for innerLoc in innerLocs:
                         startlc = innerLoc.start
-                        (startl, startc) = extractLineCol(startlc)
+                        (startl, startc) = extractLineOffset(startlc)
                         endlc = innerLoc.end
-                        (endl, endc) = extractLineCol(endlc)
+                        (endl, endc) = extractLineOffset(endlc)
                         applyEdit(text, self.view, startl, startc, endl, 
                                   endc, ntext = newName)
 
 
-def extractLineColFromDict(lc):
+def extractLineOffsetFromDict(lc):
     line = lc['line'] - 1
-    col = lc['col'] - 1
-    return (line, col)
+    offset = lc['offset'] - 1
+    return (line, offset)
 
 class TypescriptDelayedRenameFile(sublime_plugin.TextCommand):
     def run(self, text, locs = None, name = ""):
@@ -1027,9 +1049,9 @@ class TypescriptDelayedRenameFile(sublime_plugin.TextCommand):
             print(locs)
             for innerLoc in locs:
                 startlc = innerLoc['start']
-                (startl, startc) = extractLineColFromDict(startlc)
+                (startl, startc) = extractLineOffsetFromDict(startlc)
                 endlc = innerLoc['end']
-                (endl, endc) = extractLineColFromDict(endlc)
+                (endl, endc) = extractLineOffsetFromDict(endlc)
                 applyEdit(text, self.view, startl, startc, endl, 
                           endc, ntext = name)
             
@@ -1088,7 +1110,7 @@ def updateRefLine(refInfo, curLine, view):
                      sublime.HIDDEN)
 
 
-# if cursor is on reference line, go to (filename, line, col) referenced by
+# if cursor is on reference line, go to (filename, line, offset) referenced by
 # that line
 class TypescriptGoToRefCommand(sublime_plugin.TextCommand):
     def run(self, text):
@@ -1185,7 +1207,7 @@ class TypescriptPopulateRefs(sublime_plugin.TextCommand):
                     self.view.insert(text, self.view.sel()[0].begin(), filename + ":\n")
                     prevFilename = filename
                 startlc = ref.start
-                (l, c) = extractLineCol(startlc)
+                (l, c) = extractLineOffset(startlc)
                 pos = self.view.sel()[0].begin()
                 cursor = self.view.rowcol(pos)
                 line = str(cursor[0])
@@ -1231,9 +1253,9 @@ def applyFormattingChanges(text, view, codeEdits):
     if codeEdits:
         for codeEdit in codeEdits[::-1]:
             startlc = codeEdit.start
-            (startl, startc) = extractLineCol(startlc)
+            (startl, startc) = extractLineOffset(startlc)
             endlc = codeEdit.end
-            (endl, endc) = extractLineCol(endlc)
+            (endl, endc) = extractLineOffset(endlc)
             newText = codeEdit.newText
             applyEdit(text, view, startl, startc, endl, endc, ntext=newText)
 
@@ -1257,6 +1279,7 @@ class TypescriptFormatOnKey(sublime_plugin.TextCommand):
     def run(self, text, key = "", insertKey = True):
         if 0 == len(key):
             return
+        checkUpdateView(self.view)
         loc = self.view.sel()[0].begin()
         if insertKey:
             insertText(self.view, text, loc, key)
@@ -1311,6 +1334,7 @@ class TypescriptFormatLine(sublime_plugin.TextCommand):
 
 class TypescriptFormatBrackets(sublime_plugin.TextCommand):
     def run(self, text):
+        checkUpdateView(self.view)
         sel=self.view.sel()
         if (len(sel) == 1):
             print('format brackets')
@@ -1329,6 +1353,7 @@ class TypescriptFormatBrackets(sublime_plugin.TextCommand):
 class TypescriptPasteAndFormat(sublime_plugin.TextCommand):
     def run(self, text):
         view = self.view
+        checkUpdateView(view)
         beforePaste = copyRegionsStatic(view.sel())
         if cli.ST2():
             view.add_regions("apresPaste", copyRegions(view.sel()), "", "", sublime.HIDDEN)
@@ -1353,14 +1378,14 @@ class TypescriptAutoIndentOnEnterBetweenCurlyBrackets(sublime_plugin.TextCommand
         view = self.view
         view.run_command('typescript_format_on_key', { "key": "\n" });
         loc = view.sel()[0].begin()
-        rowCol = view.rowcol(loc)
+        rowOffset = view.rowoffset(loc)
         tabSize = view.settings().get('tab_size')
-        braceCol = rowCol[1]
+        braceOffset = rowOffset[1]
         ws = ""
         for i in range(tabSize):
            ws += ' '
         ws += "\n"
-        for i in range(braceCol):
+        for i in range(braceOffset):
             ws += ' '
         # insert the whitespace
         insertText(view, text, loc, ws)
