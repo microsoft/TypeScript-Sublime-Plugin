@@ -3,6 +3,8 @@ import subprocess
 import threading
 import time
 import json
+import sublime
+import sublime_plugin
 
 # queue module name changed from Python 2 to 3
 try: 
@@ -42,15 +44,22 @@ class NodeCommClient(CommClient):
             self.__serverProc = subprocess.Popen(["node", scriptPath],
                                          stdin=subprocess.PIPE, stdout=subprocess.PIPE, startupinfo=si)
         else:
-            nodePath = NodeCommClient.__which("node")
-            print(nodePath)
-            self.__serverProc = subprocess.Popen([nodePath, scriptPath],
-                                         stdin=subprocess.PIPE, stdout=subprocess.PIPE)
-
-        # start reader thread
-        readerThread = threading.Thread(target=NodeCommClient.__reader, args=(self.__serverProc.stdout, self.__msgq, self.__eventq))
-        readerThread.daemon = True
-        readerThread.start()
+           pref_settings = sublime.load_settings('Preferences.sublime-settings')
+           nodePath = pref_settings.get('node_path')
+           if not nodePath:
+              nodePath = NodeCommClient.__which("node")
+           if not nodePath:
+              path_list = os.environ["PATH"] + os.pathsep + "/usr/local/bin"
+              print("Unable to find executable file for node on path list: " + path_list)
+              self.__serverProc = None
+           else:
+              print("Found node executable at " + nodePath)
+              self.__serverProc = subprocess.Popen([nodePath, scriptPath],
+                                                   stdin=subprocess.PIPE, stdout=subprocess.PIPE)
+              # start reader thread
+              readerThread = threading.Thread(target=NodeCommClient.__reader, args=(self.__serverProc.stdout, self.__msgq, self.__eventq))
+              readerThread.daemon = True
+              readerThread.start()
 
         self.__debugProc = None
         self.__breakpoints = []
@@ -62,8 +71,8 @@ class NodeCommClient(CommClient):
     # work in progress
     def debug(self, file):
         # TODO: msg if already debugging
-        self.__debugProc = subprocess.Popen(["node", "debug", file],
-                                     stdin=subprocess.PIPE, stdout=subprocess.PIPE)
+        self.__debugProc = subprocess.Popen(["node", "--debug", file],
+                                            stdin=subprocess.PIPE, stdout=subprocess.PIPE)
 
     def makeTimeoutMsg(self, cmd, seq):
        jsonDict = json.loads(cmd)
@@ -82,17 +91,20 @@ class NodeCommClient(CommClient):
         send single-line command string; no sequence number; wait for response
         this assumes stdin/stdout; for TCP, need to add correlation with sequence numbers
         """
-        self.postCmd(cmd)
-        reqSeq = -1
-        try:
-           while reqSeq < seq:
-              data = self.__msgq.get(True,1)
-              dict = json.loads(data)
-              reqSeq = dict['request_seq']
-           if cb:
-              cb(dict)
-        except queue.Empty:
-           print("queue timeout")
+        if self.postCmd(cmd):
+           reqSeq = -1
+           try:
+              while reqSeq < seq:
+                 data = self.__msgq.get(True,1)
+                 dict = json.loads(data)
+                 reqSeq = dict['request_seq']
+              if cb:
+                 cb(dict)
+           except queue.Empty:
+              print("queue timeout")
+              if (cb):
+                 cb(self.makeTimeoutMsg(cmd, seq))
+        else:
            if (cb):
               cb(self.makeTimeoutMsg(cmd, seq))
      
@@ -100,26 +112,33 @@ class NodeCommClient(CommClient):
         """
         Sends the command and wait for the result and returns it
         """
-        self.postCmd(cmd)
-        reqSeq = -1
-        try: 
-           while reqSeq < seq:
-              data = self.__msgq.get(True,1)
-              dict = json.loads(data)
-              reqSeq = dict['request_seq']
-           return dict
-        except queue.Empty:
-           print("queue timeout")
-           return self.makeTimeoutMsg(cmd, seq)
+        if self.postCmd(cmd):
+           reqSeq = -1
+           try: 
+               while reqSeq < seq:
+                   data = self.__msgq.get(True,1)
+                   dict = json.loads(data)
+                   reqSeq = dict['request_seq']
+               return dict
+           except queue.Empty:
+               print("queue timeout")
+               return self.makeTimeoutMsg(cmd, seq)
+        else:
+            return self.makeTimeoutMsg(cmd, seq)
 
     def postCmd(self, cmd):
         """
         Post command to server; no response needed
         """
         print("request: "+cmd)
-        cmd = cmd + "\n"
-        self.__serverProc.stdin.write(cmd.encode())
-        self.__serverProc.stdin.flush()
+        if not self.__serverProc:
+           print("can not send request; node process not started")
+           return False
+        else:
+           cmd = cmd + "\n"
+           self.__serverProc.stdin.write(cmd.encode())
+           self.__serverProc.stdin.flush()
+           return True
 
     def getEvent(self):
         """
