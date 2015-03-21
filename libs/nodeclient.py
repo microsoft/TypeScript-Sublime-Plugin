@@ -51,6 +51,7 @@ class NodeCommClient(CommClient):
            if not nodePath:
               path_list = os.environ["PATH"] + os.pathsep + "/usr/local/bin"
               print("Unable to find executable file for node on path list: " + path_list)
+              print("To specify the node executable file name, use the 'node_path' setting")
               self.__serverProc = None
            else:
               print("Found node executable at " + nodePath)
