@@ -365,7 +365,6 @@ def open_file(view):
     cli.service.open(view.file_name(), tabSize, indentSize)
 
 def tab_size_changed(view):
-    print("tab size changed for " + view.file_name() + " to " + str(view.settings().get('tab_size')))
     reconfig_file(view)
     clientInfo = cli.getOrAddFile(view.file_name())
     clientInfo.pendingChanges = True
@@ -717,7 +716,7 @@ class TypeScriptListener(sublime_plugin.EventListener):
             info.lastModChangeCount = self.change_count(view)
             self.mod = True
             (lastCommand, args, rept) = view.command_history(0)
-            print("modified " + view.file_name() + " command " + lastCommand + " args " + str(args) + " rept " + str(rept))
+#            print("modified " + view.file_name() + " command " + lastCommand + " args " + str(args) + " rept " + str(rept))
             if info.preChangeSent:
                 # change handled in on_text_command
                 info.clientInfo.changeCount = self.change_count(view)
@@ -1022,9 +1021,7 @@ class TypescriptFinishRenameCommand(sublime_plugin.TextCommand):
                                       { "locs" : innerLocsValue, "name" : newName })
                     clientInfo.loadHandler = applyLocs
                 elif renameView != self.view:
-                    print(" got to " + renameView.file_name())
                     innerLocsValue = locsToValue(innerLocs)
-                    print(innerLocsValue)
                     renameView.run_command('typescript_delayed_rename_file',
                                            { "locs" : innerLocsValue, "name" : newName })
                 else:
@@ -1045,8 +1042,6 @@ def extractLineOffsetFromDict(lc):
 class TypescriptDelayedRenameFile(sublime_plugin.TextCommand):
     def run(self, text, locs = None, name = ""):
         if locs and (len(name) > 0):
-            print(name)
-            print(locs)
             for innerLoc in locs:
                 startlc = innerLoc['start']
                 (startl, startc) = extractLineOffsetFromDict(startlc)
@@ -1129,9 +1124,6 @@ class TypescriptGoToRefCommand(sublime_plugin.TextCommand):
 # TODO: generalize this to work for all types of references
 class TypescriptNextRefCommand(sublime_plugin.TextCommand):
     def run(self, text):
-        print("next ref")
-        if (self.view.file_name()):
-            print(self.view.file_name())
         refView = getRefView()
         if refView:
             refInfo = cli.getRefInfo()
@@ -1145,9 +1137,6 @@ class TypescriptNextRefCommand(sublime_plugin.TextCommand):
 # TODO: generalize this to work for all types of references
 class TypescriptPrevRefCommand(sublime_plugin.TextCommand):
     def run(self, text):
-        print("prev ref")
-        if (self.view.file_name()):
-            print(self.view.file_name())
         refView = getRefView()
         if refView:
             refInfo = cli.getRefInfo()
@@ -1200,7 +1189,6 @@ class TypescriptPopulateRefs(sublime_plugin.TextCommand):
             for ref in refs:
                 filename = ref.file
                 if prevFilename != filename:
-                    print("refs from " + filename)
                     fileCount+=1
                     if prevFilename != "":
                         self.view.insert(text, self.view.sel()[0].begin(), "\n")
@@ -1337,7 +1325,6 @@ class TypescriptFormatBrackets(sublime_plugin.TextCommand):
         checkUpdateView(self.view)
         sel=self.view.sel()
         if (len(sel) == 1):
-            print('format brackets')
             originalPos = sel[0].begin()
             bracketChar = self.view.substr(originalPos)
             if bracketChar != "}":
@@ -1417,7 +1404,6 @@ def plugin_loaded():
            else:
               print("no current ref line")
         else:
-           print("trying to close ref view")
            window = sublime.active_window()
            if window:
               window.focus_view(refView)
