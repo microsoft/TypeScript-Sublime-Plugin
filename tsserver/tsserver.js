@@ -23601,6 +23601,22 @@ var ts;
     ts.ioReadTime = 0;
     ts.ioWriteTime = 0;
     ts.version = "1.5.0.0";
+    function findConfigFile(searchPath) {
+        var fileName = "tsconfig.json";
+        while (true) {
+            if (ts.sys.fileExists(fileName)) {
+                return fileName;
+            }
+            var parentPath = ts.getDirectoryPath(searchPath);
+            if (parentPath === searchPath) {
+                break;
+            }
+            searchPath = parentPath;
+            fileName = "../" + fileName;
+        }
+        return undefined;
+    }
+    ts.findConfigFile = findConfigFile;
     function createCompilerHost(options, setParentNodes) {
         var currentDirectory;
         var existingDirectories = {};
@@ -33167,12 +33183,7 @@ var ts;
                 this.filenameToSourceFile = {};
                 this.updateGraphSeq = 0;
                 this.openRefCount = 0;
-                if (projectOptions && projectOptions.compilerOptions) {
-                    this.compilerService = new CompilerService(this, projectOptions.compilerOptions);
-                }
-                else {
-                    this.compilerService = new CompilerService(this);
-                }
+                this.compilerService = new CompilerService(this, projectOptions && projectOptions.compilerOptions);
             }
             Project.prototype.addOpenRef = function () {
                 this.openRefCount++;
@@ -33346,7 +33357,7 @@ var ts;
                 }
                 this.printProjects();
             };
-            ProjectService.prototype.gcConfiguredProjects = function () {
+            ProjectService.prototype.updateConfiguredProjectList = function () {
                 var configuredProjects = [];
                 for (var i = 0, len = this.configuredProjects.length; i < len; i++) {
                     if (this.configuredProjects[i].openRefCount > 0) {
@@ -33394,7 +33405,7 @@ var ts;
                         this.openFileRoots.push(info);
                     }
                 }
-                this.gcConfiguredProjects();
+                this.updateConfiguredProjectList();
             };
             ProjectService.prototype.closeOpenFile = function (info) {
                 var openFileRoots = [];
@@ -33545,13 +33556,18 @@ var ts;
                 return info;
             };
             ProjectService.prototype.openClientFile = function (fileName) {
-                var configFileName = this.findConfigFile(fileName);
+                var searchPath = ts.normalizePath(ts.getDirectoryPath(fileName));
+                var configFileName = ts.findConfigFile(searchPath);
+                if (configFileName) {
+                    configFileName = getAbsolutePath(configFileName, searchPath);
+                }
                 if (configFileName && (!this.configProjectIsActive(configFileName))) {
                     var configResult = this.openConfigFile(configFileName, fileName);
                     if (!configResult.success) {
                         this.log("Error opening config file " + configFileName + " " + configResult.errorMsg);
                     }
                     else {
+                        this.log("Opened configuration file " + configFileName, "Info");
                         this.configuredProjects.push(configResult.project);
                     }
                 }
@@ -33631,21 +33647,6 @@ var ts;
                 }
                 return false;
             };
-            ProjectService.prototype.findConfigFile = function (openedFileName) {
-                var searchPath = ts.getDirectoryPath(openedFileName);
-                while (true) {
-                    var fileName = searchPath + ts.directorySeparator + "tsconfig.json";
-                    if (ts.sys.fileExists(fileName)) {
-                        return fileName;
-                    }
-                    var parentPath = ts.getDirectoryPath(searchPath);
-                    if (parentPath === searchPath) {
-                        break;
-                    }
-                    searchPath = parentPath;
-                }
-                return undefined;
-            };
             ProjectService.prototype.openConfigFile = function (configFilename, clientFileName) {
                 configFilename = ts.normalizePath(configFilename);
                 var dirPath = ts.getDirectoryPath(configFilename);
@@ -33683,9 +33684,9 @@ var ts;
                 }
             };
             ProjectService.prototype.createProject = function (projectFilename, projectOptions) {
-                var eproj = new Project(this, projectOptions);
-                eproj.projectFilename = projectFilename;
-                return eproj;
+                var project = new Project(this, projectOptions);
+                project.projectFilename = projectFilename;
+                return project;
             };
             return ProjectService;
         })();
@@ -33706,7 +33707,6 @@ var ts;
             }
             CompilerService.prototype.setCompilerOptions = function (opt) {
                 this.settings = opt;
-                this.settings.target = 1;
                 this.host.setCompilationSettings(opt);
             };
             CompilerService.prototype.isExternalModule = function (filename) {
@@ -35026,7 +35026,7 @@ var ts;
                     return undefined;
                 }
                 return completions.entries.reduce(function (result, entry) {
-                    if (completions.isMemberCompletion || entry.name.indexOf(prefix) == 0) {
+                    if (completions.isMemberCompletion || (entry.name.toLowerCase().indexOf(prefix.toLowerCase()) == 0)) {
                         result.push(entry);
                     }
                     return result;
