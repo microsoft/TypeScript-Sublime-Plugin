@@ -57,11 +57,11 @@ class NodeCommClient(CommClient):
               print("Found node executable at " + nodePath)
               self.__serverProc = subprocess.Popen([nodePath, scriptPath],
                                                    stdin=subprocess.PIPE, stdout=subprocess.PIPE)
-              # start reader thread
-              readerThread = threading.Thread(target=NodeCommClient.__reader, args=(self.__serverProc.stdout, self.__msgq, self.__eventq))
-              readerThread.daemon = True
-              readerThread.start()
-
+        # start reader thread
+        if self.__serverProc:
+           readerThread = threading.Thread(target=NodeCommClient.__reader, args=(self.__serverProc.stdout, self.__msgq, self.__eventq))
+           readerThread.daemon = True
+           readerThread.start()
         self.__debugProc = None
         self.__breakpoints = []
 
