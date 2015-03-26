@@ -12355,6 +12355,7 @@ var ts;
             var expandingFlags;
             var depth = 0;
             var overflow = false;
+            var elaborateErrors = false;
             ts.Debug.assert(relation !== identityRelation || !errorNode, "no error reporting in identity checking");
             var result = isRelatedTo(source, target, errorNode !== undefined, headMessage);
             if (overflow) {
@@ -12363,7 +12364,8 @@ var ts;
             else if (errorInfo) {
                 if (errorInfo.next === undefined) {
                     errorInfo = undefined;
-                    isRelatedTo(source, target, errorNode !== undefined, headMessage, true);
+                    elaborateErrors = true;
+                    isRelatedTo(source, target, errorNode !== undefined, headMessage);
                 }
                 if (containingMessageChain) {
                     errorInfo = ts.concatenateDiagnosticMessageChains(containingMessageChain, errorInfo);
@@ -12374,8 +12376,7 @@ var ts;
             function reportError(message, arg0, arg1, arg2) {
                 errorInfo = ts.chainDiagnosticMessages(errorInfo, message, arg0, arg1, arg2);
             }
-            function isRelatedTo(source, target, reportErrors, headMessage, elaborateErrors) {
-                if (elaborateErrors === void 0) { elaborateErrors = false; }
+            function isRelatedTo(source, target, reportErrors, headMessage) {
                 var result;
                 if (source === target)
                     return -1;
@@ -12445,7 +12446,7 @@ var ts;
                     var reportStructuralErrors = reportErrors && errorInfo === saveErrorInfo;
                     var sourceOrApparentType = relation === identityRelation ? source : getApparentType(source);
                     if (sourceOrApparentType.flags & 48128 && target.flags & 48128 &&
-                        (result = objectTypeRelatedTo(sourceOrApparentType, target, reportStructuralErrors, elaborateErrors))) {
+                        (result = objectTypeRelatedTo(sourceOrApparentType, target, reportStructuralErrors))) {
                         errorInfo = saveErrorInfo;
                         return result;
                     }
@@ -12534,8 +12535,7 @@ var ts;
                     return 0;
                 }
             }
-            function objectTypeRelatedTo(source, target, reportErrors, elaborateErrors) {
-                if (elaborateErrors === void 0) { elaborateErrors = false; }
+            function objectTypeRelatedTo(source, target, reportErrors) {
                 if (overflow) {
                     return 0;
                 }
@@ -33802,11 +33802,833 @@ var ts;
 /// <reference path="..\compiler\commandLineParser.ts" />
 /// <reference path="..\services\services.ts" />
 /// <reference path="node.d.ts" />
+/// <reference path="protocol.d.ts" />
+/// <reference path="editorServices.ts" />
+var ts;
+(function (ts) {
+    var server;
+    (function (server) {
+        var spaceCache = [];
+        function generateSpaces(n) {
+            if (!spaceCache[n]) {
+                var strBuilder = "";
+                for (var i = 0; i < n; i++) {
+                    strBuilder += " ";
+                }
+                spaceCache[n] = strBuilder;
+            }
+            return spaceCache[n];
+        }
+        server.generateSpaces = generateSpaces;
+        function compareNumber(a, b) {
+            if (a < b) {
+                return -1;
+            }
+            else if (a == b) {
+                return 0;
+            }
+            else
+                return 1;
+        }
+        function compareFileStart(a, b) {
+            if (a.file < b.file) {
+                return -1;
+            }
+            else if (a.file == b.file) {
+                var n = compareNumber(a.start.line, b.start.line);
+                if (n == 0) {
+                    return compareNumber(a.start.offset, b.start.offset);
+                }
+                else
+                    return n;
+            }
+            else {
+                return 1;
+            }
+        }
+        function formatDiag(fileName, project, diag) {
+            return {
+                start: project.compilerService.host.positionToLineOffset(fileName, diag.start),
+                end: project.compilerService.host.positionToLineOffset(fileName, diag.start + diag.length),
+                text: ts.flattenDiagnosticMessageText(diag.messageText, "\n")
+            };
+        }
+        function allEditsBeforePos(edits, pos) {
+            for (var i = 0, len = edits.length; i < len; i++) {
+                if (ts.textSpanEnd(edits[i].span) >= pos) {
+                    return false;
+                }
+            }
+            return true;
+        }
+        var CommandNames;
+        (function (CommandNames) {
+            CommandNames.Change = "change";
+            CommandNames.Close = "close";
+            CommandNames.Completions = "completions";
+            CommandNames.CompletionDetails = "completionEntryDetails";
+            CommandNames.SignatureHelp = "signatureHelp";
+            CommandNames.Configure = "configure";
+            CommandNames.Definition = "definition";
+            CommandNames.Format = "format";
+            CommandNames.Formatonkey = "formatonkey";
+            CommandNames.Geterr = "geterr";
+            CommandNames.NavBar = "navbar";
+            CommandNames.Navto = "navto";
+            CommandNames.Open = "open";
+            CommandNames.Quickinfo = "quickinfo";
+            CommandNames.References = "references";
+            CommandNames.Reload = "reload";
+            CommandNames.Rename = "rename";
+            CommandNames.Saveto = "saveto";
+            CommandNames.Brace = "brace";
+            CommandNames.Unknown = "unknown";
+        })(CommandNames = server.CommandNames || (server.CommandNames = {}));
+        var Errors;
+        (function (Errors) {
+            Errors.NoProject = new Error("No Project.");
+        })(Errors || (Errors = {}));
+        var Session = (function () {
+            function Session(host, logger) {
+                var _this = this;
+                this.host = host;
+                this.logger = logger;
+                this.pendingOperation = false;
+                this.fileHash = {};
+                this.nextFileId = 1;
+                this.changeSeq = 0;
+                this.projectService =
+                    new server.ProjectService(host, logger, function (eventName, project, fileName) {
+                        _this.handleEvent(eventName, project, fileName);
+                    });
+            }
+            Session.prototype.handleEvent = function (eventName, project, fileName) {
+                var _this = this;
+                if (eventName == "context") {
+                    this.projectService.log("got context event, updating diagnostics for" + fileName, "Info");
+                    this.updateErrorCheck([{ fileName: fileName, project: project }], this.changeSeq, function (n) { return n == _this.changeSeq; }, 100);
+                }
+            };
+            Session.prototype.logError = function (err, cmd) {
+                var typedErr = err;
+                var msg = "Exception on executing command " + cmd;
+                if (typedErr.message) {
+                    msg += ":\n" + typedErr.message;
+                    if (typedErr.stack) {
+                        msg += "\n" + typedErr.stack;
+                    }
+                }
+                this.projectService.log(msg);
+            };
+            Session.prototype.sendLineToClient = function (line) {
+                this.host.write(line + this.host.newLine);
+            };
+            Session.prototype.send = function (msg) {
+                var json = JSON.stringify(msg);
+                if (this.logger.isVerbose()) {
+                    this.logger.info(msg.type + ": " + json);
+                }
+                this.sendLineToClient('Content-Length: ' + (1 + Buffer.byteLength(json, 'utf8')) +
+                    '\r\n\r\n' + json);
+            };
+            Session.prototype.event = function (info, eventName) {
+                var ev = {
+                    seq: 0,
+                    type: "event",
+                    event: eventName,
+                    body: info
+                };
+                this.send(ev);
+            };
+            Session.prototype.response = function (info, cmdName, reqSeq, errorMsg) {
+                if (reqSeq === void 0) { reqSeq = 0; }
+                var res = {
+                    seq: 0,
+                    type: "response",
+                    command: cmdName,
+                    request_seq: reqSeq,
+                    success: !errorMsg
+                };
+                if (!errorMsg) {
+                    res.body = info;
+                }
+                else {
+                    res.message = errorMsg;
+                }
+                this.send(res);
+            };
+            Session.prototype.output = function (body, commandName, requestSequence, errorMessage) {
+                if (requestSequence === void 0) { requestSequence = 0; }
+                this.response(body, commandName, requestSequence, errorMessage);
+            };
+            Session.prototype.semanticCheck = function (file, project) {
+                try {
+                    var diags = project.compilerService.languageService.getSemanticDiagnostics(file);
+                    if (diags) {
+                        var bakedDiags = diags.map(function (diag) { return formatDiag(file, project, diag); });
+                        this.event({ file: file, diagnostics: bakedDiags }, "semanticDiag");
+                    }
+                }
+                catch (err) {
+                    this.logError(err, "semantic check");
+                }
+            };
+            Session.prototype.syntacticCheck = function (file, project) {
+                try {
+                    var diags = project.compilerService.languageService.getSyntacticDiagnostics(file);
+                    if (diags) {
+                        var bakedDiags = diags.map(function (diag) { return formatDiag(file, project, diag); });
+                        this.event({ file: file, diagnostics: bakedDiags }, "syntaxDiag");
+                    }
+                }
+                catch (err) {
+                    this.logError(err, "syntactic check");
+                }
+            };
+            Session.prototype.errorCheck = function (file, project) {
+                this.syntacticCheck(file, project);
+                this.semanticCheck(file, project);
+            };
+            Session.prototype.updateProjectStructure = function (seq, matchSeq, ms) {
+                var _this = this;
+                if (ms === void 0) { ms = 1500; }
+                setTimeout(function () {
+                    if (matchSeq(seq)) {
+                        _this.projectService.updateProjectStructure();
+                    }
+                }, ms);
+            };
+            Session.prototype.updateErrorCheck = function (checkList, seq, matchSeq, ms, followMs) {
+                var _this = this;
+                if (ms === void 0) { ms = 1500; }
+                if (followMs === void 0) { followMs = 200; }
+                if (followMs > ms) {
+                    followMs = ms;
+                }
+                if (this.errorTimer) {
+                    clearTimeout(this.errorTimer);
+                }
+                if (this.immediateId) {
+                    clearImmediate(this.immediateId);
+                    this.immediateId = undefined;
+                }
+                var index = 0;
+                var checkOne = function () {
+                    if (matchSeq(seq)) {
+                        var checkSpec = checkList[index++];
+                        if (checkSpec.project.getSourceFileFromName(checkSpec.fileName, true)) {
+                            _this.syntacticCheck(checkSpec.fileName, checkSpec.project);
+                            _this.immediateId = setImmediate(function () {
+                                _this.semanticCheck(checkSpec.fileName, checkSpec.project);
+                                _this.immediateId = undefined;
+                                if (checkList.length > index) {
+                                    _this.errorTimer = setTimeout(checkOne, followMs);
+                                }
+                                else {
+                                    _this.errorTimer = undefined;
+                                }
+                            });
+                        }
+                    }
+                };
+                if ((checkList.length > index) && (matchSeq(seq))) {
+                    this.errorTimer = setTimeout(checkOne, ms);
+                }
+            };
+            Session.prototype.getDefinition = function (line, offset, fileName) {
+                var file = ts.normalizePath(fileName);
+                var project = this.projectService.getProjectForFile(file);
+                if (!project) {
+                    throw Errors.NoProject;
+                }
+                var compilerService = project.compilerService;
+                var position = compilerService.host.lineOffsetToPosition(file, line, offset);
+                var definitions = compilerService.languageService.getDefinitionAtPosition(file, position);
+                if (!definitions) {
+                    return undefined;
+                }
+                return definitions.map(function (def) { return ({
+                    file: def.fileName,
+                    start: compilerService.host.positionToLineOffset(def.fileName, def.textSpan.start),
+                    end: compilerService.host.positionToLineOffset(def.fileName, ts.textSpanEnd(def.textSpan))
+                }); });
+            };
+            Session.prototype.getRenameLocations = function (line, offset, fileName, findInComments, findInStrings) {
+                var file = ts.normalizePath(fileName);
+                var project = this.projectService.getProjectForFile(file);
+                if (!project) {
+                    throw Errors.NoProject;
+                }
+                var compilerService = project.compilerService;
+                var position = compilerService.host.lineOffsetToPosition(file, line, offset);
+                var renameInfo = compilerService.languageService.getRenameInfo(file, position);
+                if (!renameInfo) {
+                    return undefined;
+                }
+                if (!renameInfo.canRename) {
+                    return {
+                        info: renameInfo,
+                        locs: []
+                    };
+                }
+                var renameLocations = compilerService.languageService.findRenameLocations(file, position, findInStrings, findInComments);
+                if (!renameLocations) {
+                    return undefined;
+                }
+                var bakedRenameLocs = renameLocations.map(function (location) { return ({
+                    file: location.fileName,
+                    start: compilerService.host.positionToLineOffset(location.fileName, location.textSpan.start),
+                    end: compilerService.host.positionToLineOffset(location.fileName, ts.textSpanEnd(location.textSpan))
+                }); }).sort(function (a, b) {
+                    if (a.file < b.file) {
+                        return -1;
+                    }
+                    else if (a.file > b.file) {
+                        return 1;
+                    }
+                    else {
+                        if (a.start.line < b.start.line) {
+                            return 1;
+                        }
+                        else if (a.start.line > b.start.line) {
+                            return -1;
+                        }
+                        else {
+                            return b.start.offset - a.start.offset;
+                        }
+                    }
+                }).reduce(function (accum, cur) {
+                    var curFileAccum;
+                    if (accum.length > 0) {
+                        curFileAccum = accum[accum.length - 1];
+                        if (curFileAccum.file != cur.file) {
+                            curFileAccum = undefined;
+                        }
+                    }
+                    if (!curFileAccum) {
+                        curFileAccum = { file: cur.file, locs: [] };
+                        accum.push(curFileAccum);
+                    }
+                    curFileAccum.locs.push({ start: cur.start, end: cur.end });
+                    return accum;
+                }, []);
+                return { info: renameInfo, locs: bakedRenameLocs };
+            };
+            Session.prototype.getReferences = function (line, offset, fileName) {
+                var file = ts.normalizePath(fileName);
+                var project = this.projectService.getProjectForFile(file);
+                if (!project) {
+                    throw Errors.NoProject;
+                }
+                var compilerService = project.compilerService;
+                var position = compilerService.host.lineOffsetToPosition(file, line, offset);
+                var references = compilerService.languageService.getReferencesAtPosition(file, position);
+                if (!references) {
+                    return undefined;
+                }
+                var nameInfo = compilerService.languageService.getQuickInfoAtPosition(file, position);
+                if (!nameInfo) {
+                    return undefined;
+                }
+                var displayString = ts.displayPartsToString(nameInfo.displayParts);
+                var nameSpan = nameInfo.textSpan;
+                var nameColStart = compilerService.host.positionToLineOffset(file, nameSpan.start).offset;
+                var nameText = compilerService.host.getScriptSnapshot(file).getText(nameSpan.start, ts.textSpanEnd(nameSpan));
+                var bakedRefs = references.map(function (ref) {
+                    var start = compilerService.host.positionToLineOffset(ref.fileName, ref.textSpan.start);
+                    var refLineSpan = compilerService.host.lineToTextSpan(ref.fileName, start.line - 1);
+                    var snap = compilerService.host.getScriptSnapshot(ref.fileName);
+                    var lineText = snap.getText(refLineSpan.start, ts.textSpanEnd(refLineSpan)).replace(/\r|\n/g, "");
+                    return {
+                        file: ref.fileName,
+                        start: start,
+                        lineText: lineText,
+                        end: compilerService.host.positionToLineOffset(ref.fileName, ts.textSpanEnd(ref.textSpan)),
+                        isWriteAccess: ref.isWriteAccess
+                    };
+                }).sort(compareFileStart);
+                return {
+                    refs: bakedRefs,
+                    symbolName: nameText,
+                    symbolStartOffset: nameColStart,
+                    symbolDisplayString: displayString
+                };
+            };
+            Session.prototype.openClientFile = function (fileName) {
+                var file = ts.normalizePath(fileName);
+                this.projectService.openClientFile(file);
+            };
+            Session.prototype.getQuickInfo = function (line, offset, fileName) {
+                var file = ts.normalizePath(fileName);
+                var project = this.projectService.getProjectForFile(file);
+                if (!project) {
+                    throw Errors.NoProject;
+                }
+                var compilerService = project.compilerService;
+                var position = compilerService.host.lineOffsetToPosition(file, line, offset);
+                var quickInfo = compilerService.languageService.getQuickInfoAtPosition(file, position);
+                if (!quickInfo) {
+                    return undefined;
+                }
+                var displayString = ts.displayPartsToString(quickInfo.displayParts);
+                var docString = ts.displayPartsToString(quickInfo.documentation);
+                return {
+                    kind: quickInfo.kind,
+                    kindModifiers: quickInfo.kindModifiers,
+                    start: compilerService.host.positionToLineOffset(file, quickInfo.textSpan.start),
+                    end: compilerService.host.positionToLineOffset(file, ts.textSpanEnd(quickInfo.textSpan)),
+                    displayString: displayString,
+                    documentation: docString
+                };
+            };
+            Session.prototype.getFormattingEditsForRange = function (line, offset, endLine, endOffset, fileName) {
+                var file = ts.normalizePath(fileName);
+                var project = this.projectService.getProjectForFile(file);
+                if (!project) {
+                    throw Errors.NoProject;
+                }
+                var compilerService = project.compilerService;
+                var startPosition = compilerService.host.lineOffsetToPosition(file, line, offset);
+                var endPosition = compilerService.host.lineOffsetToPosition(file, endLine, endOffset);
+                var edits = compilerService.languageService.getFormattingEditsForRange(file, startPosition, endPosition, this.projectService.getFormatCodeOptions(file));
+                if (!edits) {
+                    return undefined;
+                }
+                return edits.map(function (edit) {
+                    return {
+                        start: compilerService.host.positionToLineOffset(file, edit.span.start),
+                        end: compilerService.host.positionToLineOffset(file, ts.textSpanEnd(edit.span)),
+                        newText: edit.newText ? edit.newText : ""
+                    };
+                });
+            };
+            Session.prototype.getFormattingEditsAfterKeystroke = function (line, offset, key, fileName) {
+                var file = ts.normalizePath(fileName);
+                var project = this.projectService.getProjectForFile(file);
+                if (!project) {
+                    throw Errors.NoProject;
+                }
+                var compilerService = project.compilerService;
+                var position = compilerService.host.lineOffsetToPosition(file, line, offset);
+                var formatOptions = this.projectService.getFormatCodeOptions(file);
+                var edits = compilerService.languageService.getFormattingEditsAfterKeystroke(file, position, key, formatOptions);
+                if ((key == "\n") && ((!edits) || (edits.length == 0) || allEditsBeforePos(edits, position))) {
+                    var scriptInfo = compilerService.host.getScriptInfo(file);
+                    if (scriptInfo) {
+                        var lineInfo = scriptInfo.getLineInfo(line);
+                        if (lineInfo && (lineInfo.leaf) && (lineInfo.leaf.text)) {
+                            var lineText = lineInfo.leaf.text;
+                            if (lineText.search("\\S") < 0) {
+                                var editorOptions = {
+                                    IndentSize: formatOptions.IndentSize,
+                                    TabSize: formatOptions.TabSize,
+                                    NewLineCharacter: "\n",
+                                    ConvertTabsToSpaces: true
+                                };
+                                var indentPosition = compilerService.languageService.getIndentationAtPosition(file, position, editorOptions);
+                                for (var i = 0, len = lineText.length; i < len; i++) {
+                                    if (lineText.charAt(i) == " ") {
+                                        indentPosition--;
+                                    }
+                                    else {
+                                        break;
+                                    }
+                                }
+                                if (indentPosition > 0) {
+                                    var spaces = generateSpaces(indentPosition);
+                                    edits.push({ span: ts.createTextSpanFromBounds(position, position), newText: spaces });
+                                }
+                                else if (indentPosition < 0) {
+                                    edits.push({
+                                        span: ts.createTextSpanFromBounds(position, position - indentPosition),
+                                        newText: ""
+                                    });
+                                }
+                            }
+                        }
+                    }
+                }
+                if (!edits) {
+                    return undefined;
+                }
+                return edits.map(function (edit) {
+                    return {
+                        start: compilerService.host.positionToLineOffset(file, edit.span.start),
+                        end: compilerService.host.positionToLineOffset(file, ts.textSpanEnd(edit.span)),
+                        newText: edit.newText ? edit.newText : ""
+                    };
+                });
+            };
+            Session.prototype.getCompletions = function (line, offset, prefix, fileName) {
+                if (!prefix) {
+                    prefix = "";
+                }
+                var file = ts.normalizePath(fileName);
+                var project = this.projectService.getProjectForFile(file);
+                if (!project) {
+                    throw Errors.NoProject;
+                }
+                var compilerService = project.compilerService;
+                var position = compilerService.host.lineOffsetToPosition(file, line, offset);
+                var completions = compilerService.languageService.getCompletionsAtPosition(file, position);
+                if (!completions) {
+                    return undefined;
+                }
+                return completions.entries.reduce(function (result, entry) {
+                    if (completions.isMemberCompletion || (entry.name.toLowerCase().indexOf(prefix.toLowerCase()) == 0)) {
+                        result.push(entry);
+                    }
+                    return result;
+                }, []).sort(function (a, b) { return a.name.localeCompare(b.name); });
+            };
+            Session.prototype.getCompletionEntryDetails = function (line, offset, entryNames, fileName) {
+                var file = ts.normalizePath(fileName);
+                var project = this.projectService.getProjectForFile(file);
+                if (!project) {
+                    throw Errors.NoProject;
+                }
+                var compilerService = project.compilerService;
+                var position = compilerService.host.lineOffsetToPosition(file, line, offset);
+                return entryNames.reduce(function (accum, entryName) {
+                    var details = compilerService.languageService.getCompletionEntryDetails(file, position, entryName);
+                    if (details) {
+                        accum.push(details);
+                    }
+                    return accum;
+                }, []);
+            };
+            Session.prototype.getSignatureHelpItems = function (line, offset, fileName) {
+                var file = ts.normalizePath(fileName);
+                var project = this.projectService.getProjectForFile(file);
+                if (!project) {
+                    throw Errors.NoProject;
+                }
+                var compilerService = project.compilerService;
+                var position = compilerService.host.lineOffsetToPosition(file, line, offset);
+                var helpItems = compilerService.languageService.getSignatureHelpItems(file, position);
+                if (!helpItems) {
+                    return undefined;
+                }
+                var span = helpItems.applicableSpan;
+                var result = {
+                    items: helpItems.items,
+                    applicableSpan: {
+                        start: compilerService.host.positionToLineOffset(file, span.start),
+                        end: compilerService.host.positionToLineOffset(file, span.start + span.length)
+                    },
+                    selectedItemIndex: helpItems.selectedItemIndex,
+                    argumentIndex: helpItems.argumentIndex,
+                    argumentCount: helpItems.argumentCount
+                };
+                return result;
+            };
+            Session.prototype.getDiagnostics = function (delay, fileNames) {
+                var _this = this;
+                var checkList = fileNames.reduce(function (accum, fileName) {
+                    fileName = ts.normalizePath(fileName);
+                    var project = _this.projectService.getProjectForFile(fileName);
+                    if (project) {
+                        accum.push({ fileName: fileName, project: project });
+                    }
+                    return accum;
+                }, []);
+                if (checkList.length > 0) {
+                    this.updateErrorCheck(checkList, this.changeSeq, function (n) { return n == _this.changeSeq; }, delay);
+                }
+            };
+            Session.prototype.change = function (line, offset, endLine, endOffset, insertString, fileName) {
+                var _this = this;
+                var file = ts.normalizePath(fileName);
+                var project = this.projectService.getProjectForFile(file);
+                if (project) {
+                    var compilerService = project.compilerService;
+                    var start = compilerService.host.lineOffsetToPosition(file, line, offset);
+                    var end = compilerService.host.lineOffsetToPosition(file, endLine, endOffset);
+                    if (start >= 0) {
+                        compilerService.host.editScript(file, start, end, insertString);
+                        this.changeSeq++;
+                    }
+                    this.updateProjectStructure(this.changeSeq, function (n) { return n == _this.changeSeq; });
+                }
+            };
+            Session.prototype.reload = function (fileName, tempFileName, reqSeq) {
+                var _this = this;
+                if (reqSeq === void 0) { reqSeq = 0; }
+                var file = ts.normalizePath(fileName);
+                var tmpfile = ts.normalizePath(tempFileName);
+                var project = this.projectService.getProjectForFile(file);
+                if (project) {
+                    this.changeSeq++;
+                    project.compilerService.host.reloadScript(file, tmpfile, function () {
+                        _this.output(undefined, CommandNames.Reload, reqSeq);
+                    });
+                }
+            };
+            Session.prototype.saveToTmp = function (fileName, tempFileName) {
+                var file = ts.normalizePath(fileName);
+                var tmpfile = ts.normalizePath(tempFileName);
+                var project = this.projectService.getProjectForFile(file);
+                if (project) {
+                    project.compilerService.host.saveTo(file, tmpfile);
+                }
+            };
+            Session.prototype.closeClientFile = function (fileName) {
+                var file = ts.normalizePath(fileName);
+                this.projectService.closeClientFile(file);
+            };
+            Session.prototype.decorateNavigationBarItem = function (project, fileName, items) {
+                var _this = this;
+                if (!items) {
+                    return undefined;
+                }
+                var compilerService = project.compilerService;
+                return items.map(function (item) { return ({
+                    text: item.text,
+                    kind: item.kind,
+                    kindModifiers: item.kindModifiers,
+                    spans: item.spans.map(function (span) { return ({
+                        start: compilerService.host.positionToLineOffset(fileName, span.start),
+                        end: compilerService.host.positionToLineOffset(fileName, ts.textSpanEnd(span))
+                    }); }),
+                    childItems: _this.decorateNavigationBarItem(project, fileName, item.childItems)
+                }); });
+            };
+            Session.prototype.getNavigationBarItems = function (fileName) {
+                var file = ts.normalizePath(fileName);
+                var project = this.projectService.getProjectForFile(file);
+                if (!project) {
+                    throw Errors.NoProject;
+                }
+                var compilerService = project.compilerService;
+                var items = compilerService.languageService.getNavigationBarItems(file);
+                if (!items) {
+                    return undefined;
+                }
+                return this.decorateNavigationBarItem(project, fileName, items);
+            };
+            Session.prototype.getNavigateToItems = function (searchValue, fileName, maxResultCount) {
+                var file = ts.normalizePath(fileName);
+                var project = this.projectService.getProjectForFile(file);
+                if (!project) {
+                    throw Errors.NoProject;
+                }
+                var compilerService = project.compilerService;
+                var navItems = compilerService.languageService.getNavigateToItems(searchValue, maxResultCount);
+                if (!navItems) {
+                    return undefined;
+                }
+                return navItems.map(function (navItem) {
+                    var start = compilerService.host.positionToLineOffset(navItem.fileName, navItem.textSpan.start);
+                    var end = compilerService.host.positionToLineOffset(navItem.fileName, ts.textSpanEnd(navItem.textSpan));
+                    var bakedItem = {
+                        name: navItem.name,
+                        kind: navItem.kind,
+                        file: navItem.fileName,
+                        start: start,
+                        end: end
+                    };
+                    if (navItem.kindModifiers && (navItem.kindModifiers != "")) {
+                        bakedItem.kindModifiers = navItem.kindModifiers;
+                    }
+                    if (navItem.matchKind != 'none') {
+                        bakedItem.matchKind = navItem.matchKind;
+                    }
+                    if (navItem.containerName && (navItem.containerName.length > 0)) {
+                        bakedItem.containerName = navItem.containerName;
+                    }
+                    if (navItem.containerKind && (navItem.containerKind.length > 0)) {
+                        bakedItem.containerKind = navItem.containerKind;
+                    }
+                    return bakedItem;
+                });
+            };
+            Session.prototype.getBraceMatching = function (line, offset, fileName) {
+                var file = ts.normalizePath(fileName);
+                var project = this.projectService.getProjectForFile(file);
+                if (!project) {
+                    throw Errors.NoProject;
+                }
+                var compilerService = project.compilerService;
+                var position = compilerService.host.lineOffsetToPosition(file, line, offset);
+                var spans = compilerService.languageService.getBraceMatchingAtPosition(file, position);
+                if (!spans) {
+                    return undefined;
+                }
+                return spans.map(function (span) { return ({
+                    start: compilerService.host.positionToLineOffset(file, span.start),
+                    end: compilerService.host.positionToLineOffset(file, span.start + span.length)
+                }); });
+            };
+            Session.prototype.onMessage = function (message) {
+                if (this.logger.isVerbose()) {
+                    this.logger.info("request: " + message);
+                    var start = process.hrtime();
+                }
+                try {
+                    var request = JSON.parse(message);
+                    var response;
+                    var errorMessage;
+                    var responseRequired = true;
+                    switch (request.command) {
+                        case CommandNames.Definition: {
+                            var defArgs = request.arguments;
+                            response = this.getDefinition(defArgs.line, defArgs.offset, defArgs.file);
+                            break;
+                        }
+                        case CommandNames.References: {
+                            var refArgs = request.arguments;
+                            response = this.getReferences(refArgs.line, refArgs.offset, refArgs.file);
+                            break;
+                        }
+                        case CommandNames.Rename: {
+                            var renameArgs = request.arguments;
+                            response = this.getRenameLocations(renameArgs.line, renameArgs.offset, renameArgs.file, renameArgs.findInComments, renameArgs.findInStrings);
+                            break;
+                        }
+                        case CommandNames.Open: {
+                            var openArgs = request.arguments;
+                            this.openClientFile(openArgs.file);
+                            responseRequired = false;
+                            break;
+                        }
+                        case CommandNames.Quickinfo: {
+                            var quickinfoArgs = request.arguments;
+                            response = this.getQuickInfo(quickinfoArgs.line, quickinfoArgs.offset, quickinfoArgs.file);
+                            break;
+                        }
+                        case CommandNames.Format: {
+                            var formatArgs = request.arguments;
+                            response = this.getFormattingEditsForRange(formatArgs.line, formatArgs.offset, formatArgs.endLine, formatArgs.endOffset, formatArgs.file);
+                            break;
+                        }
+                        case CommandNames.Formatonkey: {
+                            var formatOnKeyArgs = request.arguments;
+                            response = this.getFormattingEditsAfterKeystroke(formatOnKeyArgs.line, formatOnKeyArgs.offset, formatOnKeyArgs.key, formatOnKeyArgs.file);
+                            break;
+                        }
+                        case CommandNames.Completions: {
+                            var completionsArgs = request.arguments;
+                            response = this.getCompletions(completionsArgs.line, completionsArgs.offset, completionsArgs.prefix, completionsArgs.file);
+                            break;
+                        }
+                        case CommandNames.CompletionDetails: {
+                            var completionDetailsArgs = request.arguments;
+                            response =
+                                this.getCompletionEntryDetails(completionDetailsArgs.line, completionDetailsArgs.offset, completionDetailsArgs.entryNames, completionDetailsArgs.file);
+                            break;
+                        }
+                        case CommandNames.SignatureHelp: {
+                            var signatureHelpArgs = request.arguments;
+                            response = this.getSignatureHelpItems(signatureHelpArgs.line, signatureHelpArgs.offset, signatureHelpArgs.file);
+                            break;
+                        }
+                        case CommandNames.Geterr: {
+                            var geterrArgs = request.arguments;
+                            response = this.getDiagnostics(geterrArgs.delay, geterrArgs.files);
+                            responseRequired = false;
+                            break;
+                        }
+                        case CommandNames.Change: {
+                            var changeArgs = request.arguments;
+                            this.change(changeArgs.line, changeArgs.offset, changeArgs.endLine, changeArgs.endOffset, changeArgs.insertString, changeArgs.file);
+                            responseRequired = false;
+                            break;
+                        }
+                        case CommandNames.Configure: {
+                            var configureArgs = request.arguments;
+                            this.projectService.setHostConfiguration(configureArgs);
+                            this.output(undefined, CommandNames.Configure, request.seq);
+                            responseRequired = false;
+                            break;
+                        }
+                        case CommandNames.Reload: {
+                            var reloadArgs = request.arguments;
+                            this.reload(reloadArgs.file, reloadArgs.tmpfile, request.seq);
+                            responseRequired = false;
+                            break;
+                        }
+                        case CommandNames.Saveto: {
+                            var savetoArgs = request.arguments;
+                            this.saveToTmp(savetoArgs.file, savetoArgs.tmpfile);
+                            responseRequired = false;
+                            break;
+                        }
+                        case CommandNames.Close: {
+                            var closeArgs = request.arguments;
+                            this.closeClientFile(closeArgs.file);
+                            responseRequired = false;
+                            break;
+                        }
+                        case CommandNames.Navto: {
+                            var navtoArgs = request.arguments;
+                            response = this.getNavigateToItems(navtoArgs.searchValue, navtoArgs.file, navtoArgs.maxResultCount);
+                            break;
+                        }
+                        case CommandNames.Brace: {
+                            var braceArguments = request.arguments;
+                            response = this.getBraceMatching(braceArguments.line, braceArguments.offset, braceArguments.file);
+                            break;
+                        }
+                        case CommandNames.NavBar: {
+                            var navBarArgs = request.arguments;
+                            response = this.getNavigationBarItems(navBarArgs.file);
+                            break;
+                        }
+                        default: {
+                            this.projectService.log("Unrecognized JSON command: " + message);
+                            this.output(undefined, CommandNames.Unknown, request.seq, "Unrecognized JSON command: " + request.command);
+                            break;
+                        }
+                    }
+                    if (this.logger.isVerbose()) {
+                        var elapsed = process.hrtime(start);
+                        var seconds = elapsed[0];
+                        var nanoseconds = elapsed[1];
+                        var elapsedMs = ((1e9 * seconds) + nanoseconds) / 1000000.0;
+                        var leader = "Elapsed time (in milliseconds)";
+                        if (!responseRequired) {
+                            leader = "Async elapsed time (in milliseconds)";
+                        }
+                        this.logger.msg(leader + ": " + elapsedMs.toFixed(4).toString(), "Perf");
+                    }
+                    if (response) {
+                        this.output(response, request.command, request.seq);
+                    }
+                    else if (responseRequired) {
+                        this.output(undefined, request.command, request.seq, "No content available.");
+                    }
+                }
+                catch (err) {
+                    if (err instanceof ts.OperationCanceledException) {
+                    }
+                    this.logError(err, message);
+                    this.output(undefined, request ? request.command : CommandNames.Unknown, request ? request.seq : 0, "Error processing request. " + err.message);
+                }
+            };
+            return Session;
+        })();
+        server.Session = Session;
+    })(server = ts.server || (ts.server = {}));
+})(ts || (ts = {}));
+/// <reference path="..\compiler\commandLineParser.ts" />
+/// <reference path="..\services\services.ts" />
+/// <reference path="protocol.d.ts" />
+/// <reference path="session.ts" />
+/// <reference path="node.d.ts" />
 var ts;
 (function (ts) {
     var server;
     (function (server) {
         var lineCollectionCapacity = 4;
+        function mergeFormatOptions(formatCodeOptions, formatOptions) {
+            var hasOwnProperty = Object.prototype.hasOwnProperty;
+            Object.keys(formatOptions).forEach(function (key) {
+                var codeKey = key.charAt(0).toUpperCase() + key.substring(1);
+                if (hasOwnProperty.call(formatCodeOptions, codeKey)) {
+                    formatCodeOptions[codeKey] = formatOptions[key];
+                }
+            });
+        }
         var ScriptInfo = (function () {
             function ScriptInfo(host, fileName, content, isOpen) {
                 if (isOpen === void 0) { isOpen = false; }
@@ -33818,12 +34640,9 @@ var ts;
                 this.formatCodeOptions = ts.clone(CompilerService.defaultFormatCodeOptions);
                 this.svc = ScriptVersionCache.fromString(content);
             }
-            ScriptInfo.prototype.setFormatOptions = function (tabSize, indentSize) {
-                if (tabSize) {
-                    this.formatCodeOptions.TabSize = tabSize;
-                }
-                if (indentSize) {
-                    this.formatCodeOptions.IndentSize = indentSize;
+            ScriptInfo.prototype.setFormatOptions = function (formatOptions) {
+                if (formatOptions) {
+                    mergeFormatOptions(this.formatCodeOptions, formatOptions);
                 }
             };
             ScriptInfo.prototype.close = function () {
@@ -34141,15 +34960,19 @@ var ts;
                 if (args.file) {
                     var info = this.filenameToScriptInfo[args.file];
                     if (info) {
-                        info.setFormatOptions(args.tabSize, args.indentSize);
-                        this.log("Host configuration update for file " + args.file + " tab size " + args.tabSize);
+                        info.setFormatOptions(args.formatOptions);
+                        this.log("Host configuration update for file " + args.file);
                     }
                 }
                 else {
-                    this.hostConfiguration.formatCodeOptions.TabSize = args.tabSize;
-                    this.hostConfiguration.formatCodeOptions.IndentSize = args.indentSize;
-                    this.hostConfiguration.hostInfo = args.hostInfo;
-                    this.log("Host information " + args.hostInfo, "Info");
+                    if (args.hostInfo !== undefined) {
+                        this.hostConfiguration.hostInfo = args.hostInfo;
+                        this.log("Host information " + args.hostInfo, "Info");
+                    }
+                    if (args.formatOptions) {
+                        mergeFormatOptions(this.hostConfiguration.formatCodeOptions, args.formatOptions);
+                        this.log("Format host information updated", "Info");
+                    }
                 }
             };
             ProjectService.prototype.closeLog = function () {
@@ -35399,820 +36222,6 @@ var ts;
             };
             return LineLeaf;
         })();
-    })(server = ts.server || (ts.server = {}));
-})(ts || (ts = {}));
-/// <reference path="..\compiler\commandLineParser.ts" />
-/// <reference path="..\services\services.ts" />
-/// <reference path="node.d.ts" />
-/// <reference path="protocol.d.ts" />
-/// <reference path="editorServices.ts" />
-var ts;
-(function (ts) {
-    var server;
-    (function (server) {
-        var spaceCache = [];
-        function generateSpaces(n) {
-            if (!spaceCache[n]) {
-                var strBuilder = "";
-                for (var i = 0; i < n; i++) {
-                    strBuilder += " ";
-                }
-                spaceCache[n] = strBuilder;
-            }
-            return spaceCache[n];
-        }
-        server.generateSpaces = generateSpaces;
-        function compareNumber(a, b) {
-            if (a < b) {
-                return -1;
-            }
-            else if (a == b) {
-                return 0;
-            }
-            else
-                return 1;
-        }
-        function compareFileStart(a, b) {
-            if (a.file < b.file) {
-                return -1;
-            }
-            else if (a.file == b.file) {
-                var n = compareNumber(a.start.line, b.start.line);
-                if (n == 0) {
-                    return compareNumber(a.start.offset, b.start.offset);
-                }
-                else
-                    return n;
-            }
-            else {
-                return 1;
-            }
-        }
-        function formatDiag(fileName, project, diag) {
-            return {
-                start: project.compilerService.host.positionToLineOffset(fileName, diag.start),
-                end: project.compilerService.host.positionToLineOffset(fileName, diag.start + diag.length),
-                text: ts.flattenDiagnosticMessageText(diag.messageText, "\n")
-            };
-        }
-        function allEditsBeforePos(edits, pos) {
-            for (var i = 0, len = edits.length; i < len; i++) {
-                if (ts.textSpanEnd(edits[i].span) >= pos) {
-                    return false;
-                }
-            }
-            return true;
-        }
-        var CommandNames;
-        (function (CommandNames) {
-            CommandNames.Change = "change";
-            CommandNames.Close = "close";
-            CommandNames.Completions = "completions";
-            CommandNames.CompletionDetails = "completionEntryDetails";
-            CommandNames.SignatureHelp = "signatureHelp";
-            CommandNames.Configure = "configure";
-            CommandNames.Definition = "definition";
-            CommandNames.Format = "format";
-            CommandNames.Formatonkey = "formatonkey";
-            CommandNames.Geterr = "geterr";
-            CommandNames.NavBar = "navbar";
-            CommandNames.Navto = "navto";
-            CommandNames.Open = "open";
-            CommandNames.Quickinfo = "quickinfo";
-            CommandNames.References = "references";
-            CommandNames.Reload = "reload";
-            CommandNames.Rename = "rename";
-            CommandNames.Saveto = "saveto";
-            CommandNames.Brace = "brace";
-            CommandNames.Unknown = "unknown";
-        })(CommandNames = server.CommandNames || (server.CommandNames = {}));
-        var Errors;
-        (function (Errors) {
-            Errors.NoProject = new Error("No Project.");
-        })(Errors || (Errors = {}));
-        var Session = (function () {
-            function Session(host, logger) {
-                var _this = this;
-                this.host = host;
-                this.logger = logger;
-                this.pendingOperation = false;
-                this.fileHash = {};
-                this.nextFileId = 1;
-                this.changeSeq = 0;
-                this.projectService =
-                    new server.ProjectService(host, logger, function (eventName, project, fileName) {
-                        _this.handleEvent(eventName, project, fileName);
-                    });
-            }
-            Session.prototype.handleEvent = function (eventName, project, fileName) {
-                var _this = this;
-                if (eventName == "context") {
-                    this.projectService.log("got context event, updating diagnostics for" + fileName, "Info");
-                    this.updateErrorCheck([{ fileName: fileName, project: project }], this.changeSeq, function (n) { return n == _this.changeSeq; }, 100);
-                }
-            };
-            Session.prototype.logError = function (err, cmd) {
-                var typedErr = err;
-                var msg = "Exception on executing command " + cmd;
-                if (typedErr.message) {
-                    msg += ":\n" + typedErr.message;
-                    if (typedErr.stack) {
-                        msg += "\n" + typedErr.stack;
-                    }
-                }
-                this.projectService.log(msg);
-            };
-            Session.prototype.sendLineToClient = function (line) {
-                this.host.write(line + this.host.newLine);
-            };
-            Session.prototype.send = function (msg) {
-                var json = JSON.stringify(msg);
-                if (this.logger.isVerbose()) {
-                    this.logger.info(msg.type + ": " + json);
-                }
-                this.sendLineToClient('Content-Length: ' + (1 + Buffer.byteLength(json, 'utf8')) +
-                    '\r\n\r\n' + json);
-            };
-            Session.prototype.event = function (info, eventName) {
-                var ev = {
-                    seq: 0,
-                    type: "event",
-                    event: eventName,
-                    body: info
-                };
-                this.send(ev);
-            };
-            Session.prototype.response = function (info, cmdName, reqSeq, errorMsg) {
-                if (reqSeq === void 0) { reqSeq = 0; }
-                var res = {
-                    seq: 0,
-                    type: "response",
-                    command: cmdName,
-                    request_seq: reqSeq,
-                    success: !errorMsg
-                };
-                if (!errorMsg) {
-                    res.body = info;
-                }
-                else {
-                    res.message = errorMsg;
-                }
-                this.send(res);
-            };
-            Session.prototype.output = function (body, commandName, requestSequence, errorMessage) {
-                if (requestSequence === void 0) { requestSequence = 0; }
-                this.response(body, commandName, requestSequence, errorMessage);
-            };
-            Session.prototype.semanticCheck = function (file, project) {
-                try {
-                    var diags = project.compilerService.languageService.getSemanticDiagnostics(file);
-                    if (diags) {
-                        var bakedDiags = diags.map(function (diag) { return formatDiag(file, project, diag); });
-                        this.event({ file: file, diagnostics: bakedDiags }, "semanticDiag");
-                    }
-                }
-                catch (err) {
-                    this.logError(err, "semantic check");
-                }
-            };
-            Session.prototype.syntacticCheck = function (file, project) {
-                try {
-                    var diags = project.compilerService.languageService.getSyntacticDiagnostics(file);
-                    if (diags) {
-                        var bakedDiags = diags.map(function (diag) { return formatDiag(file, project, diag); });
-                        this.event({ file: file, diagnostics: bakedDiags }, "syntaxDiag");
-                    }
-                }
-                catch (err) {
-                    this.logError(err, "syntactic check");
-                }
-            };
-            Session.prototype.errorCheck = function (file, project) {
-                this.syntacticCheck(file, project);
-                this.semanticCheck(file, project);
-            };
-            Session.prototype.updateProjectStructure = function (seq, matchSeq, ms) {
-                var _this = this;
-                if (ms === void 0) { ms = 1500; }
-                setTimeout(function () {
-                    if (matchSeq(seq)) {
-                        _this.projectService.updateProjectStructure();
-                    }
-                }, ms);
-            };
-            Session.prototype.updateErrorCheck = function (checkList, seq, matchSeq, ms, followMs) {
-                var _this = this;
-                if (ms === void 0) { ms = 1500; }
-                if (followMs === void 0) { followMs = 200; }
-                if (followMs > ms) {
-                    followMs = ms;
-                }
-                if (this.errorTimer) {
-                    clearTimeout(this.errorTimer);
-                }
-                if (this.immediateId) {
-                    clearImmediate(this.immediateId);
-                    this.immediateId = undefined;
-                }
-                var index = 0;
-                var checkOne = function () {
-                    if (matchSeq(seq)) {
-                        var checkSpec = checkList[index++];
-                        if (checkSpec.project.getSourceFileFromName(checkSpec.fileName, true)) {
-                            _this.syntacticCheck(checkSpec.fileName, checkSpec.project);
-                            _this.immediateId = setImmediate(function () {
-                                _this.semanticCheck(checkSpec.fileName, checkSpec.project);
-                                _this.immediateId = undefined;
-                                if (checkList.length > index) {
-                                    _this.errorTimer = setTimeout(checkOne, followMs);
-                                }
-                                else {
-                                    _this.errorTimer = undefined;
-                                }
-                            });
-                        }
-                    }
-                };
-                if ((checkList.length > index) && (matchSeq(seq))) {
-                    this.errorTimer = setTimeout(checkOne, ms);
-                }
-            };
-            Session.prototype.getDefinition = function (line, offset, fileName) {
-                var file = ts.normalizePath(fileName);
-                var project = this.projectService.getProjectForFile(file);
-                if (!project) {
-                    throw Errors.NoProject;
-                }
-                var compilerService = project.compilerService;
-                var position = compilerService.host.lineOffsetToPosition(file, line, offset);
-                var definitions = compilerService.languageService.getDefinitionAtPosition(file, position);
-                if (!definitions) {
-                    return undefined;
-                }
-                return definitions.map(function (def) { return ({
-                    file: def.fileName,
-                    start: compilerService.host.positionToLineOffset(def.fileName, def.textSpan.start),
-                    end: compilerService.host.positionToLineOffset(def.fileName, ts.textSpanEnd(def.textSpan))
-                }); });
-            };
-            Session.prototype.getRenameLocations = function (line, offset, fileName, findInComments, findInStrings) {
-                var file = ts.normalizePath(fileName);
-                var project = this.projectService.getProjectForFile(file);
-                if (!project) {
-                    throw Errors.NoProject;
-                }
-                var compilerService = project.compilerService;
-                var position = compilerService.host.lineOffsetToPosition(file, line, offset);
-                var renameInfo = compilerService.languageService.getRenameInfo(file, position);
-                if (!renameInfo) {
-                    return undefined;
-                }
-                if (!renameInfo.canRename) {
-                    return {
-                        info: renameInfo,
-                        locs: []
-                    };
-                }
-                var renameLocations = compilerService.languageService.findRenameLocations(file, position, findInStrings, findInComments);
-                if (!renameLocations) {
-                    return undefined;
-                }
-                var bakedRenameLocs = renameLocations.map(function (location) { return ({
-                    file: location.fileName,
-                    start: compilerService.host.positionToLineOffset(location.fileName, location.textSpan.start),
-                    end: compilerService.host.positionToLineOffset(location.fileName, ts.textSpanEnd(location.textSpan))
-                }); }).sort(function (a, b) {
-                    if (a.file < b.file) {
-                        return -1;
-                    }
-                    else if (a.file > b.file) {
-                        return 1;
-                    }
-                    else {
-                        if (a.start.line < b.start.line) {
-                            return 1;
-                        }
-                        else if (a.start.line > b.start.line) {
-                            return -1;
-                        }
-                        else {
-                            return b.start.offset - a.start.offset;
-                        }
-                    }
-                }).reduce(function (accum, cur) {
-                    var curFileAccum;
-                    if (accum.length > 0) {
-                        curFileAccum = accum[accum.length - 1];
-                        if (curFileAccum.file != cur.file) {
-                            curFileAccum = undefined;
-                        }
-                    }
-                    if (!curFileAccum) {
-                        curFileAccum = { file: cur.file, locs: [] };
-                        accum.push(curFileAccum);
-                    }
-                    curFileAccum.locs.push({ start: cur.start, end: cur.end });
-                    return accum;
-                }, []);
-                return { info: renameInfo, locs: bakedRenameLocs };
-            };
-            Session.prototype.getReferences = function (line, offset, fileName) {
-                var file = ts.normalizePath(fileName);
-                var project = this.projectService.getProjectForFile(file);
-                if (!project) {
-                    throw Errors.NoProject;
-                }
-                var compilerService = project.compilerService;
-                var position = compilerService.host.lineOffsetToPosition(file, line, offset);
-                var references = compilerService.languageService.getReferencesAtPosition(file, position);
-                if (!references) {
-                    return undefined;
-                }
-                var nameInfo = compilerService.languageService.getQuickInfoAtPosition(file, position);
-                if (!nameInfo) {
-                    return undefined;
-                }
-                var displayString = ts.displayPartsToString(nameInfo.displayParts);
-                var nameSpan = nameInfo.textSpan;
-                var nameColStart = compilerService.host.positionToLineOffset(file, nameSpan.start).offset;
-                var nameText = compilerService.host.getScriptSnapshot(file).getText(nameSpan.start, ts.textSpanEnd(nameSpan));
-                var bakedRefs = references.map(function (ref) {
-                    var start = compilerService.host.positionToLineOffset(ref.fileName, ref.textSpan.start);
-                    var refLineSpan = compilerService.host.lineToTextSpan(ref.fileName, start.line - 1);
-                    var snap = compilerService.host.getScriptSnapshot(ref.fileName);
-                    var lineText = snap.getText(refLineSpan.start, ts.textSpanEnd(refLineSpan)).replace(/\r|\n/g, "");
-                    return {
-                        file: ref.fileName,
-                        start: start,
-                        lineText: lineText,
-                        end: compilerService.host.positionToLineOffset(ref.fileName, ts.textSpanEnd(ref.textSpan)),
-                        isWriteAccess: ref.isWriteAccess
-                    };
-                }).sort(compareFileStart);
-                return {
-                    refs: bakedRefs,
-                    symbolName: nameText,
-                    symbolStartOffset: nameColStart,
-                    symbolDisplayString: displayString
-                };
-            };
-            Session.prototype.openClientFile = function (fileName, tabSize, indentSize) {
-                var file = ts.normalizePath(fileName);
-                var info = this.projectService.openClientFile(file);
-                if (info) {
-                    info.setFormatOptions(tabSize, indentSize);
-                }
-            };
-            Session.prototype.getQuickInfo = function (line, offset, fileName) {
-                var file = ts.normalizePath(fileName);
-                var project = this.projectService.getProjectForFile(file);
-                if (!project) {
-                    throw Errors.NoProject;
-                }
-                var compilerService = project.compilerService;
-                var position = compilerService.host.lineOffsetToPosition(file, line, offset);
-                var quickInfo = compilerService.languageService.getQuickInfoAtPosition(file, position);
-                if (!quickInfo) {
-                    return undefined;
-                }
-                var displayString = ts.displayPartsToString(quickInfo.displayParts);
-                var docString = ts.displayPartsToString(quickInfo.documentation);
-                return {
-                    kind: quickInfo.kind,
-                    kindModifiers: quickInfo.kindModifiers,
-                    start: compilerService.host.positionToLineOffset(file, quickInfo.textSpan.start),
-                    end: compilerService.host.positionToLineOffset(file, ts.textSpanEnd(quickInfo.textSpan)),
-                    displayString: displayString,
-                    documentation: docString
-                };
-            };
-            Session.prototype.getFormattingEditsForRange = function (line, offset, endLine, endOffset, fileName) {
-                var file = ts.normalizePath(fileName);
-                var project = this.projectService.getProjectForFile(file);
-                if (!project) {
-                    throw Errors.NoProject;
-                }
-                var compilerService = project.compilerService;
-                var startPosition = compilerService.host.lineOffsetToPosition(file, line, offset);
-                var endPosition = compilerService.host.lineOffsetToPosition(file, endLine, endOffset);
-                var edits = compilerService.languageService.getFormattingEditsForRange(file, startPosition, endPosition, this.projectService.getFormatCodeOptions(file));
-                if (!edits) {
-                    return undefined;
-                }
-                return edits.map(function (edit) {
-                    return {
-                        start: compilerService.host.positionToLineOffset(file, edit.span.start),
-                        end: compilerService.host.positionToLineOffset(file, ts.textSpanEnd(edit.span)),
-                        newText: edit.newText ? edit.newText : ""
-                    };
-                });
-            };
-            Session.prototype.getFormattingEditsAfterKeystroke = function (line, offset, key, fileName) {
-                var file = ts.normalizePath(fileName);
-                var project = this.projectService.getProjectForFile(file);
-                if (!project) {
-                    throw Errors.NoProject;
-                }
-                var compilerService = project.compilerService;
-                var position = compilerService.host.lineOffsetToPosition(file, line, offset);
-                var formatOptions = this.projectService.getFormatCodeOptions(file);
-                var edits = compilerService.languageService.getFormattingEditsAfterKeystroke(file, position, key, formatOptions);
-                if ((key == "\n") && ((!edits) || (edits.length == 0) || allEditsBeforePos(edits, position))) {
-                    var scriptInfo = compilerService.host.getScriptInfo(file);
-                    if (scriptInfo) {
-                        var lineInfo = scriptInfo.getLineInfo(line);
-                        if (lineInfo && (lineInfo.leaf) && (lineInfo.leaf.text)) {
-                            var lineText = lineInfo.leaf.text;
-                            if (lineText.search("\\S") < 0) {
-                                var editorOptions = {
-                                    IndentSize: formatOptions.IndentSize,
-                                    TabSize: formatOptions.TabSize,
-                                    NewLineCharacter: "\n",
-                                    ConvertTabsToSpaces: true
-                                };
-                                var indentPosition = compilerService.languageService.getIndentationAtPosition(file, position, editorOptions);
-                                for (var i = 0, len = lineText.length; i < len; i++) {
-                                    if (lineText.charAt(i) == " ") {
-                                        indentPosition--;
-                                    }
-                                    else {
-                                        break;
-                                    }
-                                }
-                                if (indentPosition > 0) {
-                                    var spaces = generateSpaces(indentPosition);
-                                    edits.push({ span: ts.createTextSpanFromBounds(position, position), newText: spaces });
-                                }
-                                else if (indentPosition < 0) {
-                                    edits.push({
-                                        span: ts.createTextSpanFromBounds(position, position - indentPosition),
-                                        newText: ""
-                                    });
-                                }
-                            }
-                        }
-                    }
-                }
-                if (!edits) {
-                    return undefined;
-                }
-                return edits.map(function (edit) {
-                    return {
-                        start: compilerService.host.positionToLineOffset(file, edit.span.start),
-                        end: compilerService.host.positionToLineOffset(file, ts.textSpanEnd(edit.span)),
-                        newText: edit.newText ? edit.newText : ""
-                    };
-                });
-            };
-            Session.prototype.getCompletions = function (line, offset, prefix, fileName) {
-                if (!prefix) {
-                    prefix = "";
-                }
-                var file = ts.normalizePath(fileName);
-                var project = this.projectService.getProjectForFile(file);
-                if (!project) {
-                    throw Errors.NoProject;
-                }
-                var compilerService = project.compilerService;
-                var position = compilerService.host.lineOffsetToPosition(file, line, offset);
-                var completions = compilerService.languageService.getCompletionsAtPosition(file, position);
-                if (!completions) {
-                    return undefined;
-                }
-                return completions.entries.reduce(function (result, entry) {
-                    if (completions.isMemberCompletion || (entry.name.toLowerCase().indexOf(prefix.toLowerCase()) == 0)) {
-                        result.push(entry);
-                    }
-                    return result;
-                }, []).sort(function (a, b) { return a.name.localeCompare(b.name); });
-            };
-            Session.prototype.getCompletionEntryDetails = function (line, offset, entryNames, fileName) {
-                var file = ts.normalizePath(fileName);
-                var project = this.projectService.getProjectForFile(file);
-                if (!project) {
-                    throw Errors.NoProject;
-                }
-                var compilerService = project.compilerService;
-                var position = compilerService.host.lineOffsetToPosition(file, line, offset);
-                return entryNames.reduce(function (accum, entryName) {
-                    var details = compilerService.languageService.getCompletionEntryDetails(file, position, entryName);
-                    if (details) {
-                        accum.push(details);
-                    }
-                    return accum;
-                }, []);
-            };
-            Session.prototype.getSignatureHelpItems = function (line, offset, fileName) {
-                var file = ts.normalizePath(fileName);
-                var project = this.projectService.getProjectForFile(file);
-                if (!project) {
-                    throw Errors.NoProject;
-                }
-                var compilerService = project.compilerService;
-                var position = compilerService.host.lineOffsetToPosition(file, line, offset);
-                var helpItems = compilerService.languageService.getSignatureHelpItems(file, position);
-                if (!helpItems) {
-                    return undefined;
-                }
-                var span = helpItems.applicableSpan;
-                var result = {
-                    items: helpItems.items,
-                    applicableSpan: {
-                        start: compilerService.host.positionToLineOffset(file, span.start),
-                        end: compilerService.host.positionToLineOffset(file, span.start + span.length)
-                    },
-                    selectedItemIndex: helpItems.selectedItemIndex,
-                    argumentIndex: helpItems.argumentIndex,
-                    argumentCount: helpItems.argumentCount
-                };
-                return result;
-            };
-            Session.prototype.getDiagnostics = function (delay, fileNames) {
-                var _this = this;
-                var checkList = fileNames.reduce(function (accum, fileName) {
-                    fileName = ts.normalizePath(fileName);
-                    var project = _this.projectService.getProjectForFile(fileName);
-                    if (project) {
-                        accum.push({ fileName: fileName, project: project });
-                    }
-                    return accum;
-                }, []);
-                if (checkList.length > 0) {
-                    this.updateErrorCheck(checkList, this.changeSeq, function (n) { return n == _this.changeSeq; }, delay);
-                }
-            };
-            Session.prototype.change = function (line, offset, endLine, endOffset, insertString, fileName) {
-                var _this = this;
-                var file = ts.normalizePath(fileName);
-                var project = this.projectService.getProjectForFile(file);
-                if (project) {
-                    var compilerService = project.compilerService;
-                    var start = compilerService.host.lineOffsetToPosition(file, line, offset);
-                    var end = compilerService.host.lineOffsetToPosition(file, endLine, endOffset);
-                    if (start >= 0) {
-                        compilerService.host.editScript(file, start, end, insertString);
-                        this.changeSeq++;
-                    }
-                    this.updateProjectStructure(this.changeSeq, function (n) { return n == _this.changeSeq; });
-                }
-            };
-            Session.prototype.reload = function (fileName, tempFileName, reqSeq) {
-                var _this = this;
-                if (reqSeq === void 0) { reqSeq = 0; }
-                var file = ts.normalizePath(fileName);
-                var tmpfile = ts.normalizePath(tempFileName);
-                var project = this.projectService.getProjectForFile(file);
-                if (project) {
-                    this.changeSeq++;
-                    project.compilerService.host.reloadScript(file, tmpfile, function () {
-                        _this.output(undefined, CommandNames.Reload, reqSeq);
-                    });
-                }
-            };
-            Session.prototype.saveToTmp = function (fileName, tempFileName) {
-                var file = ts.normalizePath(fileName);
-                var tmpfile = ts.normalizePath(tempFileName);
-                var project = this.projectService.getProjectForFile(file);
-                if (project) {
-                    project.compilerService.host.saveTo(file, tmpfile);
-                }
-            };
-            Session.prototype.closeClientFile = function (fileName) {
-                var file = ts.normalizePath(fileName);
-                this.projectService.closeClientFile(file);
-            };
-            Session.prototype.decorateNavigationBarItem = function (project, fileName, items) {
-                var _this = this;
-                if (!items) {
-                    return undefined;
-                }
-                var compilerService = project.compilerService;
-                return items.map(function (item) { return ({
-                    text: item.text,
-                    kind: item.kind,
-                    kindModifiers: item.kindModifiers,
-                    spans: item.spans.map(function (span) { return ({
-                        start: compilerService.host.positionToLineOffset(fileName, span.start),
-                        end: compilerService.host.positionToLineOffset(fileName, ts.textSpanEnd(span))
-                    }); }),
-                    childItems: _this.decorateNavigationBarItem(project, fileName, item.childItems)
-                }); });
-            };
-            Session.prototype.getNavigationBarItems = function (fileName) {
-                var file = ts.normalizePath(fileName);
-                var project = this.projectService.getProjectForFile(file);
-                if (!project) {
-                    throw Errors.NoProject;
-                }
-                var compilerService = project.compilerService;
-                var items = compilerService.languageService.getNavigationBarItems(file);
-                if (!items) {
-                    return undefined;
-                }
-                return this.decorateNavigationBarItem(project, fileName, items);
-            };
-            Session.prototype.getNavigateToItems = function (searchValue, fileName, maxResultCount) {
-                var file = ts.normalizePath(fileName);
-                var project = this.projectService.getProjectForFile(file);
-                if (!project) {
-                    throw Errors.NoProject;
-                }
-                var compilerService = project.compilerService;
-                var navItems = compilerService.languageService.getNavigateToItems(searchValue, maxResultCount);
-                if (!navItems) {
-                    return undefined;
-                }
-                return navItems.map(function (navItem) {
-                    var start = compilerService.host.positionToLineOffset(navItem.fileName, navItem.textSpan.start);
-                    var end = compilerService.host.positionToLineOffset(navItem.fileName, ts.textSpanEnd(navItem.textSpan));
-                    var bakedItem = {
-                        name: navItem.name,
-                        kind: navItem.kind,
-                        file: navItem.fileName,
-                        start: start,
-                        end: end
-                    };
-                    if (navItem.kindModifiers && (navItem.kindModifiers != "")) {
-                        bakedItem.kindModifiers = navItem.kindModifiers;
-                    }
-                    if (navItem.matchKind != 'none') {
-                        bakedItem.matchKind = navItem.matchKind;
-                    }
-                    if (navItem.containerName && (navItem.containerName.length > 0)) {
-                        bakedItem.containerName = navItem.containerName;
-                    }
-                    if (navItem.containerKind && (navItem.containerKind.length > 0)) {
-                        bakedItem.containerKind = navItem.containerKind;
-                    }
-                    return bakedItem;
-                });
-            };
-            Session.prototype.getBraceMatching = function (line, offset, fileName) {
-                var file = ts.normalizePath(fileName);
-                var project = this.projectService.getProjectForFile(file);
-                if (!project) {
-                    throw Errors.NoProject;
-                }
-                var compilerService = project.compilerService;
-                var position = compilerService.host.lineOffsetToPosition(file, line, offset);
-                var spans = compilerService.languageService.getBraceMatchingAtPosition(file, position);
-                if (!spans) {
-                    return undefined;
-                }
-                return spans.map(function (span) { return ({
-                    start: compilerService.host.positionToLineOffset(file, span.start),
-                    end: compilerService.host.positionToLineOffset(file, span.start + span.length)
-                }); });
-            };
-            Session.prototype.onMessage = function (message) {
-                if (this.logger.isVerbose()) {
-                    this.logger.info("request: " + message);
-                    var start = process.hrtime();
-                }
-                try {
-                    var request = JSON.parse(message);
-                    var response;
-                    var errorMessage;
-                    var responseRequired = true;
-                    switch (request.command) {
-                        case CommandNames.Definition: {
-                            var defArgs = request.arguments;
-                            response = this.getDefinition(defArgs.line, defArgs.offset, defArgs.file);
-                            break;
-                        }
-                        case CommandNames.References: {
-                            var refArgs = request.arguments;
-                            response = this.getReferences(refArgs.line, refArgs.offset, refArgs.file);
-                            break;
-                        }
-                        case CommandNames.Rename: {
-                            var renameArgs = request.arguments;
-                            response = this.getRenameLocations(renameArgs.line, renameArgs.offset, renameArgs.file, renameArgs.findInComments, renameArgs.findInStrings);
-                            break;
-                        }
-                        case CommandNames.Open: {
-                            var openArgs = request.arguments;
-                            this.openClientFile(openArgs.file, openArgs.tabSize, openArgs.indentSize);
-                            responseRequired = false;
-                            break;
-                        }
-                        case CommandNames.Quickinfo: {
-                            var quickinfoArgs = request.arguments;
-                            response = this.getQuickInfo(quickinfoArgs.line, quickinfoArgs.offset, quickinfoArgs.file);
-                            break;
-                        }
-                        case CommandNames.Format: {
-                            var formatArgs = request.arguments;
-                            response = this.getFormattingEditsForRange(formatArgs.line, formatArgs.offset, formatArgs.endLine, formatArgs.endOffset, formatArgs.file);
-                            break;
-                        }
-                        case CommandNames.Formatonkey: {
-                            var formatOnKeyArgs = request.arguments;
-                            response = this.getFormattingEditsAfterKeystroke(formatOnKeyArgs.line, formatOnKeyArgs.offset, formatOnKeyArgs.key, formatOnKeyArgs.file);
-                            break;
-                        }
-                        case CommandNames.Completions: {
-                            var completionsArgs = request.arguments;
-                            response = this.getCompletions(completionsArgs.line, completionsArgs.offset, completionsArgs.prefix, completionsArgs.file);
-                            break;
-                        }
-                        case CommandNames.CompletionDetails: {
-                            var completionDetailsArgs = request.arguments;
-                            response =
-                                this.getCompletionEntryDetails(completionDetailsArgs.line, completionDetailsArgs.offset, completionDetailsArgs.entryNames, completionDetailsArgs.file);
-                            break;
-                        }
-                        case CommandNames.SignatureHelp: {
-                            var signatureHelpArgs = request.arguments;
-                            response = this.getSignatureHelpItems(signatureHelpArgs.line, signatureHelpArgs.offset, signatureHelpArgs.file);
-                            break;
-                        }
-                        case CommandNames.Geterr: {
-                            var geterrArgs = request.arguments;
-                            response = this.getDiagnostics(geterrArgs.delay, geterrArgs.files);
-                            responseRequired = false;
-                            break;
-                        }
-                        case CommandNames.Change: {
-                            var changeArgs = request.arguments;
-                            this.change(changeArgs.line, changeArgs.offset, changeArgs.endLine, changeArgs.endOffset, changeArgs.insertString, changeArgs.file);
-                            responseRequired = false;
-                            break;
-                        }
-                        case CommandNames.Configure: {
-                            var configureArgs = request.arguments;
-                            this.projectService.setHostConfiguration(configureArgs);
-                            this.output(undefined, CommandNames.Configure, request.seq);
-                            responseRequired = false;
-                            break;
-                        }
-                        case CommandNames.Reload: {
-                            var reloadArgs = request.arguments;
-                            this.reload(reloadArgs.file, reloadArgs.tmpfile, request.seq);
-                            responseRequired = false;
-                            break;
-                        }
-                        case CommandNames.Saveto: {
-                            var savetoArgs = request.arguments;
-                            this.saveToTmp(savetoArgs.file, savetoArgs.tmpfile);
-                            responseRequired = false;
-                            break;
-                        }
-                        case CommandNames.Close: {
-                            var closeArgs = request.arguments;
-                            this.closeClientFile(closeArgs.file);
-                            responseRequired = false;
-                            break;
-                        }
-                        case CommandNames.Navto: {
-                            var navtoArgs = request.arguments;
-                            response = this.getNavigateToItems(navtoArgs.searchValue, navtoArgs.file, navtoArgs.maxResultCount);
-                            break;
-                        }
-                        case CommandNames.Brace: {
-                            var braceArguments = request.arguments;
-                            response = this.getBraceMatching(braceArguments.line, braceArguments.offset, braceArguments.file);
-                            break;
-                        }
-                        case CommandNames.NavBar: {
-                            var navBarArgs = request.arguments;
-                            response = this.getNavigationBarItems(navBarArgs.file);
-                            break;
-                        }
-                        default: {
-                            this.projectService.log("Unrecognized JSON command: " + message);
-                            this.output(undefined, CommandNames.Unknown, request.seq, "Unrecognized JSON command: " + request.command);
-                            break;
-                        }
-                    }
-                    if (this.logger.isVerbose()) {
-                        var elapsed = process.hrtime(start);
-                        var seconds = elapsed[0];
-                        var nanoseconds = elapsed[1];
-                        var elapsedMs = ((1e9 * seconds) + nanoseconds) / 1000000.0;
-                        var leader = "Elapsed time (in milliseconds)";
-                        if (!responseRequired) {
-                            leader = "Async elapsed time (in milliseconds)";
-                        }
-                        this.logger.msg(leader + ": " + elapsedMs.toFixed(4).toString(), "Perf");
-                    }
-                    if (response) {
-                        this.output(response, request.command, request.seq);
-                    }
-                    else if (responseRequired) {
-                        this.output(undefined, request.command, request.seq, "No content available.");
-                    }
-                }
-                catch (err) {
-                    if (err instanceof ts.OperationCanceledException) {
-                    }
-                    this.logError(err, message);
-                    this.output(undefined, request ? request.command : CommandNames.Unknown, request ? request.seq : 0, "Error processing request. " + err.message);
-                }
-            };
-            return Session;
-        })();
-        server.Session = Session;
     })(server = ts.server || (ts.server = {}));
 })(ts || (ts = {}));
 /// <reference path="node.d.ts" />

@@ -15,9 +15,9 @@ class ServiceProxy:
         self.seq += 1
         return temp
 
-    def configure(self, hostInfo="Sublime Text", tabSize=4, indentSize=4, file=None):
+    def configure(self, hostInfo="Sublime Text", file=None, formatOptions=None):
         req = servicedefs.ConfigureRequest(self.incrSeq(), 
-            servicedefs.ConfigureRequestArgs(hostInfo, tabSize, indentSize, file))
+            servicedefs.ConfigureRequestArgs(hostInfo, file, formatOptions))
         jsonStr = jsonhelpers.encode(req)
         responseDict = self.__comm.sendCmdSync(jsonStr, req.seq)
         return jsonhelpers.fromDict(servicedefs.ConfigureResponse, responseDict)

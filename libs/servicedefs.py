@@ -45,13 +45,12 @@ class Response(Message):
         self.message = message
 
 class ConfigureRequestArgs(object):
-    def __init__(self, hostInfo, tabSize, indentSize, file):
+    def __init__(self, hostInfo, file=None, formatOptions=None):
         """
         Arguments for ConfigureRequest messages 
         """
         self.hostInfo = hostInfo
-        self.tabSize = tabSize
-        self.indentSize = indentSize
+        self.formatOptions = formatOptions
         self.file = file
 
 class ConfigureRequest(Request):

@@ -233,7 +233,8 @@ class EditorClient:
        pref_settings = sublime.load_settings('Preferences.sublime-settings')
        tabSize = pref_settings.get('tab_size', 4)
        indentSize = pref_settings.get('indent_size', tabSize)
-       self.service.configure(hostInfo, tabSize, indentSize, None)
+       formatOptions = buildSimpleFormatOptions(tabSize, indentSize)
+       self.service.configure(hostInfo, None, formatOptions)
 
     def reloadRequired(self, view):
        clientInfo = self.getOrAddFile(view.file_name())
@@ -348,13 +349,18 @@ def decrLocsToRegions(locs, amt):
         rr.append(sublime.Region(loc - amt, loc - amt))
     return rr
 
+def buildSimpleFormatOptions(tabSize, indentSize):
+    formatOptions = { "tabSize": tabSize, "indentSize": indentSize }
+    return formatOptions
+
 def reconfig_file(view):
     hostInfo = "Sublime Text version " + str(sublime.version())
     # Preferences Settings
     view_settings = view.settings()
     tabSize = view_settings.get('tab_size', 4)
     indentSize = view_settings.get('indent_size', tabSize)
-    cli.service.configure(hostInfo, tabSize, indentSize, view.file_name())
+    formatOptions = buildSimpleFormatOptions(tabSize, indentSize)
+    cli.service.configure(hostInfo, view.file_name(), formatOptions)
 
 def open_file(view):
     cli.service.open(view.file_name())
@@ -1007,14 +1013,14 @@ class TypescriptFinishRenameCommand(sublime_plugin.TextCommand):
                 activeWindow = sublime.active_window()
                 renameView = activeWindow.find_open_file(file)
                 if not renameView:
-                    renameView = activeWindow.open_file(file)
-                if renameView.is_loading():
                     clientInfo = cli.getOrAddFile(file)
                     innerLocsValue = locsToValue(innerLocs)
                     def applyLocs(v):
                         v.run_command('typescript_delayed_rename_file',
                                       { "locs" : innerLocsValue, "name" : newName })
+                    print("setting load handler for " + file)
                     clientInfo.loadHandler = applyLocs
+                    activeWindow.open_file(file)
                 elif renameView != self.view:
                     innerLocsValue = locsToValue(innerLocs)
                     renameView.run_command('typescript_delayed_rename_file',
