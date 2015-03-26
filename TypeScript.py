@@ -97,7 +97,7 @@ class ClientFileInfo:
             'syntacticDiag': [], 
             'semanticDiag': [], 
         }
-        self.loadHandler = None
+        self.renameOnLoad = None
 
 # a reference to a source file, line, offset; next and prev refer to the
 # next and previous reference in a view containing references
@@ -617,9 +617,11 @@ class TypeScriptListener(sublime_plugin.EventListener):
 
     def on_load(self, view):
         clientInfo = cli.getOrAddFile(view.file_name())
-        if clientInfo and clientInfo.loadHandler:
-            clientInfo.loadHandler(view)
-            clientInfo.loadHandler = None
+        print("loaded " + view.file_name())
+        if clientInfo and clientInfo.renameOnLoad:
+            view.run_command('typescript_delayed_rename_file',
+                             { "locsName" : clientInfo.renameOnLoad })
+            clientInfo.renameOnLoad = None
         
     # ST3 only
     # for certain text commands, learn what changed and notify the
@@ -993,11 +995,11 @@ class TypescriptRenameCommand(sublime_plugin.TextCommand):
                                                          on_done, None, on_cancel)
 
 
-def locsToValue(locs):
+def locsToValue(locs, name):
     locsValue = []
     for loc in locs:
         locsValue.append(loc.toDict())
-    return locsValue
+    return { "locs": locsValue, "name": name }
 
 # called from on_done handler in finish_rename command
 # on_done is called by input panel for new name
@@ -1014,17 +1016,14 @@ class TypescriptFinishRenameCommand(sublime_plugin.TextCommand):
                 renameView = activeWindow.find_open_file(file)
                 if not renameView:
                     clientInfo = cli.getOrAddFile(file)
-                    innerLocsValue = locsToValue(innerLocs)
-                    def applyLocs(v):
-                        v.run_command('typescript_delayed_rename_file',
-                                      { "locs" : innerLocsValue, "name" : newName })
+                    innerLocsValue = locsToValue(innerLocs, newName)
                     print("setting load handler for " + file)
-                    clientInfo.loadHandler = applyLocs
+                    clientInfo.renameOnLoad = innerLocsValue
                     activeWindow.open_file(file)
                 elif renameView != self.view:
-                    innerLocsValue = locsToValue(innerLocs)
+                    innerLocsValue = locsToValue(innerLocs, newName)
                     renameView.run_command('typescript_delayed_rename_file',
-                                           { "locs" : innerLocsValue, "name" : newName })
+                                           { "locsName" : innerLocsValue })
                 else:
                     for innerLoc in innerLocs:
                         startlc = innerLoc.start
@@ -1041,8 +1040,10 @@ def extractLineOffsetFromDict(lc):
     return (line, offset)
 
 class TypescriptDelayedRenameFile(sublime_plugin.TextCommand):
-    def run(self, text, locs = None, name = ""):
-        if locs and (len(name) > 0):
+    def run(self, text, locsName = None):
+        if locsName['locs'] and (len(locsName['name']) > 0):
+            locs = locsName['locs']
+            name = locsName['name']
             for innerLoc in locs:
                 startlc = innerLoc['start']
                 (startl, startc) = extractLineOffsetFromDict(startlc)
