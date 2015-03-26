@@ -76,10 +76,8 @@ class FileRequest(Request):
 
 
 class OpenRequestArgs(FileRequestArgs):
-    def __init__(self, file, tabSize, indentSize):
+    def __init__(self, file):
         super(OpenRequestArgs, self).__init__(file)
-        self.tabSize = tabSize
-        self.indentSize = indentSize
         
 class FileLocationRequestArgs(FileRequestArgs):
     def __init__(self, file, line, offset):
@@ -198,7 +196,7 @@ class RenameRequest(FileLocationRequest):
 
 
 class RenameInfo:
-    def __init__(self, canRename, displayName, fullDisplayName, kind, kindModifiers, localizedErrorMessage = None, **kwargs):
+    def __init__(self, canRename, displayName=None, fullDisplayName=None, kind=None, kindModifiers=None, localizedErrorMessage = None, **kwargs):
         """
         Information about the item to be renamed.
         ``fullDisplayName`` Full display name of item to be renamed

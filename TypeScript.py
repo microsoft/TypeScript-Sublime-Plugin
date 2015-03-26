@@ -357,12 +357,7 @@ def reconfig_file(view):
     cli.service.configure(hostInfo, tabSize, indentSize, view.file_name())
 
 def open_file(view):
-    hostInfo = "Sublime Text version " + str(sublime.version())
-    # Preferences Settings
-    view_settings = view.settings()
-    tabSize = view_settings.get('tab_size', 4)
-    indentSize = view_settings.get('indent_size', tabSize)
-    cli.service.open(view.file_name(), tabSize, indentSize)
+    cli.service.open(view.file_name())
 
 def tab_size_changed(view):
     reconfig_file(view)

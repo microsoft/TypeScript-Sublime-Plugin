@@ -58,8 +58,8 @@ class ServiceProxy:
         responseDict = self.__comm.sendCmdSync(jsonStr, req.seq)
         return jsonhelpers.fromDict(servicedefs.FormatResponse, responseDict)
 
-    def open(self, path, tabSize=None, indentSize=None):
-        req = servicedefs.OpenRequest(self.incrSeq(), servicedefs.OpenRequestArgs(path, tabSize, indentSize))
+    def open(self, path):
+        req = servicedefs.OpenRequest(self.incrSeq(), servicedefs.OpenRequestArgs(path))
         jsonStr = jsonhelpers.encode(req)
         self.__comm.postCmd(jsonStr)
 
