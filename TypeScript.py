@@ -877,6 +877,9 @@ class TypescriptShowDoc(sublime_plugin.TextCommand):
        self.view.insert(text, self.view.sel()[0].begin(), infoStr + "\n\n")
        self.view.insert(text, self.view.sel()[0].begin(), docStr)
      
+# only use for short strings
+def htmlEscape(str):
+    return str.replace('<','&lt;').replace('>',"&gt;") 
 
 # command to show the doc string associated with quick info;
 # re-runs quick info in case info has changed
@@ -897,9 +900,11 @@ class TypescriptQuickInfoDoc(sublime_plugin.TextCommand):
                 finfoStr = infoStr + " (^T^Q for more)"
             self.view.set_status("typescript_info", finfoStr)
             if TOOLTIP_SUPPORT:
-                html = "<div>"+infoStr+"</div>"
+                hinfoStr = htmlEscape(infoStr)
+                hdocStr = htmlEscape(docStr)
+                html = "<div>"+hinfoStr+"</div>"
                 if len(docStr) > 0:
-                    html += "<div>"+docStr+"</div>"
+                    html += "<div>"+hdocStr+"</div>"
                 self.view.show_popup(html, location = -1, max_width = 600)
         else:
             self.view.erase_status("typescript_info")
