@@ -258,6 +258,8 @@ class EditorClient:
 
     # get or add per-file information that must be globally acessible
     def getOrAddFile(self, filename):
+        if os.name == "nt":
+            filename = filename.replace('/','\\')
         if not filename in self.fileMap:
             clientInfo = ClientFileInfo(filename)
             self.fileMap[filename] = clientInfo
