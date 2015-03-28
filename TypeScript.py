@@ -37,6 +37,8 @@ def active_view():
 
 # view is typescript if outer syntactic scope is 'source.ts'
 def is_typescript(view):
+    if not view.file_name():
+        return False
     try:
         location = view.sel()[0].begin()
     except:
@@ -258,7 +260,7 @@ class EditorClient:
 
     # get or add per-file information that must be globally acessible
     def getOrAddFile(self, filename):
-        if os.name == "nt":
+        if (os.name == "nt") and filename:
             filename = filename.replace('/','\\')
         if not filename in self.fileMap:
             clientInfo = ClientFileInfo(filename)
@@ -381,7 +383,7 @@ def setFilePrefs(view):
 # given a list of regions and a (possibly zero-length) string to insert, 
 # send the appropriate change information to the server
 def sendReplaceChangesForRegions(view, regions, insertString):
-    if cli.ST2():
+    if cli.ST2() or (not is_typescript(view)):
        return
     for region in regions:
         location = getLocationFromPosition(view, region.begin())
@@ -412,9 +414,10 @@ def reloadBuffer(view, clientInfo=None):
 # if we have changes to the view not accounted for by change messages, 
 # send the whole buffer through a temporary file
 def checkUpdateView(view):
-    clientInfo = cli.getOrAddFile(view.file_name())
-    if cli.reloadRequired(view):
-        reloadBuffer(view, clientInfo)
+    if is_typescript(view):
+        clientInfo = cli.getOrAddFile(view.file_name())
+        if cli.reloadRequired(view):
+            reloadBuffer(view, clientInfo)
 
 
 # singleton that receives event calls from Sublime
@@ -727,7 +730,7 @@ class TypeScriptListener(sublime_plugin.EventListener):
                 info.clientInfo.changeCount = self.change_count(view)
                 info.preChangeSent = False
             elif lastCommand == "insert":
-                if (not "\n" in args['characters']) and (len(info.prevSel) == 1) and (info.prevSel[0].empty()) and (not info.clientInfo.pendingChanges):
+                if (not "\n" in args['characters']) and info.prevSel and (len(info.prevSel) == 1) and (info.prevSel[0].empty()) and (not info.clientInfo.pendingChanges):
                     info.clientInfo.changeCount = self.change_count(view)
                     prevCursor = info.prevSel[0].begin()
                     cursor = view.sel()[0].begin()
@@ -844,6 +847,9 @@ class TypeScriptListener(sublime_plugin.EventListener):
 # TODO: safe temp file name on Windows
 class TypescriptSave(sublime_plugin.TextCommand):
     def run(self, text):
+        if (not is_typescript(self.view)):
+            print("To run this command, please first assign a file name to the view")
+            return
         cli.service.saveto(self.view.file_name(), "/tmp/curstate")
 
 sublimeWordMask = 515
@@ -910,6 +916,9 @@ class TypescriptQuickInfoDoc(sublime_plugin.TextCommand):
             self.view.erase_status("typescript_info")
 
     def run(self, text):
+        if (not is_typescript(self.view)):
+            print("To run this command, please first assign a file name to the view")
+            return
         checkUpdateView(self.view)
         wordAtSel = self.view.classify(self.view.sel()[0].begin())
         if (wordAtSel & sublimeWordMask):
@@ -946,6 +955,9 @@ class TypescriptErrorInfo(sublime_plugin.TextCommand):
 # go to definition command
 class TypescriptGoToDefinitionCommand(sublime_plugin.TextCommand):
     def run(self, text):
+        if (not is_typescript(self.view)):
+            print("To run this command, please first assign a file name to the view")
+            return
         checkUpdateView(self.view)
         definitionResp = cli.service.definition(self.view.file_name(), getLocationFromView(self.view))
         if definitionResp.success:
@@ -960,6 +972,9 @@ class TypescriptGoToDefinitionCommand(sublime_plugin.TextCommand):
 # go to type command
 class TypescriptGoToTypeCommand(sublime_plugin.TextCommand):
     def run(self, text):
+        if (not is_typescript(self.view)):
+            print("To run this command, please first assign a file name to the view")
+            return
         checkUpdateView(self.view)
         typeResp = cli.service.type(self.view.file_name(), getLocationFromView(self.view))
         if typeResp.success:
@@ -985,6 +1000,9 @@ class FinishRenameCommandArgs:
 # rename command
 class TypescriptRenameCommand(sublime_plugin.TextCommand):
     def run(self, text):
+        if (not is_typescript(self.view)):
+            print("To run this command, please first assign a file name to the view")
+            return
         checkUpdateView(self.view)
         renameResp = cli.service.rename(self.view.file_name(), getLocationFromView(self.view))
         if renameResp.success:
@@ -1090,6 +1108,9 @@ class FindReferencesCommandArgs:
 # find references command
 class TypescriptFindReferencesCommand(sublime_plugin.TextCommand):
     def run(self, text):
+        if (not is_typescript(self.view)):
+            print("To run this command, please first assign a file name to the view")
+            return
         checkUpdateView(self.view)
         referencesResp = cli.service.references(self.view.file_name(), getLocationFromView(self.view))
         if referencesResp.success:
@@ -1280,14 +1301,19 @@ class TypescriptFormatOnKey(sublime_plugin.TextCommand):
         loc = self.view.sel()[0].begin()
         if insertKey:
             insertText(self.view, text, loc, key)
+        if (not is_typescript(self.view)):
+            print("To run this command, please first assign a file name to the view")
+            return
         formatResp = cli.service.formatOnKey(self.view.file_name(), getLocationFromView(self.view), key)
         if formatResp.success:
             codeEdits = formatResp.body
             applyFormattingChanges(text, self.view, codeEdits)
 
-
 # format a range of locations in the view
 def formatRange(text, view, begin, end):
+    if (not is_typescript(self.view)):
+        print("To run this command, please first assign a file name to the view")
+        return
     checkUpdateView(view)
     formatResp = cli.service.format(view.file_name(), getLocationFromPosition(view, begin), getLocationFromPosition(view, end))
     if formatResp.success:
@@ -1304,11 +1330,17 @@ class TypescriptFormatSelection(sublime_plugin.TextCommand):
         r = self.view.sel()[0]
         formatRange(text, self.view, r.begin(), r.end())
 
+    def is_enabled(self):
+        return is_typescript(self.view)
+
 
 # command to format the entire buffer
 class TypescriptFormatDocument(sublime_plugin.TextCommand):
     def run(self, text):
         formatRange(text, self.view, 0, self.view.size())
+
+    def is_enabled(self):
+        return is_typescript(self.view)
 
 
 nonBlankLinePattern = re.compile("[\S]+")
@@ -1317,6 +1349,9 @@ nonBlankLinePattern = re.compile("[\S]+")
 # command to format the current line
 class TypescriptFormatLine(sublime_plugin.TextCommand):
     def run(self, text):
+        if (not is_typescript(self.view)):
+            print("To run this command, please first assign a file name to the view")
+            return
         lineRegion = self.view.line(self.view.sel()[0])
         lineText = self.view.substr(lineRegion)
         if (nonBlankLinePattern.search(lineText)):
@@ -1331,6 +1366,9 @@ class TypescriptFormatLine(sublime_plugin.TextCommand):
 
 class TypescriptFormatBrackets(sublime_plugin.TextCommand):
     def run(self, text):
+        if (not is_typescript(self.view)):
+            print("To run this command, please first assign a file name to the view")
+            return
         checkUpdateView(self.view)
         sel=self.view.sel()
         if (len(sel) == 1):
@@ -1349,6 +1387,9 @@ class TypescriptFormatBrackets(sublime_plugin.TextCommand):
 class TypescriptPasteAndFormat(sublime_plugin.TextCommand):
     def run(self, text):
         view = self.view
+        if (not is_typescript(view)):
+            print("To run this command, please first assign a file name to the view")
+            return
         checkUpdateView(view)
         beforePaste = copyRegionsStatic(view.sel())
         if cli.ST2():
@@ -1372,6 +1413,9 @@ class TypescriptAutoIndentOnEnterBetweenCurlyBrackets(sublime_plugin.TextCommand
     """
     def run(self, text):
         view = self.view
+        if (not is_typescript(view)):
+            print("To run this command, please first assign a file name to the view")
+            return
         view.run_command('typescript_format_on_key', { "key": "\n" });
         loc = view.sel()[0].begin()
         rowOffset = view.rowoffset(loc)
