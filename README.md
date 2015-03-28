@@ -52,7 +52,7 @@ used by the plugin.
 
 Issues
 ------
-The plugin is current an Alpha, and as such there are many enhancements to 
+The plugin is currently an Alpha, and as such there are many enhancements to 
 implement, and many bugs to be fixed.  These are being tracked via the 
 [GitHub Issues](https://github.com/Microsoft/TypeScript-Sublime-Plugin/issues) 
 page for the project, and tagged with the appropriate issue type.
