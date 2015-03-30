@@ -948,9 +948,6 @@ class TypescriptErrorInfo(sublime_plugin.TextCommand):
         else:
             self.view.erase_status("typescript_error")
                 
-    def is_enabled(self):
-        return is_typescript(self.view)
-
 
 # go to definition command
 class TypescriptGoToDefinitionCommand(sublime_plugin.TextCommand):
@@ -1311,7 +1308,7 @@ class TypescriptFormatOnKey(sublime_plugin.TextCommand):
 
 # format a range of locations in the view
 def formatRange(text, view, begin, end):
-    if (not is_typescript(self.view)):
+    if (not is_typescript(view)):
         print("To run this command, please first assign a file name to the view")
         return
     checkUpdateView(view)
@@ -1330,17 +1327,10 @@ class TypescriptFormatSelection(sublime_plugin.TextCommand):
         r = self.view.sel()[0]
         formatRange(text, self.view, r.begin(), r.end())
 
-    def is_enabled(self):
-        return is_typescript(self.view)
-
-
 # command to format the entire buffer
 class TypescriptFormatDocument(sublime_plugin.TextCommand):
     def run(self, text):
         formatRange(text, self.view, 0, self.view.size())
-
-    def is_enabled(self):
-        return is_typescript(self.view)
 
 
 nonBlankLinePattern = re.compile("[\S]+")
