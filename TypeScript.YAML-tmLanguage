@@ -477,6 +477,7 @@ repository:
     - include: '#null-literal'
     - include: '#undefined-literal'
     - include: '#array-literal'
+    - include: '#this-literal'
 
   array-literal:
     name: meta.array.literal.ts
@@ -500,7 +501,11 @@ repository:
   null-literal:
     name: constant.language.null.ts
     match: \b(null)\b
-
+  
+  this-literal:
+    name: constant.language.this.ts
+    match: \b(this)\b
+      
   undefined-literal:
     name: constant.language.ts
     match: \b(undefined)\b

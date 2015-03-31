@@ -644,6 +644,10 @@
 					<key>include</key>
 					<string>#array-literal</string>
 				</dict>
+				<dict>
+					<key>include</key>
+					<string>#this-literal</string>
+				</dict>
 			</array>
 		</dict>
 		<key>logic-operator</key>
@@ -1230,6 +1234,13 @@
 					<string>#expression</string>
 				</dict>
 			</array>
+		</dict>
+		<key>this-literal</key>
+		<dict>
+			<key>match</key>
+			<string>\b(this)\b</string>
+			<key>name</key>
+			<string>constant.language.this.ts</string>
 		</dict>
 		<key>type</key>
 		<dict>
