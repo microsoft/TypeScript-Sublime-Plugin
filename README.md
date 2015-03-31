@@ -91,11 +91,22 @@ Tips
    auto indent (such as when typing the Enter key).  To have the
    TypeScript server supply auto indent, set the
    'typescript\_auto\_format' setting to true in your
-   Preferences.sublime-settings file.
-6. On Mac, the plug-in looks for the installed node executable on the
+   Preferences.sublime-settings file.  The plug-in does by default
+   request TypeScript formatting upon typing ';' or '}'.  You can turn
+   off TypeScript formatting on these characters by removing the key
+   bindings from the Default.sublime-keymap file in the TypeScript
+   package.
+6. You can get TypeScript formatting for a line by typing 'ctrl+;'.
+   You can get TypeScript formatting for a document by typing 'ctrl+t,
+   ctrl+f'.  If a selection is present that same key sequence will
+   format only the selection.  You can get TypeScript formatting for a
+   block by typing 'ctrl+}' from within that block.  After formatting,
+   the cursor will be placed outside the block, so that you can
+   continue to type 'ctrl+}' to format the next outer block.
+7. On Mac, the plug-in looks for the installed node executable on the
    default system path + in the directory '/usr/local/bin'.  If your
    node installation placed the node executable elsewhere, then add
-   the 'node_path' setting to your Preferences.sublime-settings file.
-   The value of the 'node_path' setting should be the pathname of the
+   the 'node\_path' setting to your Preferences.sublime-settings file.
+   The value of the 'node\_path' setting should be the pathname of the
    node executable as in '/usr/myinstalldir/node'.  
    
