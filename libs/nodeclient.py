@@ -41,26 +41,27 @@ class NodeCommClient(CommClient):
            # so only use it if on Windows
            si = subprocess.STARTUPINFO()
            si.dwFlags |= subprocess.SW_HIDE | subprocess.STARTF_USESHOWWINDOW
-           pref_settings = sublime.load_settings('Preferences.sublime-settings')
-           nodePath = pref_settings.get('node_path')
-           if not nodePath:
-              if (os.name == "nt"):
-                 nodePath = "node"
-              else:
-                 nodePath = NodeCommClient.__which("node")
-           if not nodePath:
-              path_list = os.environ["PATH"] + os.pathsep + os.path.join("usr","local","bin")
-              print("Unable to find executable file for node on path list: " + path_list)
-              print("To specify the node executable file name, use the 'node_path' setting")
-              self.__serverProc = None
+           
+        pref_settings = sublime.load_settings('Preferences.sublime-settings')
+        nodePath = pref_settings.get('node_path')
+        if not nodePath:
+           if (os.name == "nt"):
+              nodePath = "node"
            else:
-              print("Found node executable at " + nodePath)
-              if os.name == "nt":
-                 self.__serverProc = subprocess.Popen([nodePath, scriptPath],
-                                                      stdin=subprocess.PIPE, stdout=subprocess.PIPE,startupinfo=si)
-              else:
-                 self.__serverProc = subprocess.Popen([nodePath, scriptPath],
-                                                      stdin=subprocess.PIPE, stdout=subprocess.PIPE)
+              nodePath = NodeCommClient.__which("node")
+        if not nodePath:
+           path_list = os.environ["PATH"] + os.pathsep + os.path.join("usr","local","bin")
+           print("Unable to find executable file for node on path list: " + path_list)
+           print("To specify the node executable file name, use the 'node_path' setting")
+           self.__serverProc = None
+        else:
+           print("Found node executable at " + nodePath)
+           if os.name == "nt":
+              self.__serverProc = subprocess.Popen([nodePath, scriptPath],
+                                                   stdin=subprocess.PIPE, stdout=subprocess.PIPE,startupinfo=si)
+           else:
+              self.__serverProc = subprocess.Popen([nodePath, scriptPath],
+                                                   stdin=subprocess.PIPE, stdout=subprocess.PIPE)
         # start reader thread
         if self.__serverProc:
            readerThread = threading.Thread(target=NodeCommClient.__reader, args=(self.__serverProc.stdout, self.__msgq, self.__eventq))
