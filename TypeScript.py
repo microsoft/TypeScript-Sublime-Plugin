@@ -214,7 +214,7 @@ class EditorClient:
         procFile = settings.get('typescript_proc_file')
         if not procFile:
             # otherwise, get tsserver.js from package directory
-            procFile = os.path.join(pluginDir, "tsserver/tsserver.js")
+            procFile = os.path.join(pluginDir, "tsserver", "tsserver.js")
         print("spawning node module: " + procFile)
         
         self.nodeClient = NodeCommClient(procFile)
@@ -527,7 +527,7 @@ class TypeScriptListener(sublime_plugin.EventListener):
     # error messages arrived from the server; show them in view
     def showErrorMsgs(self, diagEvtBody, syntactic):
         filename = diagEvtBody.file
-        if os.name == 'nt':
+        if (os.name == 'nt') and filename:
            filename = filename.replace('/', '\\')
         diags = diagEvtBody.diagnostics
         info = self.fileMap.get(filename)

@@ -37,26 +37,30 @@ class NodeCommClient(CommClient):
 
         # start node process
         if os.name == "nt":
-            # linux subprocess module does not have STARTUPINFO
-            # so only use it if on Windows
-            si = subprocess.STARTUPINFO()
-            si.dwFlags |= subprocess.SW_HIDE | subprocess.STARTF_USESHOWWINDOW
-            self.__serverProc = subprocess.Popen(["node", scriptPath],
-                                         stdin=subprocess.PIPE, stdout=subprocess.PIPE, startupinfo=si)
-        else:
+           # linux subprocess module does not have STARTUPINFO
+           # so only use it if on Windows
+           si = subprocess.STARTUPINFO()
+           si.dwFlags |= subprocess.SW_HIDE | subprocess.STARTF_USESHOWWINDOW
            pref_settings = sublime.load_settings('Preferences.sublime-settings')
            nodePath = pref_settings.get('node_path')
            if not nodePath:
-              nodePath = NodeCommClient.__which("node")
+              if (os.name == "nt"):
+                 nodePath = "node"
+              else:
+                 nodePath = NodeCommClient.__which("node")
            if not nodePath:
-              path_list = os.environ["PATH"] + os.pathsep + "/usr/local/bin"
+              path_list = os.environ["PATH"] + os.pathsep + os.path.join("usr","local","bin")
               print("Unable to find executable file for node on path list: " + path_list)
               print("To specify the node executable file name, use the 'node_path' setting")
               self.__serverProc = None
            else:
               print("Found node executable at " + nodePath)
-              self.__serverProc = subprocess.Popen([nodePath, scriptPath],
-                                                   stdin=subprocess.PIPE, stdout=subprocess.PIPE)
+              if os.name == "nt":
+                 self.__serverProc = subprocess.Popen([nodePath, scriptPath],
+                                                      stdin=subprocess.PIPE, stdout=subprocess.PIPE,startupinfo=si)
+              else:
+                 self.__serverProc = subprocess.Popen([nodePath, scriptPath],
+                                                      stdin=subprocess.PIPE, stdout=subprocess.PIPE)
         # start reader thread
         if self.__serverProc:
            readerThread = threading.Thread(target=NodeCommClient.__reader, args=(self.__serverProc.stdout, self.__msgq, self.__eventq))
@@ -196,7 +200,7 @@ class NodeCommClient(CommClient):
         else:
            # /usr/local/bin is not on mac default path
            # but is where node is typically installed on mac
-           path_list = os.environ["PATH"] + os.pathsep + "/usr/local/bin"
+           path_list = os.environ["PATH"] + os.pathsep + os.path.join("usr","local","bin")
            for path in path_list.split(os.pathsep):
               path = path.strip('"')
               programPath = os.path.join(path, program)
