@@ -109,4 +109,12 @@ Tips
    the 'node\_path' setting to your Preferences.sublime-settings file.
    The value of the 'node\_path' setting should be the pathname of the
    node executable as in '/usr/myinstalldir/node'.  
-   
+8. When you open a file f.ts, the server will first check if f.ts is
+   configured by a tsconfig.json project.  If so, f.ts becomes part of
+   that project.  If not, then the server checks to see if f.ts is
+   referenced by any open projects.  If not, a new inferred project is
+   created for f.ts and the files in the inferred project are those
+   transitively referenced by comments in f.ts.  Coming in a future
+   release will be a way to list the files in each configured or
+   inferred project.  Also coming will be a way to see the current set
+   of compiler diagnostics for each project.

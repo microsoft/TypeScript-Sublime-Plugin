@@ -1424,7 +1424,6 @@ class TypescriptAutoIndentOnEnterBetweenCurlyBrackets(sublime_plugin.TextCommand
 
 # this is not always called on startup by Sublime, so we call it
 # from on_activated or on_close if necessary
-# TODO: get abbrev message and set up dictionary
 def plugin_loaded():
     global cli
     print('initialize typescript...')
