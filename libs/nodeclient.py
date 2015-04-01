@@ -36,11 +36,6 @@ class NodeCommClient(CommClient):
         self.__eventq = queue.Queue()
 
         # start node process
-        if os.name == "nt":
-           # linux subprocess module does not have STARTUPINFO
-           # so only use it if on Windows
-           si = subprocess.STARTUPINFO()
-           si.dwFlags |= subprocess.SW_HIDE | subprocess.STARTF_USESHOWWINDOW
            
         pref_settings = sublime.load_settings('Preferences.sublime-settings')
         nodePath = pref_settings.get('node_path')
@@ -57,6 +52,10 @@ class NodeCommClient(CommClient):
         else:
            print("Found node executable at " + nodePath)
            if os.name == "nt":
+              # linux subprocess module does not have STARTUPINFO
+              # so only use it if on Windows
+              si = subprocess.STARTUPINFO()
+              si.dwFlags |= subprocess.SW_HIDE | subprocess.STARTF_USESHOWWINDOW
               self.__serverProc = subprocess.Popen([nodePath, scriptPath],
                                                    stdin=subprocess.PIPE, stdout=subprocess.PIPE,startupinfo=si)
            else:
