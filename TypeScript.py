@@ -9,7 +9,7 @@ import sublime
 import sublime_plugin
 
 # get the directory path to this file; ST2 requires this to be done at global scope
-pluginDir = os.path.dirname(os.path.realpath(__file__))
+pluginDir = os.path.dirname(os.path.abspath(__file__))
 pluginName = os.path.basename(pluginDir)
 
 libsDir = os.path.join(pluginDir, 'libs')
