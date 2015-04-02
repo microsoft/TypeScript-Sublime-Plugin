@@ -7,7 +7,8 @@ an enhanced Sublime Text experience when working with TypeScript code.
 Installation
 ------------
 If using [Package Control](https://packagecontrol.io/) for Sublime Text, simply 
-install the `TypeScriptLang` package.  
+install the `TypeScriptLang` package.  (Note: The package has been submitted, but not
+accepted yet.  It should be available shortly).
 
 Alternatively, you can clone the repo directly into
 your Sublime plugin folder.  For example, for Sublime Text 3 on a Mac this would 
@@ -45,7 +46,6 @@ Command Pallete:
 |Go to definition  | ^T ^D (or F12)|
 |Paste and format  | (^ or Super) V|
 |Quick info        | ^T ^Q         |
-|Rename            | ^T ^M         |
 
 The plugin supports representing a TypeScript project via a 
 [tsconfig.json](https://github.com/Microsoft/TypeScript/pull/1692) file. If a 
