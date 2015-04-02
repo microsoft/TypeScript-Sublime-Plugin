@@ -114,16 +114,16 @@ Tips
    block by typing 'ctrl+}' from within that block.  After formatting,
    the cursor will be placed outside the block, so that you can
    continue to type 'ctrl+}' to format the next outer block.
-7. The plug-in looks for the installed node executable on the default
-   system path and also in the directory '/usr/local/bin'.  If your
-   node installation placed the node executable elsewhere, then add
-   the 'node\_path' setting to your Preferences.sublime-settings file.
-   The value of the 'node\_path' setting should be the pathname of the
-   node executable as in '/usr/myinstalldir/node'.  You can look for
-   the message 'spawning node module ...' in the Sublime console view
-   (ctrl + ` or View -> Show Console).  The line of text after this
-   will indicate whether the plug-in was able to find the node
-   executable.
+7. The plug-in looks for the installed node executable using the PATH
+   environment variable of the Sublime process.  and also in the
+   directory '/usr/local/bin'.  If your node installation placed the
+   node executable elsewhere, then add the 'node\_path' setting to
+   your Preferences.sublime-settings file.  The value of the
+   'node\_path' setting should be the pathname of the node executable
+   as in '/usr/myinstalldir/node'.  You can look for the message
+   'spawning node module ...' in the Sublime console view (ctrl + ` or
+   View -> Show Console).  The line of text after this will indicate
+   whether the plug-in was able to find the node executable.
 8. When you open a file f.ts, the server will first check if f.ts is
    configured by a tsconfig.json project.  If so, f.ts becomes part of
    that project.  If not, then the server checks to see if f.ts is
