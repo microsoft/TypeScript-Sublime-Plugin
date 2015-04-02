@@ -45,7 +45,7 @@ class NodeCommClient(CommClient):
            else:
               nodePath = NodeCommClient.__which("node")
         if not nodePath:
-           path_list = os.environ["PATH"] + os.pathsep + os.path.join("usr","local","bin")
+           path_list = os.environ["PATH"] + os.pathsep + "/usr/local/bin" + os.pathsep + "$NVM_BIN"
            print("Unable to find executable file for node on path list: " + path_list)
            print("To specify the node executable file name, use the 'node_path' setting")
            self.__serverProc = None
@@ -200,7 +200,7 @@ class NodeCommClient(CommClient):
         else:
            # /usr/local/bin is not on mac default path
            # but is where node is typically installed on mac
-           path_list = os.environ["PATH"] + os.pathsep + "/usr/local/bin"
+           path_list = os.environ["PATH"] + os.pathsep + "/usr/local/bin" + os.pathsep + "$NVM_BIN"
            for path in path_list.split(os.pathsep):
               path = path.strip('"')
               programPath = os.path.join(path, program)
