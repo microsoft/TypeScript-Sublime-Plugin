@@ -1463,3 +1463,5 @@ def plugin_unloaded():
         refInfo = cli.getRefInfo()
         if refInfo:
             refView.settings().set('refinfo', refInfo.asValue())
+    cli.service.exit()
+

@@ -15,6 +15,11 @@ class ServiceProxy:
         self.seq += 1
         return temp
 
+    def exit(self):
+        req = servicedefs.exitRequest(self.incrSeq())
+        jsonStr = jsonhelpers.encode(req)
+        self.__comm.postCmd(jsonStr)
+        
     def configure(self, hostInfo="Sublime Text", file=None, formatOptions=None):
         req = servicedefs.ConfigureRequest(self.incrSeq(), 
             servicedefs.ConfigureRequestArgs(hostInfo, file, formatOptions))

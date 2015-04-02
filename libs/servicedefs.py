@@ -57,6 +57,10 @@ class ConfigureRequest(Request):
     def __init__(self, seq, configureRequestArgs):
         super(ConfigureRequest, self).__init__("configure", seq, configureRequestArgs)        
 
+class ExitRequest(Request):
+    def __init__(self, seq):
+        super(ExitRequest, self).__init__("exit", seq)
+
 class FileRequestArgs(object):
     def __init__(self, file):
         """
