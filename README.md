@@ -115,7 +115,7 @@ Tips
    the cursor will be placed outside the block, so that you can
    continue to type 'ctrl+}' to format the next outer block.
 7. The plug-in looks for the installed node executable using the PATH
-   environment variable of the Sublime process.  and also in the
+   environment variable of the Sublime process and also in the
    directory '/usr/local/bin'.  If your node installation placed the
    node executable elsewhere, then add the 'node\_path' setting to
    your Preferences.sublime-settings file.  The value of the
