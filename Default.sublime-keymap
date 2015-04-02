@@ -94,6 +94,7 @@
         "args": { "key": "}" },
         "context": [
             { "key": "selector", "operator": "equal", "operand": "source.ts" },
+            { "key": "setting.typescript_auto_format", "operator": "equal", "operand": true },
             { "key": "setting.auto_match_enabled", "operator": "equal", "operand": true },
             { "key": "num_selections", "operator": "equal", "operand": 1},
             { "key": "selection_empty", "operator": "equal", "operand": true },
@@ -109,6 +110,7 @@
         "args": { "key": "}" },
         "context": [
             { "key": "num_selections", "operator": "equal", "operand": 1},
+            { "key": "setting.typescript_auto_format", "operator": "equal", "operand": true },
             { "key": "selection_empty", "operator": "equal", "operand": true, "match_all": true },
             { "key": "selector", "operator": "equal", "operand": "source.ts" },
             { "key": "setting.auto_match_enabled", "operator": "equal", "operand": false }
@@ -120,6 +122,7 @@
         "args": { "key": ";" },
         "context": [
             { "key": "selection_empty", "operator": "equal", "operand": true, "match_all": true },
+            { "key": "setting.typescript_auto_format", "operator": "equal", "operand": true },
             { "key": "selector", "operator": "equal", "operand": "source.ts" }
         ]
     },
@@ -128,7 +131,7 @@
         "command": "typescript_format_on_key",
         "args": { "key": "\n" },
         "context": [
-            { "key": "setting.typescript_auto_format", "operator": "equal", "operand": true },
+            { "key": "setting.typescript_auto_indent", "operator": "equal", "operand": true },
             { "key": "auto_complete_visible", "operator": "equal", "operand": false },
             { "key": "selector", "operator": "not_equal", "operand": "meta.scope.between-tag-pair" },
             { "key": "selection_empty", "operator": "equal", "operand": true, "match_all": true },
@@ -154,7 +157,7 @@
         "keys": [ "enter" ],
         "command": "typescript_auto_indent_on_enter_between_curly_brackets",
         "context": [
-            { "key": "setting.typescript_auto_format", "operator": "equal", "operand": true },
+            { "key": "setting.typescript_auto_indent", "operator": "equal", "operand": true },
             { "key": "auto_complete_visible", "operator": "equal", "operand": false },
             { "key": "selection_empty", "operator": "equal", "operand": true },
             { "key": "preceding_text", "operator": "regex_contains", "operand": "\\{$" },

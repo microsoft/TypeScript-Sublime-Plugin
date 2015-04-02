@@ -379,6 +379,7 @@ def setFilePrefs(view):
     settings.set('use_tab_stops', False)
     settings.set('translate_tabs_to_spaces', True)
     settings.add_on_change('tab_size',lambda: tab_size_changed(view))
+    settings.add_on_change('indent_size',lambda: tab_size_changed(view))
 
 # given a list of regions and a (possibly zero-length) string to insert, 
 # send the appropriate change information to the server

@@ -90,12 +90,13 @@ Tips
 5. By default, the plug-in retains the Sublime native behavior for
    auto indent (such as when typing the Enter key).  To have the
    TypeScript server supply auto indent, set the
-   'typescript\_auto\_format' setting to true in your
+   'typescript\_auto\_indent' setting to true in your
    Preferences.sublime-settings file.  The plug-in does by default
    request TypeScript formatting upon typing ';' or '}'.  You can turn
-   off TypeScript formatting on these characters by removing the key
-   bindings from the Default.sublime-keymap file in the TypeScript
-   package.
+   off TypeScript formatting on these characters by setting
+   'typescript\_auto\_format' to false.  The size of the indentation
+   is controlled by the 'indent\_size' setting.  If this setting is
+   not present, then indentation size will be set to 'tab\_size'.
 6. You can get TypeScript formatting for a line by typing 'ctrl+;'.
    You can get TypeScript formatting for a document by typing 'ctrl+t,
    ctrl+f'.  If a selection is present that same key sequence will
