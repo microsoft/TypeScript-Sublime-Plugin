@@ -433,6 +433,7 @@ class TypeScriptListener(sublime_plugin.EventListener):
         self.errRefreshRequested = False
         self.changeFocus = False
         self.mod = False
+        self.batch_close_queue = []
 
     def getInfo(self, view):
         info = None
@@ -686,7 +687,11 @@ class TypeScriptListener(sublime_plugin.EventListener):
                # make sure we know the latest state of the file
                reloadBuffer(view, info.clientInfo)
                # notify the server that the file is closed
-               cli.service.close(view.file_name())
+               self.batch_close_queue.append(view.name())
+               if len(self.fileMap) <= 1 or len(self.batch_close_queue) = 5:
+                    for fname in self.batch_close_queue:
+                        cli.service.close(fname)
+                    self.batch_close_queue = []
           
 
     # called by Sublime when the cursor moves (or when text is selected)
