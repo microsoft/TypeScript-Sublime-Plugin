@@ -564,7 +564,7 @@ class TypeScriptListener(sublime_plugin.EventListener):
                    view.add_regions(regionKey, errRegions, "keyword", "", sublime.DRAW_OUTLINED)
                 else:
                    view.add_regions(regionKey, errRegions, "keyword", "", 
-                                    sublime.DRAW_NO_FILL + sublime.DRAW_NO_OUTLINE + sublime.DRAW_SQUIGGLY_UNDERLINE)            
+                                    sublime.DRAW_NO_FILL + sublime.DRAW_NO_OUTLINE + sublime.DRAW_SQUIGGLY_UNDERLINE) 
 
     # event arrived from the server; call appropriate handler
     def dispatchEvent(self, ev):
@@ -912,7 +912,7 @@ class TypescriptQuickInfoDoc(sublime_plugin.TextCommand):
                 html = "<div>"+hinfoStr+"</div>"
                 if len(docStr) > 0:
                     html += "<div>"+hdocStr+"</div>"
-                self.view.show_popup(html, location = -1, max_width = 600)
+                self.view.show_popup(html, location = -1, max_width = 800)
         else:
             self.view.erase_status("typescript_info")
 
@@ -1409,7 +1409,7 @@ class TypescriptAutoIndentOnEnterBetweenCurlyBrackets(sublime_plugin.TextCommand
             return
         view.run_command('typescript_format_on_key', { "key": "\n" });
         loc = view.sel()[0].begin()
-        rowOffset = view.rowoffset(loc)
+        rowOffset = view.rowcol(loc)
         tabSize = view.settings().get('tab_size')
         braceOffset = rowOffset[1]
         ws = ""
