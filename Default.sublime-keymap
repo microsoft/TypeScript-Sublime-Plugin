@@ -87,6 +87,20 @@
             { "key": "selector", "operator": "equal", "operand": "source.ts" }
         ]
     },
+    {
+        "keys": [ "ctrl+t", "ctrl+c" ],
+        "command": "typescript_completion_panel",
+        "context": [
+            { "key": "selector", "operator": "equal", "operand": "source.ts" }
+        ]
+    },
+    {
+        "keys": [ "ctrl+t", "ctrl+o" ],
+        "command": "typescript_signature_panel",
+        "context": [
+            { "key": "selector", "operator": "equal", "operand": "source.ts" }
+        ]
+    },
     // In case when auto match is enabled, only format if not within {}
     {
         "keys": [ "}" ],

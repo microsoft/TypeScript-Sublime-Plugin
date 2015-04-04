@@ -879,6 +879,42 @@ class TypescriptQuickInfo(sublime_plugin.TextCommand):
         return is_typescript(self.view)
 
 
+class TypescriptCompletionPanel(sublime_plugin.TextCommand):
+    def run(self, text):
+        print('TypeScript completion panel triggered')
+        members = [
+            'addEventListener',
+            'anchors',
+            'appendChild',
+            'attributes']
+        self.view.window().show_quick_panel(members, self.on_selected)
+
+    def on_selected(self, index):
+        member = 'addEventListener'
+        self.view.run_command('insert', {'characters': member})
+
+    def is_enabled(self):
+        return is_typescript(self.view)
+
+
+class TypescriptSignaturePanel(sublime_plugin.TextCommand):
+    def run(self, text):
+        print('TypeScript signature panel triggered')
+        eventListenerOverloads = [
+            'addEventListener(type: "pointeenter", listener: (ev: PointerEvent) => any, useCapture?: boolean): void;',
+            'addEventListener(type: "pointerout", listener: (ev: PointerEvent) => any, useCapture?: boolean): void;',
+            'addEventListener(type: "pointerdown", listener: (ev: PointerEvent) => any, useCapture?: boolean): void;',
+            'addEventListener(type: "pointerup", listener: (ev: PointerEvent) => any, useCapture?: boolean): void;']
+        self.view.window().show_quick_panel(eventListenerOverloads, self.on_selected)
+
+    def on_selected(self, index):
+        snippet = '${1:type: "mouseout"}, ${2:listener: (ev: MouseEvent) => any}, ${3:useCapture?: boolean}'
+        self.view.run_command('insert_snippet', {"contents": snippet})
+
+    def is_enabled(self):
+        return is_typescript(self.view)
+
+
 class TypescriptShowDoc(sublime_plugin.TextCommand):
     def run(self, text, infoStr="", docStr=""):
        self.view.insert(text, self.view.sel()[0].begin(), infoStr + "\n\n")
@@ -1464,4 +1500,3 @@ def plugin_unloaded():
         if refInfo:
             refView.settings().set('refinfo', refInfo.asValue())
     cli.service.exit()
-
