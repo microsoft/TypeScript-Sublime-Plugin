@@ -909,24 +909,45 @@ class TypescriptSignaturePanel(sublime_plugin.TextCommand):
     def run(self, text):
         print('TypeScript signature panel triggered')
         self.results = []
-        # TODO
-        self.on_results(None)
+        self.snippets = []
+        cli.service.signatureHelp(self.view.file_name(),
+                                getLocationFromView(self.view), '',
+                                self.on_results)
         self.view.window().show_quick_panel(
                                 self.results, self.on_selected)
 
     def on_results(self, completionsResp):
-        self.results = [
-            'addEventListener(type: "pointeenter", listener: (ev: PointerEvent) => any, useCapture?: boolean): void;',
-            'addEventListener(type: "pointerout", listener: (ev: PointerEvent) => any, useCapture?: boolean): void;',
-            'addEventListener(type: "pointerdown", listener: (ev: PointerEvent) => any, useCapture?: boolean): void;',
-            'addEventListener(type: "pointerup", listener: (ev: PointerEvent) => any, useCapture?: boolean): void;']
+        if not completionsResp.success or not completionsResp.body:
+            return
+
+        for sig in completionsResp.body.items:
+            sigText = ""
+            snipText = ""
+            snipIndex = 1
+            if not sig.parameters:
+                continue
+            for param in sig.parameters:
+                if sigText:
+                    sigText += ", "
+                    snipText += ", "
+
+                paramText = ""
+                for part in param.displayParts:
+                    paramText += part.text
+
+                sigText += paramText
+                snipText += "${" + str(snipIndex) + ":" + paramText + "}"
+                snipIndex += 1
+
+            self.results.append(sigText)
+            self.snippets.append(snipText)
+
 
     def on_selected(self, index):
         if index == -1:
             return
 
-        snippet = '${1:type: "mouseout"}, ${2:listener: (ev: MouseEvent) => any}, ${3:useCapture?: boolean}'
-        self.view.run_command('insert_snippet', {"contents": snippet})
+        self.view.run_command('insert_snippet', {"contents": self.snippets[index]})
 
 
 class TypescriptShowDoc(sublime_plugin.TextCommand):

@@ -441,7 +441,7 @@ class SignatureHelpItems:
                  argumentIndex, argumentCount, **kwargs):
         self.items = [SignatureHelpItem(**shi)
                       for shi in items] if items else None
-        self.applicableSpan = TextSpan(applicableSpan) if applicableSpan else None
+        self.applicableSpan = TextSpan(**applicableSpan) if applicableSpan else None
         self.selectedItemIndex = selectedItemIndex
         self.argumentIndex = argumentIndex
         self.argumentCount = argumentCount
@@ -460,16 +460,16 @@ class SignatureHelpItem:
 
 class SignatureHelpParameter:
     def __init__(self, name, documentation, displayParts, isOptional):
-        this.name = name
-        this.isOptional = isOptional
+        self.name = name
+        self.isOptional = isOptional
         self.documentation = [SymbolDisplayPart(**doc) for doc in documentation] if documentation else None
         self.displayParts = [SymbolDisplayPart(**pdp) for pdp in displayParts] if displayParts else None
 
 
 class TextSpan:
     def __init__(self, start, end):
-        self.start = Location(start)
-        self.end = Location(end)
+        self.start = Location(**start)
+        self.end = Location(**end)
 
 
 class SymbolDisplayPart:
