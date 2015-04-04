@@ -405,7 +405,71 @@ class CompletionsRequest(FileLocationRequest):
         be the empty string), return the possible completions that
         begin with prefix.
         """
-        super(CompletionsRequest, self).__init__("completions", seq, completionsRequestArgs)
+        super(CompletionsRequest, self).__init__(
+                            "completions", seq, completionsRequestArgs)
+
+
+class SignatureHelpRequestArgs(FileLocationRequestArgs):
+    def __init__(self, file, line, offset, prefix=""):
+        """
+        Arguments for signature help messages
+        ``prefix`` Optional prefix to apply to possible completions.
+        """
+        super(SignatureHelpRequestArgs, self).__init__(file, line, offset)
+        self.prefix = prefix
+
+
+class SignatureHelpRequest(FileLocationRequest):
+    def __init__(self, seq, signatureHelpRequestArgs):
+        """
+        Signature help request; value of command field is "signatureHelp".
+        Given a file location (file, line, offset) and a prefix (which may
+        be the empty string), return the signature help overloads.
+        """
+        super(SignatureHelpRequest, self).__init__(
+                            "signatureHelp", seq, signatureHelpRequestArgs)
+
+
+class SignatureHelpResponse(Response):
+    def __init__(self, body=None, **kwargs):
+        super(SignatureHelpResponse, self).__init__(**kwargs)
+        self.body = SignatureHelpItems(**body) if body else None
+
+
+class SignatureHelpItems:
+    def __init__(self, items, applicableSpan, selectedItemIndex,
+                 argumentIndex, argumentCount, **kwargs):
+        self.items = [SignatureHelpItem(**shi)
+                      for shi in items] if items else None
+        self.applicableSpan = TextSpan(applicableSpan) if applicableSpan else None
+        self.selectedItemIndex = selectedItemIndex
+        self.argumentIndex = argumentIndex
+        self.argumentCount = argumentCount
+
+
+class SignatureHelpItem:
+    def __init__(self, isVariadic, prefixDisplayParts, suffixDisplayParts,
+                 separatorDisplayParts, parameters, documentation):
+        self.isVariadic = isVariadic
+        self.prefixDisplayParts = [SymbolDisplayPart(**pdp) for pdp in prefixDisplayParts] if prefixDisplayParts else None
+        self.suffixDisplayParts = [SymbolDisplayPart(**sdp) for sdp in suffixDisplayParts] if suffixDisplayParts else None
+        self.separatorDisplayParts = [SymbolDisplayPart(**sdp) for sdp in separatorDisplayParts] if separatorDisplayParts else None
+        self.parameters = [SignatureHelpParameter(**shp) for shp in parameters] if parameters else None
+        self.documentation = [SymbolDisplayPart(**doc) for doc in documentation] if documentation else None
+
+
+class SignatureHelpParameter:
+    def __init__(self, name, documentation, displayParts, isOptional):
+        this.name = name
+        this.isOptional = isOptional
+        self.documentation = [SymbolDisplayPart(**doc) for doc in documentation] if documentation else None
+        self.displayParts = [SymbolDisplayPart(**pdp) for pdp in displayParts] if displayParts else None
+
+
+class TextSpan:
+    def __init__(self, start, end):
+        self.start = Location(start)
+        self.end = Location(end)
 
 
 class SymbolDisplayPart:
@@ -433,12 +497,6 @@ class CompletionItem:
         self.kindModifiers = kindModifiers
         self.displayParts = [SymbolDisplayPart(**dp) for dp in displayParts] if displayParts else None
         self.documentation = [SymbolDisplayPart(**dp) for dp in documentation] if documentation else None
-
-
-class CompletionsResponse(Response):
-    def __init__(self, body=None, **kwargs):
-        super(CompletionsResponse, self).__init__(**kwargs)
-        self.body = [CompletionItem(**ci) for ci in body] if body else None
 
 
 class GeterrRequestArgs:

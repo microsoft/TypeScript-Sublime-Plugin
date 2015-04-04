@@ -880,39 +880,53 @@ class TypescriptQuickInfo(sublime_plugin.TextCommand):
 
 
 class TypescriptCompletionPanel(sublime_plugin.TextCommand):
-    def run(self, text):
-        print('TypeScript completion panel triggered')
-        members = [
-            'addEventListener',
-            'anchors',
-            'appendChild',
-            'attributes']
-        self.view.window().show_quick_panel(members, self.on_selected)
-
-    def on_selected(self, index):
-        member = 'addEventListener'
-        self.view.run_command('insert', {'characters': member})
-
     def is_enabled(self):
         return is_typescript(self.view)
 
+    def run(self, text):
+        print('TypeScript completion panel triggered')
+        self.members = []
+        cli.service.completions(self.view.file_name(),
+                                getLocationFromView(self.view), '',
+                                self.on_results)
+        self.view.window().show_quick_panel(self.members, self.on_selected)
+
+    def on_results(self, completionsResp):
+        self.members = []
+        if completionsResp.success and completionsResp.body:
+            self.members = [compl.name for compl in completionsResp.body]
+
+    def on_selected(self, index):
+        if index == -1:
+            return
+        self.view.run_command('insert', {'characters': self.members[index]})
+
 
 class TypescriptSignaturePanel(sublime_plugin.TextCommand):
+    def is_enabled(self):
+        return is_typescript(self.view)
+
     def run(self, text):
         print('TypeScript signature panel triggered')
-        eventListenerOverloads = [
+        self.results = []
+        # TODO
+        self.on_results(None)
+        self.view.window().show_quick_panel(
+                                self.results, self.on_selected)
+
+    def on_results(self, completionsResp):
+        self.results = [
             'addEventListener(type: "pointeenter", listener: (ev: PointerEvent) => any, useCapture?: boolean): void;',
             'addEventListener(type: "pointerout", listener: (ev: PointerEvent) => any, useCapture?: boolean): void;',
             'addEventListener(type: "pointerdown", listener: (ev: PointerEvent) => any, useCapture?: boolean): void;',
             'addEventListener(type: "pointerup", listener: (ev: PointerEvent) => any, useCapture?: boolean): void;']
-        self.view.window().show_quick_panel(eventListenerOverloads, self.on_selected)
 
     def on_selected(self, index):
+        if index == -1:
+            return
+
         snippet = '${1:type: "mouseout"}, ${2:listener: (ev: MouseEvent) => any}, ${3:useCapture?: boolean}'
         self.view.run_command('insert_snippet', {"contents": snippet})
-
-    def is_enabled(self):
-        return is_typescript(self.view)
 
 
 class TypescriptShowDoc(sublime_plugin.TextCommand):
