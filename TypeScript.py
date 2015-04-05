@@ -1014,7 +1014,7 @@ class TypescriptRenameCommand(sublime_plugin.TextCommand):
                 argsJsonStr = jsonhelpers.encode(args)
                 self.view.run_command('typescript_finish_rename', { "argsJson": argsJsonStr })
             if len(outerLocs) > 0:
-                sublime.active_window().show_input_panel("New name for {0}: ".format(displayName), "", 
+                sublime.active_window().show_input_panel("New name for {0}: ".format(displayName), infoLocs.info.displayName, 
                                                          on_done, None, on_cancel)
 
 
