@@ -663,6 +663,9 @@ class TypeScriptListener(sublime_plugin.EventListener):
 
     # update the status line with error info and quick info if no error info
     def update_status(self, view, info):
+        ev = cli.service.getEvent()
+        if ev is not None:
+            self.dispatchEvent(ev)
         if info.hasErrors:
             view.run_command('typescript_error_info')
         else:
