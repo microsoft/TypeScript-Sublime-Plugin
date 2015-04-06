@@ -32,12 +32,10 @@ class NodeCommClient(CommClient):
         The script file to run is passed to the constructor.
         """
 
-<<<<<<< HEAD
+
         self.asyncReq = {}
-=======
         self.__serverProc = None
 
->>>>>>> master
         # create response and event queues
         self.__msgq = queue.Queue()
         self.__eventq = queue.Queue()
