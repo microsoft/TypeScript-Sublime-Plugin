@@ -205,6 +205,7 @@ class RenameInfo:
         ``fullDisplayName`` Full display name of item to be renamed
         """
         self.fullDisplayName = fullDisplayName
+        self.displayName = displayName
 
 
 class FileLocations:
