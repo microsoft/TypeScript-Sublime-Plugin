@@ -648,12 +648,17 @@ class TypeScriptListener(sublime_plugin.EventListener):
     def on_load(self, view):
         logger.view_debug(view, "enter on_load")
         clientInfo = cli.getOrAddFile(view.file_name())
+
+        # reset the "close_all" flag when open new files
+        if self.about_to_close_all:
+            self.about_to_close_all = False
+
         print("loaded " + view.file_name())
         if clientInfo and clientInfo.renameOnLoad:
             view.run_command('typescript_delayed_rename_file',
                              { "locsName" : clientInfo.renameOnLoad })
             clientInfo.renameOnLoad = None
-        logger.view_debug(view, "enter on_load")
+        logger.view_debug(view, "exit on_load")
 
     def on_window_command(self, window, command_name, args):
         # logger.log.debug("notice window command: " + command_name)
