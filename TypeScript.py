@@ -10,8 +10,8 @@ import sublime
 import sublime_plugin
 
 ''' Enable logging '''
-logFileLevel = logging.DEBUG
-logConsLevel = logging.DEBUG
+logFileLevel = logging.WARN
+logConsLevel = logging.WARN
 
 def set_log_level(logger):
     logger.logFile.setLevel(logFileLevel)
@@ -21,14 +21,9 @@ def set_log_level(logger):
 # needs to be handled slightly differently
 if sys.version_info < (3, 0):
     from libs import logger
-    set_log_level(logger)
-
-    # This package exposes the Sublime classes that need to be reexposed here
-    from libs import *
 else:
     from .libs import logger
-    set_log_level(logger)
-    from .libs import * 
+set_log_level(logger)
 
 logger.log.warn('TypeScript plugin initialized.')
 
@@ -495,7 +490,7 @@ class TypeScriptListener(sublime_plugin.EventListener):
 
     # called by Sublime when a view receives focus
     def on_activated(self, view):
-        # logger.view_debug(view, "enter on_activated")
+        logger.view_debug(view, "enter on_activated")
         if not self.about_to_close_all:
             info = self.getInfo(view)
             if info:
@@ -510,7 +505,7 @@ class TypeScriptListener(sublime_plugin.EventListener):
                 self.setOnIdleTimer(20)
                 self.setOnSelectionIdleTimer(20)
                 self.changeFocus = True
-            # logger.view_debug(view, "exit on_activated")
+            logger.view_debug(view, "exit on_activated")
 
     # ask the server for diagnostic information on all opened ts files in
     # most-recently-used order
@@ -651,14 +646,14 @@ class TypeScriptListener(sublime_plugin.EventListener):
             self.refreshErrors(view, 500)
 
     def on_load(self, view):
-        # logger.view_debug(view, "enter on_load")
+        logger.view_debug(view, "enter on_load")
         clientInfo = cli.getOrAddFile(view.file_name())
         print("loaded " + view.file_name())
         if clientInfo and clientInfo.renameOnLoad:
             view.run_command('typescript_delayed_rename_file',
                              { "locsName" : clientInfo.renameOnLoad })
             clientInfo.renameOnLoad = None
-        # logger.view_debug(view, "enter on_load")
+        logger.view_debug(view, "enter on_load")
 
     def on_window_command(self, window, command_name, args):
         # logger.log.debug("notice window command: " + command_name)
@@ -710,7 +705,7 @@ class TypeScriptListener(sublime_plugin.EventListener):
             view.run_command('typescript_quick_info')
 
     def on_close(self, view):
-        # logger.view_debug(view, "enter on_close")
+        logger.view_debug(view, "enter on_close")
         if not self.about_to_close_all:
             if view.file_name() in self.mruFileList:
                 if not cli:
@@ -727,7 +722,7 @@ class TypeScriptListener(sublime_plugin.EventListener):
                     reloadBuffer(view, info.clientInfo)
                     # notify the server that the file is closed
                     cli.service.close(view.file_name())
-        # logger.view_debug(view, "exit on_close")
+        logger.view_debug(view, "exit on_close")
 
     # called by Sublime when the cursor moves (or when text is selected)
     # called after on_modified (when on_modified is called)
