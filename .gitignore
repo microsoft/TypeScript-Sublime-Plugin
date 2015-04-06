@@ -7,3 +7,4 @@ src/service/*.js
 src/testsrc/*.js
 src/service/editorServices.d.ts
 *.pyc
+TS.log

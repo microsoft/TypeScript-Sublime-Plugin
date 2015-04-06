@@ -1,12 +1,31 @@
 import json
 import os
 import sys
+import logging
 import time
 import re
 import codecs
 
 import sublime
 import sublime_plugin
+
+''' Enable logging '''
+logFileLevel = logging.WARN
+logConsLevel = logging.WARN
+
+def set_log_level(logger):
+    logger.logFile.setLevel(logFileLevel)
+    logger.console.setLevel(logConsLevel)
+
+# Sublime/Python 2 & 3 differ in the name of this module, thus package import
+# needs to be handled slightly differently
+if sys.version_info < (3, 0):
+    from libs import logger
+else:
+    from .libs import logger
+set_log_level(logger)
+
+logger.log.warn('TypeScript plugin initialized.')
 
 # get the directory path to this file; ST2 requires this to be done at global scope
 pluginDir = os.path.dirname(os.path.abspath(__file__))
@@ -292,6 +311,7 @@ class FileInfo:
         self.changeCountErrReq = -1
         self.lastModChangeCount = cc
         self.modCount = 0
+        
 
 # region that will not change as buffer is modified
 class StaticRegion:
@@ -433,6 +453,7 @@ class TypeScriptListener(sublime_plugin.EventListener):
         self.errRefreshRequested = False
         self.changeFocus = False
         self.mod = False
+        self.about_to_close_all = False
 
     def getInfo(self, view):
         info = None
@@ -469,19 +490,22 @@ class TypeScriptListener(sublime_plugin.EventListener):
 
     # called by Sublime when a view receives focus
     def on_activated(self, view):
-        info = self.getInfo(view)
-        if info:
-            info.lastCompletionLoc = None
-            # save cursor in case we need to read what was inserted
-            info.prevSel = copyRegionsStatic(view.sel())
-            # ask server for initial error diagnostics
-            self.refreshErrors(view, 200)
-            # set modified and selection idle timers, so we can read
-            # diagnostics and update
-            # status line
-            self.setOnIdleTimer(20)
-            self.setOnSelectionIdleTimer(20)
-            self.changeFocus = True
+        logger.view_debug(view, "enter on_activated")
+        if not self.about_to_close_all:
+            info = self.getInfo(view)
+            if info:
+                info.lastCompletionLoc = None
+                # save cursor in case we need to read what was inserted
+                info.prevSel = copyRegionsStatic(view.sel())
+                # ask server for initial error diagnostics
+                self.refreshErrors(view, 200)
+                # set modified and selection idle timers, so we can read
+                # diagnostics and update
+                # status line
+                self.setOnIdleTimer(20)
+                self.setOnSelectionIdleTimer(20)
+                self.changeFocus = True
+            logger.view_debug(view, "exit on_activated")
 
     # ask the server for diagnostic information on all opened ts files in
     # most-recently-used order
@@ -622,12 +646,24 @@ class TypeScriptListener(sublime_plugin.EventListener):
             self.refreshErrors(view, 500)
 
     def on_load(self, view):
+        logger.view_debug(view, "enter on_load")
         clientInfo = cli.getOrAddFile(view.file_name())
+
+        # reset the "close_all" flag when open new files
+        if self.about_to_close_all:
+            self.about_to_close_all = False
+
         print("loaded " + view.file_name())
         if clientInfo and clientInfo.renameOnLoad:
             view.run_command('typescript_delayed_rename_file',
                              { "locsName" : clientInfo.renameOnLoad })
             clientInfo.renameOnLoad = None
+        logger.view_debug(view, "exit on_load")
+
+    def on_window_command(self, window, command_name, args):
+        # logger.log.debug("notice window command: " + command_name)
+        if command_name in ["close_all", "exit", "close_window", "close_project"]:
+            self.about_to_close_all = True
         
     # ST3 only
     # for certain text commands, learn what changed and notify the
@@ -677,20 +713,24 @@ class TypeScriptListener(sublime_plugin.EventListener):
             view.run_command('typescript_quick_info')
 
     def on_close(self, view):
-       if not cli:
-           plugin_loaded()
-       if view.is_scratch() and (view.name() == "Find References"):
-           cli.disposeRefInfo()
-       else:
-           info = self.getInfo(view)
-           if info:
-               if (info in self.mruFileList):
-                   self.mruFileList.remove(info)
-               # make sure we know the latest state of the file
-               reloadBuffer(view, info.clientInfo)
-               # notify the server that the file is closed
-               cli.service.close(view.file_name())
-          
+        logger.view_debug(view, "enter on_close")
+        if not self.about_to_close_all:
+            if view.file_name() in self.mruFileList:
+                if not cli:
+                    plugin_loaded()
+
+                if view.is_scratch() and (view.name() == "Find References"):
+                    cli.disposeRefInfo()
+                else:
+                    info = self.getInfo(view)
+                if info:
+                    if (info in self.mruFileList):
+                        self.mruFileList.remove(info)
+                    # make sure we know the latest state of the file
+                    reloadBuffer(view, info.clientInfo)
+                    # notify the server that the file is closed
+                    cli.service.close(view.file_name())
+        logger.view_debug(view, "exit on_close")
 
     # called by Sublime when the cursor moves (or when text is selected)
     # called after on_modified (when on_modified is called)
