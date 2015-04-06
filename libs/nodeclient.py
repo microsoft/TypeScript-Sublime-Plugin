@@ -31,6 +31,8 @@ class NodeCommClient(CommClient):
         The script file to run is passed to the constructor.
         """
 
+        self.__serverProc = None
+
         # create response and event queues
         self.__msgq = queue.Queue()
         self.__eventq = queue.Queue()
@@ -51,16 +53,19 @@ class NodeCommClient(CommClient):
            self.__serverProc = None
         else:
            print("Found node executable at " + nodePath)
-           if os.name == "nt":
-              # linux subprocess module does not have STARTUPINFO
-              # so only use it if on Windows
-              si = subprocess.STARTUPINFO()
-              si.dwFlags |= subprocess.SW_HIDE | subprocess.STARTF_USESHOWWINDOW
-              self.__serverProc = subprocess.Popen([nodePath, scriptPath],
-                                                   stdin=subprocess.PIPE, stdout=subprocess.PIPE,startupinfo=si)
-           else:
-              self.__serverProc = subprocess.Popen([nodePath, scriptPath],
-                                                   stdin=subprocess.PIPE, stdout=subprocess.PIPE)
+           try: 
+              if os.name == "nt":
+                 # linux subprocess module does not have STARTUPINFO
+                 # so only use it if on Windows
+                 si = subprocess.STARTUPINFO()
+                 si.dwFlags |= subprocess.SW_HIDE | subprocess.STARTF_USESHOWWINDOW
+                 self.__serverProc = subprocess.Popen([nodePath, scriptPath],
+                                                      stdin=subprocess.PIPE, stdout=subprocess.PIPE,startupinfo=si)
+              else:
+                 self.__serverProc = subprocess.Popen([nodePath, scriptPath],
+                                                      stdin=subprocess.PIPE, stdout=subprocess.PIPE)
+           except FileNotFoundError:
+              self.__serverProc = None
         # start reader thread
         if self.__serverProc:
            readerThread = threading.Thread(target=NodeCommClient.__reader, args=(self.__serverProc.stdout, self.__msgq, self.__eventq))
@@ -68,6 +73,9 @@ class NodeCommClient(CommClient):
            readerThread.start()
         self.__debugProc = None
         self.__breakpoints = []
+
+    def serverStarted(self):
+       return self.__serverProc is not None
 
     # work in progress
     def addBreakpoint(self, file, line):
