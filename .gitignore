@@ -1,5 +1,4 @@
-TypeScript.tmLanguage.cache
-FindRefs.hidden-tmLanguage.cache
+*.cache
 .tmpbuf
 .log*
 built/*
