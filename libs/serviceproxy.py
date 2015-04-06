@@ -41,7 +41,9 @@ class ServiceProxy:
         def onCompletedJson(responseDict):
             obj = jsonhelpers.fromDict(servicedefs.CompletionsResponse, responseDict)
             onCompleted(obj)
-        self.__comm.sendCmd(onCompletedJson, jsonStr, req.seq)
+        self.__comm.sendCmdAsync(jsonStr, req.seq, onCompletedJson)
+#        self.__comm.sendCmd(onCompletedJson, jsonStr, req.seq)
+
 
     def definition(self, path, location=Location(1, 1)):
         req = servicedefs.DefinitionRequest(self.incrSeq(), servicedefs.FileLocationRequestArgs(path, location.line, location.offset))

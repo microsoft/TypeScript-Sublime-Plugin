@@ -219,7 +219,6 @@ class EditorClient:
         
         self.nodeClient = NodeCommClient(procFile)
         self.service = ServiceProxy(self.nodeClient)
-        self.completions = {}
         self.fileMap = {}
         self.refInfo = None
         self.versionST2 = False
@@ -425,7 +424,8 @@ def checkUpdateView(view):
 class TypeScriptListener(sublime_plugin.EventListener):
     def __init__(self):
         self.fileMap = {}
-        self.pendingCompletions = None
+        self.pendingCompletions = []
+        self.completionsReady = False
         self.completionView = None
         self.mruFileList = []
         self.pendingTimeout = 0
@@ -799,6 +799,7 @@ class TypeScriptListener(sublime_plugin.EventListener):
         if completionsResp.success:
             completions = []
             rawCompletions = completionsResp.body
+
             if rawCompletions:
                 for rawCompletion in rawCompletions:
                     name = rawCompletion.name
@@ -807,14 +808,16 @@ class TypeScriptListener(sublime_plugin.EventListener):
                 self.pendingCompletions = completions
             else:
                 self.pendingCompletions = []
+            active_view().run_command('hide_auto_complete')
+            self.completionsReady = True
+            self.run_auto_complete()
         else:
             self.pendingCompletions = []
 
-    #  not currently used; would be used in async case
     def run_auto_complete(self):
         active_view().run_command("auto_complete", {
             'disable_auto_insert': True, 
-            'api_completions_only': False, 
+            'api_completions_only': True, 
             'next_completion_if_showing': False, 
             'auto_complete_commit_on_tab': True, 
         })
@@ -828,19 +831,22 @@ class TypeScriptListener(sublime_plugin.EventListener):
             info.completionPrefixSel = decrLocsToRegions(locations, len(prefix))
             if not cli.ST2():
                view.add_regions("apresComp", decrLocsToRegions(locations, 0), flags=sublime.HIDDEN)
-            if info.lastCompletionLoc:
-                if (((len(prefix)-1)+info.lastCompletionLoc == locations[0]) and (prefix.startswith(info.lastCompletionPrefix))):
-                    return (info.lastCompletions,
-                            sublime.INHIBIT_WORD_COMPLETIONS | sublime.INHIBIT_EXPLICIT_COMPLETIONS)
-            location = getLocationFromPosition(view, locations[0])
-            checkUpdateView(view)
-            cli.service.completions(view.file_name(), location, prefix, self.handleCompletionInfo)
-            
+            if not self.completionsReady:
+                if info.lastCompletionLoc:
+                    if (((len(prefix)-1)+info.lastCompletionLoc == locations[0]) and (prefix.startswith(info.lastCompletionPrefix))):
+                        return (info.lastCompletions,
+                                sublime.INHIBIT_WORD_COMPLETIONS | sublime.INHIBIT_EXPLICIT_COMPLETIONS)
+
+                location = getLocationFromPosition(view, locations[0])
+                checkUpdateView(view)
+                cli.service.completions(view.file_name(), location, prefix, self.handleCompletionInfo)
             completions = self.pendingCompletions
-            info.lastCompletions = completions
-            info.lastCompletionLoc = locations[0]
-            info.lastCompletionPrefix = prefix
-            self.pendingCompletions = None
+            if self.completionsReady:
+                info.lastCompletions = completions
+                info.lastCompletionLoc = locations[0]
+                info.lastCompletionPrefix = prefix
+            self.pendingCompletions = []
+            self.completionsReady = False
             return (completions, sublime.INHIBIT_WORD_COMPLETIONS | sublime.INHIBIT_EXPLICIT_COMPLETIONS)
 
 

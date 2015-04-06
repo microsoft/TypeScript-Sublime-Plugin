@@ -20,6 +20,7 @@ class CommClient:
     def postCmd(self, cmd): pass
     def sendCmd(self, cb, cmd): pass
     def sendCmdSync(self, cmd): pass
+    def sendCmdAsync(self, cmd): pass
 
 
 class NodeCommClient(CommClient):
@@ -31,6 +32,7 @@ class NodeCommClient(CommClient):
         The script file to run is passed to the constructor.
         """
 
+        self.asyncReq = {}
         # create response and event queues
         self.__msgq = queue.Queue()
         self.__eventq = queue.Queue()
@@ -63,7 +65,7 @@ class NodeCommClient(CommClient):
                                                    stdin=subprocess.PIPE, stdout=subprocess.PIPE)
         # start reader thread
         if self.__serverProc:
-           readerThread = threading.Thread(target=NodeCommClient.__reader, args=(self.__serverProc.stdout, self.__msgq, self.__eventq))
+           readerThread = threading.Thread(target=NodeCommClient.__reader, args=(self.__serverProc.stdout, self.__msgq, self.__eventq, self.asyncReq))
            readerThread.daemon = True
            readerThread.start()
         self.__debugProc = None
@@ -112,6 +114,13 @@ class NodeCommClient(CommClient):
         else:
            if (cb):
               cb(self.makeTimeoutMsg(cmd, seq))
+
+    def sendCmdAsync(self, cmd, seq, cb):
+        """
+        Sends the command and registers a callback
+        """
+        if self.postCmd(cmd):
+           self.asyncReq[seq] = cb
      
     def sendCmdSync(self, cmd, seq):
         """
@@ -156,7 +165,7 @@ class NodeCommClient(CommClient):
         return ev
 
     @staticmethod
-    def __readMsg(stream, msgq, eventq):
+    def __readMsg(stream, msgq, eventq, asyncReq):
         """
         Reader thread helper
         """
@@ -172,21 +181,27 @@ class NodeCommClient(CommClient):
         if bodlen > 0:
             data = stream.read(bodlen)
             jsonStr = data.decode("utf-8")
-            msg = jsonhelpers.decode(servicedefs.Message, jsonStr)
-            if msg.type == "response":
-                print("response: "+jsonStr)
-                msgq.put(jsonStr)
+            dict = json.loads(jsonStr)
+            if dict['type'] == "response":
+               print("response: "+jsonStr)
+               request_seq = dict['request_seq']
+               if request_seq in asyncReq:
+                  callback = asyncReq.pop(request_seq, None)
+                  if callback:
+                     callback(dict)
+                     return
+               msgq.put(jsonStr)
             else:
                 print("event: "+jsonStr)
                 eventq.put(jsonStr)
 
     @staticmethod
-    def __reader(stream, msgq, eventq):
+    def __reader(stream, msgq, eventq, asyncReq):
         """
         Main function for reader thread
         """
         while True:
-            NodeCommClient.__readMsg(stream, msgq, eventq)
+            NodeCommClient.__readMsg(stream, msgq, eventq, asyncReq)
 
     @staticmethod
     def __which(program):
