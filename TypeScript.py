@@ -879,29 +879,6 @@ class TypescriptQuickInfo(sublime_plugin.TextCommand):
         return is_typescript(self.view)
 
 
-class TypescriptCompletionPanel(sublime_plugin.TextCommand):
-    def is_enabled(self):
-        return is_typescript(self.view)
-
-    def run(self, text):
-        print('TypeScript completion panel triggered')
-        self.members = []
-        cli.service.completions(self.view.file_name(),
-                                getLocationFromView(self.view), '',
-                                self.on_results)
-        self.view.window().show_quick_panel(self.members, self.on_selected)
-
-    def on_results(self, completionsResp):
-        self.members = []
-        if completionsResp.success and completionsResp.body:
-            self.members = [compl.name for compl in completionsResp.body]
-
-    def on_selected(self, index):
-        if index == -1:
-            return
-        self.view.run_command('insert', {'characters': self.members[index]})
-
-
 class TypescriptSignaturePanel(sublime_plugin.TextCommand):
     def is_enabled(self):
         return is_typescript(self.view)
@@ -911,43 +888,49 @@ class TypescriptSignaturePanel(sublime_plugin.TextCommand):
         self.results = []
         self.snippets = []
         cli.service.signatureHelp(self.view.file_name(),
-                                getLocationFromView(self.view), '',
-                                self.on_results)
-        self.view.window().show_quick_panel(
-                                self.results, self.on_selected)
+                                  getLocationFromView(self.view), '',
+                                  self.on_results)
+        if self.results:
+            self.view.window().show_quick_panel(self.results, self.on_selected)
 
     def on_results(self, completionsResp):
         if not completionsResp.success or not completionsResp.body:
             return
 
-        for sig in completionsResp.body.items:
-            sigText = ""
-            snipText = ""
-            snipIndex = 1
-            if not sig.parameters:
-                continue
-            for param in sig.parameters:
-                if sigText:
-                    sigText += ", "
-                    snipText += ", "
+        def get_text_from_parts(displayParts):
+            result = ""
+            if displayParts:
+                for part in displayParts:
+                    result += part.text
+            return result
 
-                paramText = ""
-                for part in param.displayParts:
-                    paramText += part.text
+        for signature in completionsResp.body.items:
+            signatureText = get_text_from_parts(signature.prefixDisplayParts)
+            snippetText = ""
+            paramIdx = 1
 
-                sigText += paramText
-                snipText += "${" + str(snipIndex) + ":" + paramText + "}"
-                snipIndex += 1
+            if signature.parameters:
+                for param in signature.parameters:
+                    if paramIdx > 1:
+                        signatureText += ", "
+                        snippetText += ", "
 
-            self.results.append(sigText)
-            self.snippets.append(snipText)
+                    paramText = ""
+                    paramText += get_text_from_parts(param.displayParts)
+                    signatureText += paramText
+                    snippetText += "${" + str(paramIdx) + ":" + paramText + "}"
+                    paramIdx += 1
 
+            signatureText += get_text_from_parts(signature.suffixDisplayParts)
+            self.results.append(signatureText)
+            self.snippets.append(snippetText)
 
     def on_selected(self, index):
         if index == -1:
             return
 
-        self.view.run_command('insert_snippet', {"contents": self.snippets[index]})
+        self.view.run_command('insert_snippet',
+                              {"contents": self.snippets[index]})
 
 
 class TypescriptShowDoc(sublime_plugin.TextCommand):
