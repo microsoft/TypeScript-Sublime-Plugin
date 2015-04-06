@@ -885,6 +885,60 @@ class TypescriptQuickInfo(sublime_plugin.TextCommand):
         return is_typescript(self.view)
 
 
+class TypescriptSignaturePanel(sublime_plugin.TextCommand):
+    def is_enabled(self):
+        return is_typescript(self.view)
+
+    def run(self, text):
+        print('TypeScript signature panel triggered')
+        self.results = []
+        self.snippets = []
+        cli.service.signatureHelp(self.view.file_name(),
+                                  getLocationFromView(self.view), '',
+                                  self.on_results)
+        if self.results:
+            self.view.window().show_quick_panel(self.results, self.on_selected)
+
+    def on_results(self, completionsResp):
+        if not completionsResp.success or not completionsResp.body:
+            return
+
+        def get_text_from_parts(displayParts):
+            result = ""
+            if displayParts:
+                for part in displayParts:
+                    result += part.text
+            return result
+
+        for signature in completionsResp.body.items:
+            signatureText = get_text_from_parts(signature.prefixDisplayParts)
+            snippetText = ""
+            paramIdx = 1
+
+            if signature.parameters:
+                for param in signature.parameters:
+                    if paramIdx > 1:
+                        signatureText += ", "
+                        snippetText += ", "
+
+                    paramText = ""
+                    paramText += get_text_from_parts(param.displayParts)
+                    signatureText += paramText
+                    snippetText += "${" + str(paramIdx) + ":" + paramText + "}"
+                    paramIdx += 1
+
+            signatureText += get_text_from_parts(signature.suffixDisplayParts)
+            self.results.append(signatureText)
+            self.snippets.append(snippetText)
+
+    def on_selected(self, index):
+        if index == -1:
+            return
+
+        self.view.run_command('insert_snippet',
+                              {"contents": self.snippets[index]})
+
+
 class TypescriptShowDoc(sublime_plugin.TextCommand):
     def run(self, text, infoStr="", docStr=""):
        self.view.insert(text, self.view.sel()[0].begin(), infoStr + "\n\n")
@@ -1470,4 +1524,3 @@ def plugin_unloaded():
         if refInfo:
             refView.settings().set('refinfo', refInfo.asValue())
     cli.service.exit()
-
