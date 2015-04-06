@@ -19,6 +19,17 @@ cd ~/"Library/Application Support/Sublime Text 3/Packages"
 git clone https://github.com/Microsoft/TypeScript-Sublime-Plugin.git TypeScript
 ```
 
+And on Windows something like:
+
+```
+cd "%APPDATA%\Sublime Text 3\Packages"
+git clone https://github.com/Microsoft/TypeScript-Sublime-Plugin.git TypeScript
+```
+
+Note if you are using the portable version of Sublime Text, the location will be
+different.  (See http://docs.sublimetext.info/en/latest/basic_concepts.html#the-data-directory
+for more info).
+
 Platform support
 ----------------
 The plugin has identical behavior across Windows, Mac, and Linux
