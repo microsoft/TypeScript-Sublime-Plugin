@@ -16,7 +16,7 @@ class ServiceProxy:
         return temp
 
     def exit(self):
-        req = servicedefs.exitRequest(self.incrSeq())
+        req = servicedefs.ExitRequest(self.incrSeq())
         jsonStr = jsonhelpers.encode(req)
         self.__comm.postCmd(jsonStr)
         
