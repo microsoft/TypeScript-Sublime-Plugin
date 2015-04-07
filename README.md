@@ -30,6 +30,8 @@ Note if you are using the portable version of Sublime Text, the location will be
 different.  (See http://docs.sublimetext.info/en/latest/basic_concepts.html#the-data-directory
 for more info).
 
+**IMPORTANT** If you already have a package called `TypeScript` installed, either remove this first, or clone this repo to a different folder, else module name resolution can break the plugin.
+
 Platform support
 ----------------
 The plugin has identical behavior across Windows, Mac, and Linux
