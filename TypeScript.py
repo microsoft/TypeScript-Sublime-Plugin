@@ -5,6 +5,7 @@ import logging
 import time
 import re
 import codecs
+from string import Template
 
 import sublime
 import sublime_plugin
@@ -46,6 +47,9 @@ except ImportError:
     pass
 
 TOOLTIP_SUPPORT = int(sublime.version()) >= 3072
+
+# Will contain the CSS resource used to style signature overload popups
+popup_html = None
 
 # globally-accessible information singleton; set in function plugin_loaded
 cli = None
@@ -1533,11 +1537,25 @@ class TypescriptAutoIndentOnEnterBetweenCurlyBrackets(sublime_plugin.TextCommand
 # this is not always called on startup by Sublime, so we call it
 # from on_activated or on_close if necessary
 def plugin_loaded():
-    global cli
+    global cli, popup_html
     print('initialize typescript...')
     print(sublime.version())
     cli = EditorClient()
     cli.setFeatures()
+
+    if popup_html is None and TOOLTIP_SUPPORT:
+        # Full path to CSS file
+        html_path = os.path.join(pluginDir, 'popup.html')
+
+        # Needs to be in format such as: 'Packages/TypeScript/popup.html'
+        rel_path = html_path[len(sublime.packages_path()) - len('Packages'):]
+
+        popup_text = sublime.load_resource(rel_path)
+        print('Loaded tooltip template from {0}'.format(rel_path))
+
+        # See https://docs.python.org/2.6/library/string.html#template-strings
+        popup_html = Template(popup_text)
+
     refView = getRefView(False)
     if refView:
         settings = refView.settings()
