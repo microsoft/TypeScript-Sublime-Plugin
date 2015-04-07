@@ -1500,6 +1500,27 @@ class TypescriptPasteAndFormat(sublime_plugin.TextCommand):
             ralineEnd = view.line(ra.begin()).end()
             formatRange(text, view, rblineStart, ralineEnd)
 
+class NavToCommand(sublime_plugin.WindowCommand):
+    
+    def run(self):
+        print("start nav_to command")
+        self.window.show_input_panel("Navigate To:", "", self.on_finish_input, None, None)
+
+    def format_navto_res(self, item_list):
+        return [[i['kind'] + ": " + i['name'], i['file']] for i in item_list]
+
+    def on_finish_input(self, text):
+        text = text.strip()
+        view = self.window.active_view()
+        self.item_list = cli.service.navTo(text, view.file_name())
+        self.window.show_quick_panel(self.format_navto_res(self.item_list), None, flags = sublime.KEEP_OPEN_ON_FOCUS_LOST, on_highlight = self.on_highlight)
+
+    def on_highlight(self, index):
+        item = self.item_list[index]
+        line, offset = item['start']['line'], item['start']['offset']
+        view = self.window.open_file(item['file'] + ":%s:%s" % (line, offset), sublime.ENCODED_POSITION)
+        pass
+
 
 class TypescriptAutoIndentOnEnterBetweenCurlyBrackets(sublime_plugin.TextCommand):
     """

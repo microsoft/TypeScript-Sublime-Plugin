@@ -1,4 +1,5 @@
 import collections
+import json
 
 import jsonhelpers
 import servicedefs
@@ -131,8 +132,27 @@ class ServiceProxy:
                 event = jsonhelpers.decode(servicedefs.DiagnosticEvent, evJsonStr)
         return event
 
-
     def saveto(self, path, alternatePath):
         req = servicedefs.SavetoRequest(self.incrSeq(), servicedefs.ReloadRequestArgs(path, alternatePath))
         jsonStr = jsonhelpers.encode(req)
         self.__comm.postCmd(jsonStr)        
+
+    def navTo(self, searchText, fileName):
+        req = self.wrap_req_dict ({
+            'command': 'navto',
+            'arguments': {
+                'searchValue': searchText,
+                'file': fileName,
+                'maxResultCount': 20
+            }
+        })
+        resp_str = self.__comm.sendCmdSync(json.dumps(req), req['seq'])
+        if resp_str['success']:
+            return resp_str['body']
+        else:
+            return {}
+
+    def wrap_req_dict(self, request_dict):
+        request_dict['seq'] = self.incrSeq()
+        request_dict['type'] = 'request'
+        return request_dict
