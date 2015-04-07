@@ -851,9 +851,10 @@ class TypeScriptListener(sublime_plugin.EventListener):
                 self.pendingCompletions = completions
             else:
                 self.pendingCompletions = []
-            active_view().run_command('hide_auto_complete')
-            self.completionsReady = True
-            self.run_auto_complete()
+                self.completionsReady = True
+            if not cli.ST2():
+                active_view().run_command('hide_auto_complete')
+                self.run_auto_complete()
         else:
             self.pendingCompletions = []
 
@@ -874,7 +875,7 @@ class TypeScriptListener(sublime_plugin.EventListener):
             info.completionPrefixSel = decrLocsToRegions(locations, len(prefix))
             if not cli.ST2():
                view.add_regions("apresComp", decrLocsToRegions(locations, 0), flags=sublime.HIDDEN)
-            if not self.completionsReady:
+            if (not self.completionsReady) or cli.ST2():
                 if info.lastCompletionLoc:
                     if (((len(prefix)-1)+info.lastCompletionLoc == locations[0]) and (prefix.startswith(info.lastCompletionPrefix))):
                         return (info.lastCompletions,
@@ -882,7 +883,10 @@ class TypeScriptListener(sublime_plugin.EventListener):
 
                 location = getLocationFromPosition(view, locations[0])
                 checkUpdateView(view)
-                cli.service.completions(view.file_name(), location, prefix, self.handleCompletionInfo)
+                if cli.ST2():
+                    cli.service.completions(view.file_name(), location, prefix, self.handleCompletionInfo)
+                else:
+                    cli.service.asyncCompletions(view.file_name(), location, prefix, self.handleCompletionInfo)
             completions = self.pendingCompletions
             if self.completionsReady:
                 info.lastCompletions = completions
