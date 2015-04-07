@@ -906,7 +906,6 @@ class TypeScriptListener(sublime_plugin.EventListener):
                 self.pendingCompletions = completions
             else:
                 self.pendingCompletions = []
-
             if not cli.ST2():
                 self.completionsReady = True
                 active_view().run_command('hide_auto_complete')
