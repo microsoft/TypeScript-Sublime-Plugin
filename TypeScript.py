@@ -48,7 +48,7 @@ except ImportError:
 
 TOOLTIP_SUPPORT = int(sublime.version()) >= 3072
 
-# Will contain the CSS resource used to style signature overload popups
+# Will contain the template resource used to style signature overload popups
 popup_html = None
 
 # globally-accessible information singleton; set in function plugin_loaded
@@ -900,6 +900,15 @@ class TypeScriptListener(sublime_plugin.EventListener):
             self.completionsReady = False
             return (completions, sublime.INHIBIT_WORD_COMPLETIONS | sublime.INHIBIT_EXPLICIT_COMPLETIONS)
 
+    def on_query_context(self, view, key, operator, operand, match_all):
+        print('in on_query_context for key: {0}, operator: {1}, operand: {2}, match_all: {3}'.format(
+                   key, operator, operand, match_all))
+        if key == 'is_popup_visible' and TOOLTIP_SUPPORT:
+            return view.is_popup_visible()
+        if key == 'tooltip_supported':
+            return TOOLTIP_SUPPORT == operand
+        return None
+
 
 # for debugging, send command to server to save server buffer in temp file
 # TODO: safe temp file name on Windows
@@ -988,6 +997,47 @@ class TypescriptSignaturePanel(sublime_plugin.TextCommand):
 
         self.view.run_command('insert_snippet',
                               {"contents": self.snippets[index]})
+
+
+class TypescriptSignaturePopup(sublime_plugin.TextCommand):
+    def run(self, edit, move=None):
+        print('In run for signature panel')
+        # Need build 3070 or greater for popups
+        if not TOOLTIP_SUPPORT:
+            return
+
+        # temporary filler
+        subs = {
+            'signature': '<span class="name">attr</span>( <span class="current"><span class="param">attributeName</span></span>: <span class="type">string</span>, <span class="param">value</span>: <span class="type">string|number</span> )<span class="type">: JQuery</span>', 
+            'description': '<i>Set one or more attributes for the set of matched elements.</i>',
+            'activeParam': '<span class="param">attributeName:</span> <i>The name of the attribute to set.</i>',
+            'index': '2/3 overloads',
+            'link': "overloads"
+        }
+        popup_text = popup_html.substitute(subs)
+
+        # if not move:
+        #     _counter = 0
+        # elif move == 'next':
+        #     _counter += 1
+        #     if _counter >= len(_overloads):
+        #         _counter = len(_overloads) - 1
+        # elif move == 'prev':
+        #     _counter -= 1
+        #     if _counter < 0:
+        #         _counter = 0
+
+        if not self.view.is_popup_visible():
+            self.view.show_popup(
+                popup_text,
+                sublime.COOPERATE_WITH_AUTO_COMPLETE,
+                on_navigate=self.on_navigate,
+                max_width=800)
+        else:
+            self.view.update_popup(popup_text)
+
+    def on_navigate(self, loc):
+        print('on_navigate called from popup with {0}'.format(loc))
 
 
 class TypescriptShowDoc(sublime_plugin.TextCommand):
@@ -1544,7 +1594,7 @@ def plugin_loaded():
     cli.setFeatures()
 
     if popup_html is None and TOOLTIP_SUPPORT:
-        # Full path to CSS file
+        # Full path to template file
         html_path = os.path.join(pluginDir, 'popup.html')
 
         # Needs to be in format such as: 'Packages/TypeScript/popup.html'

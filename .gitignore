@@ -6,5 +6,6 @@ built/*
 src/service/*.js
 src/testsrc/*.js
 src/service/editorServices.d.ts
+libs/rpdb/
 *.pyc
 TS.log
