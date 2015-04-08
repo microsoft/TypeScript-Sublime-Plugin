@@ -122,6 +122,15 @@
         ]
     },
     {
+        "keys": [","],
+        "command": "typescript_signature_popup",
+        "args": {"move": "arg_shift"},
+        "context": [
+            { "key": "selector", "operator": "equal", "operand": "source.ts" },
+            { "key": "is_popup_visible_comma"}
+        ]
+    },
+    {
         "keys": ["alt+down"],
         "command": "typescript_signature_popup",
         "args": {"move": "next"},
