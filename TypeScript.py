@@ -1537,6 +1537,9 @@ class NavToCommand(sublime_plugin.WindowCommand):
         cls.started = False
         cls.ini_finished = False
 
+    def is_enabled(self):
+        return is_typescript(self.window.active_view())
+
     def run(self, search_text = ""):
         logger.log.debug ("start running nvato wiht text: %s" % search_text)
 
