@@ -23,7 +23,7 @@
         ]
     },
     {
-        "keys": [ "f7"],
+        "keys": [ "ctrl+f7"],
         "command": "nav_to",
         "context": [
             { "key": "selector", "operator": "equal", "operand": "source.ts" }
