@@ -1000,32 +1000,26 @@ class TypescriptSignaturePanel(sublime_plugin.TextCommand):
 
 
 class TypescriptSignaturePopup(sublime_plugin.TextCommand):
+    def is_enabled(self):
+        return is_typescript(self.view)
+
     def run(self, edit, move=None):
         print('In run for signature panel')
         # Need build 3070 or greater for popups
         if not TOOLTIP_SUPPORT:
             return
 
-        # temporary filler
-        subs = {
-            'signature': '<span class="name">attr</span>( <span class="current"><span class="param">attributeName</span></span>: <span class="type">string</span>, <span class="param">value</span>: <span class="type">string|number</span> )<span class="type">: JQuery</span>', 
-            'description': '<i>Set one or more attributes for the set of matched elements.</i>',
-            'activeParam': '<span class="param">attributeName:</span> <i>The name of the attribute to set.</i>',
-            'index': '2/3 overloads',
-            'link': "overloads"
-        }
-        popup_text = popup_html.substitute(subs)
+        if move is None:
+            cli.service.signatureHelp(self.view.file_name(),
+                                      getLocationFromView(self.view), '',
+                                      self.on_results)
+        elif move == 'prev':
+            self.session.move_prev()
+        else:
+            self.session.move_next()
 
-        # if not move:
-        #     _counter = 0
-        # elif move == 'next':
-        #     _counter += 1
-        #     if _counter >= len(_overloads):
-        #         _counter = len(_overloads) - 1
-        # elif move == 'prev':
-        #     _counter -= 1
-        #     if _counter < 0:
-        #         _counter = 0
+        popup_parts = self.session.get_current_signature_template()
+        popup_text = popup_html.substitute(popup_parts)
 
         if not self.view.is_popup_visible():
             self.view.show_popup(
@@ -1036,8 +1030,93 @@ class TypescriptSignaturePopup(sublime_plugin.TextCommand):
         else:
             self.view.update_popup(popup_text)
 
+    def on_results(self, completionsResp):
+        if not completionsResp.success or not completionsResp.body:
+            return
+
+        self.session = SignatureSession(completionsResp.body)
+
     def on_navigate(self, loc):
+        # TODO
         print('on_navigate called from popup with {0}'.format(loc))
+
+
+class SignatureSession():
+    def __init__(self, signatureHelpItems):
+        self.sigItems = signatureHelpItems
+        self.sigIndex = signatureHelpItems.selectedItemIndex
+        self.paramIndex = signatureHelpItems.argumentIndex
+
+    def signature_to_html(self, item):
+        result = ""
+
+        def normalize_style(name):
+            if name in ['methodName']:
+                return 'name'
+            elif name in ['keyword', 'interfaceName']:
+                return 'type'
+            elif name in ['parameterName']:
+                return 'param'
+            return 'text'
+
+        def concat_display_parts(parts, underlineName=False):
+            result = ""
+            template = '<span class="{0}">{1}</span>'
+            for part in parts:
+                css_class = normalize_style(part.kind)
+                result += template.format(css_class, part.text)
+                if underlineName and css_class == 'param':
+                    result = '<span class="current">' + result + '</span>'
+            return result
+
+        # Add the prefix parts
+        result += concat_display_parts(item.prefixDisplayParts)
+
+        # Add the params (if any)
+        if item.parameters:
+            idx = 0
+            for param in item.parameters:
+                if idx:
+                    result += ", "
+                result += concat_display_parts(param.displayParts,
+                                               idx == self.paramIndex)
+                idx += 1
+
+        # Add the suffix parts
+        result += concat_display_parts(item.suffixDisplayParts)
+
+        return result
+
+    def get_current_signature_template(self):
+        if self.sigIndex == -1:
+            return ""
+        sigItem = self.sigItems.items[self.sigIndex]
+        signature = self.signature_to_html(sigItem)
+        description = sigItem.documentation[0].text
+
+        if self.paramIndex >= 0 and sigItem.parameters:
+            param = sigItem.parameters[self.paramIndex]
+            activeParam = '<span class="param">{0}:</span> <i>{1}</i>'.format(
+                                       param.name, param.documentation[0].text)
+        else:
+            activeParam = ''
+
+        return {"signature": signature,
+                "description": description,
+                "activeParam": activeParam,
+                "index": "{0}/{1}".format(self.sigIndex + 1,
+                                          len(self.sigItems.items)),
+                "link": "link"}
+
+    def move_next(self):
+        self.sigIndex += 1
+        if self.sigIndex >= len(self.sigItems.items):
+            self.sigIndex = len(self.sigItems.items) - 1
+
+    def move_prev(self):
+        self.sigIndex -= 1
+        if self.sigIndex < 0:
+            self.sigIndex = 0
 
 
 class TypescriptShowDoc(sublime_plugin.TextCommand):
