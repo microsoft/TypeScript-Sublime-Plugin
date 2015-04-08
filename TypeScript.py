@@ -1555,7 +1555,7 @@ class NavToCommand(sublime_plugin.WindowCommand):
         NavToCommand.started = True
         actual_search_text = "a" if search_text == "" else search_text
         self.items = cli.service.navTo(actual_search_text, self.window.active_view().file_name())
-        self.window.show_quick_panel(self.format_navto_res(self.items), self.on_done, flags = sublime.KEEP_OPEN_ON_FOCUS_LOST, on_highlight = self.on_highlight)  
+        self.window.show_quick_panel(self.format_navto_res(self.items), self.on_done)  
         logger.log.debug ("end running nvato wiht text: %s" % search_text)
         
     def on_done(self, index):
