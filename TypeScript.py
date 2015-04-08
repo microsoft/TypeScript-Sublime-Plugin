@@ -490,7 +490,14 @@ class TypeScriptListener(sublime_plugin.EventListener):
 
     # called by Sublime when a view receives focus
     def on_activated(self, view):
-        logger.view_debug(view, "enter on_activated")
+        logger.view_debug(view, "enter on_activated " + str(view.id()))
+        if view.window() and view.window().active_view().id() != view.id():
+            if NavToCommand.started:
+                # the current view is the nav to bar
+                NavToCommand.ini_finished = False
+                view.run_command("insert_text", {"text": NavToCommand.search_text})
+                NavToCommand.ini_finished = True
+
         if not self.about_to_close_all:
             info = self.getInfo(view)
             if info:
@@ -505,7 +512,7 @@ class TypeScriptListener(sublime_plugin.EventListener):
                 self.setOnIdleTimer(20)
                 self.setOnSelectionIdleTimer(20)
                 self.changeFocus = True
-            logger.view_debug(view, "exit on_activated")
+        logger.view_debug(view, "exit on_activated " + str(view.id()))
 
     # ask the server for diagnostic information on all opened ts files in
     # most-recently-used order
@@ -760,33 +767,48 @@ class TypeScriptListener(sublime_plugin.EventListener):
     # usually called by Sublime when the buffer is modified
     # not called for undo, redo
     def on_modified(self, view):
-        info = self.getInfo(view)
-        if info:
-            info.modified = True
-            if cli.ST2():
-               info.modCount+=1
-            info.lastModChangeCount = self.change_count(view)
-            self.mod = True
-            (lastCommand, args, rept) = view.command_history(0)
-#            print("modified " + view.file_name() + " command " + lastCommand + " args " + str(args) + " rept " + str(rept))
-            if info.preChangeSent:
-                # change handled in on_text_command
-                info.clientInfo.changeCount = self.change_count(view)
-                info.preChangeSent = False
-            elif lastCommand == "insert":
-                if (not "\n" in args['characters']) and info.prevSel and (len(info.prevSel) == 1) and (info.prevSel[0].empty()) and (not info.clientInfo.pendingChanges):
+        logger.log.debug ("enter on_modified " + str(view.id()))
+        # it is a special view
+        if view.window() and view.window().active_view().id() != view.id():
+            logger.log.debug ("enter on_modified: special view. started: %s, init_finished: %s" % 
+                   (NavToCommand.started, NavToCommand.ini_finished))
+
+            if NavToCommand.started and NavToCommand.ini_finished:
+                new_content = view.substr(sublime.Region(0, view.size()))
+                sublime.active_window().run_command("nav_to", {'search_text': new_content})
+
+            logger.log.debug ("exit on_modified: special view. started: %s, init_finished: %s" % 
+                   (NavToCommand.started, NavToCommand.ini_finished))
+        # it is a normal view
+        else:
+            info = self.getInfo(view)
+            if info:
+                info.modified = True
+                if cli.ST2():
+                   info.modCount+=1
+                info.lastModChangeCount = self.change_count(view)
+                self.mod = True
+                (lastCommand, args, rept) = view.command_history(0)
+    #            print("modified " + view.file_name() + " command " + lastCommand + " args " + str(args) + " rept " + str(rept))
+                if info.preChangeSent:
+                    # change handled in on_text_command
                     info.clientInfo.changeCount = self.change_count(view)
-                    prevCursor = info.prevSel[0].begin()
-                    cursor = view.sel()[0].begin()
-                    key = view.substr(sublime.Region(prevCursor, cursor))
-                    sendReplaceChangesForRegions(view, staticRegionsToRegions(info.prevSel), key)
-                    # mark change as handled so that on_post_text_command doesn't
-                    # try to handle it
-                    info.changeSent = True
-                else:
-                    # request reload because we have strange insert
-                    info.clientInfo.pendingChanges = True
-            self.setOnIdleTimer(100)
+                    info.preChangeSent = False
+                elif lastCommand == "insert":
+                    if (not "\n" in args['characters']) and info.prevSel and (len(info.prevSel) == 1) and (info.prevSel[0].empty()) and (not info.clientInfo.pendingChanges):
+                        info.clientInfo.changeCount = self.change_count(view)
+                        prevCursor = info.prevSel[0].begin()
+                        cursor = view.sel()[0].begin()
+                        key = view.substr(sublime.Region(prevCursor, cursor))
+                        sendReplaceChangesForRegions(view, staticRegionsToRegions(info.prevSel), key)
+                        # mark change as handled so that on_post_text_command doesn't
+                        # try to handle it
+                        info.changeSent = True
+                    else:
+                        # request reload because we have strange insert
+                        info.clientInfo.pendingChanges = True
+                self.setOnIdleTimer(100)
+        logger.log.debug ("exit on_modified " + str(view.id()))
 
     # ST3 only
     # called by ST3 for some, but not all, text commands
@@ -1500,27 +1522,73 @@ class TypescriptPasteAndFormat(sublime_plugin.TextCommand):
             ralineEnd = view.line(ra.begin()).end()
             formatRange(text, view, rblineStart, ralineEnd)
 
+
 class NavToCommand(sublime_plugin.WindowCommand):
-    
-    def run(self):
-        print("start nav_to command")
-        self.window.show_input_panel("Navigate To:", "", self.on_finish_input, None, None)
+    # indicate the nav to panel is started or not
+    started = False
+    # indicate if the insert_text command has finished pasting text into the textbox.
+    # during which time the on_modified callback shouldn't do angthing
+    ini_finished = False
+    reset_already = False
+    search_text = ""
+
+    @classmethod
+    def reset(cls):
+        cls.started = False
+        cls.ini_finished = False
+
+    def run(self, search_text = ""):
+        logger.log.debug ("start running nvato wiht text: %s" % search_text)
+
+        NavToCommand.reset_already = False
+        
+        self.window.run_command("hide_overlay")
+
+        if NavToCommand.reset_already:
+            NavToCommand.reset_already = False
+        else:
+            logger.log.debug ("reset in run")
+            NavToCommand.reset()
+            NavToCommand.reset_already = True
+
+        NavToCommand.search_text = search_text        
+        NavToCommand.started = True
+        actual_search_text = "a" if search_text == "" else search_text
+        self.items = cli.service.navTo(actual_search_text, self.window.active_view().file_name())
+        self.window.show_quick_panel(self.format_navto_res(self.items), self.on_done, flags = sublime.KEEP_OPEN_ON_FOCUS_LOST, on_highlight = self.on_highlight)  
+        logger.log.debug ("end running nvato wiht text: %s" % search_text)
+        
+    def on_done(self, index):
+        logger.log.debug ("enter on_done. search_text: %s, started: %s, init_finished: %s" % 
+               (NavToCommand.search_text, NavToCommand.started, NavToCommand.ini_finished))
+        
+        if NavToCommand.reset_already:
+            NavToCommand.reset_already = False
+        else:
+            print ("reset in on_done")
+            NavToCommand.reset()
+            NavToCommand.reset_already = True
+
+        if index >= 0:
+            print ("index is:" + str(index))
+            item = self.items[index]
+            print (item)
+            line, offset = item['start']['line'], item['start']['offset']
+            self.window.open_file(item['file'] + ":%s:%s" % (line, offset), sublime.ENCODED_POSITION)
+
+        logger.log.debug ("exit on_done. search_text: %s, started: %s, init_finished: %s" % 
+               (NavToCommand.search_text, NavToCommand.started, NavToCommand.ini_finished))
 
     def format_navto_res(self, item_list):
         return [[i['kind'] + ": " + i['name'], i['file']] for i in item_list]
 
-    def on_finish_input(self, text):
-        text = text.strip()
-        view = self.window.active_view()
-        self.item_list = cli.service.navTo(text, view.file_name())
-        self.window.show_quick_panel(self.format_navto_res(self.item_list), None, flags = sublime.KEEP_OPEN_ON_FOCUS_LOST, on_highlight = self.on_highlight)
-
     def on_highlight(self, index):
-        item = self.item_list[index]
-        line, offset = item['start']['line'], item['start']['offset']
-        view = self.window.open_file(item['file'] + ":%s:%s" % (line, offset), sublime.ENCODED_POSITION)
         pass
 
+class InsertTextCommand(sublime_plugin.TextCommand):
+
+    def run(self, edit, text):
+        self.view.insert(edit, 0, text)
 
 class TypescriptAutoIndentOnEnterBetweenCurlyBrackets(sublime_plugin.TextCommand):
     """
