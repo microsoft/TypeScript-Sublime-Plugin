@@ -1568,14 +1568,12 @@ class NavToCommand(sublime_plugin.WindowCommand):
         if NavToCommand.reset_already:
             NavToCommand.reset_already = False
         else:
-            print ("reset in on_done")
+            logger.log.debug ("reset in on_done")
             NavToCommand.reset()
             NavToCommand.reset_already = True
 
         if index >= 0:
-            print ("index is:" + str(index))
             item = self.items[index]
-            print (item)
             line, offset = item['start']['line'], item['start']['offset']
             self.window.open_file(item['file'] + ":%s:%s" % (line, offset), sublime.ENCODED_POSITION)
 
@@ -1583,7 +1581,13 @@ class NavToCommand(sublime_plugin.WindowCommand):
                (NavToCommand.search_text, NavToCommand.started, NavToCommand.ini_finished))
 
     def format_navto_res(self, item_list):
-        return [[i['kind'] + ": " + i['name'], i['file']] for i in item_list]
+        return [
+                [i['kind'] + ": " + i['name'], 
+                "in %s %s" % (
+                    (i["containerKind"] if "containerKind" in i else os.path.basename(i["file"]) + " (global)"), 
+                    (i["containerName"] if "containerName" in i else "")
+                )] 
+                for i in item_list]
 
     def on_highlight(self, index):
         pass
