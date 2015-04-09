@@ -1,0 +1,13 @@
+Welcome to the TypeScript plugin for Sublime Text!
+
+If you were previously using the 'TypeScript' package from Eric Clemmons
+(https://github.com/ericclemmons/sublime-typescript) via Package Control,
+this has now been redirected to this 'TypeScript' package from Microsoft.
+
+Details about this package and its feature can be found on its GitHub
+repository at https://github.com/Microsoft/TypeScript-Sublime-Plugin.
+
+We hope you enjoy using this plugin, and look forward to hearing any feedback,
+bugs, or suggestions you have on the GitHub repo above.
+
+Thanks!
