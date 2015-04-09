@@ -1828,7 +1828,9 @@ def plugin_loaded():
 
         # Needs to be in format such as: 'Packages/TypeScript/popup.html'
         rel_path = html_path[len(sublime.packages_path()) - len('Packages'):]
+        rel_path = rel_path.replace('\\', '/')  # Yes, even on Windows
 
+        logger.log.info('Popup resource path: {0}'.format(rel_path))
         popup_text = sublime.load_resource(rel_path)
         logger.log.info('Loaded tooltip template from {0}'.format(rel_path))
 

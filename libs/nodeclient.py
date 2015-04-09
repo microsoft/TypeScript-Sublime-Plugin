@@ -189,15 +189,10 @@ class NodeCommClient(CommClient):
             log.debug('Stream state: "{0}".  Read header: "{1}"'.format(
                                         state, header if header else 'None'))
 
-            # # TODO Remove
-            # _read_counter += 1
-            # if _read_counter == 1000:
-            #   import rpdb
-            #   rpdb.set_trace()
-
             if len(header) == 0:
                 if state == 'init':
-                    raise Exception('EOF on server stream')
+                    log.error('EOF on server stream')
+                    return
                 else:
                     state = "body"
             else:
@@ -222,7 +217,8 @@ class NodeCommClient(CommClient):
             else:
                 eventq.put(jsonStr)
         else:
-            raise Exception('Body length of 0 in server stream')
+            log.error('Body length of 0 in server stream')
+            return
 
     @staticmethod
     def __reader(stream, msgq, eventq, asyncReq):
