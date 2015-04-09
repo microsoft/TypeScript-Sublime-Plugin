@@ -660,7 +660,7 @@
 		<key>method-declaration</key>
 		<dict>
 			<key>begin</key>
-			<string>(?:\b(get|set)\s+)?(?:(new)|(?:([a-zA-Z_$][\.\w$]*)\s*(\??)))?\s*(?=\()</string>
+			<string>(?:\b(get|set)\s+)?(?:(new)|(?:([a-zA-Z_$][\.\w$]*)\s*(\??)))?\s*(?=\(|\&lt;)</string>
 			<key>beginCaptures</key>
 			<dict>
 				<key>1</key>
@@ -693,6 +693,10 @@
 				<dict>
 					<key>include</key>
 					<string>#comment</string>
+				</dict>
+				<dict>
+					<key>include</key>
+					<string>#type-parameters</string>
 				</dict>
 				<dict>
 					<key>include</key>
@@ -1279,7 +1283,7 @@
 			<key>begin</key>
 			<string>:</string>
 			<key>end</key>
-			<string>(?=$|[,);\}\[\]]|//)|(?==[^&gt;])|(?&lt;=\}|[a-z]|&gt;)\s*(?=\{)</string>
+			<string>(?=$|[,);\}\[\]]|//)|(?==[^&gt;])|(?&lt;=\}|[a-zA-Z_$]|&gt;)\s*(?=\{)</string>
 			<key>name</key>
 			<string>meta.type.annotation.ts</string>
 			<key>patterns</key>
