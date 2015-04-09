@@ -44,7 +44,7 @@ build >= 3070 is recommended, as this provides a popup API used for tool tips.
 Features
 --------
 The below features are available via the keyboard shortcuts shown, or via the 
-Command Pallete:
+Command Pallete (^ means the `ctrl` key on windows):
 
 |Feature           | Shorcut       |
 |------------------|---------------|
