@@ -114,7 +114,7 @@
         ]
     },
     {
-        "keys": ["."],
+        "keys": [","],
         "command": "typescript_signature_popup",
         "context": [
             { "key": "selector", "operator": "equal", "operand": "source.ts" },
@@ -122,12 +122,11 @@
         ]
     },
     {
-        "keys": [","],
+        "keys": ["("],
         "command": "typescript_signature_popup",
-        "args": {"move": "arg_shift"},
         "context": [
             { "key": "selector", "operator": "equal", "operand": "source.ts" },
-            { "key": "is_popup_visible_comma"}
+            { "key": "paren_pressed"}
         ]
     },
     {

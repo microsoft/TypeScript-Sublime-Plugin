@@ -5,6 +5,7 @@ import time
 import json
 import sublime
 import sublime_plugin
+from logger import log
 
 # queue module name changed from Python 2 to 3
 try: 
@@ -153,9 +154,9 @@ class NodeCommClient(CommClient):
         """
         Post command to server; no response needed
         """
-        print("request: "+cmd)
+        log.debug('Posting command: {0}'.format(cmd))
         if not self.__serverProc:
-           print("can not send request; node process not started")
+           log.error("can not send request; node process not started")
            return False
         else:
            cmd = cmd + "\n"
@@ -182,6 +183,7 @@ class NodeCommClient(CommClient):
         bodlen = 0
         while state == "headers":
             header = stream.readline().strip()
+            log.debug('Read header: {0}'.format(header if header else 'None'))
             if len(header) == 0:
                 state = "body"
             elif header.startswith(NodeCommClient.__CONTENT_LENGTH_HEADER):
@@ -189,11 +191,12 @@ class NodeCommClient(CommClient):
         # TODO: signal error if bodlen == 0
         if bodlen > 0:
             data = stream.read(bodlen)
+            log.debug('Read body of length: {0}'.format(bodlen))
             jsonStr = data.decode("utf-8")
             dict = json.loads(jsonStr)
             if dict['type'] == "response":
-               print("response: "+jsonStr)
                request_seq = dict['request_seq']
+               log.debug('Body sequence#: {0}'.format(request_seq))
                if request_seq in asyncReq:
                   callback = asyncReq.pop(request_seq, None)
                   if callback:
@@ -201,7 +204,6 @@ class NodeCommClient(CommClient):
                      return
                msgq.put(jsonStr)
             else:
-                print("event: "+jsonStr)
                 eventq.put(jsonStr)
 
     @staticmethod
