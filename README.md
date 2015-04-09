@@ -146,3 +146,8 @@ Tips
    release will be a way to list the files in each configured or
    inferred project.  Also coming will be a way to see the current set
    of compiler diagnostics for each project.
+9. The plug-in tries to avoid remapping existing Sublime key bindings
+   or context menu entries.  For example, goto definition in the
+   context menu refers to the Sublime goto definition, which is based
+   on syntactically finding declarations and which has its own rules
+   for choosing a set of files to search.
