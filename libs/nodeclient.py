@@ -16,6 +16,8 @@ except ImportError:
 import jsonhelpers
 import servicedefs
 
+_read_counter = 0
+
 class CommClient:
     def getEvent(self): pass
     def postCmd(self, cmd): pass
@@ -176,19 +178,33 @@ class NodeCommClient(CommClient):
 
     @staticmethod
     def __readMsg(stream, msgq, eventq, asyncReq):
+        global _read_counter
         """
         Reader thread helper
         """
-        state = "headers"
+        state = "init"
         bodlen = 0
-        while state == "headers":
+        while state != "body":
             header = stream.readline().strip()
-            log.debug('Read header: {0}'.format(header if header else 'None'))
+            log.debug('Stream state: "{0}".  Read header: "{1}"'.format(
+                                        state, header if header else 'None'))
+
+            # # TODO Remove
+            # _read_counter += 1
+            # if _read_counter == 1000:
+            #   import rpdb
+            #   rpdb.set_trace()
+
             if len(header) == 0:
-                state = "body"
-            elif header.startswith(NodeCommClient.__CONTENT_LENGTH_HEADER):
-                bodlen = int(header[len(NodeCommClient.__CONTENT_LENGTH_HEADER):])
-        # TODO: signal error if bodlen == 0
+                if state == 'init':
+                    raise Exception('EOF on server stream')
+                else:
+                    state = "body"
+            else:
+                state = 'header'
+                if header.startswith(NodeCommClient.__CONTENT_LENGTH_HEADER):
+                    bodlen = int(header[len(NodeCommClient.__CONTENT_LENGTH_HEADER):])
+
         if bodlen > 0:
             data = stream.read(bodlen)
             log.debug('Read body of length: {0}'.format(bodlen))
@@ -205,6 +221,8 @@ class NodeCommClient(CommClient):
                msgq.put(jsonStr)
             else:
                 eventq.put(jsonStr)
+        else:
+            raise Exception('Body length of 0 in server stream')
 
     @staticmethod
     def __reader(stream, msgq, eventq, asyncReq):
