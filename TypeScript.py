@@ -1582,8 +1582,9 @@ class NavToCommand(sublime_plugin.WindowCommand):
 
     def format_navto_res(self, item_list):
         return [
-                [i['name'] + ": " + i['kind'], 
-                "in %s %s" % (
+                [i['name'], 
+                "%s in %s %s" % (
+                    i['kind'],
                     (i["containerKind"] if "containerKind" in i else os.path.basename(i["file"]) + " (global)"), 
                     (i["containerName"] if "containerName" in i else "")
                 )] 
