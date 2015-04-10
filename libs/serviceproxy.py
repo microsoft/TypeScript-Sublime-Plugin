@@ -52,7 +52,6 @@ class ServiceProxy:
             onCompleted(obj)
         self.__comm.sendCmdAsync(jsonStr, req.seq, onCompletedJson)
 
-
     def signatureHelp(self, path, location=Location(1, 1), prefix="", onCompleted=None):
         req = servicedefs.SignatureHelpRequest(self.incrSeq(),
                                             servicedefs.SignatureHelpRequestArgs(path, location.line, location.offset, prefix))
@@ -61,6 +60,15 @@ class ServiceProxy:
             obj = jsonhelpers.fromDict(servicedefs.SignatureHelpResponse, responseDict)
             onCompleted(obj)
         self.__comm.sendCmd(onCompletedJson, jsonStr, req.seq)
+
+    def asyncSignatureHelp(self, path, location=Location(1, 1), prefix="", onCompleted=None):
+        req = servicedefs.SignatureHelpRequest(self.incrSeq(),
+                                            servicedefs.SignatureHelpRequestArgs(path, location.line, location.offset, prefix))
+        jsonStr = jsonhelpers.encode(req)
+        def onCompletedJson(responseDict):
+            obj = jsonhelpers.fromDict(servicedefs.SignatureHelpResponse, responseDict)
+            onCompleted(obj)
+        self.__comm.sendCmdAsync(jsonStr, req.seq, onCompletedJson)
 
     def definition(self, path, location=Location(1, 1)):
         req = servicedefs.DefinitionRequest(self.incrSeq(), servicedefs.FileLocationRequestArgs(path, location.line, location.offset))

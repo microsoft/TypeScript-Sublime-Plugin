@@ -191,7 +191,7 @@ class NodeCommClient(CommClient):
 
             if len(header) == 0:
                 if state == 'init':
-                    log.error('EOF on server stream')
+                    log.info('0 byte line in stream when expecting header')
                     return
                 else:
                     state = "body"
@@ -206,18 +206,20 @@ class NodeCommClient(CommClient):
             jsonStr = data.decode("utf-8")
             dict = json.loads(jsonStr)
             if dict['type'] == "response":
-               request_seq = dict['request_seq']
-               log.debug('Body sequence#: {0}'.format(request_seq))
-               if request_seq in asyncReq:
-                  callback = asyncReq.pop(request_seq, None)
-                  if callback:
-                     callback(dict)
-                     return
-               msgq.put(jsonStr)
+                request_seq = dict['request_seq']
+                log.debug('Body sequence#: {0}'.format(request_seq))
+                if request_seq in asyncReq:
+                    callback = asyncReq.pop(request_seq, None)
+                    if callback:
+                        callback(dict)
+                        return
+                else:
+                    # Only put in the queue if wasn't an async request
+                    msgq.put(jsonStr)
             else:
                 eventq.put(jsonStr)
         else:
-            log.error('Body length of 0 in server stream')
+            log.info('Body length of 0 in server stream')
             return
 
     @staticmethod

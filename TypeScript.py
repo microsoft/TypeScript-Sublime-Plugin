@@ -38,6 +38,7 @@ if libsDir not in sys.path:
 
 from nodeclient import NodeCommClient
 from serviceproxy import *
+from popupsession import PopupManager
 
 # Enable Python Tools for visual studio remote debugging
 try: 
@@ -770,23 +771,13 @@ class TypeScriptListener(sublime_plugin.EventListener):
             _paren_pressed = self.was_paren_pressed
             self.was_paren_pressed = False
 
-            if SignatureSession.active_session:
-                if SignatureSession.active_session.view != view:
-                    # Dismiss active session if it was for a different view
-                    logger.log.debug('In popup session for different view.  Dismissing')
-                    SignatureSession.active_session = False
-                    view.hide_popup()
-                else:
-                    # Active session for this view in progress. Update...
-                    logger.log.debug('In popup session for current view.  Updating')
-                    SignatureSession.active_session.queue_popup_update(True)
+            if PopupManager.is_active():
+                queue_signature_popup(view)
             else:
                 if _paren_pressed:
                     # TODO: Check 'typescript_auto_popup' setting is True
                     logger.log.debug('Triggering popup of sig help on paren')
-                    # Defer, so the buffer is updated first
-                    SignatureSession.active_session = SignatureSession(view)
-                    SignatureSession.active_session.queue_popup_update(True)
+                    queue_signature_popup(view)
 
     # usually called by Sublime when the buffer is modified
     # not called for undo, redo
@@ -1028,6 +1019,14 @@ class TypescriptSignaturePanel(sublime_plugin.TextCommand):
         self.view.run_command('insert_snippet',
                               {"contents": self.snippets[index]})
 
+# Simpler helper to keep it DRY
+def queue_signature_popup(view):
+    point = getLocationFromView(view)
+    filename = view.file_name()
+    PopupManager.queue_request(view,
+                lambda callback: cli.service.asyncSignatureHelp(
+                    filename, point, '', callback))
+
 
 class TypescriptSignaturePopup(sublime_plugin.TextCommand):
     def is_enabled(self):
@@ -1035,238 +1034,17 @@ class TypescriptSignaturePopup(sublime_plugin.TextCommand):
 
     def run(self, edit, move=None):
         logger.log.debug('In run for signature popup with move: {0}'.format(move if move else 'None'))
-        start_time = None
-        time_text = None
         if not TOOLTIP_SUPPORT:
             return
 
-        if not SignatureSession.active_session:
-            SignatureSession.active_session = SignatureSession(self.view)
-
-        # Retrieve the signatures if not a paging operation
         if move is None:
-            start_time = time.time()
-            point = getLocationFromView(self.view)
-            logger.log.debug('Requesting signatures for location: {0}:{1}'.format(point.line, point.offset))
-            cli.service.signatureHelp(self.view.file_name(),
-                                      point, '',
-                                      self.on_results)
-            if not SignatureSession.active_session:
-                logger.log.debug('No active session after signature request')
-                return
+            queue_signature_popup(self.view)
         elif move == 'prev':
-            SignatureSession.active_session.move_prev()
+            PopupManager.move_prev()
         elif move == 'next':
-            SignatureSession.active_session.move_next()
+            PopupManager.move_next()
         else:
             raise ValueError('Unknown arg: ' + move)
-
-        popup_parts = SignatureSession.active_session.get_current_signature_template()
-        popup_text = SignatureSession.popup_template.substitute(popup_parts)
-
-        if start_time:
-            endtime = time.time()
-            duration = endtime - start_time
-            SignatureSession.active_session.last_request_time = endtime
-            SignatureSession.active_session.last_request_cost = duration * 1000
-            time_text = ' - took {:3.3f}s'.format(duration)
-
-        logger.log.debug('Displaying signature popup' + (time_text if time_text else ''))
-        if not self.view.is_popup_visible():
-            self.view.show_popup(
-                popup_text,
-                sublime.COOPERATE_WITH_AUTO_COMPLETE,
-                on_navigate=self.on_navigate,
-                on_hide=self.on_hidden,
-                max_width=800)
-        else:
-            self.view.update_popup(popup_text)
-
-    def on_results(self, completionsResp):
-        if not completionsResp.success or not completionsResp.body:
-            logger.log.debug('No results for signature request')
-            SignatureSession.active_session = None
-            self.view.erase_regions('argSpan')
-            self.view.hide_popup()
-        else:
-            logger.log.debug('Setting signature help data')
-            SignatureSession.active_session.set_data(completionsResp.body)
-
-    def on_navigate(self, loc):
-        # Clicked the overloads link.  Dismiss this popup and show the panel
-        self.view.hide_popup()
-        SignatureSession.active_session = None
-        self.view.erase_regions('argSpan')
-        self.view.run_command('typescript_signature_panel')
-
-    def on_hidden(self):
-        logger.log.debug('In popup on_hidden handler')
-        # If we get hidden while inside the arg list, just reshow it
-        if not SignatureSession.active_session:
-            return
-
-        cursor_region = self.view.sel()[0]
-        argSpan = self.view.get_regions('argSpan')[0]
-        if argSpan.contains(cursor_region):
-            logger.log.debug('Was hidden while in region.  Redisplaying')
-            # Occurs on left/right movement.  Rerun to redisplay popup.
-            self.run(None)
-        else:
-            # Cleanup
-            SignatureSession.active_session = None
-            self.view.erase_regions('argSpan')
-
-
-class SignatureSession():
-    """ Represents the state of a signature popup session
-
-    The active_session static will be an instance of this class if
-    there is a session in progress.
-    """
-
-    active_session = None
-    popup_template = None
-
-    def __init__(self, view):
-        self.view = view
-        self.popup_queued = None
-        self.last_request_time = 0
-        self.last_request_cost = 0
-        self.help_items = None
-        self.current_signature = 0
-        self.current_parameter = 0;
-
-    def set_data(self, signatureHelpItems):
-        # Add a region to track the arg list as the user types
-        # Needs to be ajusted to 0-based indexing
-        arg_span = signatureHelpItems.applicableSpan
-        spanStart = self.view.text_point(arg_span.start.line - 1,
-                                    arg_span.start.offset - 2)
-        spanEnd = self.view.text_point(arg_span.end.line - 1,
-                                  arg_span.end.offset - 0)
-        arg_region = sublime.Region(spanStart, spanEnd)
-        self.view.add_regions('argSpan', [arg_region],
-                    #scope='comments', flags=sublime.DRAW_EMPTY)
-                    flags=sublime.HIDDEN)
-
-        self.help_items = signatureHelpItems
-        self.current_signature = signatureHelpItems.selectedItemIndex
-        self.current_parameter = signatureHelpItems.argumentIndex
-
-    def queue_popup_update(self, force_post = False):
-        if self.popup_queued:
-            # Already a pending requests
-            return
-        if not self.last_request_time and not force_post:
-            # First request is still running
-            return
-
-        # Calculate when the next request should run.  Heuristic is at least
-        # 50ms away, plus 4x the time taken to run last time.
-        logger.log.debug('In queue popup.  Last time/cost: {0}/{1}'.format(
-                self.last_request_time, self.last_request_cost))
-        next_request_time = (self.last_request_time  + 50 +
-                             self.last_request_cost * 4)
-
-        # If its within 10ms, just run now, don't queue it
-        next_run_delta = int(next_request_time - time.time())
-        if force_post and next_run_delta < 50:
-            next_run_delta = 50
-        if next_run_delta < 10:
-            logger.log.debug('Running next popup query immediately')
-            self.update_popup()
-        else:
-            logger.log.debug('Running next popup query for {0}ms'.format(next_run_delta))
-            self.popup_queued = True
-            sublime.set_timeout(self.update_popup, next_run_delta)
-
-    def update_popup(self):
-        self.popup_queued = False
-        if SignatureSession.active_session != self:
-            # The active session changed while this was queued.  Ignore.
-            return
-        self.view.run_command('typescript_signature_popup')
-
-
-    def signature_to_html(self, item):
-        result = ""
-
-        def normalize_style(name):
-            if name in ['methodName']:
-                return 'name'
-            elif name in ['keyword', 'interfaceName']:
-                return 'type'
-            elif name in ['parameterName']:
-                return 'param'
-            return 'text'
-
-        def concat_display_parts(parts, underlineName=False):
-            result = ""
-            template = '<span class="{0}">{1}</span>'
-            for part in parts:
-                css_class = normalize_style(part.kind)
-                result += template.format(css_class, htmlEscape(part.text))
-                if underlineName and css_class == 'param':
-                    result = '<span class="current">' + result + '</span>'
-            return result
-
-        # Add the prefix parts
-        result += concat_display_parts(item.prefixDisplayParts)
-
-        # Add the params (if any)
-        if item.parameters:
-            idx = 0
-            for param in item.parameters:
-                if idx:
-                    result += ", "
-                result += concat_display_parts(param.displayParts,
-                                               idx == self.current_parameter)
-                idx += 1
-
-        # Add the suffix parts
-        result += concat_display_parts(item.suffixDisplayParts)
-
-        return result
-
-    def get_current_signature_template(self):
-        if self.current_signature == -1:
-            return ""
-        if self.current_signature >= len(self.help_items.items):
-            self.current_signature = len(self.help_items.items) - 1
-
-        sigItem = self.help_items.items[self.current_signature]
-        signature = self.signature_to_html(sigItem)
-        if sigItem.documentation:
-            description = sigItem.documentation[0].text
-        else:
-            description = ""
-
-        if self.current_parameter >= 0 and sigItem.parameters:
-            if self.current_parameter >= len(sigItem.parameters):
-                self.current_parameter = len(sigItem.parameters) - 1
-            param = sigItem.parameters[self.current_parameter]
-            activeParam = '<span class="param">{0}:</span> <i>{1}</i>'.format(
-                    param.name,
-                    param.documentation[0].text if param.documentation else "")
-        else:
-            activeParam = ''
-
-        return {"signature": signature,
-                "description": description,
-                "activeParam": activeParam,
-                "index": "{0}/{1}".format(self.current_signature + 1,
-                                          len(self.help_items.items)),
-                "link": "link"}
-
-    def move_next(self):
-        self.current_signature += 1
-        if self.current_signature >= len(self.help_items.items):
-            self.current_signature = len(self.help_items.items) - 1
-
-    def move_prev(self):
-        self.current_signature -= 1
-        if self.current_signature < 0:
-            self.current_signature = 0
 
 
 class TypescriptShowDoc(sublime_plugin.TextCommand):
@@ -1822,7 +1600,7 @@ def plugin_loaded():
     cli = EditorClient()
     cli.setFeatures()
 
-    if SignatureSession.popup_template is None and TOOLTIP_SUPPORT:
+    if PopupManager.popup_template is None and TOOLTIP_SUPPORT:
         # Full path to template file
         html_path = os.path.join(pluginDir, 'popup.html')
 
@@ -1835,7 +1613,7 @@ def plugin_loaded():
         logger.log.info('Loaded tooltip template from {0}'.format(rel_path))
 
         # See https://docs.python.org/2.6/library/string.html#template-strings
-        SignatureSession.popup_template = Template(popup_text)
+        PopupManager.popup_template = Template(popup_text)
 
     refView = getRefView(False)
     if refView:
