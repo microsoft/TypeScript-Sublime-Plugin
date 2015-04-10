@@ -29,7 +29,7 @@ class PopupManager():
     """
     def __init__(self):
         # Used to avoid race conditions across threads
-        self.lock = threading.lock()
+        self.lock = threading.RLock()
         self.current_view = None
 
         # Maintains the latest set of signature data and rendering info
@@ -37,7 +37,8 @@ class PopupManager():
         self.popup_template = None
 
         # Maintains the index of the current signature selected
-        self.signature_index = -1
+        self.signature_index = 0
+        self.current_parameter = 0
 
         # Is set to the True to do the callback when a response is received.
         # Will be False to indicate a running request is to be ignored.
@@ -52,7 +53,7 @@ class PopupManager():
         self.last_execution_cost = 0
 
     def queue_request(self, view, request):
-        with self.lock:
+        # with self.lock:
             if self.current_view != view:
                 self.on_close_popup()
                 self.current_view = view
@@ -68,13 +69,12 @@ class PopupManager():
             delta_ms = max(40, delta_ms)
             delta_ms = min(400, delta_ms)
 
-
             if not self.queued_request_fn:
                 sublime.set_timeout(self.on_scheduled, delta_ms)
             self.queued_request_fn = lambda: request(self.on_response)
 
     def on_scheduled(self):
-        with self.lock:
+        # with self.lock:
             # Do we still have a request to worry about
             if self.queued_request_fn:
                 # If an active request is still running, try again in 100ms
@@ -87,7 +87,7 @@ class PopupManager():
                     self.queued_request_fn = None
 
     def on_response(self, response):
-        with self.lock:
+        # with self.lock:
             self.last_execution_cost = time.time() - self.last_execution_time
             if not self.active_request_callback:
                 return
@@ -100,6 +100,8 @@ class PopupManager():
             else:
                 log.debug('Setting signature help data')
                 self.signature_help = response.body
+                self.signature_index = response.body.selectedItemIndex
+                self.current_parameter = response.body.argumentIndex
 
                 # Add a region to track the arg list as the user types
                 # Needs to be ajusted to 0-based indexing
@@ -233,11 +235,13 @@ class PopupManager():
             return
 
         cursor_region = self.current_view.sel()[0]
-        argSpan = self.current_view.get_regions('argSpan')[0]
-        if argSpan.contains(cursor_region):
-            log.debug('Was hidden while in region.  Redisplaying')
-            # Occurs on left/right movement.  Rerun to redisplay popup.
-            self.display()
+        arg_regions = self.current_view.get_regions('argSpan')
+        if len(arg_regions):
+            argSpan = self.current_view.get_regions('argSpan')[0]
+            if argSpan.contains(cursor_region):
+                log.debug('Was hidden while in region.  Redisplaying')
+                # Occurs on left/right movement.  Rerun to redisplay popup.
+                self.display()
         else:
             # Cleanup
             self.on_close_popup()
@@ -254,7 +258,7 @@ class PopupManager():
         self.active_request_callback = None
         self.queued_request_fn = None
 
-    def is_active():
+    def is_active(self):
         return True if self.current_view else False
 
 # Overwrite the identifier with a singleton instance

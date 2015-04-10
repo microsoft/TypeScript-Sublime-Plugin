@@ -677,8 +677,7 @@ class TypeScriptListener(sublime_plugin.EventListener):
         # If we had a popup session active, and we get the command to hide it,
         # then do the necessary clean up
         if command_name == 'hide_popup':
-            SignatureSession.active_session = None
-            view.erase_regions('argSpan')
+            PopupManager.on_close_popup()
 
         info = self.getInfo(view)
         if info:
