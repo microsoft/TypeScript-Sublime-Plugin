@@ -1,8 +1,8 @@
 import sublime
-import threading
-import time
 from logger import log
-import workscheduler import work_scheduler
+from workscheduler import work_scheduler
+from servicedefs import Location
+
 
 class PopupManager():
 
@@ -27,16 +27,17 @@ class PopupManager():
         self.current_parameter = 0
 
     def queue_signature_popup(self, view):
-        point = getLocationFromView(view)
+        cursor = view.rowcol(view.sel()[0].begin())
+        point = Location(cursor[0] + 1,  cursor[1] + 1)
         filename = view.file_name()
 
         # Define a function to do the request and notify on completion
         def get_signature_data(on_done):
-            proxy.asyncSignatureHelp(filename, point, '', on_done)
+            self.proxy.asyncSignatureHelp(filename, point, '', on_done)
 
         # Schedule the request
-        queue_request(get_signature_data, 
-                      lambda resp: self.on_response(resp, view))
+        self.scheduler.queue_request(get_signature_data,
+                                     lambda resp: self.on_response(resp, view))
 
     def on_response(self, response, view):
         if not response.success or not response.body:
@@ -58,19 +59,20 @@ class PopupManager():
                                     arg_span.start.offset - 2)
         span_end = view.text_point(
                                     arg_span.end.line - 1,
-                                    arg_span.end.offset - 0)
+                                    arg_span.end.offset - 1)
         arg_region = sublime.Region(span_start, span_end)
         view.add_regions('argSpan', [arg_region],
-                    #scope='comments', flags=sublime.DRAW_EMPTY)
-                    flags=sublime.HIDDEN)
+                         flags=sublime.HIDDEN)
+        # To view region, set to: scope='comments', flags=sublime.DRAW_EMPTY)
+
         self.display()
 
     def display(self):
         popup_parts = self.get_current_signature_template()
-        popup_text = SignaturePopup.html_template.substitute(popup_parts)
+        popup_text = PopupManager.html_template.substitute(popup_parts)
 
         log.debug('Displaying signature popup')
-        if not view.is_popup_visible():
+        if not self.current_view.is_popup_visible():
             self.current_view.show_popup(
                 popup_text,
                 sublime.COOPERATE_WITH_AUTO_COMPLETE,
@@ -134,8 +136,8 @@ class PopupManager():
         result = ""
 
         def html_escape(str):
-            return str.replace('&','&amp;').replace(
-                                '<','&lt;').replace('>',"&gt;")
+            return str.replace('&', '&amp;').replace(
+                                '<', '&lt;').replace('>', "&gt;")
 
         def normalize_style(name):
             if name in ['methodName']:

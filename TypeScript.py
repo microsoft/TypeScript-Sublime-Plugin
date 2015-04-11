@@ -678,7 +678,7 @@ class TypeScriptListener(sublime_plugin.EventListener):
         # If we had a popup session active, and we get the command to hide it,
         # then do the necessary clean up
         if command_name == 'hide_popup':
-            PopupManager.on_close_popup()
+            popup_manager.on_close_popup()
 
         info = self.getInfo(view)
         if info:
@@ -744,6 +744,9 @@ class TypeScriptListener(sublime_plugin.EventListener):
     # called by Sublime when the cursor moves (or when text is selected)
     # called after on_modified (when on_modified is called)
     def on_selection_modified(self, view):
+        if not is_typescript(view):
+            return
+
         info = self.getInfo(view)
         if info:
             if not info.clientInfo:
@@ -1604,7 +1607,7 @@ def plugin_loaded():
         logger.log.info('Loaded tooltip template from {0}'.format(rel_path))
 
         PopupManager.html_template = Template(popup_text)
-        popup_manager = PopupManager()
+        popup_manager = PopupManager(cli.service)
 
     refView = getRefView(False)
     if refView:

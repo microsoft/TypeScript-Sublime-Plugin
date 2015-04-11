@@ -73,23 +73,27 @@ class WorkScheduler():
         self.last_time = 0
         self.last_cost = 0
         self.timer_set = False
-        self.canceled: = False
+        self.canceled = False
 
     def queue_request(self, worker, handler):
+        log.debug('In queue_request for work scheduler')
 
         # Use nested functions to close over the worker and handler parameters
         # in the callback chain stored in self.next_job
         def work_done(results):
+            log.debug('In work_done for work scheduler')
             end_time = time.time()
             canceled = False
             with self.lock:
                 self.last_cost = end_time - self.last_time
                 canceled = self.canceled
+            log.debug('Work took {0:d}ms'.format(int(self.last_cost * 1000)))
             if not canceled:
                 # Post the response to the handler on the main thread
                 sublime.set_timeout(lambda: handler(results), 0)
 
         def do_work():
+            log.debug('In do_work for work scheduler')
             start_time = time.time()
             canceled = False
             with self.lock:
@@ -99,6 +103,7 @@ class WorkScheduler():
                 worker(work_done)
 
         def on_scheduled():
+            log.debug('In on_scheduled for work scheduler')
             job = None
             with self.lock:
                 # Get the job to run if not canceled, and reset timer state
@@ -109,14 +114,16 @@ class WorkScheduler():
             if job:
                 job()
 
-        # When to set the timer for next.  0 means already set
+        # When to set the timer for next.
         delta_ms = 0
+        job_scheduled = False
         curr_time = time.time()
 
         with self.lock:
             # Ensure queued job is this job and state is not canceled
             self.next_job = do_work
             self.canceled = False
+            job_scheduled = self.timer_set
             if not self.timer_set:
                 # How long to defer execution. Use last cost as basis
                 if self.last_cost:
@@ -125,18 +132,22 @@ class WorkScheduler():
                     delta_ms = int((next_time - curr_time) * 1000)
                 else:
                     delta_ms = 33
-            self.timer_set = True # Will be before this function returns
+            self.timer_set = True  # Will be before this function returns
 
-        if delta_ms:
+        if not job_scheduled:
             # Ensure no less that 33ms, and no more than 500ms
             delta_ms = max(33, delta_ms)
             delta_ms = min(500, delta_ms)
             # Run whatever is the 'next_job' when scheduler is due
+            log.debug('Scheduling job for {0}ms'.format(delta_ms))
             sublime.set_timeout(on_scheduled, delta_ms)
+        else:
+            log.debug('Job already scheduled')
 
-    def cancel():
+    def cancel(self):
+        log.debug('In cancel for work scheduler')
         with self.lock:
-            self.canceled: = True
+            self.canceled = True
             self.next_job = None
             self.last_time = 0
             self.last_cost = 0
@@ -144,6 +155,7 @@ class WorkScheduler():
 
 
 _default_scheduler = WorkScheduler()
+
 
 def work_scheduler():
     return _default_scheduler
