@@ -18,7 +18,7 @@ filePath = path.join(_pluginRoot, 'TS.log')
 log = logging.getLogger('TS')
 log.setLevel(logging.DEBUG)
 
-_logFormat = logging.Formatter('%(asctime)s: %(levelname)s: %(message)s')
+_logFormat = logging.Formatter('%(asctime)s: %(thread)d: %(levelname)s: %(message)s')
 
 logFile = logging.FileHandler(filePath, mode='w')
 logFile.setLevel(logging.DEBUG)
