@@ -40,9 +40,11 @@ class PopupManager():
                                      lambda resp: self.on_response(resp, view))
 
     def on_response(self, response, view):
+        # Needs to be set even if failed for on_close_popup to clear regions
+        self.current_view = view
         if not response.success or not response.body:
             log.debug('No results for signature request')
-            view.hide_popup()
+            self.on_close_popup()
             return
 
         log.debug('Setting signature help data')

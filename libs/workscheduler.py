@@ -127,7 +127,7 @@ class WorkScheduler():
             if not self.timer_set:
                 # How long to defer execution. Use last cost as basis
                 if self.last_cost:
-                    min_delay = self.last_cost * 4
+                    min_delay = self.last_cost * 3
                     next_time = self.last_time + min_delay
                     delta_ms = int((next_time - curr_time) * 1000)
                 else:
