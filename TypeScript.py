@@ -18,6 +18,34 @@ def set_log_level(logger):
     logger.logFile.setLevel(logFileLevel)
     logger.console.setLevel(logConsLevel)
 
+# Need to remove any old zipped package installed by 0.1.1 release
+def _cleanup_011():
+    this_file = os.path.abspath(__file__)
+    old_package = ''
+
+    # Is the current file running under installed packages or packages?
+    offset = this_file.find(os.path.sep + 'Installed Packages' + os.path.sep)
+    if offset == -1:
+        offset = this_file.find(os.path.sep + 'Packages' + os.path.sep)
+
+    if offset == -1:
+        print('ERROR: Could not location parent packages folder')
+        return
+
+    # Move/delete old package if present
+    old_package = os.path.join(this_file[:offset], 'Installed Packages', 'TypeScript.sublime-package')
+    temp_name = os.path.join(this_file[:offset], 'Installed Packages', 'TypeScript.-old-sublime-package')
+    if os.path.exists(old_package):
+        # Rename first, incase delete fails due to file in use
+        print('Detected outdated TypeScript plugin package. Removing ' + old_package)
+        os.rename(old_package, temp_name)
+        os.remove(temp_name)
+
+try:
+    _cleanup_011()
+except:
+    pass
+
 # Sublime/Python 2 & 3 differ in the name of this module, thus package import
 # needs to be handled slightly differently
 if sys.version_info < (3, 0):

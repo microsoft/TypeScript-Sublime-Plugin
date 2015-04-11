@@ -7,8 +7,7 @@ an enhanced Sublime Text experience when working with TypeScript code.
 Installation
 ------------
 If using [Package Control](https://packagecontrol.io/) for Sublime Text, simply 
-install the `TypeScriptLang` package.  (Note: The package has been submitted, but not
-accepted yet.  It should be available shortly).
+install the `TypeScript` package.
 
 Alternatively, you can clone the repo directly into
 your Sublime plugin folder.  For example, for Sublime Text 3 on a Mac this would 
