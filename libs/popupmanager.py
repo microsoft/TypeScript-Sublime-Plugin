@@ -4,26 +4,48 @@ import time
 from logger import log
 import workscheduler import work_scheduler
 
+class PopupManager():
 
-class SignaturePopup():
-    def __init__(self):
-        self.current_view = None
+    """ PopupManager manages the state and interaction with the popup window
+
+    It uses the WorkScheduler class to handle sending requests to the server to
+    ensure good performance.
+    """
+
+    html_template = ''
+
+    def __init__(self, proxy):
+        self.scheduler = work_scheduler()
+        self.proxy = proxy
 
         # Maintains the latest set of signature data and rendering info
+        self.current_view = None
         self.signature_help = None
-        self.popup_template = None
 
         # Maintains the index of the current signature selected
         self.signature_index = 0
         self.current_parameter = 0
 
-    def on_response(self, response):
+    def queue_signature_popup(self, view):
+        point = getLocationFromView(view)
+        filename = view.file_name()
+
+        # Define a function to do the request and notify on completion
+        def get_signature_data(on_done):
+            proxy.asyncSignatureHelp(filename, point, '', on_done)
+
+        # Schedule the request
+        queue_request(get_signature_data, 
+                      lambda resp: self.on_response(resp, view))
+
+    def on_response(self, response, view):
         if not response.success or not response.body:
             log.debug('No results for signature request')
-            self.on_close_popup()
+            view.hide_popup()
             return
 
         log.debug('Setting signature help data')
+        self.current_view = view
         self.signature_help = response.body
         self.signature_index = response.body.selectedItemIndex
         self.current_parameter = response.body.argumentIndex
@@ -31,24 +53,24 @@ class SignaturePopup():
         # Add a region to track the arg list as the user types
         # Needs to be ajusted to 0-based indexing
         arg_span = self.signature_help.applicableSpan
-        span_start = self.current_view.text_point(
+        span_start = view.text_point(
                                     arg_span.start.line - 1,
                                     arg_span.start.offset - 2)
-        span_end = self.current_view.text_point(
+        span_end = view.text_point(
                                     arg_span.end.line - 1,
                                     arg_span.end.offset - 0)
         arg_region = sublime.Region(span_start, span_end)
-        self.current_view.add_regions('argSpan', [arg_region],
+        view.add_regions('argSpan', [arg_region],
                     #scope='comments', flags=sublime.DRAW_EMPTY)
                     flags=sublime.HIDDEN)
         self.display()
 
     def display(self):
         popup_parts = self.get_current_signature_template()
-        popup_text = self.popup_template.substitute(popup_parts)
+        popup_text = SignaturePopup.html_template.substitute(popup_parts)
 
         log.debug('Displaying signature popup')
-        if not self.current_view.is_popup_visible():
+        if not view.is_popup_visible():
             self.current_view.show_popup(
                 popup_text,
                 sublime.COOPERATE_WITH_AUTO_COMPLETE,
@@ -57,6 +79,56 @@ class SignaturePopup():
                 max_width=800)
         else:
             self.current_view.update_popup(popup_text)
+
+    def move_next(self):
+        if not self.signature_help:
+            return
+        self.signature_index += 1
+        if self.signature_index >= len(self.signature_help.items):
+            self.signature_index = len(self.signature_help.items) - 1
+        self.display()
+
+    def move_prev(self):
+        if not self.signature_help:
+            return
+        self.signature_index -= 1
+        if self.signature_index < 0:
+            self.signature_index = 0
+        self.display()
+
+    def on_navigate(self, loc):
+        # Clicked the overloads link.  Dismiss this popup and show the panel
+        view = self.current_view
+        self.on_close_popup()
+        view.run_command('typescript_signature_panel')
+
+    def on_hidden(self):
+        log.debug('In popup on_hidden handler')
+        if not self.current_view:
+            return
+
+        cursor_region = self.current_view.sel()[0]
+        arg_regions = self.current_view.get_regions('argSpan')
+        if len(arg_regions):
+            argSpan = self.current_view.get_regions('argSpan')[0]
+            if argSpan.contains(cursor_region):
+                log.debug('Was hidden while in region.  Redisplaying')
+                # Occurs on left/right movement.  Rerun to redisplay popup.
+                self.display()
+        else:
+            # Cleanup
+            self.on_close_popup()
+
+    def on_close_popup(self):
+        """ Call whenever the view loses focus, of the region is exited """
+        if self.current_view:
+            self.current_view.erase_regions('argSpan')
+            self.current_view.hide_popup()
+            self.current_view = None
+        self.signature_help = None
+
+    def is_active(self):
+        return True if self.current_view else False
 
     def signature_to_html(self, item):
         result = ""
@@ -131,52 +203,3 @@ class SignaturePopup():
                 "index": "{0}/{1}".format(self.signature_index + 1,
                                           len(self.signature_help.items)),
                 "link": "link"}
-
-    def move_next(self):
-        if not self.signature_help:
-            return
-        self.signature_index += 1
-        if self.signature_index >= len(self.signature_help.items):
-            self.signature_index = len(self.signature_help.items) - 1
-        self.display()
-
-    def move_prev(self):
-        if not self.signature_help:
-            return
-        self.signature_index -= 1
-        if self.signature_index < 0:
-            self.signature_index = 0
-        self.display()
-
-    def on_navigate(self, loc):
-        # Clicked the overloads link.  Dismiss this popup and show the panel
-        self.on_close_popup()
-        self.current_view.run_command('typescript_signature_panel')
-
-    def on_hidden(self):
-        log.debug('In popup on_hidden handler')
-        if not self.current_view:
-            return
-
-        cursor_region = self.current_view.sel()[0]
-        arg_regions = self.current_view.get_regions('argSpan')
-        if len(arg_regions):
-            argSpan = self.current_view.get_regions('argSpan')[0]
-            if argSpan.contains(cursor_region):
-                log.debug('Was hidden while in region.  Redisplaying')
-                # Occurs on left/right movement.  Rerun to redisplay popup.
-                self.display()
-        else:
-            # Cleanup
-            self.on_close_popup()
-
-    def on_close_popup(self):
-        """ Call whenever the view loses focus, of the region is exited """
-        if self.current_view:
-            self.current_view.erase_regions('argSpan')
-            self.current_view.hide_popup()
-            self.current_view = None
-        self.signature_help = None
-
-    def is_active(self):
-        return True if self.current_view else False

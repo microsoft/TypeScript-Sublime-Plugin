@@ -38,7 +38,7 @@ if libsDir not in sys.path:
 
 from nodeclient import NodeCommClient
 from serviceproxy import *
-from popupsession import PopupManager
+from popupmanager import PopupManager
 
 # Enable Python Tools for visual studio remote debugging
 try: 
@@ -51,6 +51,7 @@ TOOLTIP_SUPPORT = int(sublime.version()) >= 3072
 
 # globally-accessible information singleton; set in function plugin_loaded
 cli = None
+popup_manager = None
 
 # currently active view
 def active_view():
@@ -770,13 +771,13 @@ class TypeScriptListener(sublime_plugin.EventListener):
             _paren_pressed = self.was_paren_pressed
             self.was_paren_pressed = False
 
-            if PopupManager.is_active():
-                queue_signature_popup(view)
+            if popup_manager.is_active():
+                popup_manager.queue_signature_popup(view)
             else:
                 if _paren_pressed:
                     # TODO: Check 'typescript_auto_popup' setting is True
                     logger.log.debug('Triggering popup of sig help on paren')
-                    queue_signature_popup(view)
+                    popup_manager.queue_signature_popup(view)
 
     # usually called by Sublime when the buffer is modified
     # not called for undo, redo
@@ -1018,15 +1019,6 @@ class TypescriptSignaturePanel(sublime_plugin.TextCommand):
         self.view.run_command('insert_snippet',
                               {"contents": self.snippets[index]})
 
-# Simpler helper to keep it DRY
-def queue_signature_popup(view):
-    point = getLocationFromView(view)
-    filename = view.file_name()
-    PopupManager.queue_request(view,
-                lambda callback: cli.service.asyncSignatureHelp(
-                    filename, point, '', callback))
-
-
 class TypescriptSignaturePopup(sublime_plugin.TextCommand):
     def is_enabled(self):
         return is_typescript(self.view)
@@ -1037,11 +1029,11 @@ class TypescriptSignaturePopup(sublime_plugin.TextCommand):
             return
 
         if move is None:
-            queue_signature_popup(self.view)
+            popup_manager.queue_signature_popup(self.view)
         elif move == 'prev':
-            PopupManager.move_prev()
+            popup_manager.move_prev()
         elif move == 'next':
-            PopupManager.move_next()
+            popup_manager.move_next()
         else:
             raise ValueError('Unknown arg: ' + move)
 
@@ -1593,13 +1585,13 @@ class TypescriptAutoIndentOnEnterBetweenCurlyBrackets(sublime_plugin.TextCommand
 # this is not always called on startup by Sublime, so we call it
 # from on_activated or on_close if necessary
 def plugin_loaded():
-    global cli
+    global cli, popup_manager
     print('initialize typescript...')
     print(sublime.version())
     cli = EditorClient()
     cli.setFeatures()
 
-    if PopupManager.popup_template is None and TOOLTIP_SUPPORT:
+    if popup_manager is None and TOOLTIP_SUPPORT:
         # Full path to template file
         html_path = os.path.join(pluginDir, 'popup.html')
 
@@ -1611,8 +1603,8 @@ def plugin_loaded():
         popup_text = sublime.load_resource(rel_path)
         logger.log.info('Loaded tooltip template from {0}'.format(rel_path))
 
-        # See https://docs.python.org/2.6/library/string.html#template-strings
-        PopupManager.popup_template = Template(popup_text)
+        PopupManager.html_template = Template(popup_text)
+        popup_manager = PopupManager()
 
     refView = getRefView(False)
     if refView:
