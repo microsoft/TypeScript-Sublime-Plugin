@@ -135,6 +135,10 @@ def extractLineOffset(lineOffset):
     offset = lineOffset.offset - 1
     return (line, offset)
 
+def span_to_region(span, view, extendAmt):
+    (startl, starto) = extractLineOffset(span.start)
+    (endl, endo) = extractLineOffset(span.end)
+    return sublime.Region(view.text_point(startl, starto), view.text_point(endl, endo) + extendAmt)
 
 # per-file, globally-accessible information
 class ClientFileInfo:
@@ -147,6 +151,7 @@ class ClientFileInfo:
             'semanticDiag': [], 
         }
         self.renameOnLoad = None
+        self.method_tip_active = False
 
 # a reference to a source file, line, offset; next and prev refer to the
 # next and previous reference in a view containing references
@@ -425,8 +430,9 @@ def setFilePrefs(view):
     settings = view.settings()
     settings.set('use_tab_stops', False)
     settings.set('translate_tabs_to_spaces', True)
-    settings.add_on_change('tab_size',lambda: tab_size_changed(view))
-    settings.add_on_change('indent_size',lambda: tab_size_changed(view))
+    if (settings and (settings.add_on_change)):
+        settings.add_on_change('tab_size',lambda: tab_size_changed(view))
+        settings.add_on_change('indent_size',lambda: tab_size_changed(view))
 
 # given a list of regions and a (possibly zero-length) string to insert, 
 # send the appropriate change information to the server
@@ -466,6 +472,49 @@ def checkUpdateView(view):
         clientInfo = cli.getOrAddFile(view.file_name())
         if cli.reloadRequired(view):
             reloadBuffer(view, clientInfo)
+
+# these three methods work with signature help
+def handle_signature_help(signature_help_response):
+    if signature_help_response.success:
+        view = active_view()
+        if is_typescript(view):
+            clientInfo = cli.getOrAddFile(view.file_name())
+            applicableRegion = span_to_region(signature_help_response.body.applicableSpan, view, 1)
+            view.add_regions("signatureApplicable", [applicableRegion], flags=sublime.HIDDEN)
+            print("signature applicable to " + view.substr(applicableRegion))
+            if clientInfo.method_tip_active:
+                # update method tip UI
+                print("update method tip UI")
+            else:
+                # put up method tip UI
+                clientInfo.method_tip_active = True
+                print("show method tip UI")
+
+# check trigger for signature help
+def check_trigger_key(key, view):
+    if cli.ST2():
+        return
+    print('check trigger key ' + key)
+    if (key == '(') or (key == ','):
+        print('yes trigger')
+        cli.service.asyncSignatureHelp(view.file_name(),
+                                       getLocationFromView(view),'', handle_signature_help)
+
+# check whether cursor is outside the current applicable span for signature help                                   
+def check_outside_applicable_span():
+    if cli.ST2():
+        return 
+    view = active_view()
+    if is_typescript(view):
+        clientInfo = cli.getOrAddFile(view.file_name())
+        if clientInfo.method_tip_active:
+            pos = view.sel()[0].begin()
+            applicable_region = view.get_regions("signatureApplicable")[0]
+            if applicable_region and ((not applicable_region.contains(pos)) or (pos == applicable_region.end())):
+                # dismiss method tip
+                print("dismiss method tip ")
+                view.erase_regions("signatureApplicable")
+                clientInfo.method_tip_active = False
 
 
 # singleton that receives event calls from Sublime
@@ -759,7 +808,7 @@ class TypeScriptListener(sublime_plugin.EventListener):
                     # notify the server that the file is closed
                     cli.service.close(view.file_name())
         logger.view_debug(view, "exit on_close")
-
+           
     # called by Sublime when the cursor moves (or when text is selected)
     # called after on_modified (when on_modified is called)
     def on_selection_modified(self, view):
@@ -779,7 +828,8 @@ class TypeScriptListener(sublime_plugin.EventListener):
                 self.setOnSelectionIdleTimer(1250)
             else:
                 self.setOnSelectionIdleTimer(50)
-            self.mod = False    
+            self.mod = False
+            check_outside_applicable_span()
             # hide the doc info output panel if it's up
             panelView = sublime.active_window().get_output_panel("doc")
             if panelView.window():
@@ -808,6 +858,7 @@ class TypeScriptListener(sublime_plugin.EventListener):
                     cursor = view.sel()[0].begin()
                     key = view.substr(sublime.Region(prevCursor, cursor))
                     sendReplaceChangesForRegions(view, staticRegionsToRegions(info.prevSel), key)
+                    check_trigger_key(key, view)
                     # mark change as handled so that on_post_text_command doesn't
                     # try to handle it
                     info.changeSent = True
@@ -855,6 +906,10 @@ class TypeScriptListener(sublime_plugin.EventListener):
                     # give up and send whole buffer to server (do this eagerly
                     # to avoid lag on next request to server)
                     reloadBuffer(view, info.clientInfo)
+                    pos = view.sel()[0].begin()
+                    if pos > 0:
+                        key = view.substr(sublime.Region(pos - 1, pos))
+                        check_trigger_key(key, view)
                 # we are up-to-date because either change was sent to server or
                 # whole buffer was sent to server
                 info.clientInfo.changeCount = view.change_count()
@@ -899,11 +954,11 @@ class TypeScriptListener(sublime_plugin.EventListener):
     def on_query_completions(self, view, prefix, locations):
         info = self.getInfo(view)
         if info:
-            print("complete with: " + prefix)
-            info.completionPrefixSel = decrLocsToRegions(locations, len(prefix))
-            if not cli.ST2():
-               view.add_regions("apresComp", decrLocsToRegions(locations, 0), flags=sublime.HIDDEN)
-            if (not self.completionsReady) or cli.ST2():
+            if not self.completionsReady:
+                print("complete with: " + prefix)
+                info.completionPrefixSel = decrLocsToRegions(locations, len(prefix))
+                if not cli.ST2():
+                    view.add_regions("apresComp", decrLocsToRegions(locations, 0), flags=sublime.HIDDEN)
                 if info.lastCompletionLoc:
                     if (((len(prefix)-1)+info.lastCompletionLoc == locations[0]) and (prefix.startswith(info.lastCompletionPrefix))):
                         return (info.lastCompletions,
@@ -915,6 +970,7 @@ class TypeScriptListener(sublime_plugin.EventListener):
                     cli.service.completions(view.file_name(), location, prefix, self.handleCompletionInfo)
                 else:
                     cli.service.asyncCompletions(view.file_name(), location, prefix, self.handleCompletionInfo)
+
             completions = self.pendingCompletions
             if self.completionsReady:
                 info.lastCompletions = completions
