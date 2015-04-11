@@ -39,29 +39,29 @@ class PopupManager():
         self.scheduler.queue_request(get_signature_data,
                                      lambda resp: self.on_response(resp, view))
 
-    def on_response(self, response, view):
+    def on_response(self, responseJson, view):
         # Needs to be set even if failed for on_close_popup to clear regions
         self.current_view = view
-        if not response.success or not response.body:
+        if not responseJson["success"] or not responseJson["body"]:
             log.debug('No results for signature request')
             self.on_close_popup()
             return
 
         log.debug('Setting signature help data')
         self.current_view = view
-        self.signature_help = response.body
-        self.signature_index = response.body.selectedItemIndex
-        self.current_parameter = response.body.argumentIndex
+        self.signature_help = responseJson["body"]
+        self.signature_index = responseJson["body"]["selectedItemIndex"]
+        self.current_parameter = responseJson["body"]["argumentIndex"]
 
         # Add a region to track the arg list as the user types
         # Needs to be ajusted to 0-based indexing
-        arg_span = self.signature_help.applicableSpan
+        arg_span = self.signature_help["applicableSpan"]
         span_start = view.text_point(
-                                    arg_span.start.line - 1,
-                                    arg_span.start.offset - 2)
+                                    arg_span["start"]["line"] - 1,
+                                    arg_span["start"]["offset"] - 2)
         span_end = view.text_point(
-                                    arg_span.end.line - 1,
-                                    arg_span.end.offset - 1)
+                                    arg_span["end"]["line"] - 1,
+                                    arg_span["end"]["offset"] - 1)
         arg_region = sublime.Region(span_start, span_end)
         view.add_regions('argSpan', [arg_region],
                          flags=sublime.HIDDEN)
@@ -88,8 +88,8 @@ class PopupManager():
         if not self.signature_help:
             return
         self.signature_index += 1
-        if self.signature_index >= len(self.signature_help.items):
-            self.signature_index = len(self.signature_help.items) - 1
+        if self.signature_index >= len(self.signature_help["items"]):
+            self.signature_index = len(self.signature_help["items"]) - 1
         self.display()
 
     def move_prev(self):
@@ -154,50 +154,50 @@ class PopupManager():
             result = ""
             template = '<span class="{0}">{1}</span>'
             for part in parts:
-                css_class = normalize_style(part.kind)
-                result += template.format(css_class, html_escape(part.text))
+                css_class = normalize_style(part["kind"])
+                result += template.format(css_class, html_escape(part["text"]))
                 if underline_name and css_class == 'param':
                     result = '<span class="current">' + result + '</span>'
             return result
 
         # Add the prefix parts
-        result += concat_display_parts(item.prefixDisplayParts)
+        result += concat_display_parts(item["prefixDisplayParts"])
 
         # Add the params (if any)
-        if item.parameters:
+        if item["parameters"]:
             idx = 0
-            for param in item.parameters:
+            for param in item["parameters"]:
                 if idx:
                     result += ", "
-                result += concat_display_parts(param.displayParts,
+                result += concat_display_parts(param["displayParts"],
                                                idx == self.current_parameter)
                 idx += 1
 
         # Add the suffix parts
-        result += concat_display_parts(item.suffixDisplayParts)
+        result += concat_display_parts(item["suffixDisplayParts"])
 
         return result
 
     def get_current_signature_template(self):
         if self.signature_index == -1:
             return ""
-        if self.signature_index >= len(self.signature_help.items):
-            self.signature_index = len(self.signature_help.items) - 1
+        if self.signature_index >= len(self.signature_help["items"]):
+            self.signature_index = len(self.signature_help["items"]) - 1
 
-        item = self.signature_help.items[self.signature_index]
+        item = self.signature_help["items"][self.signature_index]
         signature = self.signature_to_html(item)
-        if item.documentation:
-            description = item.documentation[0].text
+        if item["documentation"]:
+            description = item["documentation"][0]["text"]
         else:
             description = ""
 
-        if self.current_parameter >= 0 and item.parameters:
-            if self.current_parameter >= len(item.parameters):
-                self.current_parameter = len(item.parameters) - 1
-            param = item.parameters[self.current_parameter]
+        if self.current_parameter >= 0 and item["parameters"]:
+            if self.current_parameter >= len(item["parameters"]):
+                self.current_parameter = len(item["parameters"]) - 1
+            param = item["parameters"][self.current_parameter]
             activeParam = '<span class="param">{0}:</span> <i>{1}</i>'.format(
-                    param.name,
-                    param.documentation[0].text if param.documentation else "")
+                    param["name"],
+                    param["documentation"][0]["text"] if param["documentation"] else "")
         else:
             activeParam = ''
 
@@ -205,5 +205,5 @@ class PopupManager():
                 "description": description,
                 "activeParam": activeParam,
                 "index": "{0}/{1}".format(self.signature_index + 1,
-                                          len(self.signature_help.items)),
+                                          len(self.signature_help["items"])),
                 "link": "link"}

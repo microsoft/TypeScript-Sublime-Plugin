@@ -65,10 +65,8 @@ class ServiceProxy:
         req = servicedefs.SignatureHelpRequest(self.incrSeq(),
                                             servicedefs.SignatureHelpRequestArgs(path, location.line, location.offset, prefix))
         jsonStr = jsonhelpers.encode(req)
-        def onCompletedJson(responseDict):
-            obj = jsonhelpers.fromDict(servicedefs.SignatureHelpResponse, responseDict)
-            onCompleted(obj)
-        self.__comm.sendCmdAsync(jsonStr, req.seq, onCompletedJson)
+        # This just gives the JSON directly to the async callback for perf reasons
+        self.__comm.sendCmdAsync(jsonStr, req.seq, onCompleted)
 
     def definition(self, path, location=Location(1, 1)):
         req = servicedefs.DefinitionRequest(self.incrSeq(), servicedefs.FileLocationRequestArgs(path, location.line, location.offset))
