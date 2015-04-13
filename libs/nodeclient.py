@@ -8,15 +8,13 @@ import sublime_plugin
 from logger import log
 
 # queue module name changed from Python 2 to 3
-try: 
+if int(sublime.version()) < 3000:
    import Queue as queue
-except ImportError:
+else:
    import queue
 
 import jsonhelpers
 import servicedefs
-
-_read_counter = 0
 
 class CommClient:
     def getEvent(self): pass
@@ -178,7 +176,6 @@ class NodeCommClient(CommClient):
 
     @staticmethod
     def __readMsg(stream, msgq, eventq, asyncReq):
-        global _read_counter
         """
         Reader thread helper
         """

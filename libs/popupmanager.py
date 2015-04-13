@@ -70,7 +70,7 @@ class PopupManager():
         self.display()
 
     def display(self):
-        popup_parts = self.get_current_signature_template()
+        popup_parts = self.get_current_signature_parts()
         popup_text = PopupManager.html_template.substitute(popup_parts)
 
         log.debug('Displaying signature popup')
@@ -132,6 +132,7 @@ class PopupManager():
         self.signature_help = None
 
     def is_active(self):
+        """ Return True if a current popup session is running """
         return True if self.current_view else False
 
     def signature_to_html(self, item):
@@ -178,7 +179,7 @@ class PopupManager():
 
         return result
 
-    def get_current_signature_template(self):
+    def get_current_signature_parts(self):
         if self.signature_index == -1:
             return ""
         if self.signature_index >= len(self.signature_help["items"]):

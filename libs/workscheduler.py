@@ -69,23 +69,37 @@ class WorkScheduler():
 
     def __init__(self):
         self.lock = threading.Lock()
+
+        # Set to the callback to be executed on the next schedule execution
         self.next_job = None
+        # Set to the time the last job started execution
         self.last_time = 0
+        # Set to the amount of time the last job took to execute
         self.last_cost = 0
+        # Set to True if a timer is already pending
         self.timer_set = False
+        # Set to True if a job is currently executing
+        self.job_running = False
+        # Set to True if the outstanding work has been canceled
         self.canceled = False
 
     def queue_request(self, worker, handler):
         log.debug('In queue_request for work scheduler')
 
         # Use nested functions to close over the worker and handler parameters
-        # in the callback chain stored in self.next_job
+
         def work_done(results):
+            """ Called when the scheduled work item is complete
+
+            This function does some bookkeeping before calling the completion
+            handler provided when the job was queued.
+            """
             log.debug('In work_done for work scheduler')
             end_time = time.time()
             canceled = False
             with self.lock:
                 self.last_cost = end_time - self.last_time
+                self.job_running = False
                 canceled = self.canceled
             log.debug('Work took {0:d}ms'.format(int(self.last_cost * 1000)))
             if not canceled:
@@ -93,26 +107,50 @@ class WorkScheduler():
                 sublime.set_timeout(lambda: handler(results), 0)
 
         def do_work():
+            """ Called to execute the worker callback provided
+
+            This function closes over the worker callback provided, and is
+            stored in the slot for the queued work item (self.next_job).
+            """
             log.debug('In do_work for work scheduler')
             start_time = time.time()
             canceled = False
             with self.lock:
                 self.last_time = start_time
                 canceled = self.canceled
+                if canceled:
+                    self.job_running = False
             if not canceled:
                 worker(work_done)
 
         def on_scheduled():
+            """ This function is called by the scheduler when the timeout fires
+
+            This pulls the queued work-item from self.next_job, which is an
+            instance of 'do_work' above, and executes it.
+            """
             log.debug('In on_scheduled for work scheduler')
             job = None
+            job_running = False
             with self.lock:
-                # Get the job to run if not canceled, and reset timer state
-                if not self.canceled:
-                    job = self.next_job
-                self.timer_set = False
-                self.next_job = None
-            if job:
-                job()
+                if self.job_running:
+                    job_running = True
+                else:
+                    # Get the job to run if not canceled, and reset timer state
+                    if not self.canceled:
+                        job = self.next_job
+                    if job:
+                        # There will be a job running when this function exits
+                        self.job_running = True
+                    self.timer_set = False
+                    self.next_job = None
+            if job_running:
+                # Defer 50ms until current job completes.
+                log.debug('Timer elapsed while prior job running.  Deferring')
+                sublime.set_timeout(50, on_scheduled)
+            else:
+                if job:
+                    job()
 
         # When to set the timer for next.
         delta_ms = 0
