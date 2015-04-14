@@ -55,6 +55,7 @@ Command Pallete (^ means the `ctrl` key):
 |Format selection  | ^T ^F         |
 |Format line       | ^ ;           |
 |Format braces     | ^ Shift + ]   |
+|Navigate to symbol| ^ Alt + R     |
 |Go to definition  | ^T ^D (or F12)|
 |Paste and format  | (^ or Super) V|
 |Quick info        | ^T ^Q         |
