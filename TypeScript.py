@@ -352,6 +352,8 @@ class FileInfo:
         self.changeCountErrReq = -1
         self.lastModChangeCount = cc
         self.modCount = 0
+        self.prevVisStart = -1
+        self.prevHasErrors = False
         
 
 # region that will not change as buffer is modified
@@ -500,6 +502,7 @@ class TypeScriptListener(sublime_plugin.EventListener):
         self.mod = False
         self.about_to_close_all = False
         self.was_paren_pressed = False
+        self.pulse_started = False
 
     def getInfo(self, view):
         info = None
@@ -708,7 +711,6 @@ class TypeScriptListener(sublime_plugin.EventListener):
         if self.about_to_close_all:
             self.about_to_close_all = False
 
-        print("loaded " + view.file_name())
         if clientInfo and clientInfo.renameOnLoad:
             view.run_command('typescript_delayed_rename_file',
                              { "locsName" : clientInfo.renameOnLoad })
@@ -762,6 +764,7 @@ class TypeScriptListener(sublime_plugin.EventListener):
         ev = cli.service.getEvent()
         if ev is not None:
             self.dispatchEvent(ev)
+        self.showTopLineStatus(info, view)
         if info.hasErrors:
             view.run_command('typescript_error_info')
         else:
@@ -792,6 +795,27 @@ class TypeScriptListener(sublime_plugin.EventListener):
                     cli.service.close(view.file_name())
         logger.view_debug(view, "exit on_close")
 
+    def handlePulse(self):
+        view = active_view()
+        info = self.getInfo(view)
+        if info:
+            self.showTopLineStatus(info, view)
+        sublime.set_timeout(self.handlePulse, 500)
+
+    def showTopLineStatus(self, info, view):
+        if not self.pulse_started:
+            self.pulse_started = True
+            sublime.set_timeout(self.handlePulse, 500)
+        visStart = view.line(view.visible_region().begin())
+        if (info.prevVisStart != visStart) or (info.prevHasErrors != info.hasErrors):
+            info.prevVisStart = visStart
+            info.prevHasErrors = info.hasErrors
+            scope = "entity.name.function"
+            if info.hasErrors:
+                scope = "keyword"
+            view.add_regions("errmark", [visStart], scope, "dot",
+                             sublime.HIDDEN | sublime.PERSISTENT)
+
     # called by Sublime when the cursor moves (or when text is selected)
     # called after on_modified (when on_modified is called)
     def on_selection_modified(self, view):
@@ -814,6 +838,7 @@ class TypeScriptListener(sublime_plugin.EventListener):
                 self.setOnSelectionIdleTimer(1250)
             else:
                 self.setOnSelectionIdleTimer(50)
+            self.showTopLineStatus(info, view)
             self.mod = False    
             # hide the doc info output panel if it's up
             panelView = sublime.active_window().get_output_panel("doc")
