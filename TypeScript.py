@@ -75,10 +75,11 @@ def is_typescript_scope(view, scopeSel):
     return view.match_selector(location, scopeSel)
 
 def is_special_view(cur_view):
-    """
-    Determine if the current view is a special view (quick panel to be the most 
-    common ones). active_view can only be normal views, therefore the id shouldn't 
-    be equal to the current view id
+    """ Determine if the current view is a special view.
+
+    Special views are mostly refering to panels. They are different from normal views 
+    in that they cannot be the active_view of their windows, therefore their ids shouldn't 
+    be equal to the current view id.
     """
     return cur_view.window() and cur_view.id() != cur_view.window().active_view().id()
 
@@ -501,9 +502,11 @@ class TypeScriptListener(sublime_plugin.EventListener):
         logger.view_debug(view, "enter on_activated " + str(view.id()))
         if is_special_view(view):
             if NavToCommand.navto_panel_started:
-                # the current view is the nav to bar
+                # The current view is the QuickPanel. Set insert_text_finished to false to suppress 
+                # handling in on_modified
                 NavToCommand.insert_text_finished = False
-                view.run_command("insert_text", {"text": NavToCommand.input_text})
+                view.run_command("insert", {"characters": NavToCommand.input_text})
+                # Re-enable the handling in on_modified
                 NavToCommand.insert_text_finished = True
 
         if not self.about_to_close_all:
@@ -1535,7 +1538,7 @@ class NavToCommand(sublime_plugin.WindowCommand):
     navto_panel_started = False
 
     # indicate if the insert_text command has finished pasting text into the textbox.
-    # during which time the on_modified callback shouldn't do angthing
+    # during which time the on_modified callback shouldn't run
     insert_text_finished = False
 
     # when a new search string comes in, the command state needs to be reset and then
@@ -1554,7 +1557,7 @@ class NavToCommand(sublime_plugin.WindowCommand):
         return is_typescript(self.window.active_view())
 
     def run(self, input_text = ""):
-        logger.log.debug("start running navto wiht text: %s" % input_text)
+        logger.log.debug("start running navto with text: %s" % input_text)
 
         NavToCommand.reset_already = False
         
@@ -1570,14 +1573,16 @@ class NavToCommand(sublime_plugin.WindowCommand):
         NavToCommand.input_text = input_text        
         NavToCommand.navto_panel_started = True
 
-        # query text is not always equal to input text. When no input_text is given
-        # alternative query text is used to ensure the panel stay active
+        # Text used for querying is not always equal to the input text. This is because the quick 
+        # panel will disappear if an empty list is provided, and we want to avoid this. Therefore
+        # when some input text that will result in empty results is given (for example, empty 
+        # string), we use alternative text to ensure the panel stay active
         query_text = "a" if input_text == "" else input_text
         items = cli.service.navTo(query_text, self.window.active_view().file_name())
         self.items = items if len(items) != 0 else self.items
 
         self.window.show_quick_panel(self.format_navto_result(self.items), self.on_done)  
-        logger.log.debug("end running navto wiht text: %s" % input_text)
+        logger.log.debug("end running navto with text: %s" % input_text)
         
     def on_done(self, index):
         logger.log.debug("enter on_done. input_text: %s, started: %s, insert_text_finished: %s" % 
@@ -1600,22 +1605,19 @@ class NavToCommand(sublime_plugin.WindowCommand):
                (NavToCommand.input_text, NavToCommand.navto_panel_started, NavToCommand.insert_text_finished))
 
     def format_navto_result(self, item_list):
-        return [
-                [i['name'], 
-                "%s in %s %s" % (
-                    i['kind'],
-                    (i["containerKind"] if "containerKind" in i else os.path.basename(i["file"]) + " (global)"), 
-                    (i["containerName"] if "containerName" in i else "")
-                )] 
-                for i in item_list]
+
+        def get_description_str(i):
+            name = i["name"]
+            kind = i["kind"]
+            container_kind = i["containerKind"] if "containerKind" in i else os.path.basename(i["file"]) + " (global)"
+            container_name = i["containerName"] if "containerName" in i else ""
+            description_str = "{0} in {1} {2}".format(kind, container_kind, container_name)
+            return [name, description_str]
+
+        return [ get_description_str(i) for i in item_list]
 
     def on_highlight(self, index):
         pass
-
-class InsertTextCommand(sublime_plugin.TextCommand):
-
-    def run(self, edit, text):
-        self.view.insert(edit, 0, text)
 
 class TypescriptAutoIndentOnEnterBetweenCurlyBrackets(sublime_plugin.TextCommand):
     """

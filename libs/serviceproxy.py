@@ -146,9 +146,9 @@ class ServiceProxy:
                 'maxResultCount': 20
             }
         })
-        resp_dict = self.__comm.sendCmdSync(json.dumps(req), req['seq'])
-        if resp_dict['success']:
-            return resp_dict['body']
+        response_dict = self.__comm.sendCmdSync(json.dumps(req), req['seq'])
+        if response_dict['success']:
+            return response_dict['body']
         else:
             return {}
 
