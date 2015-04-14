@@ -304,6 +304,7 @@ var ts;
         NodeFlags[NodeFlags["BlockScoped"] = 12288] = "BlockScoped";
     })(ts.NodeFlags || (ts.NodeFlags = {}));
     var NodeFlags = ts.NodeFlags;
+    /* @internal */
     (function (ParserContextFlags) {
         // Set if this node was parsed in strict mode.  Used for grammar error checks, as well as
         // checking if the node can be reused in incremental settings.
@@ -330,13 +331,14 @@ var ts;
         ParserContextFlags[ParserContextFlags["HasAggregatedChildData"] = 128] = "HasAggregatedChildData";
     })(ts.ParserContextFlags || (ts.ParserContextFlags = {}));
     var ParserContextFlags = ts.ParserContextFlags;
+    /* @internal */
     (function (RelationComparisonResult) {
         RelationComparisonResult[RelationComparisonResult["Succeeded"] = 1] = "Succeeded";
         RelationComparisonResult[RelationComparisonResult["Failed"] = 2] = "Failed";
         RelationComparisonResult[RelationComparisonResult["FailedAndReported"] = 3] = "FailedAndReported";
     })(ts.RelationComparisonResult || (ts.RelationComparisonResult = {}));
     var RelationComparisonResult = ts.RelationComparisonResult;
-    // Return code used by getEmitOutput function to indicate status of the function
+    /** Return code used by getEmitOutput function to indicate status of the function */
     (function (ExitStatus) {
         // Compiler ran successfully.  Either this was a simple do-nothing compilation (for example,
         // when -version or -help was provided, or this was a normal compilation, no diagnostics
@@ -373,6 +375,7 @@ var ts;
         SymbolFormatFlags[SymbolFormatFlags["UseOnlyExternalAliasing"] = 2] = "UseOnlyExternalAliasing";
     })(ts.SymbolFormatFlags || (ts.SymbolFormatFlags = {}));
     var SymbolFormatFlags = ts.SymbolFormatFlags;
+    /* @internal */
     (function (SymbolAccessibility) {
         SymbolAccessibility[SymbolAccessibility["Accessible"] = 0] = "Accessible";
         SymbolAccessibility[SymbolAccessibility["NotAccessible"] = 1] = "NotAccessible";
@@ -450,6 +453,7 @@ var ts;
         SymbolFlags[SymbolFlags["Export"] = 7340032] = "Export";
     })(ts.SymbolFlags || (ts.SymbolFlags = {}));
     var SymbolFlags = ts.SymbolFlags;
+    /* @internal */
     (function (NodeCheckFlags) {
         NodeCheckFlags[NodeCheckFlags["TypeChecked"] = 1] = "TypeChecked";
         NodeCheckFlags[NodeCheckFlags["LexicalThis"] = 2] = "LexicalThis";
@@ -462,6 +466,7 @@ var ts;
         NodeCheckFlags[NodeCheckFlags["EnumValuesComputed"] = 128] = "EnumValuesComputed";
         NodeCheckFlags[NodeCheckFlags["BlockScopedBindingInLoop"] = 256] = "BlockScopedBindingInLoop";
         NodeCheckFlags[NodeCheckFlags["EmitDecorate"] = 512] = "EmitDecorate";
+        NodeCheckFlags[NodeCheckFlags["EmitParam"] = 1024] = "EmitParam";
     })(ts.NodeCheckFlags || (ts.NodeCheckFlags = {}));
     var NodeCheckFlags = ts.NodeCheckFlags;
     (function (TypeFlags) {
@@ -481,16 +486,22 @@ var ts;
         TypeFlags[TypeFlags["Tuple"] = 8192] = "Tuple";
         TypeFlags[TypeFlags["Union"] = 16384] = "Union";
         TypeFlags[TypeFlags["Anonymous"] = 32768] = "Anonymous";
+        /* @internal */
         TypeFlags[TypeFlags["FromSignature"] = 65536] = "FromSignature";
         TypeFlags[TypeFlags["ObjectLiteral"] = 131072] = "ObjectLiteral";
+        /* @internal */
         TypeFlags[TypeFlags["ContainsUndefinedOrNull"] = 262144] = "ContainsUndefinedOrNull";
+        /* @internal */
         TypeFlags[TypeFlags["ContainsObjectLiteral"] = 524288] = "ContainsObjectLiteral";
         TypeFlags[TypeFlags["ESSymbol"] = 1048576] = "ESSymbol";
+        /* @internal */
         TypeFlags[TypeFlags["Intrinsic"] = 1048703] = "Intrinsic";
+        /* @internal */
         TypeFlags[TypeFlags["Primitive"] = 1049086] = "Primitive";
         TypeFlags[TypeFlags["StringLike"] = 258] = "StringLike";
         TypeFlags[TypeFlags["NumberLike"] = 132] = "NumberLike";
         TypeFlags[TypeFlags["ObjectType"] = 48128] = "ObjectType";
+        /* @internal */
         TypeFlags[TypeFlags["RequiresWidening"] = 786432] = "RequiresWidening";
     })(ts.TypeFlags || (ts.TypeFlags = {}));
     var TypeFlags = ts.TypeFlags;
@@ -523,6 +534,7 @@ var ts;
         ScriptTarget[ScriptTarget["Latest"] = 2] = "Latest";
     })(ts.ScriptTarget || (ts.ScriptTarget = {}));
     var ScriptTarget = ts.ScriptTarget;
+    /* @internal */
     (function (CharacterCodes) {
         CharacterCodes[CharacterCodes["nullCharacter"] = 0] = "nullCharacter";
         CharacterCodes[CharacterCodes["maxAsciiCharacter"] = 127] = "maxAsciiCharacter";
@@ -653,6 +665,7 @@ var ts;
     var CharacterCodes = ts.CharacterCodes;
 })(ts || (ts = {}));
 /// <reference path="types.ts"/>
+/* @internal */
 var ts;
 (function (ts) {
     // Ternary values are defined such that
@@ -1062,7 +1075,7 @@ var ts;
         return path.replace(/\\/g, "/");
     }
     ts.normalizeSlashes = normalizeSlashes;
-    // Returns length of path root (i.e. length of "/", "x:/", "//server/share/")
+    // Returns length of path root (i.e. length of "/", "x:/", "//server/share/, file:///user/files")
     function getRootLength(path) {
         if (path.charCodeAt(0) === 47 /* slash */) {
             if (path.charCodeAt(1) !== 47 /* slash */)
@@ -1080,6 +1093,9 @@ var ts;
                 return 3;
             return 2;
         }
+        var idx = path.indexOf('://');
+        if (idx !== -1)
+            return idx + 3;
         return 0;
     }
     ts.getRootLength = getRootLength;
@@ -1608,6 +1624,7 @@ var ts;
 })(ts || (ts = {}));
 // <auto-generated />
 /// <reference path="types.ts" />
+/* @internal */
 var ts;
 (function (ts) {
     ts.Diagnostics = {
@@ -1767,7 +1784,6 @@ var ts;
         An_extended_Unicode_escape_value_must_be_between_0x0_and_0x10FFFF_inclusive: { code: 1198, category: ts.DiagnosticCategory.Error, key: "An extended Unicode escape value must be between 0x0 and 0x10FFFF inclusive." },
         Unterminated_Unicode_escape_sequence: { code: 1199, category: ts.DiagnosticCategory.Error, key: "Unterminated Unicode escape sequence." },
         Line_terminator_not_permitted_before_arrow: { code: 1200, category: ts.DiagnosticCategory.Error, key: "Line terminator not permitted before arrow." },
-        A_type_annotation_on_an_export_statement_is_only_allowed_in_an_ambient_external_module_declaration: { code: 1201, category: ts.DiagnosticCategory.Error, key: "A type annotation on an export statement is only allowed in an ambient external module declaration." },
         Import_assignment_cannot_be_used_when_targeting_ECMAScript_6_or_higher_Consider_using_import_Asterisk_as_ns_from_mod_import_a_from_mod_or_import_d_from_mod_instead: { code: 1202, category: ts.DiagnosticCategory.Error, key: "Import assignment cannot be used when targeting ECMAScript 6 or higher. Consider using 'import * as ns from \"mod\"', 'import {a} from \"mod\"' or 'import d from \"mod\"' instead." },
         Export_assignment_cannot_be_used_when_targeting_ECMAScript_6_or_higher_Consider_using_export_default_instead: { code: 1203, category: ts.DiagnosticCategory.Error, key: "Export assignment cannot be used when targeting ECMAScript 6 or higher. Consider using 'export default' instead." },
         Cannot_compile_external_modules_into_amd_or_commonjs_when_targeting_es6_or_higher: { code: 1204, category: ts.DiagnosticCategory.Error, key: "Cannot compile external modules into amd or commonjs when targeting es6 or higher." },
@@ -1776,6 +1792,14 @@ var ts;
         Decorators_cannot_be_applied_to_multiple_get_Slashset_accessors_of_the_same_name: { code: 1207, category: ts.DiagnosticCategory.Error, key: "Decorators cannot be applied to multiple get/set accessors of the same name." },
         Cannot_compile_non_external_modules_when_the_separateCompilation_flag_is_provided: { code: 1208, category: ts.DiagnosticCategory.Error, key: "Cannot compile non-external modules when the '--separateCompilation' flag is provided." },
         Ambient_const_enums_are_not_allowed_when_the_separateCompilation_flag_is_provided: { code: 1209, category: ts.DiagnosticCategory.Error, key: "Ambient const enums are not allowed when the '--separateCompilation' flag is provided." },
+        Invalid_use_of_0_Class_definitions_are_automatically_in_strict_mode: { code: 1210, category: ts.DiagnosticCategory.Error, key: "Invalid use of '{0}'. Class definitions are automatically in strict mode." },
+        A_class_declaration_without_the_default_modifier_must_have_a_name: { code: 1211, category: ts.DiagnosticCategory.Error, key: "A class declaration without the 'default' modifier must have a name" },
+        Identifier_expected_0_is_a_reserved_word_in_strict_mode: { code: 1212, category: ts.DiagnosticCategory.Error, key: "Identifier expected. '{0}' is a reserved word in strict mode" },
+        Identifier_expected_0_is_a_reserved_word_in_strict_mode_Class_definitions_are_automatically_in_strict_mode: { code: 1213, category: ts.DiagnosticCategory.Error, key: "Identifier expected. '{0}' is a reserved word in strict mode. Class definitions are automatically in strict mode." },
+        Identifier_expected_0_is_a_reserved_word_in_strict_mode_External_Module_is_automatically_in_strict_mode: { code: 1214, category: ts.DiagnosticCategory.Error, key: "Identifier expected. '{0}' is a reserved word in strict mode. External Module is automatically in strict mode." },
+        Type_expected_0_is_a_reserved_word_in_strict_mode: { code: 1215, category: ts.DiagnosticCategory.Error, key: "Type expected. '{0}' is a reserved word in strict mode" },
+        Type_expected_0_is_a_reserved_word_in_strict_mode_Class_definitions_are_automatically_in_strict_mode: { code: 1216, category: ts.DiagnosticCategory.Error, key: "Type expected. '{0}' is a reserved word in strict mode. Class definitions are automatically in strict mode." },
+        Type_expected_0_is_a_reserved_word_in_strict_mode_Module_is_automatically_in_strict_mode: { code: 1217, category: ts.DiagnosticCategory.Error, key: "Type expected. '{0}' is a reserved word in strict mode. Module is automatically in strict mode." },
         Duplicate_identifier_0: { code: 2300, category: ts.DiagnosticCategory.Error, key: "Duplicate identifier '{0}'." },
         Initializer_of_instance_member_variable_0_cannot_reference_identifier_1_declared_in_the_constructor: { code: 2301, category: ts.DiagnosticCategory.Error, key: "Initializer of instance member variable '{0}' cannot reference identifier '{1}' declared in the constructor." },
         Static_members_cannot_reference_class_type_parameters: { code: 2302, category: ts.DiagnosticCategory.Error, key: "Static members cannot reference class type parameters." },
@@ -1951,8 +1975,8 @@ var ts;
         The_left_hand_side_of_a_for_of_statement_cannot_be_a_previously_defined_constant: { code: 2485, category: ts.DiagnosticCategory.Error, key: "The left-hand side of a 'for...of' statement cannot be a previously defined constant." },
         The_left_hand_side_of_a_for_in_statement_cannot_be_a_previously_defined_constant: { code: 2486, category: ts.DiagnosticCategory.Error, key: "The left-hand side of a 'for...in' statement cannot be a previously defined constant." },
         Invalid_left_hand_side_in_for_of_statement: { code: 2487, category: ts.DiagnosticCategory.Error, key: "Invalid left-hand side in 'for...of' statement." },
-        The_right_hand_side_of_a_for_of_statement_must_have_a_Symbol_iterator_method_that_returns_an_iterator: { code: 2488, category: ts.DiagnosticCategory.Error, key: "The right-hand side of a 'for...of' statement must have a '[Symbol.iterator]()' method that returns an iterator." },
-        The_iterator_returned_by_the_right_hand_side_of_a_for_of_statement_must_have_a_next_method: { code: 2489, category: ts.DiagnosticCategory.Error, key: "The iterator returned by the right-hand side of a 'for...of' statement must have a 'next()' method." },
+        Type_must_have_a_Symbol_iterator_method_that_returns_an_iterator: { code: 2488, category: ts.DiagnosticCategory.Error, key: "Type must have a '[Symbol.iterator]()' method that returns an iterator." },
+        An_iterator_must_have_a_next_method: { code: 2489, category: ts.DiagnosticCategory.Error, key: "An iterator must have a 'next()' method." },
         The_type_returned_by_the_next_method_of_an_iterator_must_have_a_value_property: { code: 2490, category: ts.DiagnosticCategory.Error, key: "The type returned by the 'next()' method of an iterator must have a 'value' property." },
         The_left_hand_side_of_a_for_in_statement_cannot_be_a_destructuring_pattern: { code: 2491, category: ts.DiagnosticCategory.Error, key: "The left-hand side of a 'for...in' statement cannot be a destructuring pattern." },
         Cannot_redeclare_identifier_0_in_catch_clause: { code: 2492, category: ts.DiagnosticCategory.Error, key: "Cannot redeclare identifier '{0}' in catch clause" },
@@ -2114,6 +2138,22 @@ var ts;
         Function_implicitly_has_return_type_any_because_it_does_not_have_a_return_type_annotation_and_is_referenced_directly_or_indirectly_in_one_of_its_return_expressions: { code: 7024, category: ts.DiagnosticCategory.Error, key: "Function implicitly has return type 'any' because it does not have a return type annotation and is referenced directly or indirectly in one of its return expressions." },
         You_cannot_rename_this_element: { code: 8000, category: ts.DiagnosticCategory.Error, key: "You cannot rename this element." },
         You_cannot_rename_elements_that_are_defined_in_the_standard_TypeScript_library: { code: 8001, category: ts.DiagnosticCategory.Error, key: "You cannot rename elements that are defined in the standard TypeScript library." },
+        import_can_only_be_used_in_a_ts_file: { code: 8002, category: ts.DiagnosticCategory.Error, key: "'import ... =' can only be used in a .ts file." },
+        export_can_only_be_used_in_a_ts_file: { code: 8003, category: ts.DiagnosticCategory.Error, key: "'export=' can only be used in a .ts file." },
+        type_parameter_declarations_can_only_be_used_in_a_ts_file: { code: 8004, category: ts.DiagnosticCategory.Error, key: "'type parameter declarations' can only be used in a .ts file." },
+        implements_clauses_can_only_be_used_in_a_ts_file: { code: 8005, category: ts.DiagnosticCategory.Error, key: "'implements clauses' can only be used in a .ts file." },
+        interface_declarations_can_only_be_used_in_a_ts_file: { code: 8006, category: ts.DiagnosticCategory.Error, key: "'interface declarations' can only be used in a .ts file." },
+        module_declarations_can_only_be_used_in_a_ts_file: { code: 8007, category: ts.DiagnosticCategory.Error, key: "'module declarations' can only be used in a .ts file." },
+        type_aliases_can_only_be_used_in_a_ts_file: { code: 8008, category: ts.DiagnosticCategory.Error, key: "'type aliases' can only be used in a .ts file." },
+        _0_can_only_be_used_in_a_ts_file: { code: 8009, category: ts.DiagnosticCategory.Error, key: "'{0}' can only be used in a .ts file." },
+        types_can_only_be_used_in_a_ts_file: { code: 8010, category: ts.DiagnosticCategory.Error, key: "'types' can only be used in a .ts file." },
+        type_arguments_can_only_be_used_in_a_ts_file: { code: 8011, category: ts.DiagnosticCategory.Error, key: "'type arguments' can only be used in a .ts file." },
+        parameter_modifiers_can_only_be_used_in_a_ts_file: { code: 8012, category: ts.DiagnosticCategory.Error, key: "'parameter modifiers' can only be used in a .ts file." },
+        can_only_be_used_in_a_ts_file: { code: 8013, category: ts.DiagnosticCategory.Error, key: "'?' can only be used in a .ts file." },
+        property_declarations_can_only_be_used_in_a_ts_file: { code: 8014, category: ts.DiagnosticCategory.Error, key: "'property declarations' can only be used in a .ts file." },
+        enum_declarations_can_only_be_used_in_a_ts_file: { code: 8015, category: ts.DiagnosticCategory.Error, key: "'enum declarations' can only be used in a .ts file." },
+        type_assertion_expressions_can_only_be_used_in_a_ts_file: { code: 8016, category: ts.DiagnosticCategory.Error, key: "'type assertion expressions' can only be used in a .ts file." },
+        decorators_can_only_be_used_in_a_ts_file: { code: 8017, category: ts.DiagnosticCategory.Error, key: "'decorators' can only be used in a .ts file." },
         yield_expressions_are_not_currently_supported: { code: 9000, category: ts.DiagnosticCategory.Error, key: "'yield' expressions are not currently supported." },
         Generators_are_not_currently_supported: { code: 9001, category: ts.DiagnosticCategory.Error, key: "Generators are not currently supported." },
         Only_identifiers_Slashqualified_names_with_optional_type_arguments_are_currently_supported_in_a_class_extends_clauses: { code: 9002, category: ts.DiagnosticCategory.Error, key: "Only identifiers/qualified-names with optional type arguments are currently supported in a class 'extends' clauses." },
@@ -2339,6 +2379,7 @@ var ts;
         return textToToken[s];
     }
     ts.stringToToken = stringToToken;
+    /* @internal */
     function computeLineStarts(text) {
         var result = new Array();
         var pos = 0;
@@ -2370,15 +2411,18 @@ var ts;
         return computePositionOfLineAndCharacter(getLineStarts(sourceFile), line, character);
     }
     ts.getPositionOfLineAndCharacter = getPositionOfLineAndCharacter;
+    /* @internal */
     function computePositionOfLineAndCharacter(lineStarts, line, character) {
         ts.Debug.assert(line >= 0 && line < lineStarts.length);
         return lineStarts[line] + character;
     }
     ts.computePositionOfLineAndCharacter = computePositionOfLineAndCharacter;
+    /* @internal */
     function getLineStarts(sourceFile) {
         return sourceFile.lineMap || (sourceFile.lineMap = computeLineStarts(sourceFile.text));
     }
     ts.getLineStarts = getLineStarts;
+    /* @internal */
     function computeLineAndCharacterOfPosition(lineStarts, position) {
         var lineNumber = ts.binarySearch(lineStarts, position);
         if (lineNumber < 0) {
@@ -2436,10 +2480,12 @@ var ts;
     function isDigit(ch) {
         return ch >= 48 /* _0 */ && ch <= 57 /* _9 */;
     }
+    /* @internal */
     function isOctalDigit(ch) {
         return ch >= 48 /* _0 */ && ch <= 55 /* _7 */;
     }
     ts.isOctalDigit = isOctalDigit;
+    /* @internal */
     function skipTrivia(text, pos, stopAfterLineBreak) {
         while (true) {
             var ch = text.charCodeAt(pos);
@@ -2584,6 +2630,7 @@ var ts;
                     var nextChar = text.charCodeAt(pos + 1);
                     var hasTrailingNewLine = false;
                     if (nextChar === 47 /* slash */ || nextChar === 42 /* asterisk */) {
+                        var kind = nextChar === 47 /* slash */ ? 2 /* SingleLineCommentTrivia */ : 3 /* MultiLineCommentTrivia */;
                         var startPos = pos;
                         pos += 2;
                         if (nextChar === 47 /* slash */) {
@@ -2608,7 +2655,7 @@ var ts;
                             if (!result) {
                                 result = [];
                             }
-                            result.push({ pos: startPos, end: pos, hasTrailingNewLine: hasTrailingNewLine });
+                            result.push({ pos: startPos, end: pos, hasTrailingNewLine: hasTrailingNewLine, kind: kind });
                         }
                         continue;
                     }
@@ -2646,6 +2693,7 @@ var ts;
             ch > 127 /* maxAsciiCharacter */ && isUnicodeIdentifierPart(ch, languageVersion);
     }
     ts.isIdentifierPart = isIdentifierPart;
+    /* @internal */
     function createScanner(languageVersion, skipTrivia, text, onError) {
         var pos; // Current position (end position of text of current token)
         var len; // Length of text
@@ -3626,9 +3674,13 @@ var ts;
             shortName: "w",
             type: "boolean",
             description: ts.Diagnostics.Watch_input_files
+        },
+        {
+            name: "emitDecoratorMetadata",
+            type: "boolean",
+            experimental: true
         }
     ];
-    /* @internal */
     function parseCommandLine(commandLine) {
         var options = {};
         var fileNames = [];
@@ -3822,6 +3874,7 @@ var ts;
     ts.parseConfigFile = parseConfigFile;
 })(ts || (ts = {}));
 /// <reference path="binder.ts" />
+/* @internal */
 var ts;
 (function (ts) {
     function getDeclarationOfKind(symbol, kind) {
@@ -3949,6 +4002,13 @@ var ts;
         return ts.skipTrivia((sourceFile || getSourceFileOfNode(node)).text, node.pos);
     }
     ts.getTokenPosOfNode = getTokenPosOfNode;
+    function getNonDecoratorTokenPosOfNode(node, sourceFile) {
+        if (nodeIsMissing(node) || !node.decorators) {
+            return getTokenPosOfNode(node, sourceFile);
+        }
+        return ts.skipTrivia((sourceFile || getSourceFileOfNode(node)).text, node.decorators.end);
+    }
+    ts.getNonDecoratorTokenPosOfNode = getNonDecoratorTokenPosOfNode;
     function getSourceTextOfNodeFromSourceFile(sourceFile, node) {
         if (nodeIsMissing(node)) {
             return "";
@@ -4217,6 +4277,17 @@ var ts;
         return false;
     }
     ts.isVariableLike = isVariableLike;
+    function isAccessor(node) {
+        if (node) {
+            switch (node.kind) {
+                case 136 /* GetAccessor */:
+                case 137 /* SetAccessor */:
+                    return true;
+            }
+        }
+        return false;
+    }
+    ts.isAccessor = isAccessor;
     function isFunctionLike(node) {
         if (node) {
             switch (node.kind) {
@@ -4281,6 +4352,19 @@ var ts;
                     // the *body* of the container.
                     node = node.parent;
                     break;
+                case 130 /* Decorator */:
+                    // Decorators are always applied outside of the body of a class or method. 
+                    if (node.parent.kind === 129 /* Parameter */ && isClassElement(node.parent.parent)) {
+                        // If the decorator's parent is a Parameter, we resolve the this container from
+                        // the grandparent class declaration.
+                        node = node.parent.parent;
+                    }
+                    else if (isClassElement(node.parent)) {
+                        // If the decorator's parent is a class element, we resolve the 'this' container
+                        // from the parent class declaration.
+                        node = node.parent;
+                    }
+                    break;
                 case 163 /* ArrowFunction */:
                     if (!includeArrowFunctions) {
                         continue;
@@ -4323,6 +4407,19 @@ var ts;
                     // such a parent to be a super container, the reference must be in
                     // the *body* of the container.
                     node = node.parent;
+                    break;
+                case 130 /* Decorator */:
+                    // Decorators are always applied outside of the body of a class or method. 
+                    if (node.parent.kind === 129 /* Parameter */ && isClassElement(node.parent.parent)) {
+                        // If the decorator's parent is a Parameter, we resolve the this container from
+                        // the grandparent class declaration.
+                        node = node.parent.parent;
+                    }
+                    else if (isClassElement(node.parent)) {
+                        // If the decorator's parent is a class element, we resolve the 'this' container
+                        // from the parent class declaration.
+                        node = node.parent;
+                    }
                     break;
                 case 200 /* FunctionDeclaration */:
                 case 162 /* FunctionExpression */:
@@ -4494,6 +4591,8 @@ var ts;
                         return node === parent_1.expression;
                     case 127 /* ComputedPropertyName */:
                         return node === parent_1.expression;
+                    case 130 /* Decorator */:
+                        return true;
                     default:
                         if (isExpression(parent_1)) {
                             return true;
@@ -4657,6 +4756,7 @@ var ts;
             case 134 /* MethodDeclaration */:
             case 136 /* GetAccessor */:
             case 137 /* SetAccessor */:
+            case 133 /* MethodSignature */:
             case 140 /* IndexSignature */:
                 return true;
             default:
@@ -5062,7 +5162,7 @@ var ts;
         return node;
     }
     ts.createSynthesizedNode = createSynthesizedNode;
-    // @internal
+    /* @internal */
     function createDiagnosticCollection() {
         var nonFileDiagnostics = [];
         var fileDiagnostics = {};
@@ -5782,8 +5882,7 @@ var ts;
             case 214 /* ExportAssignment */:
                 return visitNodes(cbNodes, node.decorators) ||
                     visitNodes(cbNodes, node.modifiers) ||
-                    visitNode(cbNode, node.expression) ||
-                    visitNode(cbNode, node.type);
+                    visitNode(cbNode, node.expression);
             case 171 /* TemplateExpression */:
                 return visitNode(cbNode, node.head) || visitNodes(cbNodes, node.templateSpans);
             case 176 /* TemplateSpan */:
@@ -6247,7 +6346,7 @@ var ts;
         // to reuse are already at the appropriate position in the new text.  That way when we
         // reuse them, we don't have to figure out if they need to be adjusted.  Second, it makes
         // it very easy to determine if we can reuse a node.  If the node's position is at where
-        // we are in the text, then we can reuse it.  Otherwise we can't.  If hte node's position
+        // we are in the text, then we can reuse it.  Otherwise we can't.  If the node's position
         // is ahead of us, then we'll need to rescan tokens.  If the node's position is behind
         // us, then we'll need to skip it or crumble it as appropriate
         //
@@ -6408,7 +6507,7 @@ var ts;
         // that some tokens that would be considered identifiers may be considered keywords.
         //
         // When adding more parser context flags, consider which is the more common case that the
-        // flag will be in.  This should be hte 'false' state for that flag.  The reason for this is
+        // flag will be in.  This should be the 'false' state for that flag.  The reason for this is
         // that we don't store data in our nodes unless the value is in the *non-default* state.  So,
         // for example, more often than code 'allows-in' (or doesn't 'disallow-in').  We opt for
         // 'disallow-in' set to 'false'.  Otherwise, if we had 'allowsIn' set to 'true', then almost
@@ -6419,7 +6518,7 @@ var ts;
         //
         // An important thing about these context concepts.  By default they are effectively inherited
         // while parsing through every grammar production.  i.e. if you don't change them, then when
-        // you parse a sub-production, it will have the same context values as hte parent production.
+        // you parse a sub-production, it will have the same context values as the parent production.
         // This is great most of the time.  After all, consider all the 'expression' grammar productions
         // and how nearly all of them pass along the 'in' and 'yield' context values:
         //
@@ -6673,6 +6772,7 @@ var ts;
         function tryParse(callback) {
             return speculationHelper(callback, false);
         }
+        // Ignore strict mode flag because we will report an error in type checker instead.
         function isIdentifier() {
             if (token === 65 /* Identifier */) {
                 return true;
@@ -6682,7 +6782,7 @@ var ts;
             if (token === 111 /* YieldKeyword */ && inYieldContext()) {
                 return false;
             }
-            return inStrictModeContext() ? token > 111 /* LastFutureReservedWord */ : token > 101 /* LastReservedWord */;
+            return token > 101 /* LastReservedWord */;
         }
         function parseExpected(kind, diagnosticMessage) {
             if (token === kind) {
@@ -6786,6 +6886,10 @@ var ts;
             identifierCount++;
             if (isIdentifier) {
                 var node = createNode(65 /* Identifier */);
+                // Store original token kind if it is not just an Identifier so we can report appropriate error later in type checker
+                if (token !== 65 /* Identifier */) {
+                    node.originalKeywordKind = token;
+                }
                 node.text = internIdentifier(scanner.getTokenValue());
                 nextToken();
                 return finishNode(node);
@@ -7093,7 +7197,7 @@ var ts;
             // some node, then we cannot get a node from the old source tree.  This is because we
             // want to mark the next node we encounter as being unusable.
             //
-            // Note: This may be too conservative.  Perhaps we could reuse hte node and set the bit
+            // Note: This may be too conservative.  Perhaps we could reuse the node and set the bit
             // on it (or its leftmost child) as having the error.  For now though, being conservative
             // is nice and likely won't ever affect perf.
             if (parseErrorBeforeNextFinishedNode) {
@@ -8280,6 +8384,15 @@ var ts;
                         default:
                             return 0 /* False */;
                     }
+                }
+                // If encounter "([" or "({", this could be the start of a binding pattern.
+                // Examples:
+                //      ([ x ]) => { }
+                //      ({ x }) => { }
+                //      ([ x ])
+                //      ({ x })
+                if (second === 18 /* OpenBracketToken */ || second === 14 /* OpenBraceToken */) {
+                    return 2 /* Unknown */;
                 }
                 // Simple case: "(..."
                 // This is an arrow function with a rest parameter.
@@ -9492,6 +9605,17 @@ var ts;
             node.body = parseFunctionBlockOrSemicolon(false);
             return finishNode(node);
         }
+        function isClassMemberModifier(idToken) {
+            switch (idToken) {
+                case 109 /* PublicKeyword */:
+                case 107 /* PrivateKeyword */:
+                case 108 /* ProtectedKeyword */:
+                case 110 /* StaticKeyword */:
+                    return true;
+                default:
+                    return false;
+            }
+        }
         function isClassMemberStart() {
             var idToken;
             if (token === 52 /* AtToken */) {
@@ -9500,6 +9624,15 @@ var ts;
             // Eat up all modifiers, but hold on to the last one in case it is actually an identifier.
             while (ts.isModifier(token)) {
                 idToken = token;
+                // If the idToken is a class modifier (protected, private, public, and static), it is
+                // certain that we are starting to parse class member. This allows better error recovery
+                // Example:
+                //      public foo() ...     // true
+                //      public @dec blah ... // true; we will then report an error later
+                //      export public ...    // true; we will then report an error later
+                if (isClassMemberModifier(idToken)) {
+                    return true;
+                }
                 nextToken();
             }
             if (token === 35 /* AsteriskToken */) {
@@ -9631,14 +9764,12 @@ var ts;
         function parseClassDeclarationOrExpression(fullStart, decorators, modifiers, kind) {
             // In ES6 specification, All parts of a ClassDeclaration or a ClassExpression are strict mode code
             var savedStrictModeContext = inStrictModeContext();
-            if (languageVersion >= 2 /* ES6 */) {
-                setStrictModeContext(true);
-            }
+            setStrictModeContext(true);
             var node = createNode(kind, fullStart);
             node.decorators = decorators;
             setModifiers(node, modifiers);
             parseExpected(69 /* ClassKeyword */);
-            node.name = node.flags & 256 /* Default */ ? parseOptionalIdentifier() : parseIdentifier();
+            node.name = parseOptionalIdentifier();
             node.typeParameters = parseTypeParameters();
             node.heritageClauses = parseHeritageClauses(true);
             if (parseExpected(14 /* OpenBraceToken */)) {
@@ -9952,17 +10083,11 @@ var ts;
             setModifiers(node, modifiers);
             if (parseOptional(53 /* EqualsToken */)) {
                 node.isExportEquals = true;
-                node.expression = parseAssignmentExpressionOrHigher();
             }
             else {
                 parseExpected(73 /* DefaultKeyword */);
-                if (parseOptional(51 /* ColonToken */)) {
-                    node.type = parseType();
-                }
-                else {
-                    node.expression = parseAssignmentExpressionOrHigher();
-                }
             }
+            node.expression = parseAssignmentExpressionOrHigher();
             parseSemicolon();
             return finishNode(node);
         }
@@ -10110,7 +10235,7 @@ var ts;
                 if (kind !== 2 /* SingleLineCommentTrivia */) {
                     break;
                 }
-                var range = { pos: triviaScanner.getTokenPos(), end: triviaScanner.getTextPos() };
+                var range = { pos: triviaScanner.getTokenPos(), end: triviaScanner.getTextPos(), kind: triviaScanner.getToken() };
                 var comment = sourceText.substring(range.pos, range.end);
                 var referencePathMatchResult = ts.getFileReferenceFromReferencePath(comment, range);
                 if (referencePathMatchResult) {
@@ -10199,9 +10324,10 @@ var ts;
     ts.isAssignmentOperator = isAssignmentOperator;
 })(ts || (ts = {}));
 /// <reference path="parser.ts"/>
+/* @internal */
 var ts;
 (function (ts) {
-    /* @internal */ ts.bindTime = 0;
+    ts.bindTime = 0;
     (function (ModuleInstanceState) {
         ModuleInstanceState[ModuleInstanceState["NonInstantiated"] = 0] = "NonInstantiated";
         ModuleInstanceState[ModuleInstanceState["Instantiated"] = 1] = "Instantiated";
@@ -10557,23 +10683,27 @@ var ts;
         function bindCatchVariableDeclaration(node) {
             bindChildren(node, 0, true);
         }
-        function bindBlockScopedVariableDeclaration(node) {
+        function bindBlockScopedDeclaration(node, symbolKind, symbolExcludes) {
             switch (blockScopeContainer.kind) {
                 case 205 /* ModuleDeclaration */:
-                    declareModuleMember(node, 2 /* BlockScopedVariable */, 107455 /* BlockScopedVariableExcludes */);
+                    declareModuleMember(node, symbolKind, symbolExcludes);
                     break;
                 case 227 /* SourceFile */:
                     if (ts.isExternalModule(container)) {
-                        declareModuleMember(node, 2 /* BlockScopedVariable */, 107455 /* BlockScopedVariableExcludes */);
+                        declareModuleMember(node, symbolKind, symbolExcludes);
                         break;
                     }
+                // fall through.
                 default:
                     if (!blockScopeContainer.locals) {
                         blockScopeContainer.locals = {};
                     }
-                    declareSymbol(blockScopeContainer.locals, undefined, node, 2 /* BlockScopedVariable */, 107455 /* BlockScopedVariableExcludes */);
+                    declareSymbol(blockScopeContainer.locals, undefined, node, symbolKind, symbolExcludes);
             }
-            bindChildren(node, 2 /* BlockScopedVariable */, false);
+            bindChildren(node, symbolKind, false);
+        }
+        function bindBlockScopedVariableDeclaration(node) {
+            bindBlockScopedDeclaration(node, 2 /* BlockScopedVariable */, 107455 /* BlockScopedVariableExcludes */);
         }
         function getDestructuringParameterName(node) {
             return "__" + ts.indexOf(node.parent.parameters, node);
@@ -10656,7 +10786,7 @@ var ts;
                     bindCatchVariableDeclaration(node);
                     break;
                 case 201 /* ClassDeclaration */:
-                    bindDeclaration(node, 32 /* Class */, 899583 /* ClassExcludes */, false);
+                    bindBlockScopedDeclaration(node, 32 /* Class */, 899583 /* ClassExcludes */);
                     break;
                 case 202 /* InterfaceDeclaration */:
                     bindDeclaration(node, 64 /* Interface */, 792992 /* InterfaceExcludes */, false);
@@ -10697,7 +10827,7 @@ var ts;
                     bindChildren(node, 0, false);
                     break;
                 case 214 /* ExportAssignment */:
-                    if (node.expression && node.expression.kind === 65 /* Identifier */) {
+                    if (node.expression.kind === 65 /* Identifier */) {
                         // An export default clause with an identifier exports all meanings of that identifier
                         declareSymbol(container.symbol.exports, container.symbol, node, 8388608 /* Alias */, 107455 /* PropertyExcludes */ | 8388608 /* AliasExcludes */);
                     }
@@ -10765,20 +10895,19 @@ var ts;
     }
 })(ts || (ts = {}));
 /// <reference path="binder.ts"/>
+/* @internal */
 var ts;
 (function (ts) {
     var nextSymbolId = 1;
     var nextNodeId = 1;
     var nextMergeId = 1;
-    // @internal
     function getNodeId(node) {
         if (!node.id)
             node.id = nextNodeId++;
         return node.id;
     }
     ts.getNodeId = getNodeId;
-    /* @internal */ ts.checkTime = 0;
-    /* @internal */
+    ts.checkTime = 0;
     function getSymbolId(symbol) {
         if (!symbol.id) {
             symbol.id = nextSymbolId++;
@@ -10875,6 +11004,7 @@ var ts;
         var stringLiteralTypes = {};
         var emitExtends = false;
         var emitDecorate = false;
+        var emitParam = false;
         var mergedSymbols = [];
         var symbolLinks = [];
         var nodeLinks = [];
@@ -11412,7 +11542,7 @@ var ts;
                 resolveEntityName(node.propertyName || node.name, 107455 /* Value */ | 793056 /* Type */ | 1536 /* Namespace */);
         }
         function getTargetOfExportAssignment(node) {
-            return node.expression && resolveEntityName(node.expression, 107455 /* Value */ | 793056 /* Type */ | 1536 /* Namespace */);
+            return resolveEntityName(node.expression, 107455 /* Value */ | 793056 /* Type */ | 1536 /* Namespace */);
         }
         function getTargetOfAliasDeclaration(node) {
             switch (node.kind) {
@@ -11471,7 +11601,7 @@ var ts;
             if (!links.referenced) {
                 links.referenced = true;
                 var node = getDeclarationOfAliasSymbol(symbol);
-                if (node.kind === 214 /* ExportAssignment */ && node.expression) {
+                if (node.kind === 214 /* ExportAssignment */) {
                     // export default <symbol>
                     checkExpressionCached(node.expression);
                 }
@@ -11634,7 +11764,7 @@ var ts;
             // The ES6 spec permits export * declarations in a module to circularly reference the module itself. For example,
             // module 'a' can 'export * from "b"' and 'b' can 'export * from "a"' without error.
             function visit(symbol) {
-                if (symbol.flags & 1952 /* HasExports */ && !ts.contains(visitedSymbols, symbol)) {
+                if (symbol && symbol.flags & 1952 /* HasExports */ && !ts.contains(visitedSymbols, symbol)) {
                     visitedSymbols.push(symbol);
                     if (symbol !== moduleSymbol) {
                         if (!result) {
@@ -12670,15 +12800,19 @@ var ts;
                 }
             }
             else {
-                // For an array binding element the specified or inferred type of the parent must be an array-like type
-                if (!isArrayLikeType(parentType)) {
-                    error(pattern, ts.Diagnostics.Type_0_is_not_an_array_type, typeToString(parentType));
-                    return unknownType;
-                }
+                // This elementType will be used if the specific property corresponding to this index is not
+                // present (aka the tuple element property). This call also checks that the parentType is in
+                // fact an iterable or array (depending on target language).
+                var elementType = checkIteratedTypeOrElementType(parentType, pattern, false);
                 if (!declaration.dotDotDotToken) {
+                    if (elementType.flags & 1 /* Any */) {
+                        return elementType;
+                    }
                     // Use specific property type when parent is a tuple or numeric index type when parent is an array
                     var propName = "" + ts.indexOf(pattern.elements, declaration);
-                    type = isTupleLikeType(parentType) ? getTypeOfPropertyOfType(parentType, propName) : getIndexTypeOfType(parentType, 1 /* Number */);
+                    type = isTupleLikeType(parentType)
+                        ? getTypeOfPropertyOfType(parentType, propName)
+                        : elementType;
                     if (!type) {
                         if (isTupleType(parentType)) {
                             error(declaration, ts.Diagnostics.Tuple_type_0_with_length_1_cannot_be_assigned_to_tuple_with_length_2, typeToString(parentType), parentType.elementTypes.length, pattern.elements.length);
@@ -12691,7 +12825,7 @@ var ts;
                 }
                 else {
                     // Rest element has an array type with the same element type as the parent type
-                    type = createArrayType(getIndexTypeOfType(parentType, 1 /* Number */));
+                    type = createArrayType(elementType);
                 }
             }
             return type;
@@ -12776,7 +12910,32 @@ var ts;
                     hasSpreadElement = true;
                 }
             });
-            return !elementTypes.length ? anyArrayType : hasSpreadElement ? createArrayType(getUnionType(elementTypes)) : createTupleType(elementTypes);
+            if (!elementTypes.length) {
+                return languageVersion >= 2 /* ES6 */ ? createIterableType(anyType) : anyArrayType;
+            }
+            else if (hasSpreadElement) {
+                var unionOfElements = getUnionType(elementTypes);
+                if (languageVersion >= 2 /* ES6 */) {
+                    // If the user has something like:
+                    //
+                    //     function fun(...[a, ...b]) { }
+                    //
+                    // Normally, in ES6, the implied type of an array binding pattern with a rest element is
+                    // an iterable. However, there is a requirement in our type system that all rest
+                    // parameters be array types. To satisfy this, we have an exception to the rule that
+                    // says the type of an array binding pattern with a rest element is an array type
+                    // if it is *itself* in a rest parameter. It will still be compatible with a spreaded
+                    // iterable argument, but within the function it will be an array.
+                    var parent_3 = pattern.parent;
+                    var isRestParameter = parent_3.kind === 129 /* Parameter */ &&
+                        pattern === parent_3.name &&
+                        parent_3.dotDotDotToken !== undefined;
+                    return isRestParameter ? createArrayType(unionOfElements) : createIterableType(unionOfElements);
+                }
+                return createArrayType(unionOfElements);
+            }
+            // If the pattern has at least one element, and no rest element, then it should imply a tuple type.
+            return createTupleType(elementTypes);
         }
         // Return the type implied by a binding pattern. This is the type implied purely by the binding pattern itself
         // and without regard to its context (i.e. without regard any type annotation or initializer associated with the
@@ -12840,16 +12999,7 @@ var ts;
                 }
                 // Handle export default expressions
                 if (declaration.kind === 214 /* ExportAssignment */) {
-                    var exportAssignment = declaration;
-                    if (exportAssignment.expression) {
-                        return links.type = checkExpression(exportAssignment.expression);
-                    }
-                    else if (exportAssignment.type) {
-                        return links.type = getTypeFromTypeNodeOrHeritageClauseElement(exportAssignment.type);
-                    }
-                    else {
-                        return links.type = anyType;
-                    }
+                    return links.type = checkExpression(declaration.expression);
                 }
                 // Handle variable, parameter or property
                 links.type = resolvingType;
@@ -13539,6 +13689,15 @@ var ts;
         function getSignaturesOfType(type, kind) {
             return getSignaturesOfObjectOrUnionType(getApparentType(type), kind);
         }
+        function typeHasCallOrConstructSignatures(type) {
+            var apparentType = getApparentType(type);
+            if (apparentType.flags & (48128 /* ObjectType */ | 16384 /* Union */)) {
+                var resolved = resolveObjectOrUnionTypeMembers(type);
+                return resolved.callSignatures.length > 0
+                    || resolved.constructSignatures.length > 0;
+            }
+            return false;
+        }
         function getIndexTypeOfObjectOrUnionType(type, kind) {
             if (type.flags & (48128 /* ObjectType */ | 16384 /* Union */)) {
                 var resolved = resolveObjectOrUnionTypeMembers(type);
@@ -13948,6 +14107,9 @@ var ts;
         }
         function getGlobalESSymbolConstructorSymbol() {
             return globalESSymbolConstructorSymbol || (globalESSymbolConstructorSymbol = getGlobalValueSymbol("Symbol"));
+        }
+        function createIterableType(elementType) {
+            return globalIterableType !== emptyObjectType ? createTypeReference(globalIterableType, [elementType]) : emptyObjectType;
         }
         function createArrayType(elementType) {
             // globalArrayType will be undefined if we get here during creation of the Array type. This for example happens if
@@ -15537,10 +15699,10 @@ var ts;
             // Resolve location from top down towards node if it is a context sensitive expression
             // That helps in making sure not assigning types as any when resolved out of order
             var containerNodes = [];
-            for (var parent_3 = node.parent; parent_3; parent_3 = parent_3.parent) {
-                if ((ts.isExpression(parent_3) || ts.isObjectLiteralMethod(node)) &&
-                    isContextSensitive(parent_3)) {
-                    containerNodes.unshift(parent_3);
+            for (var parent_4 = node.parent; parent_4; parent_4 = parent_4.parent) {
+                if ((ts.isExpression(parent_4) || ts.isObjectLiteralMethod(node)) &&
+                    isContextSensitive(parent_4)) {
+                    containerNodes.unshift(parent_4);
                 }
             }
             ts.forEach(containerNodes, function (node) { getTypeOfNode(node); });
@@ -15901,7 +16063,7 @@ var ts;
                     needToCaptureLexicalThis = false;
                     while (container && container.kind === 163 /* ArrowFunction */) {
                         container = ts.getSuperContainer(container, true);
-                        needToCaptureLexicalThis = true;
+                        needToCaptureLexicalThis = languageVersion < 2 /* ES6 */;
                     }
                     // topmost container must be something that is directly nested in the class declaration
                     if (container && container.parent && container.parent.kind === 201 /* ClassDeclaration */) {
@@ -15948,7 +16110,7 @@ var ts;
                     return returnType;
                 }
             }
-            if (container.kind === 127 /* ComputedPropertyName */) {
+            if (container && container.kind === 127 /* ComputedPropertyName */) {
                 error(node, ts.Diagnostics.super_cannot_be_referenced_in_a_computed_property_name);
             }
             else if (isCallExpression) {
@@ -16286,12 +16448,14 @@ var ts;
             return false;
         }
         function checkSpreadElementExpression(node, contextualMapper) {
-            var type = checkExpressionCached(node.expression, contextualMapper);
-            if (!isArrayLikeType(type)) {
-                error(node.expression, ts.Diagnostics.Type_0_is_not_an_array_type, typeToString(type));
-                return unknownType;
-            }
-            return type;
+            // It is usually not safe to call checkExpressionCached if we can be contextually typing.
+            // You can tell that we are contextually typing because of the contextualMapper parameter.
+            // While it is true that a spread element can have a contextual type, it does not do anything
+            // with this type. It is neither affected by it, nor does it propagate it to its operand.
+            // So the fact that contextualMapper is passed is not important, because the operand of a spread
+            // element is not contextually typed.
+            var arrayOrIterableType = checkExpressionCached(node.expression, contextualMapper);
+            return checkIteratedTypeOrElementType(arrayOrIterableType, node.expression, false);
         }
         function checkArrayLiteral(node, contextualMapper) {
             var elements = node.elements;
@@ -16300,16 +16464,12 @@ var ts;
             }
             var hasSpreadElement = false;
             var elementTypes = [];
-            ts.forEach(elements, function (e) {
+            for (var _i = 0; _i < elements.length; _i++) {
+                var e = elements[_i];
                 var type = checkExpression(e, contextualMapper);
-                if (e.kind === 173 /* SpreadElementExpression */) {
-                    elementTypes.push(getIndexTypeOfType(type, 1 /* Number */) || anyType);
-                    hasSpreadElement = true;
-                }
-                else {
-                    elementTypes.push(type);
-                }
-            });
+                elementTypes.push(type);
+                hasSpreadElement = hasSpreadElement || e.kind === 173 /* SpreadElementExpression */;
+            }
             if (!hasSpreadElement) {
                 var contextualType = getContextualType(node);
                 if (contextualType && contextualTypeIsTupleLikeType(contextualType) || isAssignmentTarget(node)) {
@@ -16718,13 +16878,13 @@ var ts;
             for (var _i = 0; _i < signatures.length; _i++) {
                 var signature = signatures[_i];
                 var symbol = signature.declaration && getSymbolOfNode(signature.declaration);
-                var parent_4 = signature.declaration && signature.declaration.parent;
+                var parent_5 = signature.declaration && signature.declaration.parent;
                 if (!lastSymbol || symbol === lastSymbol) {
-                    if (lastParent && parent_4 === lastParent) {
+                    if (lastParent && parent_5 === lastParent) {
                         index++;
                     }
                     else {
-                        lastParent = parent_4;
+                        lastParent = parent_5;
                         index = cutoffIndex;
                     }
                 }
@@ -16732,7 +16892,7 @@ var ts;
                     // current declaration belongs to a different symbol
                     // set cutoffIndex so re-orderings in the future won't change result set from 0 to cutoffIndex
                     index = cutoffIndex = result.length;
-                    lastParent = parent_4;
+                    lastParent = parent_5;
                 }
                 lastSymbol = symbol;
                 // specialized signatures always need to be placed before non-specialized signatures regardless
@@ -16868,7 +17028,7 @@ var ts;
             for (var i = 0; i < args.length; i++) {
                 var arg = args[i];
                 if (arg.kind !== 175 /* OmittedExpression */) {
-                    var paramType = getTypeAtPosition(signature, arg.kind === 173 /* SpreadElementExpression */ ? -1 : i);
+                    var paramType = getTypeAtPosition(signature, i);
                     var argType = void 0;
                     if (i === 0 && args[i].parent.kind === 159 /* TaggedTemplateExpression */) {
                         argType = globalTemplateStringsArrayType;
@@ -16890,7 +17050,7 @@ var ts;
                     // No need to check for omitted args and template expressions, their exlusion value is always undefined
                     if (excludeArgument[i] === false) {
                         var arg = args[i];
-                        var paramType = getTypeAtPosition(signature, arg.kind === 173 /* SpreadElementExpression */ ? -1 : i);
+                        var paramType = getTypeAtPosition(signature, i);
                         inferTypes(context, checkExpressionWithContextualType(arg, paramType, inferenceMapper), paramType);
                     }
                 }
@@ -16919,7 +17079,7 @@ var ts;
                 var arg = args[i];
                 if (arg.kind !== 175 /* OmittedExpression */) {
                     // Check spread elements against rest type (from arity check we know spread argument corresponds to a rest parameter)
-                    var paramType = getTypeAtPosition(signature, arg.kind === 173 /* SpreadElementExpression */ ? -1 : i);
+                    var paramType = getTypeAtPosition(signature, i);
                     // A tagged template expression provides a special first argument, and string literals get string literal types
                     // unless we're reporting errors
                     var argType = i === 0 && node.kind === 159 /* TaggedTemplateExpression */ ? globalTemplateStringsArrayType :
@@ -17343,14 +17503,9 @@ var ts;
             return targetType;
         }
         function getTypeAtPosition(signature, pos) {
-            if (pos >= 0) {
-                return signature.hasRestParameter ?
-                    pos < signature.parameters.length - 1 ? getTypeOfSymbol(signature.parameters[pos]) : getRestTypeOfSignature(signature) :
-                    pos < signature.parameters.length ? getTypeOfSymbol(signature.parameters[pos]) : anyType;
-            }
             return signature.hasRestParameter ?
-                getTypeOfSymbol(signature.parameters[signature.parameters.length - 1]) :
-                anyArrayType;
+                pos < signature.parameters.length - 1 ? getTypeOfSymbol(signature.parameters[pos]) : getRestTypeOfSignature(signature) :
+                pos < signature.parameters.length ? getTypeOfSymbol(signature.parameters[pos]) : anyType;
         }
         function assignContextualParameterTypes(signature, context, mapper) {
             var len = signature.parameters.length - (signature.hasRestParameter ? 1 : 0);
@@ -17448,7 +17603,7 @@ var ts;
         function checkFunctionExpressionOrObjectLiteralMethod(node, contextualMapper) {
             ts.Debug.assert(node.kind !== 134 /* MethodDeclaration */ || ts.isObjectLiteralMethod(node));
             // Grammar checking
-            var hasGrammarError = checkGrammarFunctionLikeDeclaration(node);
+            var hasGrammarError = checkGrammarDeclarationNameInStrictMode(node) || checkGrammarFunctionLikeDeclaration(node);
             if (!hasGrammarError && node.kind === 162 /* FunctionExpression */) {
                 checkGrammarFunctionName(node.name) || checkGrammarForGenerator(node);
             }
@@ -17490,7 +17645,7 @@ var ts;
         }
         function checkFunctionExpressionOrObjectLiteralMethodBody(node) {
             ts.Debug.assert(node.kind !== 134 /* MethodDeclaration */ || ts.isObjectLiteralMethod(node));
-            if (node.type) {
+            if (node.type && !node.asteriskToken) {
                 checkIfNonVoidFunctionHasReturnExpressionsOrSingleThrowStatment(node, getTypeFromTypeNodeOrHeritageClauseElement(node.type));
             }
             if (node.body) {
@@ -17741,11 +17896,10 @@ var ts;
             return sourceType;
         }
         function checkArrayLiteralAssignment(node, sourceType, contextualMapper) {
-            // TODOO(andersh): Allow iterable source type in ES6
-            if (!isArrayLikeType(sourceType)) {
-                error(node, ts.Diagnostics.Type_0_is_not_an_array_type, typeToString(sourceType));
-                return sourceType;
-            }
+            // This elementType will be used if the specific property corresponding to this index is not
+            // present (aka the tuple element property). This call also checks that the parentType is in
+            // fact an iterable or array (depending on target language).
+            var elementType = checkIteratedTypeOrElementType(sourceType, node, false);
             var elements = node.elements;
             for (var i = 0; i < elements.length; i++) {
                 var e = elements[i];
@@ -17753,8 +17907,9 @@ var ts;
                     if (e.kind !== 173 /* SpreadElementExpression */) {
                         var propName = "" + i;
                         var type = sourceType.flags & 1 /* Any */ ? sourceType :
-                            isTupleLikeType(sourceType) ? getTypeOfPropertyOfType(sourceType, propName) :
-                                getIndexTypeOfType(sourceType, 1 /* Number */);
+                            isTupleLikeType(sourceType)
+                                ? getTypeOfPropertyOfType(sourceType, propName)
+                                : elementType;
                         if (type) {
                             checkDestructuringAssignment(e, type, contextualMapper);
                         }
@@ -17769,7 +17924,7 @@ var ts;
                     }
                     else {
                         if (i === elements.length - 1) {
-                            checkReferenceAssignment(e.expression, sourceType, contextualMapper);
+                            checkReferenceAssignment(e.expression, createArrayType(elementType), contextualMapper);
                         }
                         else {
                             error(e, ts.Diagnostics.A_rest_element_must_be_last_in_an_array_destructuring_pattern);
@@ -18052,6 +18207,7 @@ var ts;
             return type;
         }
         function checkExpression(node, contextualMapper) {
+            checkGrammarIdentifierInStrictMode(node);
             return checkExpressionOrQualifiedName(node, contextualMapper);
         }
         // Checks an expression and returns its type. The contextualMapper parameter serves two purposes: When
@@ -18159,6 +18315,7 @@ var ts;
         }
         // DECLARATION AND STATEMENT TYPE CHECKING
         function checkTypeParameter(node) {
+            checkGrammarDeclarationNameInStrictMode(node);
             // Grammar Checking
             if (node.expression) {
                 grammarErrorOnFirstToken(node.expression, ts.Diagnostics.Type_expected);
@@ -18390,9 +18547,11 @@ var ts;
             checkDecorators(node);
         }
         function checkTypeReferenceNode(node) {
+            checkGrammarTypeReferenceInStrictMode(node.typeName);
             return checkTypeReferenceOrHeritageClauseElement(node);
         }
         function checkHeritageClauseElement(node) {
+            checkGrammarHeritageClauseElementInStrictMode(node.expression);
             return checkTypeReferenceOrHeritageClauseElement(node);
         }
         function checkTypeReferenceOrHeritageClauseElement(node) {
@@ -18771,22 +18930,86 @@ var ts;
                     break;
             }
         }
+        /** Checks a type reference node as an expression. */
+        function checkTypeNodeAsExpression(node) {
+            // When we are emitting type metadata for decorators, we need to try to check the type
+            // as if it were an expression so that we can emit the type in a value position when we 
+            // serialize the type metadata.
+            if (node && node.kind === 141 /* TypeReference */) {
+                var type = getTypeFromTypeNodeOrHeritageClauseElement(node);
+                var shouldCheckIfUnknownType = type === unknownType && compilerOptions.separateCompilation;
+                if (!type || (!shouldCheckIfUnknownType && type.flags & (1048703 /* Intrinsic */ | 132 /* NumberLike */ | 258 /* StringLike */))) {
+                    return;
+                }
+                if (shouldCheckIfUnknownType || type.symbol.valueDeclaration) {
+                    checkExpressionOrQualifiedName(node.typeName);
+                }
+            }
+        }
+        /**
+          * Checks the type annotation of an accessor declaration or property declaration as
+          * an expression if it is a type reference to a type with a value declaration.
+          */
+        function checkTypeAnnotationAsExpression(node) {
+            switch (node.kind) {
+                case 132 /* PropertyDeclaration */:
+                    checkTypeNodeAsExpression(node.type);
+                    break;
+                case 129 /* Parameter */:
+                    checkTypeNodeAsExpression(node.type);
+                    break;
+                case 134 /* MethodDeclaration */:
+                    checkTypeNodeAsExpression(node.type);
+                    break;
+                case 136 /* GetAccessor */:
+                    checkTypeNodeAsExpression(node.type);
+                    break;
+                case 137 /* SetAccessor */:
+                    checkTypeNodeAsExpression(getSetAccessorTypeAnnotationNode(node));
+                    break;
+            }
+        }
+        /** Checks the type annotation of the parameters of a function/method or the constructor of a class as expressions */
+        function checkParameterTypeAnnotationsAsExpressions(node) {
+            // ensure all type annotations with a value declaration are checked as an expression
+            for (var _i = 0, _a = node.parameters; _i < _a.length; _i++) {
+                var parameter = _a[_i];
+                checkTypeAnnotationAsExpression(parameter);
+            }
+        }
         /** Check the decorators of a node */
         function checkDecorators(node) {
             if (!node.decorators) {
                 return;
             }
-            switch (node.kind) {
-                case 201 /* ClassDeclaration */:
-                case 134 /* MethodDeclaration */:
-                case 136 /* GetAccessor */:
-                case 137 /* SetAccessor */:
-                case 132 /* PropertyDeclaration */:
-                case 129 /* Parameter */:
-                    emitDecorate = true;
-                    break;
-                default:
-                    return;
+            // skip this check for nodes that cannot have decorators. These should have already had an error reported by
+            // checkGrammarDecorators.
+            if (!ts.nodeCanBeDecorated(node)) {
+                return;
+            }
+            if (compilerOptions.emitDecoratorMetadata) {
+                // we only need to perform these checks if we are emitting serialized type metadata for the target of a decorator.
+                switch (node.kind) {
+                    case 201 /* ClassDeclaration */:
+                        var constructor = ts.getFirstConstructorWithBody(node);
+                        if (constructor) {
+                            checkParameterTypeAnnotationsAsExpressions(constructor);
+                        }
+                        break;
+                    case 134 /* MethodDeclaration */:
+                        checkParameterTypeAnnotationsAsExpressions(node);
+                    // fall-through
+                    case 137 /* SetAccessor */:
+                    case 136 /* GetAccessor */:
+                    case 132 /* PropertyDeclaration */:
+                    case 129 /* Parameter */:
+                        checkTypeAnnotationAsExpression(node);
+                        break;
+                }
+            }
+            emitDecorate = true;
+            if (node.kind === 129 /* Parameter */) {
+                emitParam = true;
             }
             ts.forEach(node.decorators, checkDecorator);
         }
@@ -18802,6 +19025,7 @@ var ts;
             }
         }
         function checkFunctionLikeDeclaration(node) {
+            checkGrammarDeclarationNameInStrictMode(node);
             checkDecorators(node);
             checkSignatureDeclaration(node);
             // Do not use hasDynamicName here, because that returns false for well known symbols.
@@ -18832,7 +19056,7 @@ var ts;
                 }
             }
             checkSourceElement(node.body);
-            if (node.type && !isAccessor(node.kind)) {
+            if (node.type && !isAccessor(node.kind) && !node.asteriskToken) {
                 checkIfNonVoidFunctionHasReturnExpressionsOrSingleThrowStatment(node, getTypeFromTypeNodeOrHeritageClauseElement(node.type));
             }
             // Report an implicit any error if there is no body, no explicit return type, and node is not a private method
@@ -19045,6 +19269,7 @@ var ts;
         }
         // Check variable, parameter, or property declaration
         function checkVariableLikeDeclaration(node) {
+            checkGrammarDeclarationNameInStrictMode(node);
             checkDecorators(node);
             checkSourceElement(node.type);
             // For a computed property, just check the initializer and exit
@@ -19264,26 +19489,34 @@ var ts;
         }
         function checkRightHandSideOfForOf(rhsExpression) {
             var expressionType = getTypeOfExpression(rhsExpression);
-            return languageVersion >= 2 /* ES6 */
-                ? checkIteratedType(expressionType, rhsExpression)
-                : checkElementTypeOfArrayOrString(expressionType, rhsExpression);
+            return checkIteratedTypeOrElementType(expressionType, rhsExpression, true);
+        }
+        function checkIteratedTypeOrElementType(inputType, errorNode, allowStringInput) {
+            if (languageVersion >= 2 /* ES6 */) {
+                return checkIteratedType(inputType, errorNode) || anyType;
+            }
+            if (allowStringInput) {
+                return checkElementTypeOfArrayOrString(inputType, errorNode);
+            }
+            if (isArrayLikeType(inputType)) {
+                return getIndexTypeOfType(inputType, 1 /* Number */);
+            }
+            error(errorNode, ts.Diagnostics.Type_0_is_not_an_array_type, typeToString(inputType));
+            return unknownType;
         }
         /**
-         * When expressionForError is undefined, it means we should not report any errors.
+         * When errorNode is undefined, it means we should not report any errors.
          */
-        function checkIteratedType(iterable, expressionForError) {
+        function checkIteratedType(iterable, errorNode) {
             ts.Debug.assert(languageVersion >= 2 /* ES6 */);
-            var iteratedType = getIteratedType(iterable, expressionForError);
+            var iteratedType = getIteratedType(iterable, errorNode);
             // Now even though we have extracted the iteratedType, we will have to validate that the type
             // passed in is actually an Iterable.
-            if (expressionForError && iteratedType) {
-                var completeIterableType = globalIterableType !== emptyObjectType
-                    ? createTypeReference(globalIterableType, [iteratedType])
-                    : emptyObjectType;
-                checkTypeAssignableTo(iterable, completeIterableType, expressionForError);
+            if (errorNode && iteratedType) {
+                checkTypeAssignableTo(iterable, createIterableType(iteratedType), errorNode);
             }
             return iteratedType;
-            function getIteratedType(iterable, expressionForError) {
+            function getIteratedType(iterable, errorNode) {
                 // We want to treat type as an iterable, and get the type it is an iterable of. The iterable
                 // must have the following structure (annotated with the names of the variables below):
                 //
@@ -19312,14 +19545,19 @@ var ts;
                 if (allConstituentTypesHaveKind(iterable, 1 /* Any */)) {
                     return undefined;
                 }
+                // As an optimization, if the type is instantiated directly using the globalIterableType (Iterable<number>),
+                // then just grab its type argument.
+                if ((iterable.flags & 4096 /* Reference */) && iterable.target === globalIterableType) {
+                    return iterable.typeArguments[0];
+                }
                 var iteratorFunction = getTypeOfPropertyOfType(iterable, ts.getPropertyNameForKnownSymbolName("iterator"));
                 if (iteratorFunction && allConstituentTypesHaveKind(iteratorFunction, 1 /* Any */)) {
                     return undefined;
                 }
                 var iteratorFunctionSignatures = iteratorFunction ? getSignaturesOfType(iteratorFunction, 0 /* Call */) : emptyArray;
                 if (iteratorFunctionSignatures.length === 0) {
-                    if (expressionForError) {
-                        error(expressionForError, ts.Diagnostics.The_right_hand_side_of_a_for_of_statement_must_have_a_Symbol_iterator_method_that_returns_an_iterator);
+                    if (errorNode) {
+                        error(errorNode, ts.Diagnostics.Type_must_have_a_Symbol_iterator_method_that_returns_an_iterator);
                     }
                     return undefined;
                 }
@@ -19333,8 +19571,8 @@ var ts;
                 }
                 var iteratorNextFunctionSignatures = iteratorNextFunction ? getSignaturesOfType(iteratorNextFunction, 0 /* Call */) : emptyArray;
                 if (iteratorNextFunctionSignatures.length === 0) {
-                    if (expressionForError) {
-                        error(expressionForError, ts.Diagnostics.The_iterator_returned_by_the_right_hand_side_of_a_for_of_statement_must_have_a_next_method);
+                    if (errorNode) {
+                        error(errorNode, ts.Diagnostics.An_iterator_must_have_a_next_method);
                     }
                     return undefined;
                 }
@@ -19344,8 +19582,8 @@ var ts;
                 }
                 var iteratorNextValue = getTypeOfPropertyOfType(iteratorNextResult, "value");
                 if (!iteratorNextValue) {
-                    if (expressionForError) {
-                        error(expressionForError, ts.Diagnostics.The_type_returned_by_the_next_method_of_an_iterator_must_have_a_value_property);
+                    if (errorNode) {
+                        error(errorNode, ts.Diagnostics.The_type_returned_by_the_next_method_of_an_iterator_must_have_a_value_property);
                     }
                     return undefined;
                 }
@@ -19369,7 +19607,7 @@ var ts;
          *   1. Some constituent is neither a string nor an array.
          *   2. Some constituent is a string and target is less than ES5 (because in ES3 string is not indexable).
          */
-        function checkElementTypeOfArrayOrString(arrayOrStringType, expressionForError) {
+        function checkElementTypeOfArrayOrString(arrayOrStringType, errorNode) {
             ts.Debug.assert(languageVersion < 2 /* ES6 */);
             // After we remove all types that are StringLike, we will know if there was a string constituent
             // based on whether the remaining type is the same as the initial type.
@@ -19378,7 +19616,7 @@ var ts;
             var reportedError = false;
             if (hasStringConstituent) {
                 if (languageVersion < 1 /* ES5 */) {
-                    error(expressionForError, ts.Diagnostics.Using_a_string_in_a_for_of_statement_is_only_supported_in_ECMAScript_5_and_higher);
+                    error(errorNode, ts.Diagnostics.Using_a_string_in_a_for_of_statement_is_only_supported_in_ECMAScript_5_and_higher);
                     reportedError = true;
                 }
                 // Now that we've removed all the StringLike types, if no constituents remain, then the entire
@@ -19396,7 +19634,7 @@ var ts;
                     var diagnostic = hasStringConstituent
                         ? ts.Diagnostics.Type_0_is_not_an_array_type
                         : ts.Diagnostics.Type_0_is_not_an_array_type_or_a_string_type;
-                    error(expressionForError, diagnostic, typeToString(arrayType));
+                    error(errorNode, diagnostic, typeToString(arrayType));
                 }
                 return hasStringConstituent ? stringType : unknownType;
             }
@@ -19662,9 +19900,13 @@ var ts;
             return unknownType;
         }
         function checkClassDeclaration(node) {
+            checkGrammarDeclarationNameInStrictMode(node);
             // Grammar checking
             if (node.parent.kind !== 206 /* ModuleBlock */ && node.parent.kind !== 227 /* SourceFile */) {
                 grammarErrorOnNode(node, ts.Diagnostics.class_declarations_are_only_supported_directly_inside_a_module_or_as_a_top_level_declaration);
+            }
+            if (!node.name && !(node.flags & 256 /* Default */)) {
+                grammarErrorOnFirstToken(node, ts.Diagnostics.A_class_declaration_without_the_default_modifier_must_have_a_name);
             }
             checkGrammarClassDeclarationHeritageClauses(node);
             checkDecorators(node);
@@ -19859,7 +20101,7 @@ var ts;
         }
         function checkInterfaceDeclaration(node) {
             // Grammar checking
-            checkGrammarDecorators(node) || checkGrammarModifiers(node) || checkGrammarInterfaceDeclaration(node);
+            checkGrammarDeclarationNameInStrictMode(node) || checkGrammarDecorators(node) || checkGrammarModifiers(node) || checkGrammarInterfaceDeclaration(node);
             checkTypeParameters(node.typeParameters);
             if (produceDiagnostics) {
                 checkTypeNameIsReserved(node.name, ts.Diagnostics.Interface_name_cannot_be_0);
@@ -20059,7 +20301,7 @@ var ts;
                 return;
             }
             // Grammar checking
-            checkGrammarDecorators(node) || checkGrammarModifiers(node) || checkGrammarEnumDeclaration(node);
+            checkGrammarDeclarationNameInStrictMode(node) || checkGrammarDecorators(node) || checkGrammarModifiers(node) || checkGrammarEnumDeclaration(node);
             checkTypeNameIsReserved(node.name, ts.Diagnostics.Enum_name_cannot_be_0);
             checkCollisionWithCapturedThisVariable(node, node.name);
             checkCollisionWithRequireExportsInGeneratedCode(node, node.name);
@@ -20121,7 +20363,7 @@ var ts;
         function checkModuleDeclaration(node) {
             if (produceDiagnostics) {
                 // Grammar checking
-                if (!checkGrammarDecorators(node) && !checkGrammarModifiers(node)) {
+                if (!checkGrammarDeclarationNameInStrictMode(node) && !checkGrammarDecorators(node) && !checkGrammarModifiers(node)) {
                     if (!ts.isInAmbientContext(node) && node.name.kind === 8 /* StringLiteral */) {
                         grammarErrorOnNode(node.name, ts.Diagnostics.Only_ambient_modules_can_use_quoted_names);
                     }
@@ -20216,7 +20458,7 @@ var ts;
             checkAliasSymbol(node);
         }
         function checkImportDeclaration(node) {
-            if (!checkGrammarDecorators(node) && !checkGrammarModifiers(node) && (node.flags & 499 /* Modifier */)) {
+            if (!checkGrammarImportDeclarationNameInStrictMode(node) && !checkGrammarDecorators(node) && !checkGrammarModifiers(node) && (node.flags & 499 /* Modifier */)) {
                 grammarErrorOnFirstToken(node, ts.Diagnostics.An_import_declaration_cannot_have_modifiers);
             }
             if (checkExternalImportOrExportDeclaration(node)) {
@@ -20237,7 +20479,7 @@ var ts;
             }
         }
         function checkImportEqualsDeclaration(node) {
-            checkGrammarDecorators(node) || checkGrammarModifiers(node);
+            checkGrammarDeclarationNameInStrictMode(node) || checkGrammarDecorators(node) || checkGrammarModifiers(node);
             if (ts.isInternalModuleImportEqualsDeclaration(node) || checkExternalImportOrExportDeclaration(node)) {
                 checkImportBinding(node);
                 if (node.flags & 1 /* Export */) {
@@ -20305,19 +20547,11 @@ var ts;
             if (!checkGrammarDecorators(node) && !checkGrammarModifiers(node) && (node.flags & 499 /* Modifier */)) {
                 grammarErrorOnFirstToken(node, ts.Diagnostics.An_export_assignment_cannot_have_modifiers);
             }
-            if (node.expression) {
-                if (node.expression.kind === 65 /* Identifier */) {
-                    markExportAsReferenced(node);
-                }
-                else {
-                    checkExpressionCached(node.expression);
-                }
+            if (node.expression.kind === 65 /* Identifier */) {
+                markExportAsReferenced(node);
             }
-            if (node.type) {
-                checkSourceElement(node.type);
-                if (!ts.isInAmbientContext(node)) {
-                    grammarErrorOnFirstToken(node.type, ts.Diagnostics.A_type_annotation_on_an_export_statement_is_only_allowed_in_an_ambient_external_module_declaration);
-                }
+            else {
+                checkExpressionCached(node.expression);
             }
             checkExternalModuleExports(container);
             if (node.isExportEquals && languageVersion >= 2 /* ES6 */) {
@@ -20564,6 +20798,8 @@ var ts;
                 // Grammar checking
                 checkGrammarSourceFile(node);
                 emitExtends = false;
+                emitDecorate = false;
+                emitParam = false;
                 potentialThisCollisions.length = 0;
                 ts.forEach(node.statements, checkSourceElement);
                 checkFunctionExpressionBodies(node);
@@ -20579,6 +20815,9 @@ var ts;
                 }
                 if (emitDecorate) {
                     links.flags |= 512 /* EmitDecorate */;
+                }
+                if (emitParam) {
+                    links.flags |= 1024 /* EmitParam */;
                 }
                 links.flags |= 1 /* TypeChecked */;
             }
@@ -20772,8 +21011,8 @@ var ts;
                 case 155 /* PropertyAccessExpression */:
                     // At this point, node is either a qualified name or an identifier
                     ts.Debug.assert(node.kind === 65 /* Identifier */ || node.kind === 126 /* QualifiedName */ || node.kind === 155 /* PropertyAccessExpression */, "'node' was expected to be a qualified name, identifier or property access in 'isTypeNode'.");
-                    var parent_5 = node.parent;
-                    if (parent_5.kind === 144 /* TypeQuery */) {
+                    var parent_6 = node.parent;
+                    if (parent_6.kind === 144 /* TypeQuery */) {
                         return false;
                     }
                     // Do not recursively call isTypeNode on the parent. In the example:
@@ -20782,19 +21021,19 @@ var ts;
                     //
                     // Calling isTypeNode would consider the qualified name A.B a type node. Only C or
                     // A.B.C is a type node.
-                    if (141 /* FirstTypeNode */ <= parent_5.kind && parent_5.kind <= 149 /* LastTypeNode */) {
+                    if (141 /* FirstTypeNode */ <= parent_6.kind && parent_6.kind <= 149 /* LastTypeNode */) {
                         return true;
                     }
-                    switch (parent_5.kind) {
+                    switch (parent_6.kind) {
                         case 177 /* HeritageClauseElement */:
                             return true;
                         case 128 /* TypeParameter */:
-                            return node === parent_5.constraint;
+                            return node === parent_6.constraint;
                         case 132 /* PropertyDeclaration */:
                         case 131 /* PropertySignature */:
                         case 129 /* Parameter */:
                         case 198 /* VariableDeclaration */:
-                            return node === parent_5.type;
+                            return node === parent_6.type;
                         case 200 /* FunctionDeclaration */:
                         case 162 /* FunctionExpression */:
                         case 163 /* ArrowFunction */:
@@ -20803,16 +21042,16 @@ var ts;
                         case 133 /* MethodSignature */:
                         case 136 /* GetAccessor */:
                         case 137 /* SetAccessor */:
-                            return node === parent_5.type;
+                            return node === parent_6.type;
                         case 138 /* CallSignature */:
                         case 139 /* ConstructSignature */:
                         case 140 /* IndexSignature */:
-                            return node === parent_5.type;
+                            return node === parent_6.type;
                         case 160 /* TypeAssertionExpression */:
-                            return node === parent_5.type;
+                            return node === parent_6.type;
                         case 157 /* CallExpression */:
                         case 158 /* NewExpression */:
-                            return parent_5.typeArguments && ts.indexOf(parent_5.typeArguments, node) >= 0;
+                            return parent_6.typeArguments && ts.indexOf(parent_6.typeArguments, node) >= 0;
                         case 159 /* TaggedTemplateExpression */:
                             // TODO (drosen): TaggedTemplateExpressions may eventually support type arguments.
                             return false;
@@ -21178,6 +21417,193 @@ var ts;
             }
             return undefined;
         }
+        /** Serializes an EntityName (with substitutions) to an appropriate JS constructor value. Used by the __metadata decorator. */
+        function serializeEntityName(node, getGeneratedNameForNode, fallbackPath) {
+            if (node.kind === 65 /* Identifier */) {
+                var substitution = getExpressionNameSubstitution(node, getGeneratedNameForNode);
+                var text = substitution || node.text;
+                if (fallbackPath) {
+                    fallbackPath.push(text);
+                }
+                else {
+                    return text;
+                }
+            }
+            else {
+                var left = serializeEntityName(node.left, getGeneratedNameForNode, fallbackPath);
+                var right = serializeEntityName(node.right, getGeneratedNameForNode, fallbackPath);
+                if (!fallbackPath) {
+                    return left + "." + right;
+                }
+            }
+        }
+        /** Serializes a TypeReferenceNode to an appropriate JS constructor value. Used by the __metadata decorator. */
+        function serializeTypeReferenceNode(node, getGeneratedNameForNode) {
+            // serialization of a TypeReferenceNode uses the following rules:
+            //
+            // * The serialized type of a TypeReference that is `void` is "void 0".
+            // * The serialized type of a TypeReference that is a `boolean` is "Boolean".
+            // * The serialized type of a TypeReference that is an enum or `number` is "Number".
+            // * The serialized type of a TypeReference that is a string literal or `string` is "String".
+            // * The serialized type of a TypeReference that is a tuple is "Array".
+            // * The serialized type of a TypeReference that is a `symbol` is "Symbol".
+            // * The serialized type of a TypeReference with a value declaration is its entity name.
+            // * The serialized type of a TypeReference with a call or construct signature is "Function".
+            // * The serialized type of any other type is "Object".
+            var type = getTypeFromTypeReference(node);
+            if (type.flags & 16 /* Void */) {
+                return "void 0";
+            }
+            else if (type.flags & 8 /* Boolean */) {
+                return "Boolean";
+            }
+            else if (type.flags & 132 /* NumberLike */) {
+                return "Number";
+            }
+            else if (type.flags & 258 /* StringLike */) {
+                return "String";
+            }
+            else if (type.flags & 8192 /* Tuple */) {
+                return "Array";
+            }
+            else if (type.flags & 1048576 /* ESSymbol */) {
+                return "Symbol";
+            }
+            else if (type === unknownType) {
+                var fallbackPath = [];
+                serializeEntityName(node.typeName, getGeneratedNameForNode, fallbackPath);
+                return fallbackPath;
+            }
+            else if (type.symbol && type.symbol.valueDeclaration) {
+                return serializeEntityName(node.typeName, getGeneratedNameForNode);
+            }
+            else if (typeHasCallOrConstructSignatures(type)) {
+                return "Function";
+            }
+            return "Object";
+        }
+        /** Serializes a TypeNode to an appropriate JS constructor value. Used by the __metadata decorator. */
+        function serializeTypeNode(node, getGeneratedNameForNode) {
+            // serialization of a TypeNode uses the following rules:
+            //
+            // * The serialized type of `void` is "void 0" (undefined).
+            // * The serialized type of a parenthesized type is the serialized type of its nested type.
+            // * The serialized type of a Function or Constructor type is "Function".
+            // * The serialized type of an Array or Tuple type is "Array".
+            // * The serialized type of `boolean` is "Boolean".
+            // * The serialized type of `string` or a string-literal type is "String".
+            // * The serialized type of a type reference is handled by `serializeTypeReferenceNode`.
+            // * The serialized type of any other type node is "Object".
+            if (node) {
+                switch (node.kind) {
+                    case 99 /* VoidKeyword */:
+                        return "void 0";
+                    case 149 /* ParenthesizedType */:
+                        return serializeTypeNode(node.type, getGeneratedNameForNode);
+                    case 142 /* FunctionType */:
+                    case 143 /* ConstructorType */:
+                        return "Function";
+                    case 146 /* ArrayType */:
+                    case 147 /* TupleType */:
+                        return "Array";
+                    case 113 /* BooleanKeyword */:
+                        return "Boolean";
+                    case 121 /* StringKeyword */:
+                    case 8 /* StringLiteral */:
+                        return "String";
+                    case 119 /* NumberKeyword */:
+                        return "Number";
+                    case 141 /* TypeReference */:
+                        return serializeTypeReferenceNode(node, getGeneratedNameForNode);
+                    case 144 /* TypeQuery */:
+                    case 145 /* TypeLiteral */:
+                    case 148 /* UnionType */:
+                    case 112 /* AnyKeyword */:
+                        break;
+                    default:
+                        ts.Debug.fail("Cannot serialize unexpected type node.");
+                        break;
+                }
+            }
+            return "Object";
+        }
+        /** Serializes the type of a declaration to an appropriate JS constructor value. Used by the __metadata decorator for a class member. */
+        function serializeTypeOfNode(node, getGeneratedNameForNode) {
+            // serialization of the type of a declaration uses the following rules:
+            //
+            // * The serialized type of a ClassDeclaration is "Function"
+            // * The serialized type of a ParameterDeclaration is the serialized type of its type annotation.
+            // * The serialized type of a PropertyDeclaration is the serialized type of its type annotation.
+            // * The serialized type of an AccessorDeclaration is the serialized type of the return type annotation of its getter or parameter type annotation of its setter.
+            // * The serialized type of any other FunctionLikeDeclaration is "Function".
+            // * The serialized type of any other node is "void 0".
+            // 
+            // For rules on serializing type annotations, see `serializeTypeNode`.
+            switch (node.kind) {
+                case 201 /* ClassDeclaration */: return "Function";
+                case 132 /* PropertyDeclaration */: return serializeTypeNode(node.type, getGeneratedNameForNode);
+                case 129 /* Parameter */: return serializeTypeNode(node.type, getGeneratedNameForNode);
+                case 136 /* GetAccessor */: return serializeTypeNode(node.type, getGeneratedNameForNode);
+                case 137 /* SetAccessor */: return serializeTypeNode(getSetAccessorTypeAnnotationNode(node), getGeneratedNameForNode);
+            }
+            if (ts.isFunctionLike(node)) {
+                return "Function";
+            }
+            return "void 0";
+        }
+        /** Serializes the parameter types of a function or the constructor of a class. Used by the __metadata decorator for a method or set accessor. */
+        function serializeParameterTypesOfNode(node, getGeneratedNameForNode) {
+            // serialization of parameter types uses the following rules:
+            //
+            // * If the declaration is a class, the parameters of the first constructor with a body are used.
+            // * If the declaration is function-like and has a body, the parameters of the function are used.
+            // 
+            // For the rules on serializing the type of each parameter declaration, see `serializeTypeOfDeclaration`.
+            if (node) {
+                var valueDeclaration;
+                if (node.kind === 201 /* ClassDeclaration */) {
+                    valueDeclaration = ts.getFirstConstructorWithBody(node);
+                }
+                else if (ts.isFunctionLike(node) && ts.nodeIsPresent(node.body)) {
+                    valueDeclaration = node;
+                }
+                if (valueDeclaration) {
+                    var result;
+                    var parameters = valueDeclaration.parameters;
+                    var parameterCount = parameters.length;
+                    if (parameterCount > 0) {
+                        result = new Array(parameterCount);
+                        for (var i = 0; i < parameterCount; i++) {
+                            if (parameters[i].dotDotDotToken) {
+                                var parameterType = parameters[i].type;
+                                if (parameterType.kind === 146 /* ArrayType */) {
+                                    parameterType = parameterType.elementType;
+                                }
+                                else if (parameterType.kind === 141 /* TypeReference */ && parameterType.typeArguments && parameterType.typeArguments.length === 1) {
+                                    parameterType = parameterType.typeArguments[0];
+                                }
+                                else {
+                                    parameterType = undefined;
+                                }
+                                result[i] = serializeTypeNode(parameterType, getGeneratedNameForNode);
+                            }
+                            else {
+                                result[i] = serializeTypeOfNode(parameters[i], getGeneratedNameForNode);
+                            }
+                        }
+                        return result;
+                    }
+                }
+            }
+            return emptyArray;
+        }
+        /** Serializes the return type of function. Used by the __metadata decorator for a method. */
+        function serializeReturnTypeOfNode(node, getGeneratedNameForNode) {
+            if (node && ts.isFunctionLike(node)) {
+                return serializeTypeNode(node.type, getGeneratedNameForNode);
+            }
+            return "void 0";
+        }
         function writeTypeOfDeclaration(declaration, enclosingDeclaration, flags, writer) {
             // Get type of the symbol if this is the valid symbol otherwise get type at location
             var symbol = getSymbolOfNode(declaration);
@@ -21247,7 +21673,10 @@ var ts;
                 getConstantValue: getConstantValue,
                 resolvesToSomeValue: resolvesToSomeValue,
                 collectLinkedAliases: collectLinkedAliases,
-                getBlockScopedVariableId: getBlockScopedVariableId
+                getBlockScopedVariableId: getBlockScopedVariableId,
+                serializeTypeOfNode: serializeTypeOfNode,
+                serializeParameterTypesOfNode: serializeParameterTypesOfNode,
+                serializeReturnTypeOfNode: serializeReturnTypeOfNode
             };
         }
         function initializeTypeChecker() {
@@ -21299,20 +21728,151 @@ var ts;
             anyArrayType = createArrayType(anyType);
         }
         // GRAMMAR CHECKING
+        function isReservedwordInStrictMode(node) {
+            // Check that originalKeywordKind is less than LastFurtureReservedWord to see if an Identifier is a strict-mode reserved word
+            return (node.parserContextFlags & 1 /* StrictMode */) &&
+                (node.originalKeywordKind >= 103 /* FirstFutureReservedWord */ && node.originalKeywordKind <= 111 /* LastFutureReservedWord */);
+        }
+        function reportStrictModeGrammarErrorInClassDeclaration(identifier, message, arg0, arg1, arg2) {
+            // We are checking if this name is inside class declaration or class expression (which are under class definitions inside ES6 spec.)
+            // if so, we would like to give more explicit invalid usage error.
+            if (ts.getAncestor(identifier, 201 /* ClassDeclaration */) || ts.getAncestor(identifier, 174 /* ClassExpression */)) {
+                return grammarErrorOnNode(identifier, message, arg0);
+            }
+            return false;
+        }
+        function checkGrammarImportDeclarationNameInStrictMode(node) {
+            // Check if the import declaration used strict-mode reserved word in its names bindings
+            if (node.importClause) {
+                var impotClause = node.importClause;
+                if (impotClause.namedBindings) {
+                    var nameBindings = impotClause.namedBindings;
+                    if (nameBindings.kind === 211 /* NamespaceImport */) {
+                        var name_11 = nameBindings.name;
+                        if (name_11.originalKeywordKind) {
+                            var nameText = ts.declarationNameToString(name_11);
+                            return grammarErrorOnNode(name_11, ts.Diagnostics.Identifier_expected_0_is_a_reserved_word_in_strict_mode, nameText);
+                        }
+                    }
+                    else if (nameBindings.kind === 212 /* NamedImports */) {
+                        var reportError = false;
+                        for (var _i = 0, _a = nameBindings.elements; _i < _a.length; _i++) {
+                            var element = _a[_i];
+                            var name_12 = element.name;
+                            if (name_12.originalKeywordKind) {
+                                var nameText = ts.declarationNameToString(name_12);
+                                reportError = reportError || grammarErrorOnNode(name_12, ts.Diagnostics.Identifier_expected_0_is_a_reserved_word_in_strict_mode, nameText);
+                            }
+                        }
+                        return reportError;
+                    }
+                }
+            }
+            return false;
+        }
+        function checkGrammarDeclarationNameInStrictMode(node) {
+            var name = node.name;
+            if (name && name.kind === 65 /* Identifier */ && isReservedwordInStrictMode(name)) {
+                var nameText = ts.declarationNameToString(name);
+                switch (node.kind) {
+                    case 129 /* Parameter */:
+                    case 198 /* VariableDeclaration */:
+                    case 200 /* FunctionDeclaration */:
+                    case 128 /* TypeParameter */:
+                    case 152 /* BindingElement */:
+                    case 202 /* InterfaceDeclaration */:
+                    case 203 /* TypeAliasDeclaration */:
+                    case 204 /* EnumDeclaration */:
+                        return checkGrammarIdentifierInStrictMode(name);
+                    case 201 /* ClassDeclaration */:
+                        // Report an error if the class declaration uses strict-mode reserved word.
+                        return grammarErrorOnNode(name, ts.Diagnostics.Identifier_expected_0_is_a_reserved_word_in_strict_mode_Class_definitions_are_automatically_in_strict_mode, nameText);
+                    case 205 /* ModuleDeclaration */:
+                        // Report an error if the module declaration uses strict-mode reserved word.
+                        // TODO(yuisu): fix this when having external module in strict mode
+                        return grammarErrorOnNode(name, ts.Diagnostics.Identifier_expected_0_is_a_reserved_word_in_strict_mode, nameText);
+                    case 208 /* ImportEqualsDeclaration */:
+                        // TODO(yuisu): fix this when having external module in strict mode
+                        return grammarErrorOnNode(name, ts.Diagnostics.Identifier_expected_0_is_a_reserved_word_in_strict_mode, nameText);
+                }
+            }
+            return false;
+        }
+        function checkGrammarTypeReferenceInStrictMode(typeName) {
+            // Check if the type reference is using strict mode keyword
+            // Example:
+            //      class C {
+            //          foo(x: public){}  // Error.
+            //      }
+            if (typeName.kind === 65 /* Identifier */) {
+                checkGrammarTypeNameInStrictMode(typeName);
+            }
+            else if (typeName.kind === 126 /* QualifiedName */) {
+                // Walk from right to left and report a possible error at each Identifier in QualifiedName
+                // Example:
+                //      x1: public.private.package  // error at public and private
+                checkGrammarTypeNameInStrictMode(typeName.right);
+                checkGrammarTypeReferenceInStrictMode(typeName.left);
+            }
+        }
+        // This function will report an error for every identifier in property access expression
+        // whether it violates strict mode reserved words.
+        // Example:
+        //      public                  // error at public
+        //      public.private.package  // error at public
+        //      B.private.B             // no error
+        function checkGrammarHeritageClauseElementInStrictMode(expression) {
+            // Example:
+            //      class C extends public // error at public
+            if (expression && expression.kind === 65 /* Identifier */) {
+                return checkGrammarIdentifierInStrictMode(expression);
+            }
+            else if (expression && expression.kind === 155 /* PropertyAccessExpression */) {
+                // Walk from left to right in PropertyAccessExpression until we are at the left most expression
+                // in PropertyAccessExpression. According to grammar production of MemberExpression,
+                // the left component expression is a PrimaryExpression (i.e. Identifier) while the other
+                // component after dots can be IdentifierName.
+                checkGrammarHeritageClauseElementInStrictMode(expression.expression);
+            }
+        }
+        // The function takes an identifier itself or an expression which has SyntaxKind.Identifier.
+        function checkGrammarIdentifierInStrictMode(node, nameText) {
+            if (node && node.kind === 65 /* Identifier */ && isReservedwordInStrictMode(node)) {
+                if (!nameText) {
+                    nameText = ts.declarationNameToString(node);
+                }
+                // TODO (yuisu): Fix when module is a strict mode
+                var errorReport = reportStrictModeGrammarErrorInClassDeclaration(node, ts.Diagnostics.Identifier_expected_0_is_a_reserved_word_in_strict_mode_Class_definitions_are_automatically_in_strict_mode, nameText) ||
+                    grammarErrorOnNode(node, ts.Diagnostics.Identifier_expected_0_is_a_reserved_word_in_strict_mode, nameText);
+                return errorReport;
+            }
+            return false;
+        }
+        // The function takes an identifier when uses as a typeName in TypeReferenceNode
+        function checkGrammarTypeNameInStrictMode(node) {
+            if (node && node.kind === 65 /* Identifier */ && isReservedwordInStrictMode(node)) {
+                var nameText = ts.declarationNameToString(node);
+                // TODO (yuisu): Fix when module is a strict mode
+                var errorReport = reportStrictModeGrammarErrorInClassDeclaration(node, ts.Diagnostics.Type_expected_0_is_a_reserved_word_in_strict_mode_Class_definitions_are_automatically_in_strict_mode, nameText) ||
+                    grammarErrorOnNode(node, ts.Diagnostics.Type_expected_0_is_a_reserved_word_in_strict_mode, nameText);
+                return errorReport;
+            }
+            return false;
+        }
         function checkGrammarDecorators(node) {
             if (!node.decorators) {
                 return false;
             }
             if (!ts.nodeCanBeDecorated(node)) {
-                return grammarErrorOnNode(node, ts.Diagnostics.Decorators_are_not_valid_here);
+                return grammarErrorOnFirstToken(node, ts.Diagnostics.Decorators_are_not_valid_here);
             }
             else if (languageVersion < 1 /* ES5 */) {
-                return grammarErrorOnNode(node, ts.Diagnostics.Decorators_are_only_available_when_targeting_ECMAScript_5_and_higher);
+                return grammarErrorOnFirstToken(node, ts.Diagnostics.Decorators_are_only_available_when_targeting_ECMAScript_5_and_higher);
             }
             else if (node.kind === 136 /* GetAccessor */ || node.kind === 137 /* SetAccessor */) {
                 var accessors = ts.getAllAccessorDeclarations(node.parent.members, node);
                 if (accessors.firstAccessor.decorators && node === accessors.secondAccessor) {
-                    return grammarErrorOnNode(node, ts.Diagnostics.Decorators_cannot_be_applied_to_multiple_get_Slashset_accessors_of_the_same_name);
+                    return grammarErrorOnFirstToken(node, ts.Diagnostics.Decorators_cannot_be_applied_to_multiple_get_Slashset_accessors_of_the_same_name);
                 }
             }
             return false;
@@ -21674,11 +22234,11 @@ var ts;
             var inStrictMode = (node.parserContextFlags & 1 /* StrictMode */) !== 0;
             for (var _i = 0, _a = node.properties; _i < _a.length; _i++) {
                 var prop = _a[_i];
-                var name_11 = prop.name;
+                var name_13 = prop.name;
                 if (prop.kind === 175 /* OmittedExpression */ ||
-                    name_11.kind === 127 /* ComputedPropertyName */) {
+                    name_13.kind === 127 /* ComputedPropertyName */) {
                     // If the name is not a ComputedPropertyName, the grammar checking will skip it
-                    checkGrammarComputedPropertyName(name_11);
+                    checkGrammarComputedPropertyName(name_13);
                     continue;
                 }
                 // ECMA-262 11.1.5 Object Initialiser
@@ -21693,8 +22253,8 @@ var ts;
                 if (prop.kind === 224 /* PropertyAssignment */ || prop.kind === 225 /* ShorthandPropertyAssignment */) {
                     // Grammar checking for computedPropertName and shorthandPropertyAssignment
                     checkGrammarForInvalidQuestionMark(prop, prop.questionToken, ts.Diagnostics.An_object_member_cannot_be_declared_optional);
-                    if (name_11.kind === 7 /* NumericLiteral */) {
-                        checkGrammarNumbericLiteral(name_11);
+                    if (name_13.kind === 7 /* NumericLiteral */) {
+                        checkGrammarNumbericLiteral(name_13);
                     }
                     currentKind = Property;
                 }
@@ -21710,26 +22270,26 @@ var ts;
                 else {
                     ts.Debug.fail("Unexpected syntax kind:" + prop.kind);
                 }
-                if (!ts.hasProperty(seen, name_11.text)) {
-                    seen[name_11.text] = currentKind;
+                if (!ts.hasProperty(seen, name_13.text)) {
+                    seen[name_13.text] = currentKind;
                 }
                 else {
-                    var existingKind = seen[name_11.text];
+                    var existingKind = seen[name_13.text];
                     if (currentKind === Property && existingKind === Property) {
                         if (inStrictMode) {
-                            grammarErrorOnNode(name_11, ts.Diagnostics.An_object_literal_cannot_have_multiple_properties_with_the_same_name_in_strict_mode);
+                            grammarErrorOnNode(name_13, ts.Diagnostics.An_object_literal_cannot_have_multiple_properties_with_the_same_name_in_strict_mode);
                         }
                     }
                     else if ((currentKind & GetOrSetAccessor) && (existingKind & GetOrSetAccessor)) {
                         if (existingKind !== GetOrSetAccessor && currentKind !== existingKind) {
-                            seen[name_11.text] = currentKind | existingKind;
+                            seen[name_13.text] = currentKind | existingKind;
                         }
                         else {
-                            return grammarErrorOnNode(name_11, ts.Diagnostics.An_object_literal_cannot_have_multiple_get_Slashset_accessors_with_the_same_name);
+                            return grammarErrorOnNode(name_13, ts.Diagnostics.An_object_literal_cannot_have_multiple_get_Slashset_accessors_with_the_same_name);
                         }
                     }
                     else {
-                        return grammarErrorOnNode(name_11, ts.Diagnostics.An_object_literal_cannot_have_property_and_accessor_with_the_same_name);
+                        return grammarErrorOnNode(name_13, ts.Diagnostics.An_object_literal_cannot_have_property_and_accessor_with_the_same_name);
                     }
                 }
             }
@@ -21960,7 +22520,9 @@ var ts;
                 var elements = name.elements;
                 for (var _i = 0; _i < elements.length; _i++) {
                     var element = elements[_i];
-                    checkGrammarNameInLetOrConstDeclarations(element.name);
+                    if (element.kind !== 175 /* OmittedExpression */) {
+                        checkGrammarNameInLetOrConstDeclarations(element.name);
+                    }
                 }
             }
         }
@@ -22075,7 +22637,14 @@ var ts;
                 var identifier = name;
                 if (contextNode && (contextNode.parserContextFlags & 1 /* StrictMode */) && ts.isEvalOrArgumentsIdentifier(identifier)) {
                     var nameText = ts.declarationNameToString(identifier);
-                    return grammarErrorOnNode(identifier, ts.Diagnostics.Invalid_use_of_0_in_strict_mode, nameText);
+                    // We check first if the name is inside class declaration or class expression; if so give explicit message
+                    // otherwise report generic error message.
+                    // reportGrammarErrorInClassDeclaration only return true if grammar error is successfully reported and false otherwise
+                    var reportErrorInClassDeclaration = reportStrictModeGrammarErrorInClassDeclaration(identifier, ts.Diagnostics.Invalid_use_of_0_Class_definitions_are_automatically_in_strict_mode, nameText);
+                    if (!reportErrorInClassDeclaration) {
+                        return grammarErrorOnNode(identifier, ts.Diagnostics.Invalid_use_of_0_in_strict_mode, nameText);
+                    }
+                    return reportErrorInClassDeclaration;
                 }
             }
         }
@@ -22197,6 +22766,7 @@ var ts;
     ts.createTypeChecker = createTypeChecker;
 })(ts || (ts = {}));
 /// <reference path="checker.ts"/>
+/* @internal */
 var ts;
 (function (ts) {
     function getDeclarationDiagnostics(host, resolver, targetSourceFile) {
@@ -22562,20 +23132,40 @@ var ts;
             enclosingDeclaration = node;
             emitLines(node.statements);
         }
+        // Return a temp variable name to be used in `export default` statements.
+        // The temp name will be of the form _default_counter.
+        // Note that export default is only allowed at most once in a module, so we
+        // do not need to keep track of created temp names.
+        function getExportDefaultTempVariableName() {
+            var baseName = "_default";
+            if (!ts.hasProperty(currentSourceFile.identifiers, baseName)) {
+                return baseName;
+            }
+            var count = 0;
+            while (true) {
+                var name_14 = baseName + "_" + (++count);
+                if (!ts.hasProperty(currentSourceFile.identifiers, name_14)) {
+                    return name_14;
+                }
+            }
+        }
         function emitExportAssignment(node) {
-            write(node.isExportEquals ? "export = " : "export default ");
             if (node.expression.kind === 65 /* Identifier */) {
+                write(node.isExportEquals ? "export = " : "export default ");
                 writeTextOfNode(currentSourceFile, node.expression);
             }
             else {
+                // Expression
+                var tempVarName = getExportDefaultTempVariableName();
+                write("declare var ");
+                write(tempVarName);
                 write(": ");
-                if (node.type) {
-                    emitType(node.type);
-                }
-                else {
-                    writer.getSymbolAccessibilityDiagnostic = getDefaultExportAccessibilityDiagnostic;
-                    resolver.writeTypeOfExpression(node.expression, enclosingDeclaration, 2 /* UseTypeOfFunction */, writer);
-                }
+                writer.getSymbolAccessibilityDiagnostic = getDefaultExportAccessibilityDiagnostic;
+                resolver.writeTypeOfExpression(node.expression, enclosingDeclaration, 2 /* UseTypeOfFunction */, writer);
+                write(";");
+                writeLine();
+                write(node.isExportEquals ? "export = " : "export default ");
+                write(tempVarName);
             }
             write(";");
             writeLine();
@@ -23562,7 +24152,7 @@ var ts;
             referencePathsOutput += "/// <reference path=\"" + declFileName + "\" />" + newLine;
         }
     }
-    // @internal
+    /* @internal */
     function writeDeclarationFile(jsFilePath, sourceFile, host, resolver, diagnostics) {
         var emitDeclarationResult = emitDeclarations(host, resolver, diagnostics, jsFilePath, sourceFile);
         // TODO(shkamat): Should we not write any declaration file if any of them can produce error,
@@ -23591,6 +24181,7 @@ var ts;
 })(ts || (ts = {}));
 /// <reference path="checker.ts"/>
 /// <reference path="declarationEmitter.ts"/>
+/* @internal */
 var ts;
 (function (ts) {
     function isExternalModuleOrDeclarationFile(sourceFile) {
@@ -23605,9 +24196,16 @@ var ts;
         TempFlags[TempFlags["_i"] = 268435456] = "_i";
         TempFlags[TempFlags["_n"] = 536870912] = "_n";
     })(TempFlags || (TempFlags = {}));
-    // @internal
     // targetSourceFile is when users only want one file in entire project to be emitted. This is used in compileOnSave feature
     function emitFiles(resolver, host, targetSourceFile) {
+        // emit output for the __extends helper function
+        var extendsHelper = "\nvar __extends = this.__extends || function (d, b) {\n    for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];\n    function __() { this.constructor = d; }\n    __.prototype = b.prototype;\n    d.prototype = new __();\n};";
+        // emit output for the __decorate helper function
+        var decorateHelper = "\nvar __decorate = this.__decorate || (typeof Reflect === \"object\" && Reflect.decorate) || function (decorators, target, key, desc) {\n    switch (arguments.length) {\n        case 2: return decorators.reduceRight(function(o, d) { return (d && d(o)) || o; }, target);\n        case 3: return decorators.reduceRight(function(o, d) { return (d && d(target, key)), void 0; }, void 0);\n        case 4: return decorators.reduceRight(function(o, d) { return (d && d(target, key, o)) || o; }, desc);\n    }\n};";
+        // emit output for the __metadata helper function
+        var metadataHelper = "\nvar __metadata = this.__metadata || (typeof Reflect === \"object\" && Reflect.metadata) || function () { };";
+        // emit output for the __param helper function
+        var paramHelper = "\nvar __param = this.__param || function(index, decorator) { return function (target, key) { decorator(target, key, index); } };";
         var compilerOptions = host.getCompilerOptions();
         var languageVersion = compilerOptions.target || 0 /* ES3 */;
         var sourceMapDataList = compilerOptions.sourceMap ? [] : undefined;
@@ -23674,6 +24272,7 @@ var ts;
             var computedPropertyNamesToGeneratedNames;
             var extendsEmitted = false;
             var decorateEmitted = false;
+            var paramEmitted = false;
             var tempFlags = 0;
             var tempVariables;
             var tempParameters;
@@ -23748,9 +24347,9 @@ var ts;
                     tempFlags++;
                     // Skip over 'i' and 'n'
                     if (count !== 8 && count !== 13) {
-                        var name_12 = count < 26 ? "_" + String.fromCharCode(97 /* a */ + count) : "_" + (count - 26);
-                        if (isUniqueName(name_12)) {
-                            return name_12;
+                        var name_15 = count < 26 ? "_" + String.fromCharCode(97 /* a */ + count) : "_" + (count - 26);
+                        if (isUniqueName(name_15)) {
+                            return name_15;
                         }
                     }
                 }
@@ -23783,9 +24382,9 @@ var ts;
             }
             function generateNameForModuleOrEnum(node) {
                 if (node.name.kind === 65 /* Identifier */) {
-                    var name_13 = node.name.text;
+                    var name_16 = node.name.text;
                     // Use module/enum name itself if it is unique, otherwise make a unique variation
-                    assignGeneratedName(node, isUniqueLocalName(name_13, node) ? name_13 : makeUniqueName(name_13));
+                    assignGeneratedName(node, isUniqueLocalName(name_16, node) ? name_16 : makeUniqueName(name_16));
                 }
             }
             function generateNameForImportOrExportDeclaration(node) {
@@ -23813,6 +24412,7 @@ var ts;
                 switch (node.kind) {
                     case 200 /* FunctionDeclaration */:
                     case 201 /* ClassDeclaration */:
+                    case 174 /* ClassExpression */:
                         generateNameForFunctionOrClassDeclaration(node);
                         break;
                     case 205 /* ModuleDeclaration */:
@@ -23997,8 +24597,8 @@ var ts;
                                 // Child scopes are always shown with a dot (even if they have no name),
                                 // unless it is a computed property. Then it is shown with brackets,
                                 // but the brackets are included in the name.
-                                var name_14 = node.name;
-                                if (!name_14 || name_14.kind !== 127 /* ComputedPropertyName */) {
+                                var name_17 = node.name;
+                                if (!name_17 || name_17.kind !== 127 /* ComputedPropertyName */) {
                                     scopeName = "." + scopeName;
                                 }
                                 scopeName = sourceMapData.sourceMapNames[parentIndex] + scopeName;
@@ -24027,10 +24627,10 @@ var ts;
                         node.kind === 204 /* EnumDeclaration */) {
                         // Declaration and has associated name use it
                         if (node.name) {
-                            var name_15 = node.name;
+                            var name_18 = node.name;
                             // For computed property names, the text will include the brackets
-                            scopeName = name_15.kind === 127 /* ComputedPropertyName */
-                                ? ts.getTextOfNode(name_15)
+                            scopeName = name_18.kind === 127 /* ComputedPropertyName */
+                                ? ts.getTextOfNode(name_18)
                                 : node.name.text;
                         }
                         recordScopeNameStart(scopeName);
@@ -24243,27 +24843,32 @@ var ts;
                     writeLine();
                 }
             }
-            function emitList(nodes, start, count, multiLine, trailingComma) {
+            function emitList(nodes, start, count, multiLine, trailingComma, leadingComma, noTrailingNewLine, emitNode) {
+                if (!emitNode) {
+                    emitNode = emit;
+                }
                 for (var i = 0; i < count; i++) {
                     if (multiLine) {
-                        if (i) {
+                        if (i || leadingComma) {
                             write(",");
                         }
                         writeLine();
                     }
                     else {
-                        if (i) {
+                        if (i || leadingComma) {
                             write(", ");
                         }
                     }
-                    emit(nodes[start + i]);
+                    emitNode(nodes[start + i]);
+                    leadingComma = true;
                 }
                 if (trailingComma) {
                     write(",");
                 }
-                if (multiLine) {
+                if (multiLine && !noTrailingNewLine) {
                     writeLine();
                 }
+                return count;
             }
             function emitCommaList(nodes) {
                 if (nodes) {
@@ -24499,6 +25104,7 @@ var ts;
                                 default:
                                     return -1 /* LessThan */;
                             }
+                        case 172 /* YieldExpression */:
                         case 170 /* ConditionalExpression */:
                             return -1 /* LessThan */;
                         default:
@@ -24535,16 +25141,14 @@ var ts;
                         if (!computedPropertyNamesToGeneratedNames) {
                             computedPropertyNamesToGeneratedNames = [];
                         }
-                        var generatedName = computedPropertyNamesToGeneratedNames[node.id];
+                        var generatedName = computedPropertyNamesToGeneratedNames[ts.getNodeId(node)];
                         if (generatedName) {
                             // we have already generated a variable for this node, write that value instead.
                             write(generatedName);
                             return;
                         }
-                        var generatedVariable = createTempVariable(0 /* Auto */);
-                        generatedName = generatedVariable.text;
-                        recordTempDeclaration(generatedVariable);
-                        computedPropertyNamesToGeneratedNames[node.id] = generatedName;
+                        generatedName = createAndRecordTempVariable(0 /* Auto */).text;
+                        computedPropertyNamesToGeneratedNames[ts.getNodeId(node)] = generatedName;
                         write(generatedName);
                         write(" = ");
                     }
@@ -24688,6 +25292,16 @@ var ts;
                 write("...");
                 emit(node.expression);
             }
+            function emitYieldExpression(node) {
+                write(ts.tokenToString(111 /* YieldKeyword */));
+                if (node.asteriskToken) {
+                    write("*");
+                }
+                if (node.expression) {
+                    write(" ");
+                    emit(node.expression);
+                }
+            }
             function needsParenthesisForPropertyAccessOrInvocation(node) {
                 switch (node.kind) {
                     case 65 /* Identifier */:
@@ -24760,170 +25374,142 @@ var ts;
                     /*trailingComma*/ elements.hasTrailingComma);
                 }
             }
-            function emitDownlevelObjectLiteralWithComputedProperties(node, firstComputedPropertyIndex) {
-                var parenthesizedObjectLiteral = createDownlevelObjectLiteralWithComputedProperties(node, firstComputedPropertyIndex);
-                return emit(parenthesizedObjectLiteral);
+            function emitObjectLiteralBody(node, numElements) {
+                if (numElements === 0) {
+                    write("{}");
+                    return;
+                }
+                write("{");
+                if (numElements > 0) {
+                    var properties = node.properties;
+                    // If we are not doing a downlevel transformation for object literals,
+                    // then try to preserve the original shape of the object literal.
+                    // Otherwise just try to preserve the formatting.
+                    if (numElements === properties.length) {
+                        emitLinePreservingList(node, properties, languageVersion >= 1 /* ES5 */, true);
+                    }
+                    else {
+                        var multiLine = (node.flags & 512 /* MultiLine */) !== 0;
+                        if (!multiLine) {
+                            write(" ");
+                        }
+                        else {
+                            increaseIndent();
+                        }
+                        emitList(properties, 0, numElements, multiLine, false);
+                        if (!multiLine) {
+                            write(" ");
+                        }
+                        else {
+                            decreaseIndent();
+                        }
+                    }
+                }
+                write("}");
             }
-            function createDownlevelObjectLiteralWithComputedProperties(originalObjectLiteral, firstComputedPropertyIndex) {
+            function emitDownlevelObjectLiteralWithComputedProperties(node, firstComputedPropertyIndex) {
+                var multiLine = (node.flags & 512 /* MultiLine */) !== 0;
+                var properties = node.properties;
+                write("(");
+                if (multiLine) {
+                    increaseIndent();
+                }
                 // For computed properties, we need to create a unique handle to the object
                 // literal so we can modify it without risking internal assignments tainting the object.
                 var tempVar = createAndRecordTempVariable(0 /* Auto */);
-                // Hold onto the initial non-computed properties in a new object literal,
-                // then create the rest through property accesses on the temp variable.
-                var initialObjectLiteral = ts.createSynthesizedNode(154 /* ObjectLiteralExpression */);
-                initialObjectLiteral.properties = originalObjectLiteral.properties.slice(0, firstComputedPropertyIndex);
-                initialObjectLiteral.flags |= 512 /* MultiLine */;
-                // The comma expressions that will patch the object literal.
-                // This will end up being something like '_a = { ... }, _a.x = 10, _a.y = 20, _a'.
-                var propertyPatches = createBinaryExpression(tempVar, 53 /* EqualsToken */, initialObjectLiteral);
-                ts.forEach(originalObjectLiteral.properties, function (property) {
-                    var patchedProperty = tryCreatePatchingPropertyAssignment(originalObjectLiteral, tempVar, property);
-                    if (patchedProperty) {
-                        // TODO(drosen): Preserve comments
-                        //let leadingComments = getLeadingCommentRanges(currentSourceFile.text, property.pos);
-                        //let trailingComments = getTrailingCommentRanges(currentSourceFile.text, property.end);
-                        //addCommentsToSynthesizedNode(patchedProperty, leadingComments, trailingComments);
-                        propertyPatches = createBinaryExpression(propertyPatches, 23 /* CommaToken */, patchedProperty);
+                // Write out the first non-computed properties
+                // (or all properties if none of them are computed),
+                // then emit the rest through indexing on the temp variable.
+                emit(tempVar);
+                write(" = ");
+                emitObjectLiteralBody(node, firstComputedPropertyIndex);
+                for (var i = firstComputedPropertyIndex, n = properties.length; i < n; i++) {
+                    writeComma();
+                    var property = properties[i];
+                    emitStart(property);
+                    if (property.kind === 136 /* GetAccessor */ || property.kind === 137 /* SetAccessor */) {
+                        // TODO (drosen): Reconcile with 'emitMemberFunctions'.
+                        var accessors = ts.getAllAccessorDeclarations(node.properties, property);
+                        if (property !== accessors.firstAccessor) {
+                            continue;
+                        }
+                        write("Object.defineProperty(");
+                        emit(tempVar);
+                        write(", ");
+                        emitStart(node.name);
+                        emitExpressionForPropertyName(property.name);
+                        emitEnd(property.name);
+                        write(", {");
+                        increaseIndent();
+                        if (accessors.getAccessor) {
+                            writeLine();
+                            emitLeadingComments(accessors.getAccessor);
+                            write("get: ");
+                            emitStart(accessors.getAccessor);
+                            write("function ");
+                            emitSignatureAndBody(accessors.getAccessor);
+                            emitEnd(accessors.getAccessor);
+                            emitTrailingComments(accessors.getAccessor);
+                            write(",");
+                        }
+                        if (accessors.setAccessor) {
+                            writeLine();
+                            emitLeadingComments(accessors.setAccessor);
+                            write("set: ");
+                            emitStart(accessors.setAccessor);
+                            write("function ");
+                            emitSignatureAndBody(accessors.setAccessor);
+                            emitEnd(accessors.setAccessor);
+                            emitTrailingComments(accessors.setAccessor);
+                            write(",");
+                        }
+                        writeLine();
+                        write("enumerable: true,");
+                        writeLine();
+                        write("configurable: true");
+                        decreaseIndent();
+                        writeLine();
+                        write("})");
+                        emitEnd(property);
                     }
-                });
-                // Finally, return the temp variable.
-                propertyPatches = createBinaryExpression(propertyPatches, 23 /* CommaToken */, createIdentifier(tempVar.text, true));
-                var result = createParenthesizedExpression(propertyPatches);
-                // TODO(drosen): Preserve comments
-                // let leadingComments = getLeadingCommentRanges(currentSourceFile.text, originalObjectLiteral.pos);
-                // let trailingComments = getTrailingCommentRanges(currentSourceFile.text, originalObjectLiteral.end);
-                //addCommentsToSynthesizedNode(result, leadingComments, trailingComments);
-                return result;
-            }
-            function addCommentsToSynthesizedNode(node, leadingCommentRanges, trailingCommentRanges) {
-                node.leadingCommentRanges = leadingCommentRanges;
-                node.trailingCommentRanges = trailingCommentRanges;
-            }
-            // Returns 'undefined' if a property has already been accounted for
-            // (e.g. a 'get' accessor which has already been emitted along with its 'set' accessor).
-            function tryCreatePatchingPropertyAssignment(objectLiteral, tempVar, property) {
-                var leftHandSide = createMemberAccessForPropertyName(tempVar, property.name);
-                var maybeRightHandSide = tryGetRightHandSideOfPatchingPropertyAssignment(objectLiteral, property);
-                return maybeRightHandSide && createBinaryExpression(leftHandSide, 53 /* EqualsToken */, maybeRightHandSide, true);
-            }
-            function tryGetRightHandSideOfPatchingPropertyAssignment(objectLiteral, property) {
-                switch (property.kind) {
-                    case 224 /* PropertyAssignment */:
-                        return property.initializer;
-                    case 225 /* ShorthandPropertyAssignment */:
-                        // TODO: (andersh) Technically it isn't correct to make an identifier here since getExpressionNamePrefix returns
-                        // a string containing a dotted name. In general I'm not a fan of mini tree rewriters as this one, elsewhere we
-                        // manage by just emitting strings (which is a lot more performant).
-                        //let prefix = createIdentifier(resolver.getExpressionNamePrefix((<ShorthandPropertyAssignment>property).name));
-                        //return createPropertyAccessExpression(prefix, (<ShorthandPropertyAssignment>property).name);
-                        return createIdentifier(resolver.getExpressionNameSubstitution(property.name, getGeneratedNameForNode));
-                    case 134 /* MethodDeclaration */:
-                        return createFunctionExpression(property.parameters, property.body);
-                    case 136 /* GetAccessor */:
-                    case 137 /* SetAccessor */:
-                        var _a = ts.getAllAccessorDeclarations(objectLiteral.properties, property), firstAccessor = _a.firstAccessor, getAccessor = _a.getAccessor, setAccessor = _a.setAccessor;
-                        // Only emit the first accessor.
-                        if (firstAccessor !== property) {
-                            return undefined;
+                    else {
+                        emitLeadingComments(property);
+                        emitStart(property.name);
+                        emit(tempVar);
+                        emitMemberAccessForPropertyName(property.name);
+                        emitEnd(property.name);
+                        write(" = ");
+                        if (property.kind === 224 /* PropertyAssignment */) {
+                            emit(property.initializer);
                         }
-                        var propertyDescriptor = ts.createSynthesizedNode(154 /* ObjectLiteralExpression */);
-                        var descriptorProperties = [];
-                        if (getAccessor) {
-                            var getProperty_1 = createPropertyAssignment(createIdentifier("get"), createFunctionExpression(getAccessor.parameters, getAccessor.body));
-                            descriptorProperties.push(getProperty_1);
+                        else if (property.kind === 225 /* ShorthandPropertyAssignment */) {
+                            emitExpressionIdentifier(property.name);
                         }
-                        if (setAccessor) {
-                            var setProperty = createPropertyAssignment(createIdentifier("set"), createFunctionExpression(setAccessor.parameters, setAccessor.body));
-                            descriptorProperties.push(setProperty);
+                        else if (property.kind === 134 /* MethodDeclaration */) {
+                            emitFunctionDeclaration(property);
                         }
-                        var trueExpr = ts.createSynthesizedNode(95 /* TrueKeyword */);
-                        var enumerableTrue = createPropertyAssignment(createIdentifier("enumerable"), trueExpr);
-                        descriptorProperties.push(enumerableTrue);
-                        var configurableTrue = createPropertyAssignment(createIdentifier("configurable"), trueExpr);
-                        descriptorProperties.push(configurableTrue);
-                        propertyDescriptor.properties = descriptorProperties;
-                        var objectDotDefineProperty = createPropertyAccessExpression(createIdentifier("Object"), createIdentifier("defineProperty"));
-                        return createCallExpression(objectDotDefineProperty, createNodeArray(propertyDescriptor));
-                    default:
-                        ts.Debug.fail("ObjectLiteralElement kind " + property.kind + " not accounted for.");
+                        else {
+                            ts.Debug.fail("ObjectLiteralElement type not accounted for: " + property.kind);
+                        }
+                    }
+                    emitEnd(property);
                 }
-            }
-            function createParenthesizedExpression(expression) {
-                var result = ts.createSynthesizedNode(161 /* ParenthesizedExpression */);
-                result.expression = expression;
-                return result;
-            }
-            function createNodeArray() {
-                var elements = [];
-                for (var _a = 0; _a < arguments.length; _a++) {
-                    elements[_a - 0] = arguments[_a];
+                writeComma();
+                emit(tempVar);
+                if (multiLine) {
+                    decreaseIndent();
+                    writeLine();
                 }
-                var result = elements;
-                result.pos = -1;
-                result.end = -1;
-                return result;
-            }
-            function createBinaryExpression(left, operator, right, startsOnNewLine) {
-                var result = ts.createSynthesizedNode(169 /* BinaryExpression */, startsOnNewLine);
-                result.operatorToken = ts.createSynthesizedNode(operator);
-                result.left = left;
-                result.right = right;
-                return result;
-            }
-            function createExpressionStatement(expression) {
-                var result = ts.createSynthesizedNode(182 /* ExpressionStatement */);
-                result.expression = expression;
-                return result;
-            }
-            function createMemberAccessForPropertyName(expression, memberName) {
-                if (memberName.kind === 65 /* Identifier */) {
-                    return createPropertyAccessExpression(expression, memberName);
+                write(")");
+                function writeComma() {
+                    if (multiLine) {
+                        write(",");
+                        writeLine();
+                    }
+                    else {
+                        write(", ");
+                    }
                 }
-                else if (memberName.kind === 8 /* StringLiteral */ || memberName.kind === 7 /* NumericLiteral */) {
-                    return createElementAccessExpression(expression, memberName);
-                }
-                else if (memberName.kind === 127 /* ComputedPropertyName */) {
-                    return createElementAccessExpression(expression, memberName.expression);
-                }
-                else {
-                    ts.Debug.fail("Kind '" + memberName.kind + "' not accounted for.");
-                }
-            }
-            function createPropertyAssignment(name, initializer) {
-                var result = ts.createSynthesizedNode(224 /* PropertyAssignment */);
-                result.name = name;
-                result.initializer = initializer;
-                return result;
-            }
-            function createFunctionExpression(parameters, body) {
-                var result = ts.createSynthesizedNode(162 /* FunctionExpression */);
-                result.parameters = parameters;
-                result.body = body;
-                return result;
-            }
-            function createPropertyAccessExpression(expression, name) {
-                var result = ts.createSynthesizedNode(155 /* PropertyAccessExpression */);
-                result.expression = expression;
-                result.dotToken = ts.createSynthesizedNode(20 /* DotToken */);
-                result.name = name;
-                return result;
-            }
-            function createElementAccessExpression(expression, argumentExpression) {
-                var result = ts.createSynthesizedNode(156 /* ElementAccessExpression */);
-                result.expression = expression;
-                result.argumentExpression = argumentExpression;
-                return result;
-            }
-            function createIdentifier(name, startsOnNewLine) {
-                var result = ts.createSynthesizedNode(65 /* Identifier */, startsOnNewLine);
-                result.text = name;
-                return result;
-            }
-            function createCallExpression(invokedExpression, arguments) {
-                var result = ts.createSynthesizedNode(157 /* CallExpression */);
-                result.expression = invokedExpression;
-                result.arguments = arguments;
-                return result;
             }
             function emitObjectLiteral(node) {
                 var properties = node.properties;
@@ -24946,11 +25532,27 @@ var ts;
                 }
                 // Ordinary case: either the object has no computed properties
                 // or we're compiling with an ES6+ target.
-                write("{");
-                if (properties.length) {
-                    emitLinePreservingList(node, properties, languageVersion >= 1 /* ES5 */, true);
-                }
-                write("}");
+                emitObjectLiteralBody(node, properties.length);
+            }
+            function createBinaryExpression(left, operator, right, startsOnNewLine) {
+                var result = ts.createSynthesizedNode(169 /* BinaryExpression */, startsOnNewLine);
+                result.operatorToken = ts.createSynthesizedNode(operator);
+                result.left = left;
+                result.right = right;
+                return result;
+            }
+            function createPropertyAccessExpression(expression, name) {
+                var result = ts.createSynthesizedNode(155 /* PropertyAccessExpression */);
+                result.expression = expression;
+                result.dotToken = ts.createSynthesizedNode(20 /* DotToken */);
+                result.name = name;
+                return result;
+            }
+            function createElementAccessExpression(expression, argumentExpression) {
+                var result = ts.createSynthesizedNode(156 /* ElementAccessExpression */);
+                result.expression = expression;
+                result.argumentExpression = argumentExpression;
+                return result;
             }
             function emitComputedPropertyName(node) {
                 write("[");
@@ -24958,6 +25560,9 @@ var ts;
                 write("]");
             }
             function emitMethod(node) {
+                if (languageVersion >= 2 /* ES6 */ && node.asteriskToken) {
+                    write("*");
+                }
                 emit(node.name, false);
                 if (languageVersion < 2 /* ES6 */) {
                     write(": function ");
@@ -26061,12 +26666,12 @@ var ts;
             function emitParameter(node) {
                 if (languageVersion < 2 /* ES6 */) {
                     if (ts.isBindingPattern(node.name)) {
-                        var name_16 = createTempVariable(0 /* Auto */);
+                        var name_19 = createTempVariable(0 /* Auto */);
                         if (!tempParameters) {
                             tempParameters = [];
                         }
-                        tempParameters.push(name_16);
-                        emit(name_16);
+                        tempParameters.push(name_19);
+                        emit(name_19);
                     }
                     else {
                         emit(node.name);
@@ -26190,7 +26795,11 @@ var ts;
                             write("default ");
                         }
                     }
-                    write("function ");
+                    write("function");
+                    if (languageVersion >= 2 /* ES6 */ && node.asteriskToken) {
+                        write("*");
+                    }
+                    write(" ");
                 }
                 if (shouldEmitFunctionName(node)) {
                     emitDeclarationName(node);
@@ -26402,28 +27011,47 @@ var ts;
                     emitNodeWithoutSourceMap(memberName);
                 }
             }
-            function emitMemberAssignments(node, staticFlag) {
-                ts.forEach(node.members, function (member) {
-                    if (member.kind === 132 /* PropertyDeclaration */ && (member.flags & 128 /* Static */) === staticFlag && member.initializer) {
-                        writeLine();
-                        emitLeadingComments(member);
-                        emitStart(member);
-                        emitStart(member.name);
-                        if (staticFlag) {
-                            emitDeclarationName(node);
-                        }
-                        else {
-                            write("this");
-                        }
-                        emitMemberAccessForPropertyName(member.name);
-                        emitEnd(member.name);
-                        write(" = ");
-                        emit(member.initializer);
-                        write(";");
-                        emitEnd(member);
-                        emitTrailingComments(member);
+            function getInitializedProperties(node, static) {
+                var properties = [];
+                for (var _a = 0, _b = node.members; _a < _b.length; _a++) {
+                    var member = _b[_a];
+                    if (member.kind === 132 /* PropertyDeclaration */ && static === ((member.flags & 128 /* Static */) !== 0) && member.initializer) {
+                        properties.push(member);
                     }
-                });
+                }
+                return properties;
+            }
+            function emitPropertyDeclarations(node, properties) {
+                for (var _a = 0; _a < properties.length; _a++) {
+                    var property = properties[_a];
+                    emitPropertyDeclaration(node, property);
+                }
+            }
+            function emitPropertyDeclaration(node, property, receiver, isExpression) {
+                writeLine();
+                emitLeadingComments(property);
+                emitStart(property);
+                emitStart(property.name);
+                if (receiver) {
+                    emit(receiver);
+                }
+                else {
+                    if (property.flags & 128 /* Static */) {
+                        emitDeclarationName(node);
+                    }
+                    else {
+                        write("this");
+                    }
+                }
+                emitMemberAccessForPropertyName(property.name);
+                emitEnd(property.name);
+                write(" = ");
+                emit(property.initializer);
+                if (!isExpression) {
+                    write(";");
+                }
+                emitEnd(property);
+                emitTrailingComments(property);
             }
             function emitMemberFunctionsForES5AndLower(node) {
                 ts.forEach(node.members, function (member) {
@@ -26518,6 +27146,9 @@ var ts;
                         else if (member.kind === 137 /* SetAccessor */) {
                             write("set ");
                         }
+                        if (member.asteriskToken) {
+                            write("*");
+                        }
                         emit(member.name);
                         emitSignatureAndBody(member);
                         emitEnd(member);
@@ -26536,6 +27167,12 @@ var ts;
                 tempFlags = 0;
                 tempVariables = undefined;
                 tempParameters = undefined;
+                emitConstructorWorker(node, baseTypeElement);
+                tempFlags = saveTempFlags;
+                tempVariables = saveTempVariables;
+                tempParameters = saveTempParameters;
+            }
+            function emitConstructorWorker(node, baseTypeElement) {
                 // Check if we have property assignment inside class declaration.
                 // If there is property assignment, we need to emit constructor whether users define it or not
                 // If there is no property assignment, we can omit constructor if users do not define it
@@ -26617,7 +27254,7 @@ var ts;
                         emitEnd(baseTypeElement);
                     }
                 }
-                emitMemberAssignments(node, 0);
+                emitPropertyDeclarations(node, getInitializedProperties(node, false));
                 if (ctor) {
                     var statements = ctor.body.statements;
                     if (superCall) {
@@ -26637,9 +27274,6 @@ var ts;
                 if (ctor) {
                     emitTrailingComments(ctor);
                 }
-                tempFlags = saveTempFlags;
-                tempVariables = saveTempVariables;
-                tempParameters = saveTempParameters;
             }
             function emitClassExpression(node) {
                 return emitClassLikeDeclaration(node);
@@ -26725,6 +27359,27 @@ var ts;
                         }
                     }
                 }
+                // If the class has static properties, and it's a class expression, then we'll need
+                // to specialize the emit a bit.  for a class expression of the form: 
+                //
+                //      class C { static a = 1; static b = 2; ... } 
+                //
+                // We'll emit:
+                //
+                //      (_temp = class C { ... }, _temp.a = 1, _temp.b = 2, _temp)
+                //
+                // This keeps the expression as an expression, while ensuring that the static parts
+                // of it have been initialized by the time it is used.
+                var staticProperties = getInitializedProperties(node, true);
+                var isClassExpressionWithStaticProperties = staticProperties.length > 0 && node.kind === 174 /* ClassExpression */;
+                var tempVariable;
+                if (isClassExpressionWithStaticProperties) {
+                    tempVariable = createAndRecordTempVariable(0 /* Auto */);
+                    write("(");
+                    increaseIndent();
+                    emit(tempVariable);
+                    write(" = ");
+                }
                 write("class");
                 // check if this is an "export default class" as it may not have a name. Do not emit the name if the class is decorated.
                 if ((node.name || !(node.flags & 256 /* Default */)) && !thisNodeIsDecorated) {
@@ -26770,9 +27425,24 @@ var ts;
                 // From ES6 specification:
                 //      HasLexicalDeclaration (N) : Determines if the argument identifier has a binding in this environment record that was created using
                 //                                  a lexical declaration such as a LexicalDeclaration or a ClassDeclaration.
-                writeLine();
-                emitMemberAssignments(node, 128 /* Static */);
-                emitDecoratorsOfClass(node);
+                if (isClassExpressionWithStaticProperties) {
+                    for (var _a = 0; _a < staticProperties.length; _a++) {
+                        var property = staticProperties[_a];
+                        write(",");
+                        writeLine();
+                        emitPropertyDeclaration(node, property, tempVariable, true);
+                    }
+                    write(",");
+                    writeLine();
+                    emit(tempVariable);
+                    decreaseIndent();
+                    write(")");
+                }
+                else {
+                    writeLine();
+                    emitPropertyDeclarations(node, staticProperties);
+                    emitDecoratorsOfClass(node);
+                }
                 // If this is an exported class, but not on the top level (i.e. on an internal
                 // module), export it
                 if (!isES6ExportedDeclaration(node) && (node.flags & 1 /* Export */)) {
@@ -26825,7 +27495,7 @@ var ts;
                 writeLine();
                 emitConstructor(node, baseTypeNode);
                 emitMemberFunctionsForES5AndLower(node);
-                emitMemberAssignments(node, 128 /* Static */);
+                emitPropertyDeclarations(node, getInitializedProperties(node, true));
                 writeLine();
                 emitDecoratorsOfClass(node);
                 writeLine();
@@ -26872,11 +27542,11 @@ var ts;
                 emitDecoratorsOfConstructor(node);
             }
             function emitDecoratorsOfConstructor(node) {
+                var decorators = node.decorators;
                 var constructor = ts.getFirstConstructorWithBody(node);
-                if (constructor) {
-                    emitDecoratorsOfParameters(node, constructor);
-                }
-                if (!ts.nodeIsDecorated(node)) {
+                var hasDecoratedParameters = constructor && ts.forEach(constructor.parameters, ts.nodeIsDecorated);
+                // skip decoration of the constructor if neither it nor its parameters are decorated
+                if (!decorators && !hasDecoratedParameters) {
                     return;
                 }
                 // Emit the call to __decorate. Given the class:
@@ -26892,72 +27562,94 @@ var ts;
                 writeLine();
                 emitStart(node);
                 emitDeclarationName(node);
-                write(" = ");
-                emitDecorateStart(node.decorators);
+                write(" = __decorate([");
+                increaseIndent();
+                writeLine();
+                var decoratorCount = decorators ? decorators.length : 0;
+                var argumentsWritten = emitList(decorators, 0, decoratorCount, true, false, false, true, function (decorator) {
+                    emitStart(decorator);
+                    emit(decorator.expression);
+                    emitEnd(decorator);
+                });
+                argumentsWritten += emitDecoratorsOfParameters(constructor, argumentsWritten > 0);
+                emitSerializedTypeMetadata(node, argumentsWritten >= 0);
+                decreaseIndent();
+                writeLine();
+                write("], ");
                 emitDeclarationName(node);
                 write(");");
                 emitEnd(node);
                 writeLine();
             }
             function emitDecoratorsOfMembers(node, staticFlag) {
-                ts.forEach(node.members, function (member) {
+                for (var _a = 0, _b = node.members; _a < _b.length; _a++) {
+                    var member = _b[_a];
+                    // only emit members in the correct group
                     if ((member.flags & 128 /* Static */) !== staticFlag) {
-                        return;
+                        continue;
                     }
-                    var decorators;
-                    switch (member.kind) {
-                        case 134 /* MethodDeclaration */:
-                            // emit decorators of the method's parameters
-                            emitDecoratorsOfParameters(node, member);
-                            decorators = member.decorators;
-                            break;
-                        case 136 /* GetAccessor */:
-                        case 137 /* SetAccessor */:
-                            var accessors = ts.getAllAccessorDeclarations(node.members, member);
-                            if (member !== accessors.firstAccessor) {
-                                // skip the second accessor as we processed it with the first.
-                                return;
-                            }
-                            if (accessors.setAccessor) {
-                                // emit decorators of the set accessor parameter
-                                emitDecoratorsOfParameters(node, accessors.setAccessor);
-                            }
-                            // get the decorators from the first decorated accessor.
-                            decorators = accessors.firstAccessor.decorators;
-                            if (!decorators && accessors.secondAccessor) {
-                                decorators = accessors.secondAccessor.decorators;
-                            }
-                            break;
-                        case 132 /* PropertyDeclaration */:
-                            decorators = member.decorators;
-                            break;
-                        default:
-                            // Constructor cannot be decorated, and its parameters are handled in emitDecoratorsOfConstructor
-                            // Other members (i.e. IndexSignature) cannot be decorated.
-                            return;
+                    // skip members that cannot be decorated (such as the constructor)
+                    if (!ts.nodeCanBeDecorated(member)) {
+                        continue;
                     }
-                    if (!decorators) {
-                        return;
+                    // skip a member if it or any of its parameters are not decorated
+                    if (!ts.nodeOrChildIsDecorated(member)) {
+                        continue;
+                    }
+                    // skip an accessor declaration if it is not the first accessor
+                    var decorators = void 0;
+                    var functionLikeMember = void 0;
+                    if (ts.isAccessor(member)) {
+                        var accessors = ts.getAllAccessorDeclarations(node.members, member);
+                        if (member !== accessors.firstAccessor) {
+                            continue;
+                        }
+                        // get the decorators from the first accessor with decorators
+                        decorators = accessors.firstAccessor.decorators;
+                        if (!decorators && accessors.secondAccessor) {
+                            decorators = accessors.secondAccessor.decorators;
+                        }
+                        // we only decorate parameters of the set accessor
+                        functionLikeMember = accessors.setAccessor;
+                    }
+                    else {
+                        decorators = member.decorators;
+                        // we only decorate the parameters here if this is a method
+                        if (member.kind === 134 /* MethodDeclaration */) {
+                            functionLikeMember = member;
+                        }
                     }
                     // Emit the call to __decorate. Given the following:
                     //
                     //   class C {
-                    //     @dec method() {}
+                    //     @dec method(@dec2 x) {}
                     //     @dec get accessor() {}
                     //     @dec prop;
                     //   }
                     //
                     // The emit for a method is:
                     //
-                    //   Object.defineProperty(C.prototype, "method", __decorate([dec], C.prototype, "method", Object.getOwnPropertyDescriptor(C.prototype, "method")));
+                    //   Object.defineProperty(C.prototype, "method", 
+                    //       __decorate([
+                    //           dec,
+                    //           __param(0, dec2),
+                    //           __metadata("design:type", Function),
+                    //           __metadata("design:paramtypes", [Object]),
+                    //           __metadata("design:returntype", void 0)
+                    //       ], C.prototype, "method", Object.getOwnPropertyDescriptor(C.prototype, "method")));
                     // 
                     // The emit for an accessor is:
                     //
-                    //   Object.defineProperty(C.prototype, "accessor", __decorate([dec], C.prototype, "accessor", Object.getOwnPropertyDescriptor(C.prototype, "accessor")));
+                    //   Object.defineProperty(C.prototype, "accessor", 
+                    //       __decorate([
+                    //           dec
+                    //       ], C.prototype, "accessor", Object.getOwnPropertyDescriptor(C.prototype, "accessor")));
                     //
                     // The emit for a property is:
                     //
-                    //   __decorate([dec], C.prototype, "prop");
+                    //   __decorate([
+                    //       dec
+                    //   ], C.prototype, "prop");
                     //
                     writeLine();
                     emitStart(member);
@@ -26968,9 +27660,24 @@ var ts;
                         write(", ");
                         emitExpressionForPropertyName(member.name);
                         emitEnd(member.name);
-                        write(", ");
+                        write(",");
+                        increaseIndent();
+                        writeLine();
                     }
-                    emitDecorateStart(decorators);
+                    write("__decorate([");
+                    increaseIndent();
+                    writeLine();
+                    var decoratorCount = decorators ? decorators.length : 0;
+                    var argumentsWritten = emitList(decorators, 0, decoratorCount, true, false, false, true, function (decorator) {
+                        emitStart(decorator);
+                        emit(decorator.expression);
+                        emitEnd(decorator);
+                    });
+                    argumentsWritten += emitDecoratorsOfParameters(functionLikeMember, argumentsWritten > 0);
+                    emitSerializedTypeMetadata(member, argumentsWritten > 0);
+                    decreaseIndent();
+                    writeLine();
+                    write("], ");
                     emitStart(member.name);
                     emitClassMemberPrefix(node, member);
                     write(", ");
@@ -26984,71 +27691,142 @@ var ts;
                         emitExpressionForPropertyName(member.name);
                         emitEnd(member.name);
                         write("))");
+                        decreaseIndent();
                     }
                     write(");");
                     emitEnd(member);
                     writeLine();
-                });
-            }
-            function emitDecoratorsOfParameters(node, member) {
-                ts.forEach(member.parameters, function (parameter, parameterIndex) {
-                    if (!ts.nodeIsDecorated(parameter)) {
-                        return;
-                    }
-                    // Emit the decorators for a parameter. Given the following:
-                    //
-                    //   class C {
-                    //     constructor(@dec p) { }
-                    //     method(@dec p) { }
-                    //     set accessor(@dec value) { }
-                    //   }
-                    //
-                    // The emit for a constructor is:
-                    //
-                    //   __decorate([dec], C, void 0, 0);
-                    //
-                    // The emit for a parameter is:
-                    //
-                    //   __decorate([dec], C.prototype, "method", 0);
-                    //
-                    // The emit for an accessor is:
-                    //
-                    //   __decorate([dec], C.prototype, "accessor", 0);
-                    //
-                    writeLine();
-                    emitStart(parameter);
-                    emitDecorateStart(parameter.decorators);
-                    emitStart(parameter.name);
-                    if (member.kind === 135 /* Constructor */) {
-                        emitDeclarationName(node);
-                        write(", void 0");
-                    }
-                    else {
-                        emitClassMemberPrefix(node, member);
-                        write(", ");
-                        emitExpressionForPropertyName(member.name);
-                    }
-                    write(", ");
-                    write(String(parameterIndex));
-                    emitEnd(parameter.name);
-                    write(");");
-                    emitEnd(parameter);
-                    writeLine();
-                });
-            }
-            function emitDecorateStart(decorators) {
-                write("__decorate([");
-                var decoratorCount = decorators.length;
-                for (var i = 0; i < decoratorCount; i++) {
-                    if (i > 0) {
-                        write(", ");
-                    }
-                    var decorator = decorators[i];
-                    emitStart(decorator);
-                    emit(decorator.expression);
-                    emitEnd(decorator);
                 }
-                write("], ");
+            }
+            function emitDecoratorsOfParameters(node, leadingComma) {
+                var argumentsWritten = 0;
+                if (node) {
+                    var parameterIndex = 0;
+                    for (var _a = 0, _b = node.parameters; _a < _b.length; _a++) {
+                        var parameter = _b[_a];
+                        if (ts.nodeIsDecorated(parameter)) {
+                            var decorators = parameter.decorators;
+                            argumentsWritten += emitList(decorators, 0, decorators.length, true, false, leadingComma, true, function (decorator) {
+                                emitStart(decorator);
+                                write("__param(" + parameterIndex + ", ");
+                                emit(decorator.expression);
+                                write(")");
+                                emitEnd(decorator);
+                            });
+                            leadingComma = true;
+                        }
+                        ++parameterIndex;
+                    }
+                }
+                return argumentsWritten;
+            }
+            function shouldEmitTypeMetadata(node) {
+                // This method determines whether to emit the "design:type" metadata based on the node's kind.
+                // The caller should have already tested whether the node has decorators and whether the emitDecoratorMetadata 
+                // compiler option is set.
+                switch (node.kind) {
+                    case 134 /* MethodDeclaration */:
+                    case 136 /* GetAccessor */:
+                    case 137 /* SetAccessor */:
+                    case 132 /* PropertyDeclaration */:
+                        return true;
+                }
+                return false;
+            }
+            function shouldEmitReturnTypeMetadata(node) {
+                // This method determines whether to emit the "design:returntype" metadata based on the node's kind.
+                // The caller should have already tested whether the node has decorators and whether the emitDecoratorMetadata 
+                // compiler option is set.
+                switch (node.kind) {
+                    case 134 /* MethodDeclaration */:
+                        return true;
+                }
+                return false;
+            }
+            function shouldEmitParamTypesMetadata(node) {
+                // This method determines whether to emit the "design:paramtypes" metadata based on the node's kind.
+                // The caller should have already tested whether the node has decorators and whether the emitDecoratorMetadata 
+                // compiler option is set.
+                switch (node.kind) {
+                    case 201 /* ClassDeclaration */:
+                    case 134 /* MethodDeclaration */:
+                    case 137 /* SetAccessor */:
+                        return true;
+                }
+                return false;
+            }
+            function emitSerializedTypeMetadata(node, writeComma) {
+                // This method emits the serialized type metadata for a decorator target.
+                // The caller should have already tested whether the node has decorators.
+                var argumentsWritten = 0;
+                if (compilerOptions.emitDecoratorMetadata) {
+                    if (shouldEmitTypeMetadata(node)) {
+                        var serializedType = resolver.serializeTypeOfNode(node, getGeneratedNameForNode);
+                        if (serializedType) {
+                            if (writeComma) {
+                                write(", ");
+                            }
+                            writeLine();
+                            write("__metadata('design:type', ");
+                            emitSerializedType(node, serializedType);
+                            write(")");
+                            argumentsWritten++;
+                        }
+                    }
+                    if (shouldEmitParamTypesMetadata(node)) {
+                        var serializedTypes = resolver.serializeParameterTypesOfNode(node, getGeneratedNameForNode);
+                        if (serializedTypes) {
+                            if (writeComma || argumentsWritten) {
+                                write(", ");
+                            }
+                            writeLine();
+                            write("__metadata('design:paramtypes', [");
+                            for (var i = 0; i < serializedTypes.length; ++i) {
+                                if (i > 0) {
+                                    write(", ");
+                                }
+                                emitSerializedType(node, serializedTypes[i]);
+                            }
+                            write("])");
+                            argumentsWritten++;
+                        }
+                    }
+                    if (shouldEmitReturnTypeMetadata(node)) {
+                        var serializedType = resolver.serializeReturnTypeOfNode(node, getGeneratedNameForNode);
+                        if (serializedType) {
+                            if (writeComma || argumentsWritten) {
+                                write(", ");
+                            }
+                            writeLine();
+                            write("__metadata('design:returntype', ");
+                            emitSerializedType(node, serializedType);
+                            write(")");
+                            argumentsWritten++;
+                        }
+                    }
+                }
+                return argumentsWritten;
+            }
+            function serializeTypeNameSegment(location, path, index) {
+                switch (index) {
+                    case 0:
+                        return "typeof " + path[index] + " !== 'undefined' && " + path[index];
+                    case 1:
+                        return serializeTypeNameSegment(location, path, index - 1) + "." + path[index];
+                    default:
+                        var temp = createAndRecordTempVariable(0 /* Auto */).text;
+                        return "(" + temp + " = " + serializeTypeNameSegment(location, path, index - 1) + ") && " + temp + "." + path[index];
+                }
+            }
+            function emitSerializedType(location, name) {
+                if (typeof name === "string") {
+                    write(name);
+                    return;
+                }
+                else {
+                    ts.Debug.assert(name.length > 0, "Invalid serialized type name");
+                    write("(" + serializeTypeNameSegment(location, name, name.length - 1) + ") || Object");
+                }
             }
             function emitInterfaceDeclaration(node) {
                 emitOnlyPinnedOrTripleSlashComments(node);
@@ -27516,8 +28294,8 @@ var ts;
                                 // export { x, y }
                                 for (var _c = 0, _d = node.exportClause.elements; _c < _d.length; _c++) {
                                     var specifier = _d[_c];
-                                    var name_17 = (specifier.propertyName || specifier.name).text;
-                                    (exportSpecifiers[name_17] || (exportSpecifiers[name_17] = [])).push(specifier);
+                                    var name_20 = (specifier.propertyName || specifier.name).text;
+                                    (exportSpecifiers[name_20] || (exportSpecifiers[name_20] = [])).push(specifier);
                                 }
                             }
                             break;
@@ -27656,7 +28434,7 @@ var ts;
                 }
                 return statements.length;
             }
-            function writeHelper(text) {
+            function writeLines(text) {
                 var lines = text.split(/\r\n|\r|\n/g);
                 for (var i = 0; i < lines.length; ++i) {
                     var line = lines[i];
@@ -27673,27 +28451,21 @@ var ts;
                 // emit prologue directives prior to __extends
                 var startIndex = emitDirectivePrologues(node.statements, false);
                 // Only Emit __extends function when target ES5.
-                // For target ES6 and above, we can emit classDeclaration as if.
+                // For target ES6 and above, we can emit classDeclaration as is.
                 if ((languageVersion < 2 /* ES6 */) && (!extendsEmitted && resolver.getNodeCheckFlags(node) & 8 /* EmitExtends */)) {
-                    writeLine();
-                    write("var __extends = this.__extends || function (d, b) {");
-                    increaseIndent();
-                    writeLine();
-                    write("for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];");
-                    writeLine();
-                    write("function __() { this.constructor = d; }");
-                    writeLine();
-                    write("__.prototype = b.prototype;");
-                    writeLine();
-                    write("d.prototype = new __();");
-                    decreaseIndent();
-                    writeLine();
-                    write("};");
+                    writeLines(extendsHelper);
                     extendsEmitted = true;
                 }
                 if (!decorateEmitted && resolver.getNodeCheckFlags(node) & 512 /* EmitDecorate */) {
-                    writeHelper("\nvar __decorate = this.__decorate || function (decorators, target, key, value) {\n    var kind = typeof (arguments.length == 2 ? value = target : value);\n    for (var i = decorators.length - 1; i >= 0; --i) {\n        var decorator = decorators[i];\n        switch (kind) {\n            case \"function\": value = decorator(value) || value; break;\n            case \"number\": decorator(target, key, value); break;\n            case \"undefined\": decorator(target, key); break;\n            case \"object\": value = decorator(target, key, value) || value; break;\n        }\n    }\n    return value;\n};");
+                    writeLines(decorateHelper);
+                    if (compilerOptions.emitDecoratorMetadata) {
+                        writeLines(metadataHelper);
+                    }
                     decorateEmitted = true;
+                }
+                if (!paramEmitted && resolver.getNodeCheckFlags(node) & 1024 /* EmitParam */) {
+                    writeLines(paramHelper);
+                    paramEmitted = true;
                 }
                 if (ts.isExternalModule(node)) {
                     if (languageVersion >= 2 /* ES6 */) {
@@ -27855,6 +28627,8 @@ var ts;
                         return emitConditionalExpression(node);
                     case 173 /* SpreadElementExpression */:
                         return emitSpreadElementExpression(node);
+                    case 172 /* YieldExpression */:
+                        return emitYieldExpression(node);
                     case 175 /* OmittedExpression */:
                         return;
                     case 179 /* Block */:
@@ -28568,6 +29342,7 @@ var ts;
 // Copyright (c) Microsoft. All rights reserved. Licensed under the Apache License, Version 2.0. 
 // See LICENSE.txt in the project root for complete license information.
 /// <reference path='services.ts' />
+/* @internal */
 var ts;
 (function (ts) {
     var BreakpointResolver;
@@ -28708,9 +29483,6 @@ var ts;
                             // span in throw ...
                             return textSpan(node, node.expression);
                         case 214 /* ExportAssignment */:
-                            if (!node.expression) {
-                                return undefined;
-                            }
                             // span on export = id
                             return textSpan(node, node.expression);
                         case 208 /* ImportEqualsDeclaration */:
@@ -29008,20 +29780,7 @@ var ts;
         BreakpointResolver.spanInSourceFileAtLocation = spanInSourceFileAtLocation;
     })(BreakpointResolver = ts.BreakpointResolver || (ts.BreakpointResolver = {}));
 })(ts || (ts = {}));
-//
-// Copyright (c) Microsoft Corporation.  All rights reserved.
-// 
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//   http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
-//
+/* @internal */
 var ts;
 (function (ts) {
     var OutliningElementsCollector;
@@ -29040,6 +29799,58 @@ var ts;
                     elements.push(span);
                 }
             }
+            function addOutliningSpanComments(commentSpan, autoCollapse) {
+                if (commentSpan) {
+                    var span = {
+                        textSpan: ts.createTextSpanFromBounds(commentSpan.pos, commentSpan.end),
+                        hintSpan: ts.createTextSpanFromBounds(commentSpan.pos, commentSpan.end),
+                        bannerText: collapseText,
+                        autoCollapse: autoCollapse
+                    };
+                    elements.push(span);
+                }
+            }
+            function addOutliningForLeadingCommentsForNode(n) {
+                var comments = ts.getLeadingCommentRangesOfNode(n, sourceFile);
+                if (comments) {
+                    var firstSingleLineCommentStart = -1;
+                    var lastSingleLineCommentEnd = -1;
+                    var isFirstSingleLineComment = true;
+                    var singleLineCommentCount = 0;
+                    for (var _i = 0; _i < comments.length; _i++) {
+                        var currentComment = comments[_i];
+                        // For single line comments, combine consecutive ones (2 or more) into
+                        // a single span from the start of the first till the end of the last
+                        if (currentComment.kind === 2 /* SingleLineCommentTrivia */) {
+                            if (isFirstSingleLineComment) {
+                                firstSingleLineCommentStart = currentComment.pos;
+                            }
+                            isFirstSingleLineComment = false;
+                            lastSingleLineCommentEnd = currentComment.end;
+                            singleLineCommentCount++;
+                        }
+                        else if (currentComment.kind === 3 /* MultiLineCommentTrivia */) {
+                            combineAndAddMultipleSingleLineComments(singleLineCommentCount, firstSingleLineCommentStart, lastSingleLineCommentEnd);
+                            addOutliningSpanComments(currentComment, false);
+                            singleLineCommentCount = 0;
+                            lastSingleLineCommentEnd = -1;
+                            isFirstSingleLineComment = true;
+                        }
+                    }
+                    combineAndAddMultipleSingleLineComments(singleLineCommentCount, firstSingleLineCommentStart, lastSingleLineCommentEnd);
+                }
+            }
+            function combineAndAddMultipleSingleLineComments(count, start, end) {
+                // Only outline spans of two or more consecutive single line comments
+                if (count > 1) {
+                    var multipleSingleLineComments = {
+                        pos: start,
+                        end: end,
+                        kind: 2 /* SingleLineCommentTrivia */
+                    };
+                    addOutliningSpanComments(multipleSingleLineComments, false);
+                }
+            }
             function autoCollapse(node) {
                 return ts.isFunctionBlock(node) && node.parent.kind !== 163 /* ArrowFunction */;
             }
@@ -29049,31 +29860,34 @@ var ts;
                 if (depth > maxDepth) {
                     return;
                 }
+                if (ts.isDeclaration(n)) {
+                    addOutliningForLeadingCommentsForNode(n);
+                }
                 switch (n.kind) {
                     case 179 /* Block */:
                         if (!ts.isFunctionBlock(n)) {
-                            var parent_6 = n.parent;
+                            var parent_7 = n.parent;
                             var openBrace = ts.findChildOfKind(n, 14 /* OpenBraceToken */, sourceFile);
                             var closeBrace = ts.findChildOfKind(n, 15 /* CloseBraceToken */, sourceFile);
                             // Check if the block is standalone, or 'attached' to some parent statement.
                             // If the latter, we want to collaps the block, but consider its hint span
                             // to be the entire span of the parent.
-                            if (parent_6.kind === 184 /* DoStatement */ ||
-                                parent_6.kind === 187 /* ForInStatement */ ||
-                                parent_6.kind === 188 /* ForOfStatement */ ||
-                                parent_6.kind === 186 /* ForStatement */ ||
-                                parent_6.kind === 183 /* IfStatement */ ||
-                                parent_6.kind === 185 /* WhileStatement */ ||
-                                parent_6.kind === 192 /* WithStatement */ ||
-                                parent_6.kind === 223 /* CatchClause */) {
-                                addOutliningSpan(parent_6, openBrace, closeBrace, autoCollapse(n));
+                            if (parent_7.kind === 184 /* DoStatement */ ||
+                                parent_7.kind === 187 /* ForInStatement */ ||
+                                parent_7.kind === 188 /* ForOfStatement */ ||
+                                parent_7.kind === 186 /* ForStatement */ ||
+                                parent_7.kind === 183 /* IfStatement */ ||
+                                parent_7.kind === 185 /* WhileStatement */ ||
+                                parent_7.kind === 192 /* WithStatement */ ||
+                                parent_7.kind === 223 /* CatchClause */) {
+                                addOutliningSpan(parent_7, openBrace, closeBrace, autoCollapse(n));
                                 break;
                             }
-                            if (parent_6.kind === 196 /* TryStatement */) {
+                            if (parent_7.kind === 196 /* TryStatement */) {
                                 // Could be the try-block, or the finally-block.
-                                var tryStatement = parent_6;
+                                var tryStatement = parent_7;
                                 if (tryStatement.tryBlock === n) {
-                                    addOutliningSpan(parent_6, openBrace, closeBrace, autoCollapse(n));
+                                    addOutliningSpan(parent_7, openBrace, closeBrace, autoCollapse(n));
                                     break;
                                 }
                                 else if (tryStatement.finallyBlock === n) {
@@ -29128,6 +29942,7 @@ var ts;
         OutliningElementsCollector.collectElements = collectElements;
     })(OutliningElementsCollector = ts.OutliningElementsCollector || (ts.OutliningElementsCollector = {}));
 })(ts || (ts = {}));
+/* @internal */
 var ts;
 (function (ts) {
     var NavigateTo;
@@ -29149,7 +29964,7 @@ var ts;
                         if (!matches) {
                             continue;
                         }
-                        // It was a match!  If the pattern has dots in it, then also see if hte 
+                        // It was a match!  If the pattern has dots in it, then also see if the 
                         // declaration container matches as well.
                         if (patternMatcher.patternContainsDots) {
                             var containers = getContainers(declaration);
@@ -29305,6 +30120,7 @@ var ts;
     })(NavigateTo = ts.NavigateTo || (ts.NavigateTo = {}));
 })(ts || (ts = {}));
 /// <reference path='services.ts' />
+/* @internal */
 var ts;
 (function (ts) {
     var NavigationBar;
@@ -29556,9 +30372,9 @@ var ts;
                     case 198 /* VariableDeclaration */:
                     case 152 /* BindingElement */:
                         var variableDeclarationNode;
-                        var name_18;
+                        var name_21;
                         if (node.kind === 152 /* BindingElement */) {
-                            name_18 = node.name;
+                            name_21 = node.name;
                             variableDeclarationNode = node;
                             // binding elements are added only for variable declarations
                             // bubble up to the containing variable declaration
@@ -29570,16 +30386,16 @@ var ts;
                         else {
                             ts.Debug.assert(!ts.isBindingPattern(node.name));
                             variableDeclarationNode = node;
-                            name_18 = node.name;
+                            name_21 = node.name;
                         }
                         if (ts.isConst(variableDeclarationNode)) {
-                            return createItem(node, getTextOfNode(name_18), ts.ScriptElementKind.constElement);
+                            return createItem(node, getTextOfNode(name_21), ts.ScriptElementKind.constElement);
                         }
                         else if (ts.isLet(variableDeclarationNode)) {
-                            return createItem(node, getTextOfNode(name_18), ts.ScriptElementKind.letElement);
+                            return createItem(node, getTextOfNode(name_21), ts.ScriptElementKind.letElement);
                         }
                         else {
-                            return createItem(node, getTextOfNode(name_18), ts.ScriptElementKind.variableElement);
+                            return createItem(node, getTextOfNode(name_21), ts.ScriptElementKind.variableElement);
                         }
                     case 135 /* Constructor */:
                         return createItem(node, "constructor", ts.ScriptElementKind.constructorImplementationElement);
@@ -29651,9 +30467,9 @@ var ts;
                     return getNavigationBarItem(moduleName, ts.ScriptElementKind.moduleElement, ts.getNodeModifiers(node), [getNodeSpan(node)], childItems, getIndent(node));
                 }
                 function createFunctionItem(node) {
-                    if ((node.name || node.flags & 256 /* Default */) && node.body && node.body.kind === 179 /* Block */) {
+                    if (node.body && node.body.kind === 179 /* Block */) {
                         var childItems = getItemsWorker(sortNodes(node.body.statements), createChildItem);
-                        return getNavigationBarItem((!node.name && node.flags & 256 /* Default */) ? "default" : node.name.text, ts.ScriptElementKind.functionElement, ts.getNodeModifiers(node), [getNodeSpan(node)], childItems, getIndent(node));
+                        return getNavigationBarItem(!node.name ? "default" : node.name.text, ts.ScriptElementKind.functionElement, ts.getNodeModifiers(node), [getNodeSpan(node)], childItems, getIndent(node));
                     }
                     return undefined;
                 }
@@ -29683,7 +30499,7 @@ var ts;
                         }
                         childItems = getItemsWorker(sortNodes(nodes), createChildItem);
                     }
-                    var nodeName = !node.name && (node.flags & 256 /* Default */) ? "default" : node.name.text;
+                    var nodeName = !node.name ? "default" : node.name.text;
                     return getNavigationBarItem(nodeName, ts.ScriptElementKind.classElement, ts.getNodeModifiers(node), [getNodeSpan(node)], childItems, getIndent(node));
                 }
                 function createEnumItem(node) {
@@ -29722,6 +30538,7 @@ var ts;
         NavigationBar.getNavigationBarItems = getNavigationBarItems;
     })(NavigationBar = ts.NavigationBar || (ts.NavigationBar = {}));
 })(ts || (ts = {}));
+/* @internal */
 var ts;
 (function (ts) {
     // Note(cyrusn): this enum is ordered from strongest match type to weakest match type.
@@ -30050,7 +30867,7 @@ var ts;
     ts.createPatternMatcher = createPatternMatcher;
     // Helper function to compare two matches to determine which is better.  Matches are first
     // ordered by kind (so all prefix matches always beat all substring matches).  Then, if the
-    // match is a camel case match, the relative weights of hte match are used to determine 
+    // match is a camel case match, the relative weights of the match are used to determine 
     // which is better (with a greater weight being better).  Then if the match is of the same 
     // type, then a case sensitive match is considered better than an insensitive one. 
     function patternMatchCompareTo(match1, match2) {
@@ -30333,6 +31150,7 @@ var ts;
     }
 })(ts || (ts = {}));
 ///<reference path='services.ts' />
+/* @internal */
 var ts;
 (function (ts) {
     var SignatureHelp;
@@ -30836,6 +31654,7 @@ var ts;
     })(SignatureHelp = ts.SignatureHelp || (ts.SignatureHelp = {}));
 })(ts || (ts = {}));
 // These utilities are common to multiple language service features.
+/* @internal */
 var ts;
 (function (ts) {
     function getEndLinePosition(line, sourceFile) {
@@ -31294,6 +32113,7 @@ var ts;
     ts.compareDataObjects = compareDataObjects;
 })(ts || (ts = {}));
 // Display-part writer helpers
+/* @internal */
 var ts;
 (function (ts) {
     function isFirstDeclarationOfSymbolParameter(symbol) {
@@ -31464,6 +32284,7 @@ var ts;
 })(ts || (ts = {}));
 /// <reference path="formatting.ts"/>
 /// <reference path="..\..\compiler\scanner.ts"/>
+/* @internal */
 var ts;
 (function (ts) {
     var formatting;
@@ -31664,21 +32485,8 @@ var ts;
         formatting.getFormattingScanner = getFormattingScanner;
     })(formatting = ts.formatting || (ts.formatting = {}));
 })(ts || (ts = {}));
-//
-// Copyright (c) Microsoft Corporation.  All rights reserved.
-// 
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//   http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
-//
 /// <reference path="references.ts"/>
+/* @internal */
 var ts;
 (function (ts) {
     var formatting;
@@ -31758,21 +32566,8 @@ var ts;
         formatting.FormattingContext = FormattingContext;
     })(formatting = ts.formatting || (ts.formatting = {}));
 })(ts || (ts = {}));
-//
-// Copyright (c) Microsoft Corporation.  All rights reserved.
-// 
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//   http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
-//
 /// <reference path="references.ts"/>
+/* @internal */
 var ts;
 (function (ts) {
     var formatting;
@@ -31787,21 +32582,8 @@ var ts;
         var FormattingRequestKind = formatting.FormattingRequestKind;
     })(formatting = ts.formatting || (ts.formatting = {}));
 })(ts || (ts = {}));
-//
-// Copyright (c) Microsoft Corporation.  All rights reserved.
-// 
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//   http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
-//
 ///<reference path='references.ts' />
+/* @internal */
 var ts;
 (function (ts) {
     var formatting;
@@ -31823,21 +32605,8 @@ var ts;
         formatting.Rule = Rule;
     })(formatting = ts.formatting || (ts.formatting = {}));
 })(ts || (ts = {}));
-//
-// Copyright (c) Microsoft Corporation.  All rights reserved.
-// 
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//   http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
-//
 ///<reference path='references.ts' />
+/* @internal */
 var ts;
 (function (ts) {
     var formatting;
@@ -31851,21 +32620,8 @@ var ts;
         var RuleAction = formatting.RuleAction;
     })(formatting = ts.formatting || (ts.formatting = {}));
 })(ts || (ts = {}));
-//
-// Copyright (c) Microsoft Corporation.  All rights reserved.
-// 
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//   http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
-//
 ///<reference path='references.ts' />
+/* @internal */
 var ts;
 (function (ts) {
     var formatting;
@@ -31896,21 +32652,8 @@ var ts;
         formatting.RuleDescriptor = RuleDescriptor;
     })(formatting = ts.formatting || (ts.formatting = {}));
 })(ts || (ts = {}));
-//
-// Copyright (c) Microsoft Corporation.  All rights reserved.
-// 
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//   http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
-//
 ///<reference path='references.ts' />
+/* @internal */
 var ts;
 (function (ts) {
     var formatting;
@@ -31922,21 +32665,8 @@ var ts;
         var RuleFlags = formatting.RuleFlags;
     })(formatting = ts.formatting || (ts.formatting = {}));
 })(ts || (ts = {}));
-//
-// Copyright (c) Microsoft Corporation.  All rights reserved.
-// 
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//   http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
-//
 ///<reference path='references.ts' />
+/* @internal */
 var ts;
 (function (ts) {
     var formatting;
@@ -31964,21 +32694,8 @@ var ts;
         formatting.RuleOperation = RuleOperation;
     })(formatting = ts.formatting || (ts.formatting = {}));
 })(ts || (ts = {}));
-//
-// Copyright (c) Microsoft Corporation.  All rights reserved.
-// 
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//   http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
-//
 ///<reference path='references.ts' />
+/* @internal */
 var ts;
 (function (ts) {
     var formatting;
@@ -32012,21 +32729,8 @@ var ts;
         formatting.RuleOperationContext = RuleOperationContext;
     })(formatting = ts.formatting || (ts.formatting = {}));
 })(ts || (ts = {}));
-//
-// Copyright (c) Microsoft Corporation.  All rights reserved.
-// 
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//   http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
-//
 ///<reference path='references.ts' />
+/* @internal */
 var ts;
 (function (ts) {
     var formatting;
@@ -32138,6 +32842,10 @@ var ts;
                 this.NoSpaceAfterCloseAngularBracket = new formatting.Rule(formatting.RuleDescriptor.create3(25 /* GreaterThanToken */, formatting.Shared.TokenRange.FromTokens([16 /* OpenParenToken */, 18 /* OpenBracketToken */, 25 /* GreaterThanToken */, 23 /* CommaToken */])), formatting.RuleOperation.create2(new formatting.RuleOperationContext(Rules.IsSameLineTokenContext, Rules.IsTypeArgumentOrParameterContext), 8 /* Delete */));
                 // Remove spaces in empty interface literals. e.g.: x: {}
                 this.NoSpaceBetweenEmptyInterfaceBraceBrackets = new formatting.Rule(formatting.RuleDescriptor.create1(14 /* OpenBraceToken */, 15 /* CloseBraceToken */), formatting.RuleOperation.create2(new formatting.RuleOperationContext(Rules.IsSameLineTokenContext, Rules.IsObjectTypeContext), 8 /* Delete */));
+                // decorators
+                this.SpaceBeforeAt = new formatting.Rule(formatting.RuleDescriptor.create2(formatting.Shared.TokenRange.Any, 52 /* AtToken */), formatting.RuleOperation.create2(new formatting.RuleOperationContext(Rules.IsSameLineTokenContext), 2 /* Space */));
+                this.NoSpaceAfterAt = new formatting.Rule(formatting.RuleDescriptor.create3(52 /* AtToken */, formatting.Shared.TokenRange.Any), formatting.RuleOperation.create2(new formatting.RuleOperationContext(Rules.IsSameLineTokenContext), 8 /* Delete */));
+                this.SpaceAfterDecorator = new formatting.Rule(formatting.RuleDescriptor.create4(formatting.Shared.TokenRange.Any, formatting.Shared.TokenRange.FromTokens([65 /* Identifier */, 78 /* ExportKeyword */, 73 /* DefaultKeyword */, 69 /* ClassKeyword */, 110 /* StaticKeyword */, 109 /* PublicKeyword */, 107 /* PrivateKeyword */, 108 /* ProtectedKeyword */, 116 /* GetKeyword */, 120 /* SetKeyword */, 18 /* OpenBracketToken */, 35 /* AsteriskToken */])), formatting.RuleOperation.create2(new formatting.RuleOperationContext(Rules.IsEndOfDecoratorContextOnSameLine), 2 /* Space */));
                 // These rules are higher in priority than user-configurable rules.
                 this.HighPriorityCommonRules =
                     [
@@ -32174,7 +32882,10 @@ var ts;
                         this.NoSpaceBetweenCloseParenAndAngularBracket,
                         this.NoSpaceAfterOpenAngularBracket,
                         this.NoSpaceBeforeCloseAngularBracket,
-                        this.NoSpaceAfterCloseAngularBracket
+                        this.NoSpaceAfterCloseAngularBracket,
+                        this.SpaceBeforeAt,
+                        this.NoSpaceAfterAt,
+                        this.SpaceAfterDecorator,
                     ];
                 // These rules are lower in priority than user-configurable rules.
                 this.LowPriorityCommonRules =
@@ -32224,9 +32935,9 @@ var ts;
             }
             Rules.prototype.getRuleName = function (rule) {
                 var o = this;
-                for (var name_19 in o) {
-                    if (o[name_19] === rule) {
-                        return name_19;
+                for (var name_22 in o) {
+                    if (o[name_22] === rule) {
+                        return name_22;
                     }
                 }
                 throw new Error("Unknown rule");
@@ -32407,6 +33118,18 @@ var ts;
             Rules.IsSameLineTokenContext = function (context) {
                 return context.TokensAreOnSameLine();
             };
+            Rules.IsEndOfDecoratorContextOnSameLine = function (context) {
+                return context.TokensAreOnSameLine() &&
+                    context.contextNode.decorators &&
+                    Rules.NodeIsInDecoratorContext(context.currentTokenParent) &&
+                    !Rules.NodeIsInDecoratorContext(context.nextTokenParent);
+            };
+            Rules.NodeIsInDecoratorContext = function (node) {
+                while (ts.isExpression(node)) {
+                    node = node.parent;
+                }
+                return node.kind === 130 /* Decorator */;
+            };
             Rules.IsStartOfVariableDeclarationList = function (context) {
                 return context.currentTokenParent.kind === 199 /* VariableDeclarationList */ &&
                     context.currentTokenParent.getStart(context.sourceFile) === context.currentTokenSpan.pos;
@@ -32454,21 +33177,8 @@ var ts;
         formatting.Rules = Rules;
     })(formatting = ts.formatting || (ts.formatting = {}));
 })(ts || (ts = {}));
-//
-// Copyright (c) Microsoft Corporation.  All rights reserved.
-// 
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//   http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
-//
 ///<reference path='references.ts' />
+/* @internal */
 var ts;
 (function (ts) {
     var formatting;
@@ -32622,21 +33332,8 @@ var ts;
         formatting.RulesBucket = RulesBucket;
     })(formatting = ts.formatting || (ts.formatting = {}));
 })(ts || (ts = {}));
-//
-// Copyright (c) Microsoft Corporation.  All rights reserved.
-// 
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//   http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
-//
 ///<reference path='references.ts' />
+/* @internal */
 var ts;
 (function (ts) {
     var formatting;
@@ -32751,20 +33448,6 @@ var ts;
         })(Shared = formatting.Shared || (formatting.Shared = {}));
     })(formatting = ts.formatting || (ts.formatting = {}));
 })(ts || (ts = {}));
-//
-// Copyright (c) Microsoft Corporation.  All rights reserved.
-// 
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//   http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
-//
 ///<reference path='..\services.ts' />
 ///<reference path='formattingContext.ts' />
 ///<reference path='formattingRequestKind.ts' />
@@ -32777,21 +33460,8 @@ var ts;
 ///<reference path='rules.ts' />
 ///<reference path='rulesMap.ts' />
 ///<reference path='tokenRange.ts' /> 
-//
-// Copyright (c) Microsoft Corporation.  All rights reserved.
-// 
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//   http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
-//
 /// <reference path="references.ts"/>
+/* @internal */
 var ts;
 (function (ts) {
     var formatting;
@@ -32881,6 +33551,7 @@ var ts;
 ///<reference path='formattingScanner.ts' />
 ///<reference path='rulesProvider.ts' />
 ///<reference path='references.ts' />
+/* @internal */
 var ts;
 (function (ts) {
     var formatting;
@@ -33112,8 +33783,12 @@ var ts;
             formattingScanner.advance();
             if (formattingScanner.isOnToken()) {
                 var startLine = sourceFile.getLineAndCharacterOfPosition(enclosingNode.getStart(sourceFile)).line;
+                var undecoratedStartLine = startLine;
+                if (enclosingNode.decorators) {
+                    undecoratedStartLine = sourceFile.getLineAndCharacterOfPosition(ts.getNonDecoratorTokenPosOfNode(enclosingNode, sourceFile)).line;
+                }
                 var delta = getOwnOrInheritedDelta(enclosingNode, options, sourceFile);
-                processNode(enclosingNode, enclosingNode, startLine, initialIndentation, delta);
+                processNode(enclosingNode, enclosingNode, startLine, undecoratedStartLine, initialIndentation, delta);
             }
             formattingScanner.close();
             return edits;
@@ -33258,7 +33933,7 @@ var ts;
                     }
                 };
             }
-            function processNode(node, contextNode, nodeStartLine, indentation, delta) {
+            function processNode(node, contextNode, nodeStartLine, undecoratedNodeStartLine, indentation, delta) {
                 if (!ts.rangeOverlapsWithStartEnd(originalRange, node.getStart(sourceFile), node.getEnd())) {
                     return;
                 }
@@ -33278,7 +33953,7 @@ var ts;
                 // if there are any tokens that logically belong to node and interleave child nodes
                 // such tokens will be consumed in processChildNode for for the child that follows them
                 ts.forEachChild(node, function (child) {
-                    processChildNode(child, -1 /* Unknown */, node, nodeDynamicIndentation, nodeStartLine, false);
+                    processChildNode(child, -1 /* Unknown */, node, nodeDynamicIndentation, nodeStartLine, undecoratedNodeStartLine, false);
                 }, function (nodes) {
                     processChildNodes(nodes, node, nodeStartLine, nodeDynamicIndentation);
                 });
@@ -33290,9 +33965,13 @@ var ts;
                     }
                     consumeTokenAndAdvanceScanner(tokenInfo, node, nodeDynamicIndentation);
                 }
-                function processChildNode(child, inheritedIndentation, parent, parentDynamicIndentation, parentStartLine, isListItem) {
+                function processChildNode(child, inheritedIndentation, parent, parentDynamicIndentation, parentStartLine, undecoratedParentStartLine, isListItem) {
                     var childStartPos = child.getStart(sourceFile);
-                    var childStart = sourceFile.getLineAndCharacterOfPosition(childStartPos);
+                    var childStartLine = sourceFile.getLineAndCharacterOfPosition(childStartPos).line;
+                    var undecoratedChildStartLine = childStartLine;
+                    if (child.decorators) {
+                        undecoratedChildStartLine = sourceFile.getLineAndCharacterOfPosition(ts.getNonDecoratorTokenPosOfNode(child, sourceFile)).line;
+                    }
                     // if child is a list item - try to get its indentation
                     var childIndentationAmount = -1 /* Unknown */;
                     if (isListItem) {
@@ -33327,8 +34006,9 @@ var ts;
                         consumeTokenAndAdvanceScanner(tokenInfo, node, parentDynamicIndentation);
                         return inheritedIndentation;
                     }
-                    var childIndentation = computeIndentation(child, childStart.line, childIndentationAmount, node, parentDynamicIndentation, parentStartLine);
-                    processNode(child, childContextNode, childStart.line, childIndentation.indentation, childIndentation.delta);
+                    var effectiveParentStartLine = child.kind === 130 /* Decorator */ ? childStartLine : undecoratedParentStartLine;
+                    var childIndentation = computeIndentation(child, childStartLine, childIndentationAmount, node, parentDynamicIndentation, effectiveParentStartLine);
+                    processNode(child, childContextNode, childStartLine, undecoratedChildStartLine, childIndentation.indentation, childIndentation.delta);
                     childContextNode = node;
                     return inheritedIndentation;
                 }
@@ -33361,7 +34041,7 @@ var ts;
                     var inheritedIndentation = -1 /* Unknown */;
                     for (var _i = 0; _i < nodes.length; _i++) {
                         var child = nodes[_i];
-                        inheritedIndentation = processChildNode(child, inheritedIndentation, node, listDynamicIndentation, startLine, true);
+                        inheritedIndentation = processChildNode(child, inheritedIndentation, node, listDynamicIndentation, startLine, startLine, true);
                     }
                     if (listEndToken !== 0 /* Unknown */) {
                         if (formattingScanner.isOnToken()) {
@@ -33747,6 +34427,7 @@ var ts;
     })(formatting = ts.formatting || (ts.formatting = {}));
 })(ts || (ts = {}));
 ///<reference path='..\services.ts' />
+/* @internal */
 var ts;
 (function (ts) {
     var formatting;
@@ -34649,113 +35330,116 @@ var ts;
         };
         SourceFileObject.prototype.getNamedDeclarations = function () {
             if (!this.namedDeclarations) {
-                var sourceFile = this;
-                var namedDeclarations = [];
-                ts.forEachChild(sourceFile, function visit(node) {
-                    switch (node.kind) {
-                        case 200 /* FunctionDeclaration */:
-                        case 134 /* MethodDeclaration */:
-                        case 133 /* MethodSignature */:
-                            var functionDeclaration = node;
-                            if (functionDeclaration.name && functionDeclaration.name.getFullWidth() > 0) {
-                                var lastDeclaration = namedDeclarations.length > 0 ?
-                                    namedDeclarations[namedDeclarations.length - 1] :
-                                    undefined;
-                                // Check whether this declaration belongs to an "overload group".
-                                if (lastDeclaration && functionDeclaration.symbol === lastDeclaration.symbol) {
-                                    // Overwrite the last declaration if it was an overload
-                                    // and this one is an implementation.
-                                    if (functionDeclaration.body && !lastDeclaration.body) {
-                                        namedDeclarations[namedDeclarations.length - 1] = functionDeclaration;
-                                    }
-                                }
-                                else {
-                                    namedDeclarations.push(functionDeclaration);
-                                }
-                                ts.forEachChild(node, visit);
-                            }
-                            break;
-                        case 201 /* ClassDeclaration */:
-                        case 202 /* InterfaceDeclaration */:
-                        case 203 /* TypeAliasDeclaration */:
-                        case 204 /* EnumDeclaration */:
-                        case 205 /* ModuleDeclaration */:
-                        case 208 /* ImportEqualsDeclaration */:
-                        case 217 /* ExportSpecifier */:
-                        case 213 /* ImportSpecifier */:
-                        case 208 /* ImportEqualsDeclaration */:
-                        case 210 /* ImportClause */:
-                        case 211 /* NamespaceImport */:
-                        case 136 /* GetAccessor */:
-                        case 137 /* SetAccessor */:
-                        case 145 /* TypeLiteral */:
-                            if (node.name) {
-                                namedDeclarations.push(node);
-                            }
-                        // fall through
-                        case 135 /* Constructor */:
-                        case 180 /* VariableStatement */:
-                        case 199 /* VariableDeclarationList */:
-                        case 150 /* ObjectBindingPattern */:
-                        case 151 /* ArrayBindingPattern */:
-                        case 206 /* ModuleBlock */:
-                            ts.forEachChild(node, visit);
-                            break;
-                        case 179 /* Block */:
-                            if (ts.isFunctionBlock(node)) {
-                                ts.forEachChild(node, visit);
-                            }
-                            break;
-                        case 129 /* Parameter */:
-                            // Only consider properties defined as constructor parameters
-                            if (!(node.flags & 112 /* AccessibilityModifier */)) {
-                                break;
-                            }
-                        // fall through
-                        case 198 /* VariableDeclaration */:
-                        case 152 /* BindingElement */:
-                            if (ts.isBindingPattern(node.name)) {
-                                ts.forEachChild(node.name, visit);
-                                break;
-                            }
-                        case 226 /* EnumMember */:
-                        case 132 /* PropertyDeclaration */:
-                        case 131 /* PropertySignature */:
-                            namedDeclarations.push(node);
-                            break;
-                        case 215 /* ExportDeclaration */:
-                            // Handle named exports case e.g.:
-                            //    export {a, b as B} from "mod";
-                            if (node.exportClause) {
-                                ts.forEach(node.exportClause.elements, visit);
-                            }
-                            break;
-                        case 209 /* ImportDeclaration */:
-                            var importClause = node.importClause;
-                            if (importClause) {
-                                // Handle default import case e.g.:
-                                //    import d from "mod";
-                                if (importClause.name) {
-                                    namedDeclarations.push(importClause);
-                                }
-                                // Handle named bindings in imports e.g.:
-                                //    import * as NS from "mod";
-                                //    import {a, b as B} from "mod";
-                                if (importClause.namedBindings) {
-                                    if (importClause.namedBindings.kind === 211 /* NamespaceImport */) {
-                                        namedDeclarations.push(importClause.namedBindings);
-                                    }
-                                    else {
-                                        ts.forEach(importClause.namedBindings.elements, visit);
-                                    }
-                                }
-                            }
-                            break;
-                    }
-                });
-                this.namedDeclarations = namedDeclarations;
+                this.namedDeclarations = this.computeNamedDeclarations();
             }
             return this.namedDeclarations;
+        };
+        SourceFileObject.prototype.computeNamedDeclarations = function () {
+            var namedDeclarations = [];
+            ts.forEachChild(this, visit);
+            return namedDeclarations;
+            function visit(node) {
+                switch (node.kind) {
+                    case 200 /* FunctionDeclaration */:
+                    case 134 /* MethodDeclaration */:
+                    case 133 /* MethodSignature */:
+                        var functionDeclaration = node;
+                        if (functionDeclaration.name && functionDeclaration.name.getFullWidth() > 0) {
+                            var lastDeclaration = namedDeclarations.length > 0 ?
+                                namedDeclarations[namedDeclarations.length - 1] :
+                                undefined;
+                            // Check whether this declaration belongs to an "overload group".
+                            if (lastDeclaration && functionDeclaration.symbol === lastDeclaration.symbol) {
+                                // Overwrite the last declaration if it was an overload
+                                // and this one is an implementation.
+                                if (functionDeclaration.body && !lastDeclaration.body) {
+                                    namedDeclarations[namedDeclarations.length - 1] = functionDeclaration;
+                                }
+                            }
+                            else {
+                                namedDeclarations.push(functionDeclaration);
+                            }
+                            ts.forEachChild(node, visit);
+                        }
+                        break;
+                    case 201 /* ClassDeclaration */:
+                    case 202 /* InterfaceDeclaration */:
+                    case 203 /* TypeAliasDeclaration */:
+                    case 204 /* EnumDeclaration */:
+                    case 205 /* ModuleDeclaration */:
+                    case 208 /* ImportEqualsDeclaration */:
+                    case 217 /* ExportSpecifier */:
+                    case 213 /* ImportSpecifier */:
+                    case 208 /* ImportEqualsDeclaration */:
+                    case 210 /* ImportClause */:
+                    case 211 /* NamespaceImport */:
+                    case 136 /* GetAccessor */:
+                    case 137 /* SetAccessor */:
+                    case 145 /* TypeLiteral */:
+                        if (node.name) {
+                            namedDeclarations.push(node);
+                        }
+                    // fall through
+                    case 135 /* Constructor */:
+                    case 180 /* VariableStatement */:
+                    case 199 /* VariableDeclarationList */:
+                    case 150 /* ObjectBindingPattern */:
+                    case 151 /* ArrayBindingPattern */:
+                    case 206 /* ModuleBlock */:
+                        ts.forEachChild(node, visit);
+                        break;
+                    case 179 /* Block */:
+                        if (ts.isFunctionBlock(node)) {
+                            ts.forEachChild(node, visit);
+                        }
+                        break;
+                    case 129 /* Parameter */:
+                        // Only consider properties defined as constructor parameters
+                        if (!(node.flags & 112 /* AccessibilityModifier */)) {
+                            break;
+                        }
+                    // fall through
+                    case 198 /* VariableDeclaration */:
+                    case 152 /* BindingElement */:
+                        if (ts.isBindingPattern(node.name)) {
+                            ts.forEachChild(node.name, visit);
+                            break;
+                        }
+                    case 226 /* EnumMember */:
+                    case 132 /* PropertyDeclaration */:
+                    case 131 /* PropertySignature */:
+                        namedDeclarations.push(node);
+                        break;
+                    case 215 /* ExportDeclaration */:
+                        // Handle named exports case e.g.:
+                        //    export {a, b as B} from "mod";
+                        if (node.exportClause) {
+                            ts.forEach(node.exportClause.elements, visit);
+                        }
+                        break;
+                    case 209 /* ImportDeclaration */:
+                        var importClause = node.importClause;
+                        if (importClause) {
+                            // Handle default import case e.g.:
+                            //    import d from "mod";
+                            if (importClause.name) {
+                                namedDeclarations.push(importClause);
+                            }
+                            // Handle named bindings in imports e.g.:
+                            //    import * as NS from "mod";
+                            //    import {a, b as B} from "mod";
+                            if (importClause.namedBindings) {
+                                if (importClause.namedBindings.kind === 211 /* NamespaceImport */) {
+                                    namedDeclarations.push(importClause.namedBindings);
+                                }
+                                else {
+                                    ts.forEach(importClause.namedBindings.elements, visit);
+                                }
+                            }
+                        }
+                        break;
+                }
+            }
         };
         return SourceFileObject;
     })(NodeObject);
@@ -34765,6 +35449,13 @@ var ts;
         return TextChange;
     })();
     ts.TextChange = TextChange;
+    var HighlightSpanKind;
+    (function (HighlightSpanKind) {
+        HighlightSpanKind.none = "none";
+        HighlightSpanKind.definition = "definition";
+        HighlightSpanKind.reference = "reference";
+        HighlightSpanKind.writtenReference = "writtenReference";
+    })(HighlightSpanKind = ts.HighlightSpanKind || (ts.HighlightSpanKind = {}));
     (function (SymbolDisplayPartKind) {
         SymbolDisplayPartKind[SymbolDisplayPartKind["aliasName"] = 0] = "aliasName";
         SymbolDisplayPartKind[SymbolDisplayPartKind["className"] = 1] = "className";
@@ -34819,10 +35510,10 @@ var ts;
     })(ts.TokenClass || (ts.TokenClass = {}));
     var TokenClass = ts.TokenClass;
     // TODO: move these to enums
-    var ScriptElementKind = (function () {
-        function ScriptElementKind() {
-        }
+    var ScriptElementKind;
+    (function (ScriptElementKind) {
         ScriptElementKind.unknown = "";
+        ScriptElementKind.warning = "warning";
         // predefined type (void) or keyword (class)
         ScriptElementKind.keyword = "keyword";
         // top level script node
@@ -34871,12 +35562,9 @@ var ts;
         ScriptElementKind.alias = "alias";
         ScriptElementKind.constElement = "const";
         ScriptElementKind.letElement = "let";
-        return ScriptElementKind;
-    })();
-    ts.ScriptElementKind = ScriptElementKind;
-    var ScriptElementKindModifier = (function () {
-        function ScriptElementKindModifier() {
-        }
+    })(ScriptElementKind = ts.ScriptElementKind || (ts.ScriptElementKind = {}));
+    var ScriptElementKindModifier;
+    (function (ScriptElementKindModifier) {
         ScriptElementKindModifier.none = "";
         ScriptElementKindModifier.publicMemberModifier = "public";
         ScriptElementKindModifier.privateMemberModifier = "private";
@@ -34884,9 +35572,7 @@ var ts;
         ScriptElementKindModifier.exportedModifier = "export";
         ScriptElementKindModifier.ambientModifier = "declare";
         ScriptElementKindModifier.staticModifier = "static";
-        return ScriptElementKindModifier;
-    })();
-    ts.ScriptElementKindModifier = ScriptElementKindModifier;
+    })(ScriptElementKindModifier = ts.ScriptElementKindModifier || (ts.ScriptElementKindModifier = {}));
     var ClassificationTypeNames = (function () {
         function ClassificationTypeNames() {
         }
@@ -34928,9 +35614,9 @@ var ts;
                 return false;
             }
             // If the parent is not sourceFile or module block it is local variable
-            for (var parent_7 = declaration.parent; !ts.isFunctionBlock(parent_7); parent_7 = parent_7.parent) {
+            for (var parent_8 = declaration.parent; !ts.isFunctionBlock(parent_8); parent_8 = parent_8.parent) {
                 // Reached source file or module block
-                if (parent_7.kind === 227 /* SourceFile */ || parent_7.kind === 206 /* ModuleBlock */) {
+                if (parent_8.kind === 227 /* SourceFile */ || parent_8.kind === 206 /* ModuleBlock */) {
                     return false;
                 }
             }
@@ -35099,7 +35785,7 @@ var ts;
             useCaseSensitiveFileNames: function () { return false; },
             getCanonicalFileName: function (fileName) { return fileName; },
             getCurrentDirectory: function () { return ""; },
-            getNewLine: function () { return "\r\n"; }
+            getNewLine: function () { return (ts.sys && ts.sys.newLine) || "\r\n"; }
         };
         var program = ts.createProgram([inputFileName], options, compilerHost);
         if (diagnostics) {
@@ -35533,7 +36219,8 @@ var ts;
         keywordCompletions.push({
             name: ts.tokenToString(i),
             kind: ScriptElementKind.keyword,
-            kindModifiers: ScriptElementKindModifier.none
+            kindModifiers: ScriptElementKindModifier.none,
+            sortText: "0"
         });
     }
     /* @internal */ function getContainerNode(node) {
@@ -35768,6 +36455,9 @@ var ts;
             synchronizeHostData();
             return program.getSyntacticDiagnostics(getValidSourceFile(fileName));
         }
+        function isJavaScript(fileName) {
+            return ts.fileExtensionIs(fileName, ".js");
+        }
         /**
          * getSemanticDiagnostiscs return array of Diagnostics. If '-d' is not enabled, only report semantic errors
          * If '-d' enabled, report both semantic and emitter errors
@@ -35775,6 +36465,12 @@ var ts;
         function getSemanticDiagnostics(fileName) {
             synchronizeHostData();
             var targetSourceFile = getValidSourceFile(fileName);
+            // For JavaScript files, we don't want to report the normal typescript semantic errors.
+            // Instead, we just report errors for using TypeScript-only constructs from within a 
+            // JavaScript file.
+            if (isJavaScript(fileName)) {
+                return getJavaScriptSemanticDiagnostics(targetSourceFile);
+            }
             // Only perform the action per file regardless of '-out' flag as LanguageServiceHost is expected to call this function per file.
             // Therefore only get diagnostics for given file.
             var semanticDiagnostics = program.getSemanticDiagnostics(targetSourceFile);
@@ -35785,31 +36481,182 @@ var ts;
             var declarationDiagnostics = program.getDeclarationDiagnostics(targetSourceFile);
             return ts.concatenate(semanticDiagnostics, declarationDiagnostics);
         }
+        function getJavaScriptSemanticDiagnostics(sourceFile) {
+            var diagnostics = [];
+            walk(sourceFile);
+            return diagnostics;
+            function walk(node) {
+                if (!node) {
+                    return false;
+                }
+                switch (node.kind) {
+                    case 208 /* ImportEqualsDeclaration */:
+                        diagnostics.push(ts.createDiagnosticForNode(node, ts.Diagnostics.import_can_only_be_used_in_a_ts_file));
+                        return true;
+                    case 214 /* ExportAssignment */:
+                        diagnostics.push(ts.createDiagnosticForNode(node, ts.Diagnostics.export_can_only_be_used_in_a_ts_file));
+                        return true;
+                    case 201 /* ClassDeclaration */:
+                        var classDeclaration = node;
+                        if (checkModifiers(classDeclaration.modifiers) ||
+                            checkTypeParameters(classDeclaration.typeParameters)) {
+                            return true;
+                        }
+                        break;
+                    case 222 /* HeritageClause */:
+                        var heritageClause = node;
+                        if (heritageClause.token === 103 /* ImplementsKeyword */) {
+                            diagnostics.push(ts.createDiagnosticForNode(node, ts.Diagnostics.implements_clauses_can_only_be_used_in_a_ts_file));
+                            return true;
+                        }
+                        break;
+                    case 202 /* InterfaceDeclaration */:
+                        diagnostics.push(ts.createDiagnosticForNode(node, ts.Diagnostics.interface_declarations_can_only_be_used_in_a_ts_file));
+                        return true;
+                    case 205 /* ModuleDeclaration */:
+                        diagnostics.push(ts.createDiagnosticForNode(node, ts.Diagnostics.module_declarations_can_only_be_used_in_a_ts_file));
+                        return true;
+                    case 203 /* TypeAliasDeclaration */:
+                        diagnostics.push(ts.createDiagnosticForNode(node, ts.Diagnostics.type_aliases_can_only_be_used_in_a_ts_file));
+                        return true;
+                    case 134 /* MethodDeclaration */:
+                    case 133 /* MethodSignature */:
+                    case 135 /* Constructor */:
+                    case 136 /* GetAccessor */:
+                    case 137 /* SetAccessor */:
+                    case 162 /* FunctionExpression */:
+                    case 200 /* FunctionDeclaration */:
+                    case 163 /* ArrowFunction */:
+                    case 200 /* FunctionDeclaration */:
+                        var functionDeclaration = node;
+                        if (checkModifiers(functionDeclaration.modifiers) ||
+                            checkTypeParameters(functionDeclaration.typeParameters) ||
+                            checkTypeAnnotation(functionDeclaration.type)) {
+                            return true;
+                        }
+                        break;
+                    case 180 /* VariableStatement */:
+                        var variableStatement = node;
+                        if (checkModifiers(variableStatement.modifiers)) {
+                            return true;
+                        }
+                        break;
+                    case 198 /* VariableDeclaration */:
+                        var variableDeclaration = node;
+                        if (checkTypeAnnotation(variableDeclaration.type)) {
+                            return true;
+                        }
+                        break;
+                    case 157 /* CallExpression */:
+                    case 158 /* NewExpression */:
+                        var expression = node;
+                        if (expression.typeArguments && expression.typeArguments.length > 0) {
+                            var start = expression.typeArguments.pos;
+                            diagnostics.push(ts.createFileDiagnostic(sourceFile, start, expression.typeArguments.end - start, ts.Diagnostics.type_arguments_can_only_be_used_in_a_ts_file));
+                            return true;
+                        }
+                        break;
+                    case 129 /* Parameter */:
+                        var parameter = node;
+                        if (parameter.modifiers) {
+                            var start = parameter.modifiers.pos;
+                            diagnostics.push(ts.createFileDiagnostic(sourceFile, start, parameter.modifiers.end - start, ts.Diagnostics.parameter_modifiers_can_only_be_used_in_a_ts_file));
+                            return true;
+                        }
+                        if (parameter.questionToken) {
+                            diagnostics.push(ts.createDiagnosticForNode(parameter.questionToken, ts.Diagnostics.can_only_be_used_in_a_ts_file));
+                            return true;
+                        }
+                        if (parameter.type) {
+                            diagnostics.push(ts.createDiagnosticForNode(parameter.type, ts.Diagnostics.types_can_only_be_used_in_a_ts_file));
+                            return true;
+                        }
+                        break;
+                    case 132 /* PropertyDeclaration */:
+                        diagnostics.push(ts.createDiagnosticForNode(node, ts.Diagnostics.property_declarations_can_only_be_used_in_a_ts_file));
+                        return true;
+                    case 204 /* EnumDeclaration */:
+                        diagnostics.push(ts.createDiagnosticForNode(node, ts.Diagnostics.enum_declarations_can_only_be_used_in_a_ts_file));
+                        return true;
+                    case 160 /* TypeAssertionExpression */:
+                        var typeAssertionExpression = node;
+                        diagnostics.push(ts.createDiagnosticForNode(typeAssertionExpression.type, ts.Diagnostics.type_assertion_expressions_can_only_be_used_in_a_ts_file));
+                        return true;
+                    case 130 /* Decorator */:
+                        diagnostics.push(ts.createDiagnosticForNode(node, ts.Diagnostics.decorators_can_only_be_used_in_a_ts_file));
+                        return true;
+                }
+                return ts.forEachChild(node, walk);
+            }
+            function checkTypeParameters(typeParameters) {
+                if (typeParameters) {
+                    var start = typeParameters.pos;
+                    diagnostics.push(ts.createFileDiagnostic(sourceFile, start, typeParameters.end - start, ts.Diagnostics.type_parameter_declarations_can_only_be_used_in_a_ts_file));
+                    return true;
+                }
+                return false;
+            }
+            function checkTypeAnnotation(type) {
+                if (type) {
+                    diagnostics.push(ts.createDiagnosticForNode(type, ts.Diagnostics.types_can_only_be_used_in_a_ts_file));
+                    return true;
+                }
+                return false;
+            }
+            function checkModifiers(modifiers) {
+                if (modifiers) {
+                    for (var _i = 0; _i < modifiers.length; _i++) {
+                        var modifier = modifiers[_i];
+                        switch (modifier.kind) {
+                            case 109 /* PublicKeyword */:
+                            case 107 /* PrivateKeyword */:
+                            case 108 /* ProtectedKeyword */:
+                            case 115 /* DeclareKeyword */:
+                                diagnostics.push(ts.createDiagnosticForNode(modifier, ts.Diagnostics._0_can_only_be_used_in_a_ts_file, ts.tokenToString(modifier.kind)));
+                                return true;
+                            // These are all legal modifiers.
+                            case 110 /* StaticKeyword */:
+                            case 78 /* ExportKeyword */:
+                            case 70 /* ConstKeyword */:
+                            case 73 /* DefaultKeyword */:
+                        }
+                    }
+                }
+                return false;
+            }
+        }
         function getCompilerOptionsDiagnostics() {
             synchronizeHostData();
             return program.getGlobalDiagnostics();
         }
         /// Completion
-        function getCompletionEntryDisplayName(symbol, target, performCharacterChecks) {
+        function getCompletionEntryDisplayNameForSymbol(symbol, target, performCharacterChecks) {
             var displayName = symbol.getName();
+            if (displayName) {
+                // If this is the default export, get the name of the declaration if it exists
+                if (displayName === "default") {
+                    var localSymbol = ts.getLocalSymbolForExportDefault(symbol);
+                    if (localSymbol && localSymbol.name) {
+                        displayName = symbol.valueDeclaration.localSymbol.name;
+                    }
+                }
+                var firstCharCode = displayName.charCodeAt(0);
+                // First check of the displayName is not external module; if it is an external module, it is not valid entry
+                if ((symbol.flags & 1536 /* Namespace */) && (firstCharCode === 39 /* singleQuote */ || firstCharCode === 34 /* doubleQuote */)) {
+                    // If the symbol is external module, don't show it in the completion list
+                    // (i.e declare module "http" { let x; } | // <= request completion here, "http" should not be there)
+                    return undefined;
+                }
+            }
+            return getCompletionEntryDisplayName(displayName, target, performCharacterChecks);
+        }
+        function getCompletionEntryDisplayName(displayName, target, performCharacterChecks) {
             if (!displayName) {
                 return undefined;
             }
-            // If this is the default export, get the name of the declaration if it exists
-            if (displayName === "default") {
-                var localSymbol = ts.getLocalSymbolForExportDefault(symbol);
-                if (localSymbol && localSymbol.name) {
-                    displayName = symbol.valueDeclaration.localSymbol.name;
-                }
-            }
             var firstCharCode = displayName.charCodeAt(0);
-            // First check of the displayName is not external module; if it is an external module, it is not valid entry
-            if ((symbol.flags & 1536 /* Namespace */) && (firstCharCode === 39 /* singleQuote */ || firstCharCode === 34 /* doubleQuote */)) {
-                // If the symbol is external module, don't show it in the completion list
-                // (i.e declare module "http" { let x; } | // <= request completion here, "http" should not be there)
-                return undefined;
-            }
-            if (displayName && displayName.length >= 2 && firstCharCode === displayName.charCodeAt(displayName.length - 1) &&
+            if (displayName.length >= 2 &&
+                firstCharCode === displayName.charCodeAt(displayName.length - 1) &&
                 (firstCharCode === 39 /* singleQuote */ || firstCharCode === 34 /* doubleQuote */)) {
                 // If the user entered name for the symbol was quoted, removing the quotes is not enough, as the name could be an
                 // invalid identifier name. We need to check if whatever was inside the quotes is actually a valid identifier name.
@@ -35834,18 +36681,22 @@ var ts;
             // Try to get a valid display name for this symbol, if we could not find one, then ignore it. 
             // We would like to only show things that can be added after a dot, so for instance numeric properties can
             // not be accessed with a dot (a.1 <- invalid)
-            var displayName = getCompletionEntryDisplayName(symbol, program.getCompilerOptions().target, true);
+            var displayName = getCompletionEntryDisplayNameForSymbol(symbol, program.getCompilerOptions().target, true);
             if (!displayName) {
                 return undefined;
             }
-            // TODO(drosen): Right now we just permit *all* semantic meanings when calling 'getSymbolKind'
-            //               which is permissible given that it is backwards compatible; but really we should consider
-            //               passing the meaning for the node so that we don't report that a suggestion for a value is an interface.
-            //               We COULD also just do what 'getSymbolModifiers' does, which is to use the first declaration.
+            // TODO(drosen): Right now we just permit *all* semantic meanings when calling 
+            // 'getSymbolKind' which is permissible given that it is backwards compatible; but 
+            // really we should consider passing the meaning for the node so that we don't report
+            // that a suggestion for a value is an interface.  We COULD also just do what 
+            // 'getSymbolModifiers' does, which is to use the first declaration.
+            // Use a 'sortText' of 0' so that all symbol completion entries come before any other
+            // entries (like JavaScript identifier entries).
             return {
                 name: displayName,
                 kind: getSymbolKind(symbol, typeChecker, location),
-                kindModifiers: getSymbolModifiers(symbol)
+                kindModifiers: getSymbolModifiers(symbol),
+                sortText: "0"
             };
         }
         function getCompletionData(fileName, position) {
@@ -35880,8 +36731,9 @@ var ts;
                 log("Returning an empty list because completion was requested in an invalid position.");
                 return undefined;
             }
-            // Find the node where completion is requested on, in the case of a completion after a dot, it is the member access expression
-            // otherwise, it is a request for all visible symbols in the scope, and the node is the current location
+            // Find the node where completion is requested on, in the case of a completion after 
+            // a dot, it is the member access expression other wise, it is a request for all 
+            // visible symbols in the scope, and the node is the current location.
             var node = currentToken;
             var isRightOfDot = false;
             if (contextToken && contextToken.kind === 20 /* DotToken */ && contextToken.parent.kind === 155 /* PropertyAccessExpression */) {
@@ -35897,10 +36749,22 @@ var ts;
             var semanticStart = new Date().getTime();
             var isMemberCompletion;
             var isNewIdentifierLocation;
-            var symbols;
+            var symbols = [];
             if (isRightOfDot) {
+                getTypeScriptMemberSymbols();
+            }
+            else {
+                // For JavaScript or TypeScript, if we're not after a dot, then just try to get the
+                // global symbols in scope.  These results should be valid for either language as
+                // the set of symbols that can be referenced from this location.
+                if (!tryGetGlobalSymbols()) {
+                    return undefined;
+                }
+            }
+            log("getCompletionData: Semantic work: " + (new Date().getTime() - semanticStart));
+            return { symbols: symbols, isMemberCompletion: isMemberCompletion, isNewIdentifierLocation: isNewIdentifierLocation, location: location, isRightOfDot: isRightOfDot };
+            function getTypeScriptMemberSymbols() {
                 // Right of dot member completion list
-                symbols = [];
                 isMemberCompletion = true;
                 isNewIdentifierLocation = false;
                 if (node.kind === 65 /* Identifier */ || node.kind === 126 /* QualifiedName */ || node.kind === 155 /* PropertyAccessExpression */) {
@@ -35929,7 +36793,7 @@ var ts;
                     });
                 }
             }
-            else {
+            function tryGetGlobalSymbols() {
                 var containingObjectLiteral = getContainingObjectLiteralApplicableForCompletion(contextToken);
                 if (containingObjectLiteral) {
                     // Object literal expression, look up possible property names from contextual type
@@ -35937,7 +36801,7 @@ var ts;
                     isNewIdentifierLocation = true;
                     var contextualType = typeInfoResolver.getContextualType(containingObjectLiteral);
                     if (!contextualType) {
-                        return undefined;
+                        return false;
                     }
                     var contextualTypeMembers = typeInfoResolver.getPropertiesOfType(contextualType);
                     if (contextualTypeMembers && contextualTypeMembers.length > 0) {
@@ -36004,9 +36868,8 @@ var ts;
                     var symbolMeanings = 793056 /* Type */ | 107455 /* Value */ | 1536 /* Namespace */ | 8388608 /* Alias */;
                     symbols = typeInfoResolver.getSymbolsInScope(scopeNode, symbolMeanings);
                 }
+                return true;
             }
-            log("getCompletionData: Semantic work: " + (new Date().getTime() - semanticStart));
-            return { symbols: symbols, isMemberCompletion: isMemberCompletion, isNewIdentifierLocation: isNewIdentifierLocation, location: location };
             /**
              * Finds the first node that "embraces" the position, so that one may
              * accurately aggregate locals from the closest containing scope.
@@ -36101,12 +36964,12 @@ var ts;
             function getContainingObjectLiteralApplicableForCompletion(previousToken) {
                 // The locations in an object literal expression that are applicable for completion are property name definition locations.
                 if (previousToken) {
-                    var parent_8 = previousToken.parent;
+                    var parent_9 = previousToken.parent;
                     switch (previousToken.kind) {
                         case 14 /* OpenBraceToken */: // let x = { |
                         case 23 /* CommaToken */:
-                            if (parent_8 && parent_8.kind === 154 /* ObjectLiteralExpression */) {
-                                return parent_8;
+                            if (parent_9 && parent_9.kind === 154 /* ObjectLiteralExpression */) {
+                                return parent_9;
                             }
                             break;
                     }
@@ -36260,28 +37123,62 @@ var ts;
             if (!completionData) {
                 return undefined;
             }
-            var symbols = completionData.symbols, isMemberCompletion = completionData.isMemberCompletion, isNewIdentifierLocation = completionData.isNewIdentifierLocation, location = completionData.location;
-            if (!symbols || symbols.length === 0) {
-                return undefined;
+            var symbols = completionData.symbols, isMemberCompletion = completionData.isMemberCompletion, isNewIdentifierLocation = completionData.isNewIdentifierLocation, location = completionData.location, isRightOfDot = completionData.isRightOfDot;
+            var entries;
+            if (isRightOfDot && isJavaScript(fileName)) {
+                entries = getCompletionEntriesFromSymbols(symbols);
+                ts.addRange(entries, getJavaScriptCompletionEntries());
             }
-            var entries = getCompletionEntriesFromSymbols(symbols);
+            else {
+                if (!symbols || symbols.length === 0) {
+                    return undefined;
+                }
+                entries = getCompletionEntriesFromSymbols(symbols);
+            }
             // Add keywords if this is not a member completion list
             if (!isMemberCompletion) {
                 ts.addRange(entries, keywordCompletions);
             }
             return { isMemberCompletion: isMemberCompletion, isNewIdentifierLocation: isNewIdentifierLocation, entries: entries };
+            function getJavaScriptCompletionEntries() {
+                var entries = [];
+                var allNames = {};
+                var target = program.getCompilerOptions().target;
+                for (var _i = 0, _a = program.getSourceFiles(); _i < _a.length; _i++) {
+                    var sourceFile = _a[_i];
+                    var nameTable = getNameTable(sourceFile);
+                    for (var name_23 in nameTable) {
+                        if (!allNames[name_23]) {
+                            allNames[name_23] = name_23;
+                            var displayName = getCompletionEntryDisplayName(name_23, target, true);
+                            if (displayName) {
+                                var entry = {
+                                    name: displayName,
+                                    kind: ScriptElementKind.warning,
+                                    kindModifiers: "",
+                                    sortText: "1"
+                                };
+                                entries.push(entry);
+                            }
+                        }
+                    }
+                }
+                return entries;
+            }
             function getCompletionEntriesFromSymbols(symbols) {
                 var start = new Date().getTime();
                 var entries = [];
-                var nameToSymbol = {};
-                for (var _i = 0; _i < symbols.length; _i++) {
-                    var symbol = symbols[_i];
-                    var entry = createCompletionEntry(symbol, typeInfoResolver, location);
-                    if (entry) {
-                        var id = ts.escapeIdentifier(entry.name);
-                        if (!ts.lookUp(nameToSymbol, id)) {
-                            entries.push(entry);
-                            nameToSymbol[id] = symbol;
+                if (symbols) {
+                    var nameToSymbol = {};
+                    for (var _i = 0; _i < symbols.length; _i++) {
+                        var symbol = symbols[_i];
+                        var entry = createCompletionEntry(symbol, typeInfoResolver, location);
+                        if (entry) {
+                            var id = ts.escapeIdentifier(entry.name);
+                            if (!ts.lookUp(nameToSymbol, id)) {
+                                entries.push(entry);
+                                nameToSymbol[id] = symbol;
+                            }
                         }
                     }
                 }
@@ -36300,7 +37197,7 @@ var ts;
                 // We don't need to perform character checks here because we're only comparing the 
                 // name against 'entryName' (which is known to be good), not building a new 
                 // completion entry.
-                var symbol = ts.forEach(symbols, function (s) { return getCompletionEntryDisplayName(s, target, false) === entryName ? s : undefined; });
+                var symbol = ts.forEach(symbols, function (s) { return getCompletionEntryDisplayNameForSymbol(s, target, false) === entryName ? s : undefined; });
                 if (symbol) {
                     var displayPartsDocumentationsAndSymbolKind = getSymbolDisplayPartsDocumentationAndSymbolKind(symbol, getValidSourceFile(fileName), location_2, typeInfoResolver, location_2, 7 /* All */);
                     return {
@@ -36755,6 +37652,9 @@ var ts;
             if (!node) {
                 return undefined;
             }
+            if (isLabelName(node)) {
+                return undefined;
+            }
             var symbol = typeInfoResolver.getSymbolAtLocation(node);
             if (!symbol) {
                 // Try getting just type at this position and show
@@ -36917,466 +37817,542 @@ var ts;
             var results = getOccurrencesAtPositionCore(fileName, position);
             if (results) {
                 var sourceFile = getCanonicalFileName(ts.normalizeSlashes(fileName));
-                // ensure the results are in the file we're interested in
-                results.forEach(function (value) {
-                    var targetFile = getCanonicalFileName(ts.normalizeSlashes(value.fileName));
-                    ts.Debug.assert(sourceFile == targetFile, "Unexpected file in results. Found results in " + targetFile + " expected only results in " + sourceFile + ".");
-                });
+                // Get occurrences only supports reporting occurrences for the file queried.  So 
+                // filter down to that list.
+                results = ts.filter(results, function (r) { return r.fileName === fileName; });
             }
             return results;
         }
-        /// References and Occurrences
-        function getOccurrencesAtPositionCore(fileName, position) {
+        function getDocumentHighlights(fileName, position, filesToSearch) {
             synchronizeHostData();
+            filesToSearch = ts.map(filesToSearch, ts.normalizeSlashes);
+            var sourceFilesToSearch = ts.filter(program.getSourceFiles(), function (f) { return ts.contains(filesToSearch, f.fileName); });
             var sourceFile = getValidSourceFile(fileName);
             var node = ts.getTouchingWord(sourceFile, position);
             if (!node) {
                 return undefined;
             }
-            if (node.kind === 65 /* Identifier */ || node.kind === 93 /* ThisKeyword */ || node.kind === 91 /* SuperKeyword */ ||
-                isLiteralNameOfPropertyDeclarationOrIndexAccess(node) || isNameOfExternalModuleImportOrDeclaration(node)) {
-                return convertReferences(getReferencesForNode(node, [sourceFile], true, false, false));
+            return getSemanticDocumentHighlights(node) || getSyntacticDocumentHighlights(node);
+            function getHighlightSpanForNode(node) {
+                var start = node.getStart();
+                var end = node.getEnd();
+                return {
+                    fileName: sourceFile.fileName,
+                    textSpan: ts.createTextSpanFromBounds(start, end),
+                    kind: HighlightSpanKind.none
+                };
             }
-            switch (node.kind) {
-                case 84 /* IfKeyword */:
-                case 76 /* ElseKeyword */:
-                    if (hasKind(node.parent, 183 /* IfStatement */)) {
-                        return getIfElseOccurrences(node.parent);
-                    }
-                    break;
-                case 90 /* ReturnKeyword */:
-                    if (hasKind(node.parent, 191 /* ReturnStatement */)) {
-                        return getReturnOccurrences(node.parent);
-                    }
-                    break;
-                case 94 /* ThrowKeyword */:
-                    if (hasKind(node.parent, 195 /* ThrowStatement */)) {
-                        return getThrowOccurrences(node.parent);
-                    }
-                    break;
-                case 68 /* CatchKeyword */:
-                    if (hasKind(parent(parent(node)), 196 /* TryStatement */)) {
-                        return getTryCatchFinallyOccurrences(node.parent.parent);
-                    }
-                    break;
-                case 96 /* TryKeyword */:
-                case 81 /* FinallyKeyword */:
-                    if (hasKind(parent(node), 196 /* TryStatement */)) {
-                        return getTryCatchFinallyOccurrences(node.parent);
-                    }
-                    break;
-                case 92 /* SwitchKeyword */:
-                    if (hasKind(node.parent, 193 /* SwitchStatement */)) {
-                        return getSwitchCaseDefaultOccurrences(node.parent);
-                    }
-                    break;
-                case 67 /* CaseKeyword */:
-                case 73 /* DefaultKeyword */:
-                    if (hasKind(parent(parent(parent(node))), 193 /* SwitchStatement */)) {
-                        return getSwitchCaseDefaultOccurrences(node.parent.parent.parent);
-                    }
-                    break;
-                case 66 /* BreakKeyword */:
-                case 71 /* ContinueKeyword */:
-                    if (hasKind(node.parent, 190 /* BreakStatement */) || hasKind(node.parent, 189 /* ContinueStatement */)) {
-                        return getBreakOrContinueStatementOccurences(node.parent);
-                    }
-                    break;
-                case 82 /* ForKeyword */:
-                    if (hasKind(node.parent, 186 /* ForStatement */) ||
-                        hasKind(node.parent, 187 /* ForInStatement */) ||
-                        hasKind(node.parent, 188 /* ForOfStatement */)) {
-                        return getLoopBreakContinueOccurrences(node.parent);
-                    }
-                    break;
-                case 100 /* WhileKeyword */:
-                case 75 /* DoKeyword */:
-                    if (hasKind(node.parent, 185 /* WhileStatement */) || hasKind(node.parent, 184 /* DoStatement */)) {
-                        return getLoopBreakContinueOccurrences(node.parent);
-                    }
-                    break;
-                case 114 /* ConstructorKeyword */:
-                    if (hasKind(node.parent, 135 /* Constructor */)) {
-                        return getConstructorOccurrences(node.parent);
-                    }
-                    break;
-                case 116 /* GetKeyword */:
-                case 120 /* SetKeyword */:
-                    if (hasKind(node.parent, 136 /* GetAccessor */) || hasKind(node.parent, 137 /* SetAccessor */)) {
-                        return getGetAndSetOccurrences(node.parent);
-                    }
-                default:
-                    if (ts.isModifier(node.kind) && node.parent &&
-                        (ts.isDeclaration(node.parent) || node.parent.kind === 180 /* VariableStatement */)) {
-                        return getModifierOccurrences(node.kind, node.parent);
-                    }
-            }
-            return undefined;
-            function getIfElseOccurrences(ifStatement) {
-                var keywords = [];
-                // Traverse upwards through all parent if-statements linked by their else-branches.
-                while (hasKind(ifStatement.parent, 183 /* IfStatement */) && ifStatement.parent.elseStatement === ifStatement) {
-                    ifStatement = ifStatement.parent;
+            function getSemanticDocumentHighlights(node) {
+                if (node.kind === 65 /* Identifier */ ||
+                    node.kind === 93 /* ThisKeyword */ ||
+                    node.kind === 91 /* SuperKeyword */ ||
+                    isLiteralNameOfPropertyDeclarationOrIndexAccess(node) ||
+                    isNameOfExternalModuleImportOrDeclaration(node)) {
+                    var referencedSymbols = getReferencedSymbolsForNodes(node, sourceFilesToSearch, false, false);
+                    return convertReferencedSymbols(referencedSymbols);
                 }
-                // Now traverse back down through the else branches, aggregating if/else keywords of if-statements.
-                while (ifStatement) {
-                    var children = ifStatement.getChildren();
-                    pushKeywordIf(keywords, children[0], 84 /* IfKeyword */);
-                    // Generally the 'else' keyword is second-to-last, so we traverse backwards.
-                    for (var i = children.length - 1; i >= 0; i--) {
-                        if (pushKeywordIf(keywords, children[i], 76 /* ElseKeyword */)) {
-                            break;
+                return undefined;
+                function convertReferencedSymbols(referencedSymbols) {
+                    if (!referencedSymbols) {
+                        return undefined;
+                    }
+                    var fileNameToDocumentHighlights = {};
+                    var result = [];
+                    for (var _i = 0; _i < referencedSymbols.length; _i++) {
+                        var referencedSymbol = referencedSymbols[_i];
+                        for (var _a = 0, _b = referencedSymbol.references; _a < _b.length; _a++) {
+                            var referenceEntry = _b[_a];
+                            var fileName_1 = referenceEntry.fileName;
+                            var documentHighlights = ts.getProperty(fileNameToDocumentHighlights, fileName_1);
+                            if (!documentHighlights) {
+                                documentHighlights = { fileName: fileName_1, highlightSpans: [] };
+                                fileNameToDocumentHighlights[fileName_1] = documentHighlights;
+                                result.push(documentHighlights);
+                            }
+                            documentHighlights.highlightSpans.push({
+                                textSpan: referenceEntry.textSpan,
+                                kind: referenceEntry.isWriteAccess ? HighlightSpanKind.writtenReference : HighlightSpanKind.reference
+                            });
                         }
                     }
-                    if (!hasKind(ifStatement.elseStatement, 183 /* IfStatement */)) {
-                        break;
-                    }
-                    ifStatement = ifStatement.elseStatement;
+                    return result;
                 }
-                var result = [];
-                // We'd like to highlight else/ifs together if they are only separated by whitespace
-                // (i.e. the keywords are separated by no comments, no newlines).
-                for (var i = 0; i < keywords.length; i++) {
-                    if (keywords[i].kind === 76 /* ElseKeyword */ && i < keywords.length - 1) {
-                        var elseKeyword = keywords[i];
-                        var ifKeyword = keywords[i + 1]; // this *should* always be an 'if' keyword.
-                        var shouldHighlightNextKeyword = true;
-                        // Avoid recalculating getStart() by iterating backwards.
-                        for (var j = ifKeyword.getStart() - 1; j >= elseKeyword.end; j--) {
-                            if (!ts.isWhiteSpace(sourceFile.text.charCodeAt(j))) {
-                                shouldHighlightNextKeyword = false;
+            }
+            function getSyntacticDocumentHighlights(node) {
+                var fileName = sourceFile.fileName;
+                var highlightSpans = getHighlightSpans(node);
+                if (!highlightSpans || highlightSpans.length === 0) {
+                    return undefined;
+                }
+                return [{ fileName: fileName, highlightSpans: highlightSpans }];
+                // returns true if 'node' is defined and has a matching 'kind'.
+                function hasKind(node, kind) {
+                    return node !== undefined && node.kind === kind;
+                }
+                // Null-propagating 'parent' function.
+                function parent(node) {
+                    return node && node.parent;
+                }
+                function getHighlightSpans(node) {
+                    if (node) {
+                        switch (node.kind) {
+                            case 84 /* IfKeyword */:
+                            case 76 /* ElseKeyword */:
+                                if (hasKind(node.parent, 183 /* IfStatement */)) {
+                                    return getIfElseOccurrences(node.parent);
+                                }
                                 break;
+                            case 90 /* ReturnKeyword */:
+                                if (hasKind(node.parent, 191 /* ReturnStatement */)) {
+                                    return getReturnOccurrences(node.parent);
+                                }
+                                break;
+                            case 94 /* ThrowKeyword */:
+                                if (hasKind(node.parent, 195 /* ThrowStatement */)) {
+                                    return getThrowOccurrences(node.parent);
+                                }
+                                break;
+                            case 68 /* CatchKeyword */:
+                                if (hasKind(parent(parent(node)), 196 /* TryStatement */)) {
+                                    return getTryCatchFinallyOccurrences(node.parent.parent);
+                                }
+                                break;
+                            case 96 /* TryKeyword */:
+                            case 81 /* FinallyKeyword */:
+                                if (hasKind(parent(node), 196 /* TryStatement */)) {
+                                    return getTryCatchFinallyOccurrences(node.parent);
+                                }
+                                break;
+                            case 92 /* SwitchKeyword */:
+                                if (hasKind(node.parent, 193 /* SwitchStatement */)) {
+                                    return getSwitchCaseDefaultOccurrences(node.parent);
+                                }
+                                break;
+                            case 67 /* CaseKeyword */:
+                            case 73 /* DefaultKeyword */:
+                                if (hasKind(parent(parent(parent(node))), 193 /* SwitchStatement */)) {
+                                    return getSwitchCaseDefaultOccurrences(node.parent.parent.parent);
+                                }
+                                break;
+                            case 66 /* BreakKeyword */:
+                            case 71 /* ContinueKeyword */:
+                                if (hasKind(node.parent, 190 /* BreakStatement */) || hasKind(node.parent, 189 /* ContinueStatement */)) {
+                                    return getBreakOrContinueStatementOccurences(node.parent);
+                                }
+                                break;
+                            case 82 /* ForKeyword */:
+                                if (hasKind(node.parent, 186 /* ForStatement */) ||
+                                    hasKind(node.parent, 187 /* ForInStatement */) ||
+                                    hasKind(node.parent, 188 /* ForOfStatement */)) {
+                                    return getLoopBreakContinueOccurrences(node.parent);
+                                }
+                                break;
+                            case 100 /* WhileKeyword */:
+                            case 75 /* DoKeyword */:
+                                if (hasKind(node.parent, 185 /* WhileStatement */) || hasKind(node.parent, 184 /* DoStatement */)) {
+                                    return getLoopBreakContinueOccurrences(node.parent);
+                                }
+                                break;
+                            case 114 /* ConstructorKeyword */:
+                                if (hasKind(node.parent, 135 /* Constructor */)) {
+                                    return getConstructorOccurrences(node.parent);
+                                }
+                                break;
+                            case 116 /* GetKeyword */:
+                            case 120 /* SetKeyword */:
+                                if (hasKind(node.parent, 136 /* GetAccessor */) || hasKind(node.parent, 137 /* SetAccessor */)) {
+                                    return getGetAndSetOccurrences(node.parent);
+                                }
+                            default:
+                                if (ts.isModifier(node.kind) && node.parent &&
+                                    (ts.isDeclaration(node.parent) || node.parent.kind === 180 /* VariableStatement */)) {
+                                    return getModifierOccurrences(node.kind, node.parent);
+                                }
+                        }
+                    }
+                    return undefined;
+                }
+                /**
+                 * Aggregates all throw-statements within this node *without* crossing
+                 * into function boundaries and try-blocks with catch-clauses.
+                 */
+                function aggregateOwnedThrowStatements(node) {
+                    var statementAccumulator = [];
+                    aggregate(node);
+                    return statementAccumulator;
+                    function aggregate(node) {
+                        if (node.kind === 195 /* ThrowStatement */) {
+                            statementAccumulator.push(node);
+                        }
+                        else if (node.kind === 196 /* TryStatement */) {
+                            var tryStatement = node;
+                            if (tryStatement.catchClause) {
+                                aggregate(tryStatement.catchClause);
+                            }
+                            else {
+                                // Exceptions thrown within a try block lacking a catch clause
+                                // are "owned" in the current context.
+                                aggregate(tryStatement.tryBlock);
+                            }
+                            if (tryStatement.finallyBlock) {
+                                aggregate(tryStatement.finallyBlock);
                             }
                         }
-                        if (shouldHighlightNextKeyword) {
-                            result.push({
-                                fileName: fileName,
-                                textSpan: ts.createTextSpanFromBounds(elseKeyword.getStart(), ifKeyword.end),
-                                isWriteAccess: false
-                            });
-                            i++; // skip the next keyword
-                            continue;
+                        else if (!ts.isFunctionLike(node)) {
+                            ts.forEachChild(node, aggregate);
                         }
                     }
-                    // Ordinary case: just highlight the keyword.
-                    result.push(getReferenceEntryFromNode(keywords[i]));
+                    ;
                 }
-                return result;
-            }
-            function getReturnOccurrences(returnStatement) {
-                var func = ts.getContainingFunction(returnStatement);
-                // If we didn't find a containing function with a block body, bail out.
-                if (!(func && hasKind(func.body, 179 /* Block */))) {
+                /**
+                 * For lack of a better name, this function takes a throw statement and returns the
+                 * nearest ancestor that is a try-block (whose try statement has a catch clause),
+                 * function-block, or source file.
+                 */
+                function getThrowStatementOwner(throwStatement) {
+                    var child = throwStatement;
+                    while (child.parent) {
+                        var parent_10 = child.parent;
+                        if (ts.isFunctionBlock(parent_10) || parent_10.kind === 227 /* SourceFile */) {
+                            return parent_10;
+                        }
+                        // A throw-statement is only owned by a try-statement if the try-statement has
+                        // a catch clause, and if the throw-statement occurs within the try block.
+                        if (parent_10.kind === 196 /* TryStatement */) {
+                            var tryStatement = parent_10;
+                            if (tryStatement.tryBlock === child && tryStatement.catchClause) {
+                                return child;
+                            }
+                        }
+                        child = parent_10;
+                    }
                     return undefined;
                 }
-                var keywords = [];
-                ts.forEachReturnStatement(func.body, function (returnStatement) {
-                    pushKeywordIf(keywords, returnStatement.getFirstToken(), 90 /* ReturnKeyword */);
-                });
-                // Include 'throw' statements that do not occur within a try block.
-                ts.forEach(aggregateOwnedThrowStatements(func.body), function (throwStatement) {
-                    pushKeywordIf(keywords, throwStatement.getFirstToken(), 94 /* ThrowKeyword */);
-                });
-                return ts.map(keywords, getReferenceEntryFromNode);
-            }
-            function getThrowOccurrences(throwStatement) {
-                var owner = getThrowStatementOwner(throwStatement);
-                if (!owner) {
+                function aggregateAllBreakAndContinueStatements(node) {
+                    var statementAccumulator = [];
+                    aggregate(node);
+                    return statementAccumulator;
+                    function aggregate(node) {
+                        if (node.kind === 190 /* BreakStatement */ || node.kind === 189 /* ContinueStatement */) {
+                            statementAccumulator.push(node);
+                        }
+                        else if (!ts.isFunctionLike(node)) {
+                            ts.forEachChild(node, aggregate);
+                        }
+                    }
+                    ;
+                }
+                function ownsBreakOrContinueStatement(owner, statement) {
+                    var actualOwner = getBreakOrContinueOwner(statement);
+                    return actualOwner && actualOwner === owner;
+                }
+                function getBreakOrContinueOwner(statement) {
+                    for (var node_1 = statement.parent; node_1; node_1 = node_1.parent) {
+                        switch (node_1.kind) {
+                            case 193 /* SwitchStatement */:
+                                if (statement.kind === 189 /* ContinueStatement */) {
+                                    continue;
+                                }
+                            // Fall through.
+                            case 186 /* ForStatement */:
+                            case 187 /* ForInStatement */:
+                            case 188 /* ForOfStatement */:
+                            case 185 /* WhileStatement */:
+                            case 184 /* DoStatement */:
+                                if (!statement.label || isLabeledBy(node_1, statement.label.text)) {
+                                    return node_1;
+                                }
+                                break;
+                            default:
+                                // Don't cross function boundaries.
+                                if (ts.isFunctionLike(node_1)) {
+                                    return undefined;
+                                }
+                                break;
+                        }
+                    }
                     return undefined;
                 }
-                var keywords = [];
-                ts.forEach(aggregateOwnedThrowStatements(owner), function (throwStatement) {
-                    pushKeywordIf(keywords, throwStatement.getFirstToken(), 94 /* ThrowKeyword */);
-                });
-                // If the "owner" is a function, then we equate 'return' and 'throw' statements in their
-                // ability to "jump out" of the function, and include occurrences for both.
-                if (ts.isFunctionBlock(owner)) {
-                    ts.forEachReturnStatement(owner, function (returnStatement) {
+                function getModifierOccurrences(modifier, declaration) {
+                    var container = declaration.parent;
+                    // Make sure we only highlight the keyword when it makes sense to do so.
+                    if (ts.isAccessibilityModifier(modifier)) {
+                        if (!(container.kind === 201 /* ClassDeclaration */ ||
+                            (declaration.kind === 129 /* Parameter */ && hasKind(container, 135 /* Constructor */)))) {
+                            return undefined;
+                        }
+                    }
+                    else if (modifier === 110 /* StaticKeyword */) {
+                        if (container.kind !== 201 /* ClassDeclaration */) {
+                            return undefined;
+                        }
+                    }
+                    else if (modifier === 78 /* ExportKeyword */ || modifier === 115 /* DeclareKeyword */) {
+                        if (!(container.kind === 206 /* ModuleBlock */ || container.kind === 227 /* SourceFile */)) {
+                            return undefined;
+                        }
+                    }
+                    else {
+                        // unsupported modifier
+                        return undefined;
+                    }
+                    var keywords = [];
+                    var modifierFlag = getFlagFromModifier(modifier);
+                    var nodes;
+                    switch (container.kind) {
+                        case 206 /* ModuleBlock */:
+                        case 227 /* SourceFile */:
+                            nodes = container.statements;
+                            break;
+                        case 135 /* Constructor */:
+                            nodes = container.parameters.concat(container.parent.members);
+                            break;
+                        case 201 /* ClassDeclaration */:
+                            nodes = container.members;
+                            // If we're an accessibility modifier, we're in an instance member and should search
+                            // the constructor's parameter list for instance members as well.
+                            if (modifierFlag & 112 /* AccessibilityModifier */) {
+                                var constructor = ts.forEach(container.members, function (member) {
+                                    return member.kind === 135 /* Constructor */ && member;
+                                });
+                                if (constructor) {
+                                    nodes = nodes.concat(constructor.parameters);
+                                }
+                            }
+                            break;
+                        default:
+                            ts.Debug.fail("Invalid container kind.");
+                    }
+                    ts.forEach(nodes, function (node) {
+                        if (node.modifiers && node.flags & modifierFlag) {
+                            ts.forEach(node.modifiers, function (child) { return pushKeywordIf(keywords, child, modifier); });
+                        }
+                    });
+                    return ts.map(keywords, getHighlightSpanForNode);
+                    function getFlagFromModifier(modifier) {
+                        switch (modifier) {
+                            case 109 /* PublicKeyword */:
+                                return 16 /* Public */;
+                            case 107 /* PrivateKeyword */:
+                                return 32 /* Private */;
+                            case 108 /* ProtectedKeyword */:
+                                return 64 /* Protected */;
+                            case 110 /* StaticKeyword */:
+                                return 128 /* Static */;
+                            case 78 /* ExportKeyword */:
+                                return 1 /* Export */;
+                            case 115 /* DeclareKeyword */:
+                                return 2 /* Ambient */;
+                            default:
+                                ts.Debug.fail();
+                        }
+                    }
+                }
+                function pushKeywordIf(keywordList, token) {
+                    var expected = [];
+                    for (var _i = 2; _i < arguments.length; _i++) {
+                        expected[_i - 2] = arguments[_i];
+                    }
+                    if (token && ts.contains(expected, token.kind)) {
+                        keywordList.push(token);
+                        return true;
+                    }
+                    return false;
+                }
+                function getGetAndSetOccurrences(accessorDeclaration) {
+                    var keywords = [];
+                    tryPushAccessorKeyword(accessorDeclaration.symbol, 136 /* GetAccessor */);
+                    tryPushAccessorKeyword(accessorDeclaration.symbol, 137 /* SetAccessor */);
+                    return ts.map(keywords, getHighlightSpanForNode);
+                    function tryPushAccessorKeyword(accessorSymbol, accessorKind) {
+                        var accessor = ts.getDeclarationOfKind(accessorSymbol, accessorKind);
+                        if (accessor) {
+                            ts.forEach(accessor.getChildren(), function (child) { return pushKeywordIf(keywords, child, 116 /* GetKeyword */, 120 /* SetKeyword */); });
+                        }
+                    }
+                }
+                function getConstructorOccurrences(constructorDeclaration) {
+                    var declarations = constructorDeclaration.symbol.getDeclarations();
+                    var keywords = [];
+                    ts.forEach(declarations, function (declaration) {
+                        ts.forEach(declaration.getChildren(), function (token) {
+                            return pushKeywordIf(keywords, token, 114 /* ConstructorKeyword */);
+                        });
+                    });
+                    return ts.map(keywords, getHighlightSpanForNode);
+                }
+                function getLoopBreakContinueOccurrences(loopNode) {
+                    var keywords = [];
+                    if (pushKeywordIf(keywords, loopNode.getFirstToken(), 82 /* ForKeyword */, 100 /* WhileKeyword */, 75 /* DoKeyword */)) {
+                        // If we succeeded and got a do-while loop, then start looking for a 'while' keyword.
+                        if (loopNode.kind === 184 /* DoStatement */) {
+                            var loopTokens = loopNode.getChildren();
+                            for (var i = loopTokens.length - 1; i >= 0; i--) {
+                                if (pushKeywordIf(keywords, loopTokens[i], 100 /* WhileKeyword */)) {
+                                    break;
+                                }
+                            }
+                        }
+                    }
+                    var breaksAndContinues = aggregateAllBreakAndContinueStatements(loopNode.statement);
+                    ts.forEach(breaksAndContinues, function (statement) {
+                        if (ownsBreakOrContinueStatement(loopNode, statement)) {
+                            pushKeywordIf(keywords, statement.getFirstToken(), 66 /* BreakKeyword */, 71 /* ContinueKeyword */);
+                        }
+                    });
+                    return ts.map(keywords, getHighlightSpanForNode);
+                }
+                function getBreakOrContinueStatementOccurences(breakOrContinueStatement) {
+                    var owner = getBreakOrContinueOwner(breakOrContinueStatement);
+                    if (owner) {
+                        switch (owner.kind) {
+                            case 186 /* ForStatement */:
+                            case 187 /* ForInStatement */:
+                            case 188 /* ForOfStatement */:
+                            case 184 /* DoStatement */:
+                            case 185 /* WhileStatement */:
+                                return getLoopBreakContinueOccurrences(owner);
+                            case 193 /* SwitchStatement */:
+                                return getSwitchCaseDefaultOccurrences(owner);
+                        }
+                    }
+                    return undefined;
+                }
+                function getSwitchCaseDefaultOccurrences(switchStatement) {
+                    var keywords = [];
+                    pushKeywordIf(keywords, switchStatement.getFirstToken(), 92 /* SwitchKeyword */);
+                    // Go through each clause in the switch statement, collecting the 'case'/'default' keywords.
+                    ts.forEach(switchStatement.caseBlock.clauses, function (clause) {
+                        pushKeywordIf(keywords, clause.getFirstToken(), 67 /* CaseKeyword */, 73 /* DefaultKeyword */);
+                        var breaksAndContinues = aggregateAllBreakAndContinueStatements(clause);
+                        ts.forEach(breaksAndContinues, function (statement) {
+                            if (ownsBreakOrContinueStatement(switchStatement, statement)) {
+                                pushKeywordIf(keywords, statement.getFirstToken(), 66 /* BreakKeyword */);
+                            }
+                        });
+                    });
+                    return ts.map(keywords, getHighlightSpanForNode);
+                }
+                function getTryCatchFinallyOccurrences(tryStatement) {
+                    var keywords = [];
+                    pushKeywordIf(keywords, tryStatement.getFirstToken(), 96 /* TryKeyword */);
+                    if (tryStatement.catchClause) {
+                        pushKeywordIf(keywords, tryStatement.catchClause.getFirstToken(), 68 /* CatchKeyword */);
+                    }
+                    if (tryStatement.finallyBlock) {
+                        var finallyKeyword = ts.findChildOfKind(tryStatement, 81 /* FinallyKeyword */, sourceFile);
+                        pushKeywordIf(keywords, finallyKeyword, 81 /* FinallyKeyword */);
+                    }
+                    return ts.map(keywords, getHighlightSpanForNode);
+                }
+                function getThrowOccurrences(throwStatement) {
+                    var owner = getThrowStatementOwner(throwStatement);
+                    if (!owner) {
+                        return undefined;
+                    }
+                    var keywords = [];
+                    ts.forEach(aggregateOwnedThrowStatements(owner), function (throwStatement) {
+                        pushKeywordIf(keywords, throwStatement.getFirstToken(), 94 /* ThrowKeyword */);
+                    });
+                    // If the "owner" is a function, then we equate 'return' and 'throw' statements in their
+                    // ability to "jump out" of the function, and include occurrences for both.
+                    if (ts.isFunctionBlock(owner)) {
+                        ts.forEachReturnStatement(owner, function (returnStatement) {
+                            pushKeywordIf(keywords, returnStatement.getFirstToken(), 90 /* ReturnKeyword */);
+                        });
+                    }
+                    return ts.map(keywords, getHighlightSpanForNode);
+                }
+                function getReturnOccurrences(returnStatement) {
+                    var func = ts.getContainingFunction(returnStatement);
+                    // If we didn't find a containing function with a block body, bail out.
+                    if (!(func && hasKind(func.body, 179 /* Block */))) {
+                        return undefined;
+                    }
+                    var keywords = [];
+                    ts.forEachReturnStatement(func.body, function (returnStatement) {
                         pushKeywordIf(keywords, returnStatement.getFirstToken(), 90 /* ReturnKeyword */);
                     });
+                    // Include 'throw' statements that do not occur within a try block.
+                    ts.forEach(aggregateOwnedThrowStatements(func.body), function (throwStatement) {
+                        pushKeywordIf(keywords, throwStatement.getFirstToken(), 94 /* ThrowKeyword */);
+                    });
+                    return ts.map(keywords, getHighlightSpanForNode);
                 }
-                return ts.map(keywords, getReferenceEntryFromNode);
-            }
-            /**
-             * Aggregates all throw-statements within this node *without* crossing
-             * into function boundaries and try-blocks with catch-clauses.
-             */
-            function aggregateOwnedThrowStatements(node) {
-                var statementAccumulator = [];
-                aggregate(node);
-                return statementAccumulator;
-                function aggregate(node) {
-                    if (node.kind === 195 /* ThrowStatement */) {
-                        statementAccumulator.push(node);
+                function getIfElseOccurrences(ifStatement) {
+                    var keywords = [];
+                    // Traverse upwards through all parent if-statements linked by their else-branches.
+                    while (hasKind(ifStatement.parent, 183 /* IfStatement */) && ifStatement.parent.elseStatement === ifStatement) {
+                        ifStatement = ifStatement.parent;
                     }
-                    else if (node.kind === 196 /* TryStatement */) {
-                        var tryStatement = node;
-                        if (tryStatement.catchClause) {
-                            aggregate(tryStatement.catchClause);
-                        }
-                        else {
-                            // Exceptions thrown within a try block lacking a catch clause
-                            // are "owned" in the current context.
-                            aggregate(tryStatement.tryBlock);
-                        }
-                        if (tryStatement.finallyBlock) {
-                            aggregate(tryStatement.finallyBlock);
-                        }
-                    }
-                    else if (!ts.isFunctionLike(node)) {
-                        ts.forEachChild(node, aggregate);
-                    }
-                }
-                ;
-            }
-            /**
-             * For lack of a better name, this function takes a throw statement and returns the
-             * nearest ancestor that is a try-block (whose try statement has a catch clause),
-             * function-block, or source file.
-             */
-            function getThrowStatementOwner(throwStatement) {
-                var child = throwStatement;
-                while (child.parent) {
-                    var parent_9 = child.parent;
-                    if (ts.isFunctionBlock(parent_9) || parent_9.kind === 227 /* SourceFile */) {
-                        return parent_9;
-                    }
-                    // A throw-statement is only owned by a try-statement if the try-statement has
-                    // a catch clause, and if the throw-statement occurs within the try block.
-                    if (parent_9.kind === 196 /* TryStatement */) {
-                        var tryStatement = parent_9;
-                        if (tryStatement.tryBlock === child && tryStatement.catchClause) {
-                            return child;
-                        }
-                    }
-                    child = parent_9;
-                }
-                return undefined;
-            }
-            function getTryCatchFinallyOccurrences(tryStatement) {
-                var keywords = [];
-                pushKeywordIf(keywords, tryStatement.getFirstToken(), 96 /* TryKeyword */);
-                if (tryStatement.catchClause) {
-                    pushKeywordIf(keywords, tryStatement.catchClause.getFirstToken(), 68 /* CatchKeyword */);
-                }
-                if (tryStatement.finallyBlock) {
-                    var finallyKeyword = ts.findChildOfKind(tryStatement, 81 /* FinallyKeyword */, sourceFile);
-                    pushKeywordIf(keywords, finallyKeyword, 81 /* FinallyKeyword */);
-                }
-                return ts.map(keywords, getReferenceEntryFromNode);
-            }
-            function getLoopBreakContinueOccurrences(loopNode) {
-                var keywords = [];
-                if (pushKeywordIf(keywords, loopNode.getFirstToken(), 82 /* ForKeyword */, 100 /* WhileKeyword */, 75 /* DoKeyword */)) {
-                    // If we succeeded and got a do-while loop, then start looking for a 'while' keyword.
-                    if (loopNode.kind === 184 /* DoStatement */) {
-                        var loopTokens = loopNode.getChildren();
-                        for (var i = loopTokens.length - 1; i >= 0; i--) {
-                            if (pushKeywordIf(keywords, loopTokens[i], 100 /* WhileKeyword */)) {
+                    // Now traverse back down through the else branches, aggregating if/else keywords of if-statements.
+                    while (ifStatement) {
+                        var children = ifStatement.getChildren();
+                        pushKeywordIf(keywords, children[0], 84 /* IfKeyword */);
+                        // Generally the 'else' keyword is second-to-last, so we traverse backwards.
+                        for (var i = children.length - 1; i >= 0; i--) {
+                            if (pushKeywordIf(keywords, children[i], 76 /* ElseKeyword */)) {
                                 break;
                             }
                         }
-                    }
-                }
-                var breaksAndContinues = aggregateAllBreakAndContinueStatements(loopNode.statement);
-                ts.forEach(breaksAndContinues, function (statement) {
-                    if (ownsBreakOrContinueStatement(loopNode, statement)) {
-                        pushKeywordIf(keywords, statement.getFirstToken(), 66 /* BreakKeyword */, 71 /* ContinueKeyword */);
-                    }
-                });
-                return ts.map(keywords, getReferenceEntryFromNode);
-            }
-            function getSwitchCaseDefaultOccurrences(switchStatement) {
-                var keywords = [];
-                pushKeywordIf(keywords, switchStatement.getFirstToken(), 92 /* SwitchKeyword */);
-                // Go through each clause in the switch statement, collecting the 'case'/'default' keywords.
-                ts.forEach(switchStatement.caseBlock.clauses, function (clause) {
-                    pushKeywordIf(keywords, clause.getFirstToken(), 67 /* CaseKeyword */, 73 /* DefaultKeyword */);
-                    var breaksAndContinues = aggregateAllBreakAndContinueStatements(clause);
-                    ts.forEach(breaksAndContinues, function (statement) {
-                        if (ownsBreakOrContinueStatement(switchStatement, statement)) {
-                            pushKeywordIf(keywords, statement.getFirstToken(), 66 /* BreakKeyword */);
+                        if (!hasKind(ifStatement.elseStatement, 183 /* IfStatement */)) {
+                            break;
                         }
-                    });
-                });
-                return ts.map(keywords, getReferenceEntryFromNode);
-            }
-            function getBreakOrContinueStatementOccurences(breakOrContinueStatement) {
-                var owner = getBreakOrContinueOwner(breakOrContinueStatement);
-                if (owner) {
-                    switch (owner.kind) {
-                        case 186 /* ForStatement */:
-                        case 187 /* ForInStatement */:
-                        case 188 /* ForOfStatement */:
-                        case 184 /* DoStatement */:
-                        case 185 /* WhileStatement */:
-                            return getLoopBreakContinueOccurrences(owner);
-                        case 193 /* SwitchStatement */:
-                            return getSwitchCaseDefaultOccurrences(owner);
+                        ifStatement = ifStatement.elseStatement;
                     }
-                }
-                return undefined;
-            }
-            function aggregateAllBreakAndContinueStatements(node) {
-                var statementAccumulator = [];
-                aggregate(node);
-                return statementAccumulator;
-                function aggregate(node) {
-                    if (node.kind === 190 /* BreakStatement */ || node.kind === 189 /* ContinueStatement */) {
-                        statementAccumulator.push(node);
-                    }
-                    else if (!ts.isFunctionLike(node)) {
-                        ts.forEachChild(node, aggregate);
-                    }
-                }
-                ;
-            }
-            function ownsBreakOrContinueStatement(owner, statement) {
-                var actualOwner = getBreakOrContinueOwner(statement);
-                return actualOwner && actualOwner === owner;
-            }
-            function getBreakOrContinueOwner(statement) {
-                for (var node_1 = statement.parent; node_1; node_1 = node_1.parent) {
-                    switch (node_1.kind) {
-                        case 193 /* SwitchStatement */:
-                            if (statement.kind === 189 /* ContinueStatement */) {
+                    var result = [];
+                    // We'd like to highlight else/ifs together if they are only separated by whitespace
+                    // (i.e. the keywords are separated by no comments, no newlines).
+                    for (var i = 0; i < keywords.length; i++) {
+                        if (keywords[i].kind === 76 /* ElseKeyword */ && i < keywords.length - 1) {
+                            var elseKeyword = keywords[i];
+                            var ifKeyword = keywords[i + 1]; // this *should* always be an 'if' keyword.
+                            var shouldCombindElseAndIf = true;
+                            // Avoid recalculating getStart() by iterating backwards.
+                            for (var j = ifKeyword.getStart() - 1; j >= elseKeyword.end; j--) {
+                                if (!ts.isWhiteSpace(sourceFile.text.charCodeAt(j))) {
+                                    shouldCombindElseAndIf = false;
+                                    break;
+                                }
+                            }
+                            if (shouldCombindElseAndIf) {
+                                result.push({
+                                    fileName: fileName,
+                                    textSpan: ts.createTextSpanFromBounds(elseKeyword.getStart(), ifKeyword.end),
+                                    kind: HighlightSpanKind.reference
+                                });
+                                i++; // skip the next keyword
                                 continue;
                             }
-                        // Fall through.
-                        case 186 /* ForStatement */:
-                        case 187 /* ForInStatement */:
-                        case 188 /* ForOfStatement */:
-                        case 185 /* WhileStatement */:
-                        case 184 /* DoStatement */:
-                            if (!statement.label || isLabeledBy(node_1, statement.label.text)) {
-                                return node_1;
-                            }
-                            break;
-                        default:
-                            // Don't cross function boundaries.
-                            if (ts.isFunctionLike(node_1)) {
-                                return undefined;
-                            }
-                            break;
+                        }
+                        // Ordinary case: just highlight the keyword.
+                        result.push(getHighlightSpanForNode(keywords[i]));
                     }
-                }
-                return undefined;
-            }
-            function getConstructorOccurrences(constructorDeclaration) {
-                var declarations = constructorDeclaration.symbol.getDeclarations();
-                var keywords = [];
-                ts.forEach(declarations, function (declaration) {
-                    ts.forEach(declaration.getChildren(), function (token) {
-                        return pushKeywordIf(keywords, token, 114 /* ConstructorKeyword */);
-                    });
-                });
-                return ts.map(keywords, getReferenceEntryFromNode);
-            }
-            function getGetAndSetOccurrences(accessorDeclaration) {
-                var keywords = [];
-                tryPushAccessorKeyword(accessorDeclaration.symbol, 136 /* GetAccessor */);
-                tryPushAccessorKeyword(accessorDeclaration.symbol, 137 /* SetAccessor */);
-                return ts.map(keywords, getReferenceEntryFromNode);
-                function tryPushAccessorKeyword(accessorSymbol, accessorKind) {
-                    var accessor = ts.getDeclarationOfKind(accessorSymbol, accessorKind);
-                    if (accessor) {
-                        ts.forEach(accessor.getChildren(), function (child) { return pushKeywordIf(keywords, child, 116 /* GetKeyword */, 120 /* SetKeyword */); });
-                    }
+                    return result;
                 }
             }
-            function getModifierOccurrences(modifier, declaration) {
-                var container = declaration.parent;
-                // Make sure we only highlight the keyword when it makes sense to do so.
-                if (ts.isAccessibilityModifier(modifier)) {
-                    if (!(container.kind === 201 /* ClassDeclaration */ ||
-                        (declaration.kind === 129 /* Parameter */ && hasKind(container, 135 /* Constructor */)))) {
-                        return undefined;
-                    }
-                }
-                else if (modifier === 110 /* StaticKeyword */) {
-                    if (container.kind !== 201 /* ClassDeclaration */) {
-                        return undefined;
-                    }
-                }
-                else if (modifier === 78 /* ExportKeyword */ || modifier === 115 /* DeclareKeyword */) {
-                    if (!(container.kind === 206 /* ModuleBlock */ || container.kind === 227 /* SourceFile */)) {
-                        return undefined;
-                    }
-                }
-                else {
-                    // unsupported modifier
+        }
+        /// References and Occurrences
+        function getOccurrencesAtPositionCore(fileName, position) {
+            synchronizeHostData();
+            return convertDocumentHighlights(getDocumentHighlights(fileName, position, [fileName]));
+            function convertDocumentHighlights(documentHighlights) {
+                if (!documentHighlights) {
                     return undefined;
                 }
-                var keywords = [];
-                var modifierFlag = getFlagFromModifier(modifier);
-                var nodes;
-                switch (container.kind) {
-                    case 206 /* ModuleBlock */:
-                    case 227 /* SourceFile */:
-                        nodes = container.statements;
-                        break;
-                    case 135 /* Constructor */:
-                        nodes = container.parameters.concat(container.parent.members);
-                        break;
-                    case 201 /* ClassDeclaration */:
-                        nodes = container.members;
-                        // If we're an accessibility modifier, we're in an instance member and should search
-                        // the constructor's parameter list for instance members as well.
-                        if (modifierFlag & 112 /* AccessibilityModifier */) {
-                            var constructor = ts.forEach(container.members, function (member) {
-                                return member.kind === 135 /* Constructor */ && member;
-                            });
-                            if (constructor) {
-                                nodes = nodes.concat(constructor.parameters);
-                            }
-                        }
-                        break;
-                    default:
-                        ts.Debug.fail("Invalid container kind.");
-                }
-                ts.forEach(nodes, function (node) {
-                    if (node.modifiers && node.flags & modifierFlag) {
-                        ts.forEach(node.modifiers, function (child) { return pushKeywordIf(keywords, child, modifier); });
-                    }
-                });
-                return ts.map(keywords, getReferenceEntryFromNode);
-                function getFlagFromModifier(modifier) {
-                    switch (modifier) {
-                        case 109 /* PublicKeyword */:
-                            return 16 /* Public */;
-                        case 107 /* PrivateKeyword */:
-                            return 32 /* Private */;
-                        case 108 /* ProtectedKeyword */:
-                            return 64 /* Protected */;
-                        case 110 /* StaticKeyword */:
-                            return 128 /* Static */;
-                        case 78 /* ExportKeyword */:
-                            return 1 /* Export */;
-                        case 115 /* DeclareKeyword */:
-                            return 2 /* Ambient */;
-                        default:
-                            ts.Debug.fail();
+                var result = [];
+                for (var _i = 0; _i < documentHighlights.length; _i++) {
+                    var entry = documentHighlights[_i];
+                    for (var _a = 0, _b = entry.highlightSpans; _a < _b.length; _a++) {
+                        var highlightSpan = _b[_a];
+                        result.push({
+                            fileName: entry.fileName,
+                            textSpan: highlightSpan.textSpan,
+                            isWriteAccess: highlightSpan.kind === HighlightSpanKind.writtenReference
+                        });
                     }
                 }
-            }
-            // returns true if 'node' is defined and has a matching 'kind'.
-            function hasKind(node, kind) {
-                return node !== undefined && node.kind === kind;
-            }
-            // Null-propagating 'parent' function.
-            function parent(node) {
-                return node && node.parent;
-            }
-            function pushKeywordIf(keywordList, token) {
-                var expected = [];
-                for (var _i = 2; _i < arguments.length; _i++) {
-                    expected[_i - 2] = arguments[_i];
-                }
-                if (token && ts.contains(expected, token.kind)) {
-                    keywordList.push(token);
-                    return true;
-                }
-                return false;
+                return result;
             }
         }
         function convertReferences(referenceSymbols) {
@@ -37419,9 +38395,9 @@ var ts;
                 return undefined;
             }
             ts.Debug.assert(node.kind === 65 /* Identifier */ || node.kind === 7 /* NumericLiteral */ || node.kind === 8 /* StringLiteral */);
-            return getReferencesForNode(node, program.getSourceFiles(), false, findInStrings, findInComments);
+            return getReferencedSymbolsForNodes(node, program.getSourceFiles(), findInStrings, findInComments);
         }
-        function getReferencesForNode(node, sourceFiles, searchOnlyInCurrentFile, findInStrings, findInComments) {
+        function getReferencedSymbolsForNodes(node, sourceFiles, findInStrings, findInComments) {
             // Labels
             if (isLabelName(node)) {
                 if (isJumpStatementTarget(node)) {
@@ -37467,21 +38443,15 @@ var ts;
                 getReferencesInNode(scope, symbol, declaredName, node, searchMeaning, findInStrings, findInComments, result, symbolToIndex);
             }
             else {
-                if (searchOnlyInCurrentFile) {
-                    ts.Debug.assert(sourceFiles.length === 1);
-                    result = [];
-                    getReferencesInNode(sourceFiles[0], symbol, declaredName, node, searchMeaning, findInStrings, findInComments, result, symbolToIndex);
-                }
-                else {
-                    var internedName = getInternedName(symbol, node, declarations);
-                    ts.forEach(sourceFiles, function (sourceFile) {
-                        cancellationToken.throwIfCancellationRequested();
-                        var nameTable = getNameTable(sourceFile);
-                        if (ts.lookUp(nameTable, internedName)) {
-                            result = result || [];
-                            getReferencesInNode(sourceFile, symbol, declaredName, node, searchMeaning, findInStrings, findInComments, result, symbolToIndex);
-                        }
-                    });
+                var internedName = getInternedName(symbol, node, declarations);
+                for (var _i = 0; _i < sourceFiles.length; _i++) {
+                    var sourceFile = sourceFiles[_i];
+                    cancellationToken.throwIfCancellationRequested();
+                    var nameTable = getNameTable(sourceFile);
+                    if (ts.lookUp(nameTable, internedName)) {
+                        result = result || [];
+                        getReferencesInNode(sourceFile, symbol, declaredName, node, searchMeaning, findInStrings, findInComments, result, symbolToIndex);
+                    }
                 }
             }
             return result;
@@ -38015,19 +38985,19 @@ var ts;
                 if (isNameOfPropertyAssignment(node)) {
                     var objectLiteral = node.parent.parent;
                     var contextualType = typeInfoResolver.getContextualType(objectLiteral);
-                    var name_20 = node.text;
+                    var name_24 = node.text;
                     if (contextualType) {
                         if (contextualType.flags & 16384 /* Union */) {
                             // This is a union type, first see if the property we are looking for is a union property (i.e. exists in all types)
                             // if not, search the constituent types for the property
-                            var unionProperty = contextualType.getProperty(name_20);
+                            var unionProperty = contextualType.getProperty(name_24);
                             if (unionProperty) {
                                 return [unionProperty];
                             }
                             else {
                                 var result_3 = [];
                                 ts.forEach(contextualType.types, function (t) {
-                                    var symbol = t.getProperty(name_20);
+                                    var symbol = t.getProperty(name_24);
                                     if (symbol) {
                                         result_3.push(symbol);
                                     }
@@ -38036,7 +39006,7 @@ var ts;
                             }
                         }
                         else {
-                            var symbol_1 = contextualType.getProperty(name_20);
+                            var symbol_1 = contextualType.getProperty(name_24);
                             if (symbol_1) {
                                 return [symbol_1];
                             }
@@ -38849,6 +39819,7 @@ var ts;
             getReferencesAtPosition: getReferencesAtPosition,
             findReferences: findReferences,
             getOccurrencesAtPosition: getOccurrencesAtPosition,
+            getDocumentHighlights: getDocumentHighlights,
             getNameOrDottedNameSpan: getNameOrDottedNameSpan,
             getBreakpointStatementAtPosition: getBreakpointStatementAtPosition,
             getNavigateToItems: getNavigateToItems,
@@ -39373,6 +40344,7 @@ var ts;
             CommandNames.Geterr = "geterr";
             CommandNames.NavBar = "navbar";
             CommandNames.Navto = "navto";
+            CommandNames.Occurrences = "occurrences";
             CommandNames.Open = "open";
             CommandNames.Quickinfo = "quickinfo";
             CommandNames.References = "references";
@@ -39550,6 +40522,30 @@ var ts;
                     start: compilerService.host.positionToLineOffset(def.fileName, def.textSpan.start),
                     end: compilerService.host.positionToLineOffset(def.fileName, ts.textSpanEnd(def.textSpan))
                 }); });
+            };
+            Session.prototype.getOccurrences = function (line, offset, fileName) {
+                fileName = ts.normalizePath(fileName);
+                var project = this.projectService.getProjectForFile(fileName);
+                if (!project) {
+                    throw Errors.NoProject;
+                }
+                var compilerService = project.compilerService;
+                var position = compilerService.host.lineOffsetToPosition(fileName, line, offset);
+                var occurrences = compilerService.languageService.getOccurrencesAtPosition(fileName, position);
+                if (!occurrences) {
+                    return undefined;
+                }
+                return occurrences.map(function (occurrence) {
+                    var fileName = occurrence.fileName, isWriteAccess = occurrence.isWriteAccess, textSpan = occurrence.textSpan;
+                    var start = compilerService.host.positionToLineOffset(fileName, textSpan.start);
+                    var end = compilerService.host.positionToLineOffset(fileName, ts.textSpanEnd(textSpan));
+                    return {
+                        start: start,
+                        end: end,
+                        file: fileName,
+                        isWriteAccess: isWriteAccess
+                    };
+                });
             };
             Session.prototype.getRenameLocations = function (line, offset, fileName, findInComments, findInStrings) {
                 var file = ts.normalizePath(fileName);
@@ -40089,6 +41085,11 @@ var ts;
                         case CommandNames.NavBar: {
                             var navBarArgs = request.arguments;
                             response = this.getNavigationBarItems(navBarArgs.file);
+                            break;
+                        }
+                        case CommandNames.Occurrences: {
+                            var _a = request.arguments, line = _a.line, offset = _a.offset, fileName = _a.file;
+                            response = this.getOccurrences(line, offset, fileName);
                             break;
                         }
                         default: {
@@ -41420,6 +42421,9 @@ var ts;
                     });
                 }
                 return accum;
+            };
+            LineIndex.prototype.getLength = function () {
+                return this.root.charCount();
             };
             LineIndex.prototype.every = function (f, rangeStart, rangeEnd) {
                 if (!rangeEnd) {
