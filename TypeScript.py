@@ -293,7 +293,8 @@ class EditorClient:
        pref_settings = sublime.load_settings('Preferences.sublime-settings')
        tabSize = pref_settings.get('tab_size', 4)
        indentSize = pref_settings.get('indent_size', tabSize)
-       formatOptions = buildSimpleFormatOptions(tabSize, indentSize)
+       tabsToSpaces = pref_settings.get('translate_tabs_to_spaces', True)
+       formatOptions = buildSimpleFormatOptions(tabSize, indentSize, tabsToSpaces)
        self.service.configure(hostInfo, None, formatOptions)
 
     def reloadRequired(self, view):
@@ -412,8 +413,9 @@ def decrLocsToRegions(locs, amt):
         rr.append(sublime.Region(loc - amt, loc - amt))
     return rr
 
-def buildSimpleFormatOptions(tabSize, indentSize):
-    formatOptions = { "tabSize": tabSize, "indentSize": indentSize }
+def buildSimpleFormatOptions(tabSize, indentSize, tabsToSpaces):
+    formatOptions = { "tabSize": tabSize, "indentSize": indentSize,
+                      "convertTabsToSpaces": tabsToSpaces }
     return formatOptions
 
 def reconfig_file(view):
@@ -422,7 +424,8 @@ def reconfig_file(view):
     view_settings = view.settings()
     tabSize = view_settings.get('tab_size', 4)
     indentSize = view_settings.get('indent_size', tabSize)
-    formatOptions = buildSimpleFormatOptions(tabSize, indentSize)
+    tabsToSpaces = view_settings.get('translate_tabs_to_spaces', True)
+    formatOptions = buildSimpleFormatOptions(tabSize, indentSize, tabsToSpaces)
     cli.service.configure(hostInfo, view.file_name(), formatOptions)
 
 def open_file(view):
@@ -436,9 +439,11 @@ def tab_size_changed(view):
 def setFilePrefs(view):
     settings = view.settings()
     settings.set('use_tab_stops', False)
-    settings.set('translate_tabs_to_spaces', True)
+#    settings.set('translate_tabs_to_spaces', True)
     settings.add_on_change('tab_size',lambda: tab_size_changed(view))
     settings.add_on_change('indent_size',lambda: tab_size_changed(view))
+    settings.add_on_change('translate_tabs_to_spaces',lambda: tab_size_changed(view))
+    reconfig_file(view)
 
 # given a list of regions and a (possibly zero-length) string to insert, 
 # send the appropriate change information to the server
