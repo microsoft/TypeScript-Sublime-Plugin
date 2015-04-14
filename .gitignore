@@ -10,3 +10,7 @@ libs/rpdb/
 libs/ptvsd/
 *.pyc
 TS.log
+*.pyproj
+*.sln
+ptvsd/*
+.vs/*

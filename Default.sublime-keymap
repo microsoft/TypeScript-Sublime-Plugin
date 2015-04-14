@@ -23,6 +23,13 @@
         ]
     },
     {
+        "keys": [ "ctrl+alt+r"],
+        "command": "nav_to",
+        "context": [
+            { "key": "selector", "operator": "equal", "operand": "source.ts" }
+        ]
+    },
+    {
         "keys": [ "ctrl+t", "ctrl+f" ],
         "command": "typescript_format_document",
         "context": [
