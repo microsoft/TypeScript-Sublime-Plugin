@@ -493,7 +493,7 @@ repository:
 
   numeric-literal:
     name: constant.numeric.ts 
-    match: \b((0(x|X)[0-9a-fA-F]+)|([0-9]+(\.[0-9]+)?))\b
+    match: \b(?<=[^$])((0(x|X)[0-9a-fA-F]+)|([0-9]+(\.[0-9]+)?))\b
 
   boolean-literal:
     name: constant.language.boolean.ts
