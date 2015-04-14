@@ -43,7 +43,7 @@ build >= 3070 is recommended, as this provides a popup API used for tool tips.
 Features
 --------
 The below features are available via the keyboard shortcuts shown, or via the 
-Command Pallete (^ means the `ctrl` key on windows):
+Command Pallete (^ means the `ctrl` key):
 
 |Feature           | Shorcut       |
 |------------------|---------------|
@@ -58,6 +58,25 @@ Command Pallete (^ means the `ctrl` key on windows):
 |Go to definition  | ^T ^D (or F12)|
 |Paste and format  | (^ or Super) V|
 |Quick info        | ^T ^Q         |
+
+A 'Signature Overloads Panel' feature helps dislay all the overloads for a
+function.  To display it, select `TypeScript: Overloads panel` from the 
+Command Palette while inside an argument list, or type a `?` character 
+inside the opening parenthesis of an argument list.  If an overload is 
+selected, its parameters will be inserted as snippets inside the argument 
+list, which may be then tabbed through and typed over (press the `<esc>` key 
+to dismiss the panel without inserting the parameter snippets).
+
+If using Sublime Text 3 build 3070 or later (recommended), then you may also
+use the signature help popup feature.  This will appear automatically on starting
+an argument list (after the opening '('), and the below shortcuts will also be
+available:
+
+|Feature            | Shorcut       |
+|-------------------|---------------|
+|Show signature help| Alt+,         |
+|Next signature     | Alt+Down      |
+|Prev signature     | Alt+Up        |
 
 The plugin supports representing a TypeScript project via a 
 [tsconfig.json](https://github.com/Microsoft/TypeScript/pull/1692) file. If a 
