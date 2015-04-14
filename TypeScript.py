@@ -533,13 +533,13 @@ class TypeScriptListener(sublime_plugin.EventListener):
     def on_activated(self, view):
         logger.view_debug(view, "enter on_activated " + str(view.id()))
         if is_special_view(view):
-            if NavToCommand.navto_panel_started:
+            if TypescriptNavToCommand.navto_panel_started:
                 # The current view is the QuickPanel. Set insert_text_finished to false to suppress 
                 # handling in on_modified
-                NavToCommand.insert_text_finished = False
-                view.run_command("insert", {"characters": NavToCommand.input_text})
+                TypescriptNavToCommand.insert_text_finished = False
+                view.run_command("insert", {"characters": TypescriptNavToCommand.input_text})
                 # Re-enable the handling in on_modified
-                NavToCommand.insert_text_finished = True
+                TypescriptNavToCommand.insert_text_finished = True
 
         if not self.about_to_close_all:
             info = self.getInfo(view)
@@ -835,14 +835,14 @@ class TypeScriptListener(sublime_plugin.EventListener):
         # it is a special view
         if is_special_view(view):
             logger.log.debug("enter on_modified: special view. started: %s, insert_text_finished: %s" % 
-                   (NavToCommand.navto_panel_started, NavToCommand.insert_text_finished))
+                   (TypescriptNavToCommand.navto_panel_started, TypescriptNavToCommand.insert_text_finished))
 
-            if NavToCommand.navto_panel_started and NavToCommand.insert_text_finished:
+            if TypescriptNavToCommand.navto_panel_started and TypescriptNavToCommand.insert_text_finished:
                 new_content = view.substr(sublime.Region(0, view.size()))
-                sublime.active_window().run_command("nav_to", {'input_text': new_content})
+                sublime.active_window().run_command("typescript_nav_to", {'input_text': new_content})
 
             logger.log.debug("exit on_modified: special view. started: %s, insert_text_finished: %s" % 
-                   (NavToCommand.navto_panel_started, NavToCommand.insert_text_finished))
+                   (TypescriptNavToCommand.navto_panel_started, TypescriptNavToCommand.insert_text_finished))
         # it is a normal view
         else:
             info = self.getInfo(view)
@@ -1621,7 +1621,8 @@ class TypescriptPasteAndFormat(sublime_plugin.TextCommand):
             formatRange(text, view, rblineStart, ralineEnd)
 
 
-class NavToCommand(sublime_plugin.WindowCommand):
+class TypescriptNavToCommand(sublime_plugin.WindowCommand):
+
     navto_panel_started = False
 
     # indicate if the insert_text command has finished pasting text into the textbox.
@@ -1646,19 +1647,19 @@ class NavToCommand(sublime_plugin.WindowCommand):
     def run(self, input_text = ""):
         logger.log.debug("start running navto with text: %s" % input_text)
 
-        NavToCommand.reset_already = False
+        TypescriptNavToCommand.reset_already = False
         
         self.window.run_command("hide_overlay")
 
-        if NavToCommand.reset_already:
-            NavToCommand.reset_already = False
+        if TypescriptNavToCommand.reset_already:
+            TypescriptNavToCommand.reset_already = False
         else:
             logger.log.debug("reset in run")
-            NavToCommand.reset()
-            NavToCommand.reset_already = True
+            TypescriptNavToCommand.reset()
+            TypescriptNavToCommand.reset_already = True
 
-        NavToCommand.input_text = input_text        
-        NavToCommand.navto_panel_started = True
+        TypescriptNavToCommand.input_text = input_text        
+        TypescriptNavToCommand.navto_panel_started = True
 
         # Text used for querying is not always equal to the input text. This is because the quick 
         # panel will disappear if an empty list is provided, and we want to avoid this. Therefore
@@ -1673,14 +1674,14 @@ class NavToCommand(sublime_plugin.WindowCommand):
         
     def on_done(self, index):
         logger.log.debug("enter on_done. input_text: %s, started: %s, insert_text_finished: %s" % 
-               (NavToCommand.input_text, NavToCommand.navto_panel_started, NavToCommand.insert_text_finished))
+               (TypescriptNavToCommand.input_text, TypescriptNavToCommand.navto_panel_started, TypescriptNavToCommand.insert_text_finished))
         
-        if NavToCommand.reset_already:
-            NavToCommand.reset_already = False
+        if TypescriptNavToCommand.reset_already:
+            TypescriptNavToCommand.reset_already = False
         else:
             logger.log.debug("reset in on_done")
-            NavToCommand.reset()
-            NavToCommand.reset_already = True
+            TypescriptNavToCommand.reset()
+            TypescriptNavToCommand.reset_already = True
 
         if index >= 0:
             item = self.items[index]
@@ -1689,7 +1690,7 @@ class NavToCommand(sublime_plugin.WindowCommand):
             self.window.open_file(file_at_location, sublime.ENCODED_POSITION)
 
         logger.log.debug("exit on_done. input_text: %s, started: %s, insert_text_finished: %s" % 
-               (NavToCommand.input_text, NavToCommand.navto_panel_started, NavToCommand.insert_text_finished))
+               (TypescriptNavToCommand.input_text, TypescriptNavToCommand.navto_panel_started, TypescriptNavToCommand.insert_text_finished))
 
     def format_navto_result(self, item_list):
 
