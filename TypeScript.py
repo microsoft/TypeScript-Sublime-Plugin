@@ -839,7 +839,10 @@ class TypeScriptListener(sublime_plugin.EventListener):
 
             if TypescriptNavToCommand.navto_panel_started and TypescriptNavToCommand.insert_text_finished:
                 new_content = view.substr(sublime.Region(0, view.size()))
-                sublime.active_window().run_command("typescript_nav_to", {'input_text': new_content})
+                sublime.active_window().run_command("hide_overlay")
+                sublime.set_timeout(
+                    lambda:sublime.active_window().run_command("typescript_nav_to", {'input_text': new_content}),
+                    0)
 
             logger.log.debug("exit on_modified: special view. started: %s, insert_text_finished: %s" % 
                    (TypescriptNavToCommand.navto_panel_started, TypescriptNavToCommand.insert_text_finished))
@@ -1628,12 +1631,6 @@ class TypescriptNavToCommand(sublime_plugin.WindowCommand):
     # indicate if the insert_text command has finished pasting text into the textbox.
     # during which time the on_modified callback shouldn't run
     insert_text_finished = False
-
-    # when a new search string comes in, the command state needs to be reset and then
-    # restart. However the reset cannot be reset after the "run" method. Because
-    # the exeuation order of the "run" and "on_done" methods are not fixed, this flag is
-    # set to make sure the state reset to be done before run
-    reset_already = False
     input_text = ""
 
     @classmethod
@@ -1646,18 +1643,8 @@ class TypescriptNavToCommand(sublime_plugin.WindowCommand):
 
     def run(self, input_text = ""):
         logger.log.debug("start running navto with text: %s" % input_text)
-
-        TypescriptNavToCommand.reset_already = False
         
-        self.window.run_command("hide_overlay")
-
-        if TypescriptNavToCommand.reset_already:
-            TypescriptNavToCommand.reset_already = False
-        else:
-            logger.log.debug("reset in run")
-            TypescriptNavToCommand.reset()
-            TypescriptNavToCommand.reset_already = True
-
+        TypescriptNavToCommand.reset()
         TypescriptNavToCommand.input_text = input_text        
         TypescriptNavToCommand.navto_panel_started = True
 
@@ -1673,27 +1660,15 @@ class TypescriptNavToCommand(sublime_plugin.WindowCommand):
         logger.log.debug("end running navto with text: %s" % input_text)
         
     def on_done(self, index):
-        logger.log.debug("enter on_done. input_text: %s, started: %s, insert_text_finished: %s" % 
-               (TypescriptNavToCommand.input_text, TypescriptNavToCommand.navto_panel_started, TypescriptNavToCommand.insert_text_finished))
-        
-        if TypescriptNavToCommand.reset_already:
-            TypescriptNavToCommand.reset_already = False
-        else:
-            logger.log.debug("reset in on_done")
-            TypescriptNavToCommand.reset()
-            TypescriptNavToCommand.reset_already = True
+        TypescriptNavToCommand.reset()
 
         if index >= 0:
             item = self.items[index]
             line, offset = item['start']['line'], item['start']['offset']
             file_at_location = item['file'] + ":%s:%s" % (line, offset)
             self.window.open_file(file_at_location, sublime.ENCODED_POSITION)
-
-        logger.log.debug("exit on_done. input_text: %s, started: %s, insert_text_finished: %s" % 
-               (TypescriptNavToCommand.input_text, TypescriptNavToCommand.navto_panel_started, TypescriptNavToCommand.insert_text_finished))
-
+            
     def format_navto_result(self, item_list):
-
         def get_description_str(i):
             name = i["name"]
             kind = i["kind"]
