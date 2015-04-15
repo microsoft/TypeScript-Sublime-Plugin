@@ -843,7 +843,6 @@ class TypeScriptListener(sublime_plugin.EventListener):
                 self.setOnSelectionIdleTimer(1250)
             else:
                 self.setOnSelectionIdleTimer(50)
-            self.showTopLineStatus(info, view)
             self.mod = False    
             # hide the doc info output panel if it's up
             panelView = sublime.active_window().get_output_panel("doc")
