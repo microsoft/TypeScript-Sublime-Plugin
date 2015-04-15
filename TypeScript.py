@@ -964,7 +964,7 @@ class TypeScriptListener(sublime_plugin.EventListener):
             if rawCompletions:
                 for rawCompletion in rawCompletions:
                     name = rawCompletion.name
-                    completion = (name + "\t" + rawCompletion.kind, name)
+                    completion = (name + "\t" + rawCompletion.kind, name.replace("$", "\\$"))
                     completions.append(completion)
                 self.pendingCompletions = completions
             else:
