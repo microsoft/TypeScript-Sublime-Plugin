@@ -813,8 +813,10 @@ class TypeScriptListener(sublime_plugin.EventListener):
             scope = "entity.name.function"
             if info.hasErrors:
                 scope = "keyword"
-            view.add_regions("errmark", [visStart], scope, "dot",
-                             sublime.HIDDEN | sublime.PERSISTENT)
+                icon = "Packages/" + pluginName + "/icons/triangle-outline-128-red.png" if not cli.ST2() else "dot"
+            else:
+                icon = "Packages/" + pluginName + "/icons/triangle-outline-128-green.png" if not cli.ST2() else "dot"
+            view.add_regions("errmark", [visStart], scope, icon, sublime.HIDDEN | sublime.PERSISTENT)
 
     # called by Sublime when the cursor moves (or when text is selected)
     # called after on_modified (when on_modified is called)
@@ -1380,7 +1382,7 @@ def updateRefLine(refInfo, curLine, view):
     view.erase_regions("curref")
     caretPos = view.text_point(curLine, 0)
     # sublime 2 doesn't support custom icons
-    icon = "Packages/" + pluginName + "/icons/arrow-right3.png" if not cli.ST2() else ""
+    icon = "Packages/" + pluginName + "/icons/arrow-right3.png" if not cli.ST2() else "dot"
     view.add_regions("curref", [sublime.Region(caretPos, caretPos + 1)], 
                      "keyword", icon, 
                      sublime.HIDDEN)
