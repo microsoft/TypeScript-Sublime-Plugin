@@ -795,6 +795,7 @@ class TypeScriptListener(sublime_plugin.EventListener):
                     cli.service.close(view.file_name())
         logger.view_debug(view, "exit on_close")
 
+    # periodic timer function to check whether the view has been scrolled        
     def handlePulse(self):
         view = active_view()
         info = self.getInfo(view)
@@ -802,11 +803,12 @@ class TypeScriptListener(sublime_plugin.EventListener):
             self.showTopLineStatus(info, view)
         sublime.set_timeout(self.handlePulse, 500)
 
+    # show error status in the first visible content line
     def showTopLineStatus(self, info, view):
         if not self.pulse_started:
             self.pulse_started = True
             sublime.set_timeout(self.handlePulse, 500)
-        visStart = view.line(view.visible_region().begin())
+        visStart = view.visible_region().begin()
         if (info.prevVisStart != visStart) or (info.prevHasErrors != info.hasErrors):
             info.prevVisStart = visStart
             info.prevHasErrors = info.hasErrors
@@ -816,7 +818,8 @@ class TypeScriptListener(sublime_plugin.EventListener):
                 icon = "Packages/" + pluginName + "/icons/triangle-outline-128-red.png" if not cli.ST2() else "dot"
             else:
                 icon = "Packages/" + pluginName + "/icons/triangle-outline-128-green.png" if not cli.ST2() else "dot"
-            view.add_regions("errmark", [visStart], scope, icon, sublime.HIDDEN | sublime.PERSISTENT)
+            visRegions = [sublime.Region(visStart, visStart)]
+            view.add_regions("errmark", visRegions, scope, icon, sublime.HIDDEN | sublime.PERSISTENT)
 
     # called by Sublime when the cursor moves (or when text is selected)
     # called after on_modified (when on_modified is called)
