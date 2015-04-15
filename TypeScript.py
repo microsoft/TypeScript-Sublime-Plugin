@@ -787,6 +787,9 @@ class TypeScriptListener(sublime_plugin.EventListener):
                 else:
                     info = self.getInfo(view)
                 if info:
+                    info.settings().clear_on_change('tab_size')
+                    info.settings().clear_on_change('indent_size')
+                    info.settings().clear_on_change('translate_tabs_to_spaces')
                     if (info in self.mruFileList):
                         self.mruFileList.remove(info)
                     # make sure we know the latest state of the file
@@ -808,7 +811,10 @@ class TypeScriptListener(sublime_plugin.EventListener):
         if not self.pulse_started:
             self.pulse_started = True
             sublime.set_timeout(self.handlePulse, 500)
-        visStart = view.visible_region().begin()
+        visRegion = view.visible_region()
+        topLine = view.rowcol(visRegion.begin())[0]
+        bottomLine = view.rowcol(visRegion.end())[0]
+        visStart = view.text_point(topLine+((bottomLine-topLine)/2),0)
         if (info.prevVisStart != visStart) or (info.prevHasErrors != info.hasErrors):
             info.prevVisStart = visStart
             info.prevHasErrors = info.hasErrors
