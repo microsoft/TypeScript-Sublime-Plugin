@@ -42,9 +42,21 @@ class NodeCommClient(CommClient):
         self.__eventq = queue.Queue()
 
         # start node process
-           
         pref_settings = sublime.load_settings('Preferences.sublime-settings')
         nodePath = pref_settings.get('node_path')
+        env_var_list = ["$HOME"]
+        if nodePath:
+            for env_var in env_var_list:
+                if env_var in nodePath:
+                    env_var_no_dollar = env_var.replace("$", "")
+                    if env_var_no_dollar in os.environ:
+                        nodePath = os.path.normpath(
+                            nodePath.replace(env_var, os.environ[env_var_no_dollar])
+                        )
+                    else:
+                        print ("Specified environmental variable {} doesn't exist.".format(env_var))
+                        nodePath = None
+
         if not nodePath:
            if (os.name == "nt"):
               nodePath = "node"
