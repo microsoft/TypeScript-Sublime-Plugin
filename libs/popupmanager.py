@@ -26,6 +26,9 @@ class PopupManager():
         self.signature_index = 0
         self.current_parameter = 0
 
+        # Used to avoid looping
+        self.suppress_onhidden = 0
+
     def queue_signature_popup(self, view):
         cursor = view.rowcol(view.sel()[0].begin())
         point = Location(cursor[0] + 1,  cursor[1] + 1)
@@ -57,11 +60,11 @@ class PopupManager():
         # Needs to be ajusted to 0-based indexing
         arg_span = self.signature_help["applicableSpan"]
         span_start = view.text_point(
-                                    arg_span["start"]["line"] - 1,
-                                    arg_span["start"]["offset"] - 2)
+            arg_span["start"]["line"] - 1,
+            arg_span["start"]["offset"] - 2)
         span_end = view.text_point(
-                                    arg_span["end"]["line"] - 1,
-                                    arg_span["end"]["offset"] - 1)
+            arg_span["end"]["line"] - 1,
+            arg_span["end"]["offset"] - 1)
         arg_region = sublime.Region(span_start, span_end)
         view.add_regions('argSpan', [arg_region],
                          flags=sublime.HIDDEN)
@@ -74,15 +77,36 @@ class PopupManager():
         popup_text = PopupManager.html_template.substitute(popup_parts)
 
         log.debug('Displaying signature popup')
-        if not self.current_view.is_popup_visible():
-            self.current_view.show_popup(
-                popup_text,
-                sublime.COOPERATE_WITH_AUTO_COMPLETE,
-                on_navigate=self.on_navigate,
-                on_hide=self.on_hidden,
-                max_width=800)
-        else:
-            self.current_view.update_popup(popup_text)
+
+        arg_region = self.current_view.get_regions('argSpan')[0]
+        location = arg_region.begin()  # Default to start of arg list
+
+        # If the cursor is not in the first line of the arg list, set the popup
+        # location to first non-whitespace, or EOL, of the current line
+        cursor_point = self.current_view.sel()[0].begin()
+        opening_line = self.current_view.line(arg_region.begin())
+        if(not opening_line.contains(cursor_point)):
+            cursor_line_start = self.current_view.line(cursor_point).begin()
+            location = self.current_view.find(
+                r'\s*?(?=[\S\n\r]|$)',
+                cursor_line_start
+            ).end()
+
+        # Need to hide/redisply in case location moved, but this triggers an
+        # on_hidden loop if we don't ignore the event (which occurs later)
+        # from the hide message
+        if self.current_view.is_popup_visible():
+            self.suppress_onhidden += 1
+            log.debug('+suppress_onhidden: {0}'.format(self.suppress_onhidden))
+            self.current_view.hide_popup()
+
+        self.current_view.show_popup(
+            popup_text,
+            sublime.COOPERATE_WITH_AUTO_COMPLETE,
+            on_navigate=self.on_navigate,
+            on_hide=self.on_hidden,
+            location=location,
+            max_width=800)
 
     def move_next(self):
         if not self.signature_help:
@@ -109,6 +133,13 @@ class PopupManager():
     def on_hidden(self):
         log.debug('In popup on_hidden handler')
         if not self.current_view:
+            log.debug('No current view for popup session. Hiding popup')
+            return
+
+        # Did we hide the popup ourselves in order to redisplay it?
+        if self.suppress_onhidden > 0:
+            self.suppress_onhidden -= 1
+            log.debug('-suppress_onhidden: {0}'.format(self.suppress_onhidden))
             return
 
         cursor_region = self.current_view.sel()[0]
@@ -117,7 +148,7 @@ class PopupManager():
             argSpan = self.current_view.get_regions('argSpan')[0]
             if argSpan.contains(cursor_region):
                 log.debug('Was hidden while in region.  Redisplaying')
-                # Occurs on left/right movement.  Rerun to redisplay popup.
+                # Occurs on cursor movement.  Rerun to redisplay popup.
                 self.display()
         else:
             # Cleanup
@@ -140,7 +171,7 @@ class PopupManager():
 
         def html_escape(str):
             return str.replace('&', '&amp;').replace(
-                                '<', '&lt;').replace('>', "&gt;")
+                '<', '&lt;').replace('>', "&gt;")
 
         def normalize_style(name):
             if name in ['methodName']:
@@ -197,8 +228,9 @@ class PopupManager():
                 self.current_parameter = len(item["parameters"]) - 1
             param = item["parameters"][self.current_parameter]
             activeParam = '<span class="param">{0}:</span> <i>{1}</i>'.format(
-                    param["name"],
-                    param["documentation"][0]["text"] if param["documentation"] else "")
+                param["name"],
+                param["documentation"][0]["text"]
+                if param["documentation"] else "")
         else:
             activeParam = ''
 
