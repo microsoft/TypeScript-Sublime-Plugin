@@ -6,11 +6,11 @@ an enhanced Sublime Text experience when working with TypeScript code.
 
 Installation
 ------------
-If using [Package Control](https://packagecontrol.io/) for Sublime Text, simply 
+If using [Package Control](https://packagecontrol.io/) for Sublime Text, simply
 install the `TypeScript` package.
 
 Alternatively, you can clone the repo directly into
-your Sublime plugin folder.  For example, for Sublime Text 3 on a Mac this would 
+your Sublime plugin folder.  For example, for Sublime Text 3 on a Mac this would
 look something like:
 
 ```
@@ -37,35 +37,35 @@ The plugin has identical behavior across Windows, Mac, and Linux
 platforms.  On Windows with ST2, you may see a "plugin delay" message
 upon startup.  This happens because ST2 does not call "plugin_loaded()",
 so the TypeScript server process is started from within an event handler.
-Where possible, the use of a [Sublime Text 3](http://www.sublimetext.com/3) 
+Where possible, the use of a [Sublime Text 3](http://www.sublimetext.com/3)
 build >= 3070 is recommended, as this provides a popup API used for tool tips.
 
 Features
 --------
-The below features are available via the keyboard shortcuts shown, or via the 
-Command Pallete (^ means the `ctrl` key):
+The below features are available via the keyboard shortcuts shown, or via the
+Command Palette (^ means the `ctrl` key):
 
-|Feature           | Shorcut       |
-|------------------|---------------|
-|Rename            | ^T ^M         |
-|Find references   | ^T ^R         |
-|Next reference    | ^T ^N         |
-|Prev reference    | ^T ^P         |
-|Format document   | ^T ^F         |
-|Format selection  | ^T ^F         |
-|Format line       | ^ ;           |
-|Format braces     | ^ Shift + ]   |
-|Navigate to symbol| ^ Alt + R     |
-|Go to definition  | ^T ^D (or F12)|
-|Paste and format  | (^ or Super) V|
-|Quick info        | ^T ^Q         |
+|Feature           | Shortcut        |
+|------------------|-----------------|
+|Rename            | `^T` `^M`       |
+|Find references   | `^T` `^R`       |
+|Next reference    | `^T` `^N`       |
+|Prev reference    | `^T` `^P`       |
+|Format document   | `^T` `^F`       |
+|Format selection  | `^T` `^F`       |
+|Format line       | `^;`            |
+|Format braces     | `^ Shift ]`     |
+|Navigate to symbol| `^ Alt R`       |
+|Go to definition  | `^T^D` or `F12` |
+|Paste and format  | `^V` or <code>&#8984;V</code> |
+|Quick info        | `^T` `^Q`       |
 
-A 'Signature Overloads Panel' feature helps dislay all the overloads for a
-function.  To display it, select `TypeScript: Overloads panel` from the 
-Command Palette while inside an argument list, or type a `?` character 
-inside the opening parenthesis of an argument list.  If an overload is 
-selected, its parameters will be inserted as snippets inside the argument 
-list, which may be then tabbed through and typed over (press the `<esc>` key 
+A 'Signature Overloads Panel' feature helps display all the overloads for a
+function.  To display it, select `TypeScript: Overloads panel` from the
+Command Palette while inside an argument list, or type a `?` character
+inside the opening parenthesis of an argument list.  If an overload is
+selected, its parameters will be inserted as snippets inside the argument
+list, which may be then tabbed through and typed over (press the `<esc>` key
 to dismiss the panel without inserting the parameter snippets).
 
 If using Sublime Text 3 build 3070 or later (recommended), then you may also
@@ -73,27 +73,27 @@ use the signature help popup feature.  This will appear automatically on startin
 an argument list (after the opening '('), and the below shortcuts will also be
 available:
 
-|Feature            | Shorcut       |
+|Feature            | Shortcut      |
 |-------------------|---------------|
-|Show signature help| Alt+,         |
-|Next signature     | Alt+Down      |
-|Prev signature     | Alt+Up        |
+|Show signature help| `Alt ,`       |
+|Next signature     | `Alt Down`    |
+|Prev signature     | `Alt Up`      |
 
-The plugin supports representing a TypeScript project via a 
-[tsconfig.json](https://github.com/Microsoft/TypeScript/pull/1692) file. If a 
-file of this name is detected in a parent directory, then its settings will be 
+The plugin supports representing a TypeScript project via a
+[tsconfig.json](https://github.com/Microsoft/TypeScript/pull/1692) file. If a
+file of this name is detected in a parent directory, then its settings will be
 used by the plugin.
 
 Issues
 -------
-The plugin is currently an Alpha, and as such there are many enhancements to 
-implement, and many bugs to be fixed.  These are being tracked via the 
-[GitHub Issues](https://github.com/Microsoft/TypeScript-Sublime-Plugin/issues) 
+The plugin is currently an Alpha, and as such there are many enhancements to
+implement, and many bugs to be fixed.  These are being tracked via the
+[GitHub Issues](https://github.com/Microsoft/TypeScript-Sublime-Plugin/issues)
 page for the project, and tagged with the appropriate issue type.
 
-Please do log issues for any bugs you find or enhancements you would like to see 
-(after searching to see if such as issue already exists).  We are excited to 
-get your feedback and work with the community to make this plugin as awesome as 
+Please do log issues for any bugs you find or enhancements you would like to see
+(after searching to see if such as issue already exists).  We are excited to
+get your feedback and work with the community to make this plugin as awesome as
 possible.
 
 Requirements
