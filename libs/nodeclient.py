@@ -42,31 +42,32 @@ class NodeCommClient(CommClient):
         self.__eventq = queue.Queue()
 
         # start node process
-           
         pref_settings = sublime.load_settings('Preferences.sublime-settings')
-        nodePath = pref_settings.get('node_path')
-        if not nodePath:
+        node_path = pref_settings.get('node_path')
+        if node_path:
+            node_path = os.path.expandvars(node_path)
+        if not node_path:
            if (os.name == "nt"):
-              nodePath = "node"
+              node_path = "node"
            else:
-              nodePath = NodeCommClient.__which("node")
-        if not nodePath:
+              node_path = NodeCommClient.__which("node")
+        if not node_path:
            path_list = os.environ["PATH"] + os.pathsep + "/usr/local/bin" + os.pathsep + "$NVM_BIN"
            print("Unable to find executable file for node on path list: " + path_list)
            print("To specify the node executable file name, use the 'node_path' setting")
            self.__serverProc = None
         else:
-           print("Found node executable at " + nodePath)
+           print("Found node executable at " + node_path)
            try: 
               if os.name == "nt":
                  # linux subprocess module does not have STARTUPINFO
                  # so only use it if on Windows
                  si = subprocess.STARTUPINFO()
                  si.dwFlags |= subprocess.SW_HIDE | subprocess.STARTF_USESHOWWINDOW
-                 self.__serverProc = subprocess.Popen([nodePath, scriptPath],
+                 self.__serverProc = subprocess.Popen([node_path, scriptPath],
                                                       stdin=subprocess.PIPE, stdout=subprocess.PIPE,startupinfo=si)
               else:
-                 self.__serverProc = subprocess.Popen([nodePath, scriptPath],
+                 self.__serverProc = subprocess.Popen([node_path, scriptPath],
                                                       stdin=subprocess.PIPE, stdout=subprocess.PIPE)
            except FileNotFoundError:
               self.__serverProc = None
