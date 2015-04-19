@@ -352,6 +352,8 @@ class FileInfo:
         self.changeCountErrReq = -1
         self.lastModChangeCount = cc
         self.modCount = 0
+        self.prevVisStart = -1
+        self.prevHasErrors = False
         
 
 # region that will not change as buffer is modified
@@ -500,6 +502,7 @@ class TypeScriptListener(sublime_plugin.EventListener):
         self.mod = False
         self.about_to_close_all = False
         self.was_paren_pressed = False
+        self.pulse_started = False
 
     def getInfo(self, view):
         info = None
@@ -708,7 +711,6 @@ class TypeScriptListener(sublime_plugin.EventListener):
         if self.about_to_close_all:
             self.about_to_close_all = False
 
-        print("loaded " + view.file_name())
         if clientInfo and clientInfo.renameOnLoad:
             view.run_command('typescript_delayed_rename_file',
                              { "locsName" : clientInfo.renameOnLoad })
@@ -762,6 +764,7 @@ class TypeScriptListener(sublime_plugin.EventListener):
         ev = cli.service.getEvent()
         if ev is not None:
             self.dispatchEvent(ev)
+        self.showTopLineStatus(info, view)
         if info.hasErrors:
             view.run_command('typescript_error_info')
         else:
@@ -784,6 +787,9 @@ class TypeScriptListener(sublime_plugin.EventListener):
                 else:
                     info = self.getInfo(view)
                 if info:
+                    info.settings().clear_on_change('tab_size')
+                    info.settings().clear_on_change('indent_size')
+                    info.settings().clear_on_change('translate_tabs_to_spaces')
                     if (info in self.mruFileList):
                         self.mruFileList.remove(info)
                     # make sure we know the latest state of the file
@@ -791,6 +797,35 @@ class TypeScriptListener(sublime_plugin.EventListener):
                     # notify the server that the file is closed
                     cli.service.close(view.file_name())
         logger.view_debug(view, "exit on_close")
+
+    # periodic timer function to check whether the view has been scrolled        
+    def handlePulse(self):
+        view = active_view()
+        info = self.getInfo(view)
+        if info:
+            self.showTopLineStatus(info, view)
+        sublime.set_timeout(self.handlePulse, 500)
+
+    # show error status in the first visible content line
+    def showTopLineStatus(self, info, view):
+        if not self.pulse_started:
+            self.pulse_started = True
+            sublime.set_timeout(self.handlePulse, 500)
+        visRegion = view.visible_region()
+        topLine = view.rowcol(visRegion.begin())[0]
+        bottomLine = view.rowcol(visRegion.end())[0]
+        visStart = view.text_point(topLine+((bottomLine-topLine)/2),0)
+        if (info.prevVisStart != visStart) or (info.prevHasErrors != info.hasErrors):
+            info.prevVisStart = visStart
+            info.prevHasErrors = info.hasErrors
+            scope = "entity.name.function"
+            if info.hasErrors:
+                scope = "keyword"
+                icon = "Packages/" + pluginName + "/icons/triangle-outline-128-red.png" if not cli.ST2() else "dot"
+            else:
+                icon = "Packages/" + pluginName + "/icons/triangle-outline-128-green.png" if not cli.ST2() else "dot"
+            visRegions = [sublime.Region(visStart, visStart)]
+            view.add_regions("errmark", visRegions, scope, icon, sublime.HIDDEN | sublime.PERSISTENT)
 
     # called by Sublime when the cursor moves (or when text is selected)
     # called after on_modified (when on_modified is called)
@@ -1358,7 +1393,7 @@ def updateRefLine(refInfo, curLine, view):
     view.erase_regions("curref")
     caretPos = view.text_point(curLine, 0)
     # sublime 2 doesn't support custom icons
-    icon = "Packages/" + pluginName + "/icons/arrow-right3.png" if not cli.ST2() else ""
+    icon = "Packages/" + pluginName + "/icons/arrow-right3.png" if not cli.ST2() else "dot"
     view.add_regions("curref", [sublime.Region(caretPos, caretPos + 1)], 
                      "keyword", icon, 
                      sublime.HIDDEN)
