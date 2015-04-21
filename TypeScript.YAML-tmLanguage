@@ -117,10 +117,13 @@ repository:
 
   field-declaration:
     name: meta.field.declaration.ts
-    match: '(?<!\()\s*\b([a-zA-Z_$][\w$]*)\s*(\?\s*)?(?=(=|:))'
-    captures:
+    begin: '(?<!\()\s*\b([a-zA-Z_$][\w$]*)\s*(\?\s*)?(?=(=|:))'
+    beginCaptures:
       '1': { name: variable.ts }
       '2': { name: keyword.operator.ts }
+    end: '(?=\}|;|,)|(?<=\})'
+    patterns:
+    - include: '#expression'
 
   method-declaration:
     name: meta.method.declaration.ts

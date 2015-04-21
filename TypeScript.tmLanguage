@@ -363,7 +363,9 @@
 		</dict>
 		<key>field-declaration</key>
 		<dict>
-			<key>captures</key>
+			<key>begin</key>
+			<string>(?&lt;!\()\s*\b([a-zA-Z_$][\w$]*)\s*(\?\s*)?(?=(=|:))</string>
+			<key>beginCaptures</key>
 			<dict>
 				<key>1</key>
 				<dict>
@@ -376,10 +378,17 @@
 					<string>keyword.operator.ts</string>
 				</dict>
 			</dict>
-			<key>match</key>
-			<string>(?&lt;!\()\s*\b([a-zA-Z_$][\w$]*)\s*(\?\s*)?(?=(=|:))</string>
+			<key>end</key>
+			<string>(?=\}|;|,)|(?&lt;=\})</string>
 			<key>name</key>
 			<string>meta.field.declaration.ts</string>
+			<key>patterns</key>
+			<array>
+				<dict>
+					<key>include</key>
+					<string>#expression</string>
+				</dict>
+			</array>
 		</dict>
 		<key>for-in-simple</key>
 		<dict>
