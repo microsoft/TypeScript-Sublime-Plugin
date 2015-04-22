@@ -694,7 +694,7 @@
 				</dict>
 			</dict>
 			<key>end</key>
-			<string>(?=\}|;|,)|(?&lt;=\})</string>
+			<string>(?=\}|;|,|\n)|(?&lt;=\})</string>
 			<key>name</key>
 			<string>meta.method.declaration.ts</string>
 			<key>patterns</key>
