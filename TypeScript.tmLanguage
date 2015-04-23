@@ -1299,6 +1299,10 @@
 				</dict>
 				<dict>
 					<key>include</key>
+					<string>#type-tuple</string>
+				</dict>
+				<dict>
+					<key>include</key>
 					<string>#object-type</string>
 				</dict>
 				<dict>
@@ -1316,7 +1320,7 @@
 			<key>begin</key>
 			<string>:</string>
 			<key>end</key>
-			<string>(?=$|[,);\}\[\]]|//)|(?==[^&gt;])|(?&lt;=\}|[a-zA-Z_$]|&gt;)\s*(?=\{)</string>
+			<string>(?=$|[,);\}\]]|//)|(?==[^&gt;])|(?&lt;=\}|[a-zA-Z_$]|&gt;)\s*(?=\{)</string>
 			<key>name</key>
 			<string>meta.type.annotation.ts</string>
 			<key>patterns</key>
@@ -1409,6 +1413,42 @@
 				</dict>
 			</array>
 		</dict>
+		<key>type-tuple</key>
+		<dict>
+			<key>begin</key>
+			<string>\[</string>
+			<key>beginCaptures</key>
+			<dict>
+				<key>0</key>
+				<dict>
+					<key>name</key>
+					<string>meta.brace.square.ts</string>
+				</dict>
+			</dict>
+			<key>end</key>
+			<string>\]</string>
+			<key>endCaptures</key>
+			<dict>
+				<key>0</key>
+				<dict>
+					<key>name</key>
+					<string>meta.brace.square.ts</string>
+				</dict>
+			</dict>
+			<key>name</key>
+			<string>meta.type.tuple.ts</string>
+			<key>patterns</key>
+			<array>
+				<dict>
+					<key>include</key>
+					<string>#type</string>
+				</dict>
+				<dict>
+					<key>include</key>
+					<string>#comment</string>
+				</dict>
+			</array>
+		</dict>
 		<key>type-union</key>
 		<dict>
 			<key>begin</key>
@@ -1422,15 +1462,7 @@
 				</dict>
 			</dict>
 			<key>end</key>
-			<string>([a-zA-Z_$][.\w$]*)</string>
-			<key>endCaptures</key>
-			<dict>
-				<key>1</key>
-				<dict>
-					<key>name</key>
-					<string>storage.type.ts</string>
-				</dict>
-			</dict>
+			<string>(?=$|[,);\}\]]|//)|(?==[^&gt;])|(?&lt;=\}|[a-zA-Z_$]|&gt;)\s*(?=\{)</string>
 			<key>name</key>
 			<string>meta.type.union.ts</string>
 			<key>patterns</key>
@@ -1438,6 +1470,10 @@
 				<dict>
 					<key>include</key>
 					<string>#comment</string>
+				</dict>
+				<dict>
+					<key>include</key>
+					<string>#type</string>
 				</dict>
 			</array>
 		</dict>

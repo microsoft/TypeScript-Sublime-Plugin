@@ -253,10 +253,10 @@ repository:
   type-annotation:
     name: meta.type.annotation.ts
     begin: ":"
-    end: (?=$|[,);\}\[\]]|//)|(?==[^>])|(?<=\}|[a-zA-Z_$]|>)\s*(?=\{)
+    end: (?=$|[,);\}\]]|//)|(?==[^>])|(?<=\}|[a-zA-Z_$]|>)\s*(?=\{)
     patterns:
-      - include: '#type'
-      - include: '#comment'
+    - include: '#type'
+    - include: '#comment'
 
   type:
     name: meta.type.ts
@@ -264,6 +264,7 @@ repository:
     - include: '#type-name'
     - include: '#type-parameters'
     - include: '#type-union'
+    - include: '#type-tuple'
     - include: '#object-type'
     - include: '#function-type-parameters'
     - include: '#function-type-return-type'
@@ -282,10 +283,21 @@ repository:
     begin: '(\|)'
     beginCaptures:
       '1': { name: keyword.operator.ts }
-    end: '([a-zA-Z_$][.\w$]*)'
-    endCaptures:
-      '1': { name: storage.type.ts }
+    end: '(?=$|[,);\}\]]|//)|(?==[^>])|(?<=\}|[a-zA-Z_$]|>)\s*(?=\{)'
     patterns:
+    - include: '#comment'
+    - include: '#type'
+
+  type-tuple:
+    name: meta.type.tuple.ts
+    begin: \[
+    beginCaptures:
+      '0': { name: meta.brace.square.ts }
+    end: \]
+    endCaptures:
+      '0': { name: meta.brace.square.ts }
+    patterns:
+    - include: '#type'
     - include: '#comment'
 
   type-name:
