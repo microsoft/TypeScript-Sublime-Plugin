@@ -261,13 +261,42 @@ repository:
   type:
     name: meta.type.ts
     patterns:
+    - include: '#type-primitive'
     - include: '#type-name'
     - include: '#type-parameters'
     - include: '#type-union'
     - include: '#type-tuple'
     - include: '#object-type'
+    - include: '#type-operator'
+    - include: '#paren-type-or-function-type-parameters'
     - include: '#function-type-parameters'
     - include: '#function-type-return-type'
+
+  type-primitive:
+    name: storage.type.ts
+    match: '\b(string|number|boolean|symbol|any|void)\b'
+
+  paren-type-or-function-type-parameters:
+    name: meta.type.paren.cover.ts
+    begin: '\('
+    end: '\)'
+    patterns:
+    - include: '#comment'
+    - include: '#type'
+    - include: '#type-or-function-type-parameter'
+
+  type-or-function-type-parameter:
+    name: meta.type.paren.cover.ts
+    match: '(\.\.\.)?\s*([a-zA-Z_$][\w$]*)\s*(\?)?\s*(:)?\s*(?=,|\)\s*=>)'
+    captures:
+      '1': { name: keyword.operator.ts }
+      '2': { name: meta.function-parameters.ts }
+      '3': { name: keyword.operator.ts }
+      '4': { name: keyword.operator.ts }
+
+  type-operator:
+    name: keyword.operator.type.ts
+    match: '[\.;]'
 
   function-type-return-type:
     name: meta.function.type.return.ts
@@ -301,7 +330,7 @@ repository:
     - include: '#comment'
 
   type-name:
-    name: storage.type.ts
+    name: entity.name.type.ts
     match: '[a-zA-Z_$][.\w$]*'
 
   type-parameters:
@@ -355,18 +384,32 @@ repository:
     captures:
       '1': { name: storage.type.ts }
       '3': { name: keyword.operator.ts }
+      
   cast:
     name: cast.expr.ts
-    match: '<\s*([a-zA-Z_$][.\w$]*)\s*(?:<([a-zA-Z_$][.\w$]*)>)?\s*(\[\])*\s*>'
-    captures:
-       '1': { name: storage.type.ts }
-       '2': { name: storage.type.ts }
+    # To differentiate a cast vs a relational <, this regexp tries to use the surrounding context
+    # If < is preceeded by 'return', 'throw', 'yield' its most likely a type assertion
+    # An '=', '(', ',', ':', or '>' character followed by '<' is likely a type assertion, as otherwise its a syntax error
+    # '<=' and '<<=' are definately not type assertions, as they are assignment operators.
+    begin: '(?:(?<=return|throw|yield|[=(,:>]))\s*(<)(?!<?\=)'
+    beginCaptures:
+      '1': { name: keyword.operator.type.ts }
+    end: '>'
+    endCaptures:
+      '0': { name: keyword.operator.type.ts }
+    patterns:
+    - include: '#type'
+
   new-expr:
     name: new.expr.ts
-    match: '\b(new)\b\s*([a-zA-Z_$][.\w$]*)'
-    captures:
-       '1': { name: keyword.operator.ts }
-       '2': { name: storage.type.ts }
+    begin: '\b(new)\b'
+    beginCaptures:
+      '1': { name: keyword.operator.ts }
+    # new-expr ends just before any type or call arguments. Type arguments will be picked up by #cast.
+    end: '(?=[<(;]|$)'
+    patterns:
+    - include: '#type'
+
   object-member:
     name: meta.object.member.ts
     begin: '[a-zA-Z_$][\w$]*\s*:'
@@ -379,19 +422,19 @@ repository:
     match: =>|\b(delete|export|import|in|instanceof|module|new|typeof|void)\b
 
   arithmetic-operator:
-    name: keyword.operator.ts
+    name: keyword.operator.arithmetic.ts
     match: \*|/|\-\-|\-|\+\+|\+|%
 
   relational-operator:
-    name: keyword.operator.ts
+    name: keyword.operator.comparison.ts
     match: ===|==|=|!=|!==|<=|>=|<>|<|>
 
   assignment-operator:
-    name: keyword.operator.ts
+    name: keyword.operator.assignment.ts
     match: <<=|>>=|>>>=|\*=|(?<!\()/=|%=|\+=|\-=|&=|\^=
 
   logic-operator:
-    name: keyword.operator.ts
+    name: keyword.operator.arithmetic.ts
     match: \!|&|~|\||&&|\|\|
 
   storage-keyword:

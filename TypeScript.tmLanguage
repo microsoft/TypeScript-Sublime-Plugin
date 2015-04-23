@@ -29,7 +29,7 @@
 			<key>match</key>
 			<string>\*|/|\-\-|\-|\+\+|\+|%</string>
 			<key>name</key>
-			<string>keyword.operator.ts</string>
+			<string>keyword.operator.arithmetic.ts</string>
 		</dict>
 		<key>array-literal</key>
 		<dict>
@@ -68,7 +68,7 @@
 			<key>match</key>
 			<string>&lt;&lt;=|&gt;&gt;=|&gt;&gt;&gt;=|\*=|(?&lt;!\()/=|%=|\+=|\-=|&amp;=|\^=</string>
 			<key>name</key>
-			<string>keyword.operator.ts</string>
+			<string>keyword.operator.assignment.ts</string>
 		</dict>
 		<key>block</key>
 		<dict>
@@ -115,23 +115,35 @@
 		</dict>
 		<key>cast</key>
 		<dict>
-			<key>captures</key>
+			<key>begin</key>
+			<string>(?:(?&lt;=return|throw|yield|[=(,:&gt;]))\s*(&lt;)(?!&lt;?\=)</string>
+			<key>beginCaptures</key>
 			<dict>
 				<key>1</key>
 				<dict>
 					<key>name</key>
-					<string>storage.type.ts</string>
-				</dict>
-				<key>2</key>
-				<dict>
-					<key>name</key>
-					<string>storage.type.ts</string>
+					<string>keyword.operator.type.ts</string>
 				</dict>
 			</dict>
-			<key>match</key>
-			<string>&lt;\s*([a-zA-Z_$][.\w$]*)\s*(?:&lt;([a-zA-Z_$][.\w$]*)&gt;)?\s*(\[\])*\s*&gt;</string>
+			<key>end</key>
+			<string>&gt;</string>
+			<key>endCaptures</key>
+			<dict>
+				<key>0</key>
+				<dict>
+					<key>name</key>
+					<string>keyword.operator.type.ts</string>
+				</dict>
+			</dict>
 			<key>name</key>
 			<string>cast.expr.ts</string>
+			<key>patterns</key>
+			<array>
+				<dict>
+					<key>include</key>
+					<string>#type</string>
+				</dict>
+			</array>
 		</dict>
 		<key>comment</key>
 		<dict>
@@ -688,7 +700,7 @@
 			<key>match</key>
 			<string>\!|&amp;|~|\||&amp;&amp;|\|\|</string>
 			<key>name</key>
-			<string>keyword.operator.ts</string>
+			<string>keyword.operator.arithmetic.ts</string>
 		</dict>
 		<key>method-declaration</key>
 		<dict>
@@ -747,23 +759,27 @@
 		</dict>
 		<key>new-expr</key>
 		<dict>
-			<key>captures</key>
+			<key>begin</key>
+			<string>\b(new)\b</string>
+			<key>beginCaptures</key>
 			<dict>
 				<key>1</key>
 				<dict>
 					<key>name</key>
 					<string>keyword.operator.ts</string>
 				</dict>
-				<key>2</key>
-				<dict>
-					<key>name</key>
-					<string>storage.type.ts</string>
-				</dict>
 			</dict>
-			<key>match</key>
-			<string>\b(new)\b\s*([a-zA-Z_$][.\w$]*)</string>
+			<key>end</key>
+			<string>(?=[&lt;(;]|$)</string>
 			<key>name</key>
 			<string>new.expr.ts</string>
+			<key>patterns</key>
+			<array>
+				<dict>
+					<key>include</key>
+					<string>#type</string>
+				</dict>
+			</array>
 		</dict>
 		<key>null-literal</key>
 		<dict>
@@ -1041,6 +1057,30 @@
 				</dict>
 			</array>
 		</dict>
+		<key>paren-type-or-function-type-parameters</key>
+		<dict>
+			<key>begin</key>
+			<string>\(</string>
+			<key>end</key>
+			<string>\)</string>
+			<key>name</key>
+			<string>meta.type.paren.cover.ts</string>
+			<key>patterns</key>
+			<array>
+				<dict>
+					<key>include</key>
+					<string>#comment</string>
+				</dict>
+				<dict>
+					<key>include</key>
+					<string>#type</string>
+				</dict>
+				<dict>
+					<key>include</key>
+					<string>#type-or-function-type-parameter</string>
+				</dict>
+			</array>
+		</dict>
 		<key>property-accessor</key>
 		<dict>
 			<key>match</key>
@@ -1109,7 +1149,7 @@
 			<key>match</key>
 			<string>===|==|=|!=|!==|&lt;=|&gt;=|&lt;&gt;|&lt;|&gt;</string>
 			<key>name</key>
-			<string>keyword.operator.ts</string>
+			<string>keyword.operator.comparison.ts</string>
 		</dict>
 		<key>return-type</key>
 		<dict>
@@ -1287,6 +1327,10 @@
 			<array>
 				<dict>
 					<key>include</key>
+					<string>#type-primitive</string>
+				</dict>
+				<dict>
+					<key>include</key>
 					<string>#type-name</string>
 				</dict>
 				<dict>
@@ -1304,6 +1348,14 @@
 				<dict>
 					<key>include</key>
 					<string>#object-type</string>
+				</dict>
+				<dict>
+					<key>include</key>
+					<string>#type-operator</string>
+				</dict>
+				<dict>
+					<key>include</key>
+					<string>#paren-type-or-function-type-parameters</string>
 				</dict>
 				<dict>
 					<key>include</key>
@@ -1369,7 +1421,44 @@
 			<key>match</key>
 			<string>[a-zA-Z_$][.\w$]*</string>
 			<key>name</key>
-			<string>storage.type.ts</string>
+			<string>entity.name.type.ts</string>
+		</dict>
+		<key>type-operator</key>
+		<dict>
+			<key>match</key>
+			<string>[\.;]</string>
+			<key>name</key>
+			<string>keyword.operator.type.ts</string>
+		</dict>
+		<key>type-or-function-type-parameter</key>
+		<dict>
+			<key>captures</key>
+			<dict>
+				<key>1</key>
+				<dict>
+					<key>name</key>
+					<string>keyword.operator.ts</string>
+				</dict>
+				<key>2</key>
+				<dict>
+					<key>name</key>
+					<string>meta.function-parameters.ts</string>
+				</dict>
+				<key>3</key>
+				<dict>
+					<key>name</key>
+					<string>keyword.operator.ts</string>
+				</dict>
+				<key>4</key>
+				<dict>
+					<key>name</key>
+					<string>keyword.operator.ts</string>
+				</dict>
+			</dict>
+			<key>match</key>
+			<string>(\.\.\.)?\s*([a-zA-Z_$][\w$]*)\s*(\?)?\s*(:)?\s*(?=,|\)\s*=&gt;)</string>
+			<key>name</key>
+			<string>meta.type.paren.cover.ts</string>
 		</dict>
 		<key>type-parameters</key>
 		<dict>
@@ -1412,6 +1501,13 @@
 					<string>#type</string>
 				</dict>
 			</array>
+		</dict>
+		<key>type-primitive</key>
+		<dict>
+			<key>match</key>
+			<string>\b(string|number|boolean|symbol|any|void)\b</string>
+			<key>name</key>
+			<string>storage.type.ts</string>
 		</dict>
 		<key>type-tuple</key>
 		<dict>
