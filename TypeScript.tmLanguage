@@ -435,6 +435,10 @@
 			<array>
 				<dict>
 					<key>include</key>
+					<string>#function-overload-declaration</string>
+				</dict>
+				<dict>
+					<key>include</key>
 					<string>#comment</string>
 				</dict>
 				<dict>
@@ -454,6 +458,26 @@
 					<string>#decl-block</string>
 				</dict>
 			</array>
+		</dict>
+		<key>function-overload-declaration</key>
+		<dict>
+			<key>captures</key>
+			<dict>
+				<key>1</key>
+				<dict>
+					<key>name</key>
+					<string>storage.type.function.ts</string>
+				</dict>
+				<key>2</key>
+				<dict>
+					<key>name</key>
+					<string>entity.name.function.ts</string>
+				</dict>
+			</dict>
+			<key>match</key>
+			<string>\b(function)\b(?:\s+([a-zA-Z_$][\w$]*))?\s*</string>
+			<key>name</key>
+			<string>meta.function.overload.ts</string>
 		</dict>
 		<key>function-parameters</key>
 		<dict>
