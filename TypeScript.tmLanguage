@@ -592,7 +592,7 @@
 				</dict>
 			</dict>
 			<key>end</key>
-			<string>(?=[,\)\{=;]|//)</string>
+			<string>(?=[,\)\{=;]|//|$)</string>
 			<key>name</key>
 			<string>meta.function.type.return.ts</string>
 			<key>patterns</key>

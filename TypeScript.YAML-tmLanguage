@@ -302,7 +302,7 @@ repository:
     begin: '=>'
     beginCaptures:
       '0': { name: keyword.operator.ts }
-    end: (?=[,\)\{=;]|//)
+    end: (?=[,\)\{=;]|//|$)
     patterns:
     - include: '#type'
 
