@@ -1529,6 +1529,7 @@ class TypescriptFormatOnKey(sublime_plugin.TextCommand):
         checkUpdateView(self.view)
         loc = self.view.sel()[0].begin()
         if insertKey:
+            active_view().run_command('hide_auto_complete')
             insertText(self.view, text, loc, key)
         if (not is_typescript(self.view)):
             print("To run this command, please first assign a file name to the view")
