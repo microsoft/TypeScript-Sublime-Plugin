@@ -459,7 +459,7 @@
 				</dict>
 				<dict>
 					<key>include</key>
-					<string>#function-parameters</string>
+					<string>#function-type-parameters</string>
 				</dict>
 				<dict>
 					<key>include</key>
@@ -491,7 +491,7 @@
 			<key>name</key>
 			<string>meta.function.overload.ts</string>
 		</dict>
-		<key>function-parameters</key>
+		<key>function-type-parameters</key>
 		<dict>
 			<key>begin</key>
 			<string>\(</string>
@@ -514,51 +514,7 @@
 				</dict>
 			</dict>
 			<key>name</key>
-			<string>meta.function-parameters.ts</string>
-			<key>patterns</key>
-			<array>
-				<dict>
-					<key>include</key>
-					<string>#comment</string>
-				</dict>
-				<dict>
-					<key>include</key>
-					<string>#parameter-name</string>
-				</dict>
-				<dict>
-					<key>include</key>
-					<string>#type-annotation</string>
-				</dict>
-				<dict>
-					<key>include</key>
-					<string>#variable-initializer</string>
-				</dict>
-			</array>
-		</dict>
-		<key>function-type-parameters</key>
-		<dict>
-			<key>begin</key>
-			<string>(\()</string>
-			<key>beginCaptures</key>
-			<dict>
-				<key>1</key>
-				<dict>
-					<key>name</key>
-					<string>meta.brace.round.ts</string>
-				</dict>
-			</dict>
-			<key>end</key>
-			<string>(\))</string>
-			<key>endCaptures</key>
-			<dict>
-				<key>1</key>
-				<dict>
-					<key>name</key>
-					<string>meta.brace.round.ts</string>
-				</dict>
-			</dict>
-			<key>name</key>
-			<string>meta.function.type.ts</string>
+			<string>meta.function.type.parameter.ts</string>
 			<key>patterns</key>
 			<array>
 				<dict>
@@ -745,7 +701,7 @@
 				</dict>
 				<dict>
 					<key>include</key>
-					<string>#function-parameters</string>
+					<string>#function-type-parameters</string>
 				</dict>
 				<dict>
 					<key>include</key>
@@ -1060,7 +1016,15 @@
 		<key>paren-type-or-function-type-parameters</key>
 		<dict>
 			<key>begin</key>
-			<string>\(</string>
+			<string>(?:\b(new)\b)?\s*\(</string>
+			<key>beginCaptures</key>
+			<dict>
+				<key>1</key>
+				<dict>
+					<key>name</key>
+					<string>keyword.operator.ts</string>
+				</dict>
+			</dict>
 			<key>end</key>
 			<string>\)</string>
 			<key>name</key>
@@ -1077,7 +1041,7 @@
 				</dict>
 				<dict>
 					<key>include</key>
-					<string>#type-or-function-type-parameter</string>
+					<string>#function-type-parameters</string>
 				</dict>
 			</array>
 		</dict>
@@ -1154,7 +1118,7 @@
 		<key>return-type</key>
 		<dict>
 			<key>begin</key>
-			<string>(?&lt;=\)):</string>
+			<string>(?&lt;=\))\s*:</string>
 			<key>end</key>
 			<string>(?=$)|(?=\{|;|//)</string>
 			<key>name</key>
@@ -1331,10 +1295,6 @@
 				</dict>
 				<dict>
 					<key>include</key>
-					<string>#type-name</string>
-				</dict>
-				<dict>
-					<key>include</key>
 					<string>#type-parameters</string>
 				</dict>
 				<dict>
@@ -1355,11 +1315,11 @@
 				</dict>
 				<dict>
 					<key>include</key>
-					<string>#function-type-parameters</string>
+					<string>#function-type-return-type</string>
 				</dict>
 				<dict>
 					<key>include</key>
-					<string>#function-type-return-type</string>
+					<string>#type-name</string>
 				</dict>
 			</array>
 		</dict>
@@ -1425,36 +1385,6 @@
 			<string>[.|]</string>
 			<key>name</key>
 			<string>keyword.operator.type.ts</string>
-		</dict>
-		<key>type-or-function-type-parameter</key>
-		<dict>
-			<key>captures</key>
-			<dict>
-				<key>1</key>
-				<dict>
-					<key>name</key>
-					<string>keyword.operator.ts</string>
-				</dict>
-				<key>2</key>
-				<dict>
-					<key>name</key>
-					<string>meta.function-parameters.ts</string>
-				</dict>
-				<key>3</key>
-				<dict>
-					<key>name</key>
-					<string>keyword.operator.ts</string>
-				</dict>
-				<key>4</key>
-				<dict>
-					<key>name</key>
-					<string>keyword.operator.ts</string>
-				</dict>
-			</dict>
-			<key>match</key>
-			<string>(\.\.\.)?\s*([a-zA-Z_$][\w$]*)\s*(\?)?\s*(:)?\s*(?=,|\)\s*=&gt;)</string>
-			<key>name</key>
-			<string>meta.type.paren.cover.ts</string>
 		</dict>
 		<key>type-parameters</key>
 		<dict>

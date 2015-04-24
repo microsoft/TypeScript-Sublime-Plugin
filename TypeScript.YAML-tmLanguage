@@ -137,7 +137,7 @@ repository:
     patterns:
     - include: '#comment'
     - include: '#type-parameters'
-    - include: '#function-parameters'
+    - include: '#function-type-parameters'
     - include: '#type-annotation'
     - include: '#decl-block'
 
@@ -172,7 +172,7 @@ repository:
     - include: '#function-overload-declaration'
     - include: '#comment'
     - include: '#type-parameters'
-    - include: '#function-parameters'
+    - include: '#function-type-parameters'
     - include: '#return-type'
     - include: '#decl-block'
 
@@ -206,34 +206,6 @@ repository:
     patterns:
     - include: '#expression'
 
-  function-parameters:
-    name: meta.function-parameters.ts
-    begin: \(
-    beginCaptures:
-      '0': { name: meta.brace.round.ts }
-    end: \)
-    endCaptures:
-      '0': { name: meta.brace.round.ts }
-    patterns:
-      - include: '#comment'
-      - include: '#parameter-name'
-      - include: '#type-annotation'
-      - include: '#variable-initializer'
-
-  function-type-parameters:
-    name: meta.function.type.ts
-    begin: (\()
-    beginCaptures:
-      '1': { name: meta.brace.round.ts }
-    end: (\))
-    endCaptures:
-      '1': { name: meta.brace.round.ts }
-    patterns:
-    - include: '#comment'
-    - include: '#parameter-name'
-    - include: '#type-annotation'
-    - include: '#variable-initializer'
-
   parameter-name:
     name: parameter.name.ts
     match: '(?:\s*\b(public|private)\b\s+)?(\.\.\.)?\s*([a-zA-Z_$][\w$]*)\s*(\??)'
@@ -245,7 +217,7 @@ repository:
 
   return-type:
     name: meta.return.type.ts
-    begin: '(?<=\)):'
+    begin: '(?<=\))\s*:'
     end: (?=$)|(?=\{|;|//)
     patterns:
     - include: '#type'
@@ -262,37 +234,47 @@ repository:
     name: meta.type.ts
     patterns:
     - include: '#type-primitive'
-    - include: '#type-name'
     - include: '#type-parameters'
     - include: '#type-tuple'
     - include: '#object-type'
     - include: '#type-operator'
     - include: '#paren-type-or-function-type-parameters'
-    - include: '#function-type-parameters'
     - include: '#function-type-return-type'
+    - include: '#type-name'
+
+  function-type-parameters:
+    name: meta.function.type.parameter.ts
+    begin: \(
+    beginCaptures:
+      '0': { name: meta.brace.round.ts }
+    end: \)
+    endCaptures:
+      '0': { name: meta.brace.round.ts }
+    patterns:
+    - include: '#comment'
+    - include: '#parameter-name'
+    - include: '#type-annotation'
+    - include: '#variable-initializer'
 
   type-primitive:
     name: storage.type.ts
     match: '\b(string|number|boolean|symbol|any|void)\b'
 
+  # Parenthesis can contain either types and function parameters
+  # (number | string) or (param: number, param2: string)
+  # and it can be nested, for example
+  # (number | (param: number, param2: string) => void)
   paren-type-or-function-type-parameters:
     name: meta.type.paren.cover.ts
-    begin: '\('
+    begin: '(?:\b(new)\b)?\s*\('
+    beginCaptures:
+      '1': { name: keyword.operator.ts }
     end: '\)'
     patterns:
     - include: '#comment'
     - include: '#type'
-    - include: '#type-or-function-type-parameter'
-
-  type-or-function-type-parameter:
-    name: meta.type.paren.cover.ts
-    match: '(\.\.\.)?\s*([a-zA-Z_$][\w$]*)\s*(\?)?\s*(:)?\s*(?=,|\)\s*=>)'
-    captures:
-      '1': { name: keyword.operator.ts }
-      '2': { name: meta.function-parameters.ts }
-      '3': { name: keyword.operator.ts }
-      '4': { name: keyword.operator.ts }
-
+    - include: '#function-type-parameters'
+    
   type-operator:
     name: keyword.operator.type.ts
     match: '[.|]'
