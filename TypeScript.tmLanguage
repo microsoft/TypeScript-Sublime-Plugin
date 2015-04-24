@@ -1339,10 +1339,6 @@
 				</dict>
 				<dict>
 					<key>include</key>
-					<string>#type-union</string>
-				</dict>
-				<dict>
-					<key>include</key>
 					<string>#type-tuple</string>
 				</dict>
 				<dict>
@@ -1426,7 +1422,7 @@
 		<key>type-operator</key>
 		<dict>
 			<key>match</key>
-			<string>[\.;]</string>
+			<string>[.|]</string>
 			<key>name</key>
 			<string>keyword.operator.type.ts</string>
 		</dict>
@@ -1542,34 +1538,6 @@
 				<dict>
 					<key>include</key>
 					<string>#comment</string>
-				</dict>
-			</array>
-		</dict>
-		<key>type-union</key>
-		<dict>
-			<key>begin</key>
-			<string>(\|)</string>
-			<key>beginCaptures</key>
-			<dict>
-				<key>1</key>
-				<dict>
-					<key>name</key>
-					<string>keyword.operator.ts</string>
-				</dict>
-			</dict>
-			<key>end</key>
-			<string>(?=$|[,);\}\]]|//)|(?==[^&gt;])|(?&lt;=\}|[a-zA-Z_$]|&gt;)\s*(?=\{)</string>
-			<key>name</key>
-			<string>meta.type.union.ts</string>
-			<key>patterns</key>
-			<array>
-				<dict>
-					<key>include</key>
-					<string>#comment</string>
-				</dict>
-				<dict>
-					<key>include</key>
-					<string>#type</string>
 				</dict>
 			</array>
 		</dict>

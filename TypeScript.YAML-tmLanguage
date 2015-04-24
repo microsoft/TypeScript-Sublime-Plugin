@@ -264,7 +264,6 @@ repository:
     - include: '#type-primitive'
     - include: '#type-name'
     - include: '#type-parameters'
-    - include: '#type-union'
     - include: '#type-tuple'
     - include: '#object-type'
     - include: '#type-operator'
@@ -296,7 +295,7 @@ repository:
 
   type-operator:
     name: keyword.operator.type.ts
-    match: '[\.;]'
+    match: '[.|]'
 
   function-type-return-type:
     name: meta.function.type.return.ts
@@ -305,16 +304,6 @@ repository:
       '0': { name: keyword.operator.ts }
     end: (?=[,\)\{=;]|//)
     patterns:
-    - include: '#type'
-
-  type-union:
-    name: meta.type.union.ts
-    begin: '(\|)'
-    beginCaptures:
-      '1': { name: keyword.operator.ts }
-    end: '(?=$|[,);\}\]]|//)|(?==[^>])|(?<=\}|[a-zA-Z_$]|>)\s*(?=\{)'
-    patterns:
-    - include: '#comment'
     - include: '#type'
 
   type-tuple:
