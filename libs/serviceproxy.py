@@ -17,156 +17,168 @@ class ServiceProxy:
         return temp
 
     def exit(self):
-        req = servicedefs.ExitRequest(self.incrSeq())
-        jsonStr = jsonhelpers.encode(req)
-        self.__comm.postCmd(jsonStr)
+        req_dict = self.create_req_dict("exit")
+        json_str = jsonhelpers.encode(req_dict)
+        self.__comm.postCmd(json_str)
         
     def configure(self, hostInfo="Sublime Text", file=None, formatOptions=None):
-        req = servicedefs.ConfigureRequest(self.incrSeq(), 
-            servicedefs.ConfigureRequestArgs(hostInfo, file, formatOptions))
-        jsonStr = jsonhelpers.encode(req)
-        responseDict = self.__comm.sendCmdSync(jsonStr, req.seq)
-        return jsonhelpers.fromDict(servicedefs.ConfigureResponse, responseDict)
+        args = {"hostInfo": hostInfo, "formatOptions": formatOptions, "file": file}
+        req_dict = self.create_req_dict("configure", args)
+        json_str = jsonhelpers.encode(req_dict)
+        response_dict = self.__comm.sendCmdSync(json_str, req_dict["seq"])
+        return response_dict
 
-    def change(self, path, location=Location(1, 1), endLocation=Location(1,1), insertString=""):
-        req = servicedefs.ChangeRequest(self.incrSeq(),servicedefs.ChangeRequestArgs(path, location.line, location.offset,
-                                                                                     endLocation.line, endLocation.offset,
-                                                                                     insertString))
-        jsonStr = jsonhelpers.encode(req)
-        self.__comm.postCmd(jsonStr)
+    def change(self, path, begin_location=Location(1, 1), end_location=Location(1,1), insertString=""):
+        args = {
+            "file": path, 
+            "line": begin_location.line, 
+            "offset": begin_location.offset, 
+            "endLine": end_location.line, 
+            "endOffset": end_location.offset,
+            "insertString": insertString
+            }
+        req_dict = self.create_req_dict("change", args)
+        json_str = jsonhelpers.encode(req_dict)
+        self.__comm.postCmd(json_str)
 
-    def completions(self, path, location=Location(1, 1), prefix="", onCompleted=None):
-        req = servicedefs.CompletionsRequest(self.incrSeq(),
-                                             servicedefs.CompletionsRequestArgs(path, location.line, location.offset, prefix))
-        jsonStr = jsonhelpers.encode(req)
-        def onCompletedJson(responseDict):
-            obj = jsonhelpers.fromDict(servicedefs.CompletionsResponse, responseDict)
-            onCompleted(obj)
-        self.__comm.sendCmd(onCompletedJson, jsonStr, req.seq)
+    def completions(self, path, location=Location(1, 1), prefix="", on_completed=None):
+        args = {"file": path, "line": location.line, "offset": location.offset, "prefix": prefix}
+        req_dict = self.create_req_dict("completions", args)
+        json_str = jsonhelpers.encode(req_dict)
+        self.__comm.sendCmdAsync(
+            lambda response_dict: None if on_completed is None else on_completed(response_dict),
+            json_str, 
+            req_dict["seq"]
+            )
 
-    def asyncCompletions(self, path, location=Location(1, 1), prefix="", onCompleted=None):
-        req = servicedefs.CompletionsRequest(self.incrSeq(),
-                                             servicedefs.CompletionsRequestArgs(path, location.line, location.offset, prefix))
-        jsonStr = jsonhelpers.encode(req)
-        def onCompletedJson(responseDict):
-            obj = jsonhelpers.fromDict(servicedefs.CompletionsResponse, responseDict)
-            onCompleted(obj)
-        self.__comm.sendCmdAsync(jsonStr, req.seq, onCompletedJson)
+    def asyncCompletions(self, path, location=Location(1, 1), prefix="", on_completed=None):
+        args = {"file": path, "line": location.line, "offset": location.offset, "prefix": prefix}
+        req_dict = self.create_req_dict("completions", args)
+        json_str = jsonhelpers.encode(req_dict)
+        self.__comm.sendCmdAsync(json_str, req_dict["seq"], on_completed)
 
-    def signatureHelp(self, path, location=Location(1, 1), prefix="", onCompleted=None):
-        req = servicedefs.SignatureHelpRequest(self.incrSeq(),
-                                            servicedefs.SignatureHelpRequestArgs(path, location.line, location.offset, prefix))
-        jsonStr = jsonhelpers.encode(req)
-        def onCompletedJson(responseDict):
-            obj = jsonhelpers.fromDict(servicedefs.SignatureHelpResponse, responseDict)
-            onCompleted(obj)
-        self.__comm.sendCmd(onCompletedJson, jsonStr, req.seq)
+    def signatureHelp(self, path, location=Location(1, 1), prefix="", on_completed=None):
+        args = {"file": path, "line": location.line, "offset": location.offset, "prefix": prefix}
+        req_dict = self.create_req_dict("signatureHelp", args)
+        json_str = jsonhelpers.encode(req_dict)
+        self.__comm.sendCmd(
+            lambda response_dict: None if on_completed is None else on_completed(response_dict), 
+            json_str, 
+            req_dict["seq"]
+            )
 
-    def asyncSignatureHelp(self, path, location=Location(1, 1), prefix="", onCompleted=None):
-        req = servicedefs.SignatureHelpRequest(self.incrSeq(),
-                                            servicedefs.SignatureHelpRequestArgs(path, location.line, location.offset, prefix))
-        jsonStr = jsonhelpers.encode(req)
-        # This just gives the JSON directly to the async callback for perf reasons
-        self.__comm.sendCmdAsync(jsonStr, req.seq, onCompleted)
+    def asyncSignatureHelp(self, path, location=Location(1, 1), prefix="", on_completed=None):
+        args = {"file": path, "line": location.line, "offset": location.offset, "prefix": prefix}
+        req_dict = self.create_req_dict("signatureHelp", args)
+        json_str = jsonhelpers.encode(req_dict)
+        self.__comm.sendCmdAsync(json_str, req_dict["seq"], on_completed)
 
     def definition(self, path, location=Location(1, 1)):
-        req = servicedefs.DefinitionRequest(self.incrSeq(), servicedefs.FileLocationRequestArgs(path, location.line, location.offset))
-        jsonStr = jsonhelpers.encode(req)
-        responseDict = self.__comm.sendCmdSync(jsonStr, req.seq)
-        return jsonhelpers.fromDict(servicedefs.DefinitionResponse,responseDict)
+        args = {"file": path, "line": location.line, "offset": location.offset}
+        req_dict = self.create_req_dict("definition", args)
+        json_str = jsonhelpers.encode(req_dict)
+        response_dict = self.__comm.sendCmdSync(json_str, req_dict["seq"])
+        return response_dict
 
-    def format(self, path, beginLoc=Location(1, 1), endLoc=Location(1, 1)):
-        req = servicedefs.FormatRequest(self.incrSeq(),
-                                        servicedefs.FormatRequestArgs(path, beginLoc.line, beginLoc.offset, endLoc.line, endLoc.offset))
-        jsonStr = jsonhelpers.encode(req)
-        responseDict = self.__comm.sendCmdSync(jsonStr, req.seq)
-        return jsonhelpers.fromDict(servicedefs.FormatResponse, responseDict)
+    def format(self, path, begin_location=Location(1, 1), end_location=Location(1, 1)):
+        args = {
+            "file": path, 
+            "line": begin_location.line, 
+            "offset": begin_location.offset, 
+            "endLine": end_location.line, 
+            "endOffset": end_location.offset
+            }
+        req_dict = self.create_req_dict("format", args)
+        json_str = jsonhelpers.encode(req_dict)
+        response_dict = self.__comm.sendCmdSync(json_str, req_dict["seq"])
+        return response_dict
 
     def formatOnKey(self, path, location=Location(1, 1), key=""):
-        req = servicedefs.FormatOnKeyRequest(self.incrSeq(),
-                                             servicedefs.FormatOnKeyRequestArgs(path, location.line, location.offset, key))
-        jsonStr = jsonhelpers.encode(req)
-        responseDict = self.__comm.sendCmdSync(jsonStr, req.seq)
-        return jsonhelpers.fromDict(servicedefs.FormatResponse, responseDict)
+        args = {"file": path, "line": location.line, "offset": location.offset, "key": key}
+        req_dict = self.create_req_dict("formatonkey", args)
+        json_str = jsonhelpers.encode(req_dict)
+        response_dict = self.__comm.sendCmdSync(json_str, req_dict["seq"])
+        return response_dict
 
     def open(self, path):
-        req = servicedefs.OpenRequest(self.incrSeq(), servicedefs.OpenRequestArgs(path))
-        jsonStr = jsonhelpers.encode(req)
-        self.__comm.postCmd(jsonStr)
+        args = {"file": path}
+        req_dict = self.create_req_dict("open", args)
+        json_str = jsonhelpers.encode(req_dict)
+        self.__comm.postCmd(json_str)
 
     def close(self, path):
-        req = servicedefs.CloseRequest(self.incrSeq(), servicedefs.FileRequestArgs(path))
-        jsonStr = jsonhelpers.encode(req)
-        self.__comm.postCmd(jsonStr)
+        args = {"file": path}
+        req_dict = self.create_req_dict("close", args)
+        json_str = jsonhelpers.encode(req_dict)
+        self.__comm.postCmd(json_str)
 
     def references(self, path, location=Location(1, 1)):
-        req = servicedefs.ReferencesRequest(self.incrSeq(), servicedefs.FileLocationRequestArgs(path, location.line, location.offset))
-        jsonStr = jsonhelpers.encode(req)
-        responseDict = self.__comm.sendCmdSync(jsonStr, req.seq)
-        return jsonhelpers.fromDict(servicedefs.ReferencesResponse, responseDict)
+        args = {"file": path, "line": location.line, "offset": location.offset}
+        req_dict = self.create_req_dict("references", args)
+        json_str = jsonhelpers.encode(req_dict)
+        response_dict = self.__comm.sendCmdSync(json_str, req_dict["seq"])
+        return response_dict
 
     def reload(self, path, alternatePath):
-        req = servicedefs.ReloadRequest(self.incrSeq(), servicedefs.ReloadRequestArgs(path, alternatePath))
-        jsonStr = jsonhelpers.encode(req)
-        responseDict = self.__comm.sendCmdSync(jsonStr, req.seq)
-        return jsonhelpers.fromDict(servicedefs.ReloadResponse, responseDict)
+        args = { "file": path, "tmpfile": alternatePath }
+        req_dict = self.create_req_dict("reload", args)
+        json_str = jsonhelpers.encode(req_dict)
+        response_dict = self.__comm.sendCmdSync(json_str, req_dict["seq"])
+        return response_dict
 
     def rename(self, path, location=Location(1, 1)):
-        req = servicedefs.RenameRequest(self.incrSeq(), servicedefs.FileLocationRequestArgs(path, location.line, location.offset))
-        jsonStr = jsonhelpers.encode(req)
-        responseDict = self.__comm.sendCmdSync(jsonStr, req.seq)
-        return jsonhelpers.fromDict(servicedefs.RenameResponse, responseDict)
+        args = { "file": path, "line": location.line, "offset":location.offset }
+        req_dict = self.create_req_dict("rename", args)
+        json_str = jsonhelpers.encode(req_dict)
+        response_dict = self.__comm.sendCmdSync(json_str, req_dict["seq"])
+        return response_dict
 
     def requestGetError(self, delay=0, pathList=[]):
-        req = servicedefs.GeterrRequest(self.incrSeq(), servicedefs.GeterrRequestArgs(pathList, delay))
-        jsonStr = jsonhelpers.encode(req)
-        self.__comm.postCmd(jsonStr)
+        args = {"files": pathList, "delay": delay}
+        req_dict = self.create_req_dict("geterr", args)
+        json_str = jsonhelpers.encode(req_dict)
+        self.__comm.postCmd(json_str)
 
     def type(self, path, location=Location(1, 1)):
-        req = servicedefs.TypeRequest(self.incrSeq(), servicedefs.FileLocationRequestArgs(path, location.line, location.offset))
-        jsonStr = jsonhelpers.encode(req)
-        responseDict = self.__comm.sendCmdSync(jsonStr, req.seq)
-        return jsonhelpers.fromDict(servicedefs.TypeResponse, responseDict)
+        args = { "file": path, "line": location.line, "offset":location.offset }
+        req_dict = self.create_req_dict("type", args)
+        json_str = jsonhelpers.encode(req_dict)
+        response_dict = self.__comm.sendCmdSync(json_str, req_dict["seq"])
+        return response_dict
 
     def quickInfo(self, path, location=Location(1, 1), onCompleted=None):
-        req = servicedefs.QuickInfoRequest(self.incrSeq(), servicedefs.FileLocationRequestArgs(path, location.line, location.offset))
-        jsonStr = jsonhelpers.encode(req)
-        def onCompletedJson(json):
-            obj = jsonhelpers.fromDict(servicedefs.QuickInfoResponse, json)
-            if onCompleted:
-                onCompleted(obj)
-        self.__comm.sendCmd(onCompletedJson, jsonStr, req.seq)
+        args = { "file": path, "line": location.line, "offset": location.offset }
+        req_dict = self.create_req_dict("quickinfo", args)
+        json_str = jsonhelpers.encode(req_dict)
+        self.__comm.sendCmd(
+            lambda json_dict: None if onCompleted is None else onCompleted(json_dict), 
+            json_str, 
+            req_dict["seq"]
+            )
 
     def getEvent(self):
-        event = None
-        evJsonStr = self.__comm.getEvent()
-        if not evJsonStr is None:
-            event = jsonhelpers.decode(servicedefs.Event, evJsonStr)
-            if event.event == "syntaxDiag" or event.event == "semanticDiag":
-                event = jsonhelpers.decode(servicedefs.DiagnosticEvent, evJsonStr)
-        return event
+        event_json_str = self.__comm.getEvent()
+        return jsonhelpers.decode(event_json_str) if event_json_str is not None else None
 
     def saveto(self, path, alternatePath):
-        req = servicedefs.SavetoRequest(self.incrSeq(), servicedefs.ReloadRequestArgs(path, alternatePath))
-        jsonStr = jsonhelpers.encode(req)
-        self.__comm.postCmd(jsonStr)        
+        args = {"file": path, "tmpfile": alternatePath}
+        req_dict = self.create_req_dict("saveto", args)
+        json_str = jsonhelpers.encode(req_dict)
+        self.__comm.postCmd(json_str)
 
-    def navTo(self, searchText, fileName):
-        req = self.wrap_req_dict ({
-            'command': 'navto',
-            'arguments': {
-                'searchValue': searchText,
-                'file': fileName,
-                'maxResultCount': 20
+    def navTo(self, search_text, file_name):
+        args = { "searchValue": search_text, "file": file_name, "maxResultCount": 20 }
+        req_dict = self.create_req_dict("navto", args)
+        json_str = jsonhelpers.encode(req_dict)
+        response_dict = self.__comm.sendCmdSync(json_str, req_dict["seq"])
+        return response_dict
+
+    def create_req_dict(self, command_name, args=None):
+        req_dict = {
+            "command": command_name,
+            "seq": self.incrSeq(),
+            "type": "request"
             }
-        })
-        response_dict = self.__comm.sendCmdSync(json.dumps(req), req['seq'])
-        if response_dict['success']:
-            return response_dict['body']
-        else:
-            return {}
-
-    def wrap_req_dict(self, request_dict):
-        request_dict['seq'] = self.incrSeq()
-        request_dict['type'] = 'request'
-        return request_dict
+        if args:
+            req_dict["arguments"] = args
+        return req_dict
