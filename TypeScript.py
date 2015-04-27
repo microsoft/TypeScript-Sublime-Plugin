@@ -458,21 +458,23 @@ def sendReplaceChangesForRegions(view, regions, insertString):
         endLocation = getLocationFromPosition(view, region.end())
         cli.service.change(view.file_name(), location, endLocation, insertString)
 
-def recvReloadAck(reloadResp):
+def recv_reload_response(reloadResp):
     if reloadResp.request_seq in cli.tempFileMap:
         tmpfile = cli.tempFileMap.pop(reloadResp.request_seq)
         if tmpfile:
             cli.tempFileList.append(tmpfile)
 
 def getTempFileName():
+    """ Get the first unused temp file name to avoid conflicts
+    """
     seq = cli.service.seq
     if len(cli.tempFileList) > 0:
-        tmpfile = cli.tempFileList.pop()
+        temp_file_name = cli.tempFileList.pop()
     else:
-        tmpfile = os.path.join(pluginDir, ".tmpbuf"+str(cli.tmpseq))
+        temp_file_name = os.path.join(pluginDir, ".tmpbuf"+str(cli.tmpseq))
         cli.tmpseq += 1
-    cli.tempFileMap[seq] = tmpfile
-    return tmpfile
+    cli.tempFileMap[seq] = temp_file_name
+    return temp_file_name
 
 # write the buffer of view to a temporary file and have the server reload it
 def reloadBuffer(view, clientInfo=None):
@@ -482,7 +484,7 @@ def reloadBuffer(view, clientInfo=None):
       text = view.substr(sublime.Region(0, view.size()))
       tmpfile.write(text)
       tmpfile.flush()
-      cli.service.reloadAsync(view.file_name(), tmpfileName, recvReloadAck)
+      cli.service.reloadAsync(view.file_name(), tmpfileName, recv_reload_response)
       if not cli.ST2():
          if not clientInfo:
             clientInfo = cli.getOrAddFile(view.file_name())
