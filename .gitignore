@@ -1,5 +1,5 @@
 *.cache
-.tmpbuf
+.tmpbuf*
 .log*
 built/*
 ~*.docx
