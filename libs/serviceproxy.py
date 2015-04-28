@@ -111,6 +111,14 @@ class ServiceProxy:
         responseDict = self.__comm.sendCmdSync(jsonStr, req.seq)
         return jsonhelpers.fromDict(servicedefs.ReloadResponse, responseDict)
 
+    def reloadAsync(self, path, alternatePath, onCompleted):
+        req = servicedefs.ReloadRequest(self.incrSeq(), servicedefs.ReloadRequestArgs(path, alternatePath))
+        jsonStr = jsonhelpers.encode(req)
+        def onCompletedJson(responseDict):
+            obj = jsonhelpers.fromDict(servicedefs.ReloadResponse, responseDict)
+            onCompleted(obj)
+        self.__comm.sendCmdAsync(jsonStr, req.seq, onCompletedJson)
+
     def rename(self, path, location=Location(1, 1)):
         req = servicedefs.RenameRequest(self.incrSeq(), servicedefs.FileLocationRequestArgs(path, location.line, location.offset))
         jsonStr = jsonhelpers.encode(req)

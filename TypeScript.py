@@ -281,6 +281,9 @@ class EditorClient:
         self.fileMap = {}
         self.refInfo = None
         self.versionST2 = False
+        self.seq_to_tempfile_name = {}
+        self.available_tempfile_list = []
+        self.tmpseq = 0
 
     def ST2(self):
        return self.versionST2
@@ -455,21 +458,33 @@ def sendReplaceChangesForRegions(view, regions, insertString):
         endLocation = getLocationFromPosition(view, region.end())
         cli.service.change(view.file_name(), location, endLocation, insertString)
 
+def recv_reload_response(reloadResp):
+    if reloadResp.request_seq in cli.seq_to_tempfile_name:
+        temp_file_name = cli.seq_to_tempfile_name.pop(reloadResp.request_seq)
+        if temp_file_name:
+            cli.available_tempfile_list.append(temp_file_name)
+
 def getTempFileName():
-   return os.path.join(pluginDir, ".tmpbuf")
+    """ Get the first unused temp file name to avoid conflicts
+    """
+    seq = cli.service.seq
+    if len(cli.available_tempfile_list) > 0:
+        temp_file_name = cli.available_tempfile_list.pop()
+    else:
+        temp_file_name = os.path.join(pluginDir, ".tmpbuf"+str(cli.tmpseq))
+        cli.tmpseq += 1
+    cli.seq_to_tempfile_name[seq] = temp_file_name
+    return temp_file_name
 
 # write the buffer of view to a temporary file and have the server reload it
 def reloadBuffer(view, clientInfo=None):
    if not view.is_loading():
-      t = time.time()
       tmpfileName = getTempFileName()
       tmpfile = codecs.open(tmpfileName, "w", "utf-8")
       text = view.substr(sublime.Region(0, view.size()))
       tmpfile.write(text)
       tmpfile.flush()
-      cli.service.reload(view.file_name(), tmpfileName)
-      et = time.time()
-      print("time for reload %f" % (et - t))
+      cli.service.reloadAsync(view.file_name(), tmpfileName, recv_reload_response)
       if not cli.ST2():
          if not clientInfo:
             clientInfo = cli.getOrAddFile(view.file_name())
