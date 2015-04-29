@@ -463,8 +463,8 @@ def sendReplaceChangesForRegions(view, regions, insertString):
         cli.service.change(view.file_name(), location, endLocation, insertString)
 
 def recv_reload_response(reloadResp):
-    if reloadResp.request_seq in cli.seq_to_tempfile_name:
-        temp_file_name = cli.seq_to_tempfile_name.pop(reloadResp.request_seq)
+    if reloadResp["request_seq"] in cli.seq_to_tempfile_name:
+        temp_file_name = cli.seq_to_tempfile_name.pop(reloadResp["request_seq"])
         if temp_file_name:
             cli.available_tempfile_list.append(temp_file_name)
 

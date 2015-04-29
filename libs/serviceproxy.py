@@ -119,20 +119,18 @@ class ServiceProxy:
         response_dict = self.__comm.sendCmdSync(json_str, req_dict["seq"])
         return response_dict
 
-    def reload(self, path, alternatePath):
-        args = { "file": path, "tmpfile": alternatePath }
+    def reload(self, path, alternate_path):
+        args = { "file": path, "tmpfile": alternate_path }
         req_dict = self.create_req_dict("reload", args)
         json_str = jsonhelpers.encode(req_dict)
         response_dict = self.__comm.sendCmdSync(json_str, req_dict["seq"])
         return response_dict
 
-    def reloadAsync(self, path, alternatePath, onCompleted):
-        req = servicedefs.ReloadRequest(self.incrSeq(), servicedefs.ReloadRequestArgs(path, alternatePath))
-        jsonStr = jsonhelpers.encode(req)
-        def onCompletedJson(responseDict):
-            obj = jsonhelpers.fromDict(servicedefs.ReloadResponse, responseDict)
-            onCompleted(obj)
-        self.__comm.sendCmdAsync(jsonStr, req.seq, onCompletedJson)
+    def reloadAsync(self, path, alternate_path, on_completed):
+        args = { "file": path, "tmpfile": alternate_path }
+        req_dict = self.create_req_dict("reload", args)
+        json_str = jsonhelpers.encode(req_dict)
+        self.__comm.sendCmdAsync(json_str, req_dict["seq"], on_completed)
 
     def rename(self, path, location=Location(1, 1)):
         args = { "file": path, "line": location.line, "offset":location.offset }
