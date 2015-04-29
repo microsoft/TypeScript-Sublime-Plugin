@@ -93,7 +93,7 @@ class NodeCommClient(CommClient):
                                             stdin=subprocess.PIPE, stdout=subprocess.PIPE)
 
     def makeTimeoutMsg(self, cmd, seq):
-       jsonDict = json.loads(cmd)
+       jsonDict = jsonhelpers.decode(cmd)
        timeoutMsg = {
           "seq": 0,
           "type": "response",
@@ -114,7 +114,7 @@ class NodeCommClient(CommClient):
            try:
               while reqSeq < seq:
                  data = self.__msgq.get(True,1)
-                 dict = json.loads(data)
+                 dict = jsonhelpers.decode(data)
                  reqSeq = dict['request_seq']
               if cb:
                  cb(dict)
@@ -142,7 +142,7 @@ class NodeCommClient(CommClient):
            try: 
                while reqSeq < seq:
                    data = self.__msgq.get(True,1)
-                   dict = json.loads(data)
+                   dict = jsonhelpers.decode(data)
                    reqSeq = dict['request_seq']
                return dict
            except queue.Empty:
@@ -202,7 +202,7 @@ class NodeCommClient(CommClient):
             data = stream.read(bodlen)
             log.debug('Read body of length: {0}'.format(bodlen))
             jsonStr = data.decode("utf-8")
-            dict = json.loads(jsonStr)
+            dict = jsonhelpers.decode(jsonStr)
             if dict['type'] == "response":
                 request_seq = dict['request_seq']
                 log.debug('Body sequence#: {0}'.format(request_seq))
