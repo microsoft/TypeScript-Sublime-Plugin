@@ -1079,7 +1079,7 @@ class TypescriptSignaturePanel(sublime_plugin.TextCommand):
             result = ""
             if displayParts:
                 for part in displayParts:
-                    result += part.text
+                    result += part["text"]
             return result
 
         for signature in response_dict["body"]["items"]:
@@ -1094,7 +1094,7 @@ class TypescriptSignaturePanel(sublime_plugin.TextCommand):
                         snippetText += ", "
 
                     paramText = ""
-                    paramText += get_text_from_parts(param.displayParts)
+                    paramText += get_text_from_parts(param["displayParts"])
                     signatureText += paramText
                     snippetText += "${" + str(paramIdx) + ":" + paramText + "}"
                     paramIdx += 1
