@@ -510,6 +510,7 @@ class TypeScriptListener(sublime_plugin.EventListener):
         self.fileMap = {}
         self.pendingCompletions = []
         self.completionsReady = False
+        self.completionsLoc = None
         self.completionView = None
         self.mruFileList = []
         self.pendingTimeout = 0
@@ -519,6 +520,7 @@ class TypeScriptListener(sublime_plugin.EventListener):
         self.mod = False
         self.about_to_close_all = False
         self.was_paren_pressed = False
+
 
     def getInfo(self, view):
         info = None
@@ -830,6 +832,9 @@ class TypeScriptListener(sublime_plugin.EventListener):
             # on_modified) what was inserted
             info.prevSel = copyRegionsStatic(view.sel())
             if self.mod:
+                # backspace past start of completion
+                if info.lastCompletionLoc and (info.lastCompletionLoc > view.sel()[0].begin()):
+                    view.run_command('hide_auto_complete')
                 self.setOnSelectionIdleTimer(1250)
             else:
                 self.setOnSelectionIdleTimer(50)
@@ -990,7 +995,7 @@ class TypeScriptListener(sublime_plugin.EventListener):
                view.add_regions("apresComp", decrLocsToRegions(locations, 0), flags=sublime.HIDDEN)
             if (not self.completionsReady) or cli.ST2():
                 if info.lastCompletionLoc:
-                    if (((len(prefix)-1)+info.lastCompletionLoc == locations[0]) and (prefix.startswith(info.lastCompletionPrefix))):
+                    if ((len(prefix) > 0) and ((len(prefix)-1)+info.lastCompletionLoc == locations[0]) and (prefix.startswith(info.lastCompletionPrefix))):
                         return (info.lastCompletions,
                                 sublime.INHIBIT_WORD_COMPLETIONS | sublime.INHIBIT_EXPLICIT_COMPLETIONS)
 
@@ -1001,9 +1006,9 @@ class TypeScriptListener(sublime_plugin.EventListener):
                 else:
                     cli.service.asyncCompletions(view.file_name(), location, prefix, self.handleCompletionInfo)
             completions = self.pendingCompletions
+            info.lastCompletionLoc = locations[0]
             if self.completionsReady:
                 info.lastCompletions = completions
-                info.lastCompletionLoc = locations[0]
                 info.lastCompletionPrefix = prefix
             self.pendingCompletions = []
             self.completionsReady = False
