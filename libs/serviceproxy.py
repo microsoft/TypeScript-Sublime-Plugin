@@ -45,10 +45,10 @@ class ServiceProxy:
         args = {"file": path, "line": location.line, "offset": location.offset, "prefix": prefix}
         req_dict = self.create_req_dict("completions", args)
         json_str = jsonhelpers.encode(req_dict)
-        self.__comm.sendCmdAsync(
+        self.__comm.sendCmd(
+            lambda json_dict: None if on_completed is None else on_completed(json_dict), 
             json_str, 
-            req_dict["seq"],
-            lambda response_dict: None if on_completed is None else on_completed(response_dict),
+            req_dict["seq"]
             )
 
     def asyncCompletions(self, path, location=Location(1, 1), prefix="", on_completed=None):
