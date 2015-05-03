@@ -67,13 +67,16 @@ class NodeCommClient(CommClient):
                  self.__serverProc = subprocess.Popen([node_path, scriptPath],
                                                       stdin=subprocess.PIPE, stdout=subprocess.PIPE,startupinfo=si)
               else:
+                 log.debug("opening "+ node_path + " " + scriptPath)
                  self.__serverProc = subprocess.Popen([node_path, scriptPath],
                                                       stdin=subprocess.PIPE, stdout=subprocess.PIPE)
-           except FileNotFoundError:
+           except:
               self.__serverProc = None
         # start reader thread
-        if self.__serverProc:
-           readerThread = threading.Thread(target=NodeCommClient.__reader, args=(self.__serverProc.stdout, self.__msgq, self.__eventq, self.asyncReq))
+        if self.__serverProc and (not self.__serverProc.poll()):
+           log.debug("server proc "+str(self.__serverProc))
+           log.debug("starting reader thread")
+           readerThread = threading.Thread(target=NodeCommClient.__reader, args=(self.__serverProc.stdout, self.__msgq, self.__eventq, self.asyncReq, self.__serverProc))
            readerThread.daemon = True
            readerThread.start()
         self.__debugProc = None
@@ -157,7 +160,7 @@ class NodeCommClient(CommClient):
         """
         log.debug('Posting command: {0}'.format(cmd))
         if not self.__serverProc:
-           log.error("can not send request; node process not started")
+           log.error("can not send request; node process not running")
            return False
         else:
            cmd = cmd + "\n"
@@ -176,7 +179,7 @@ class NodeCommClient(CommClient):
         return ev
 
     @staticmethod
-    def __readMsg(stream, msgq, eventq, asyncReq):
+    def __readMsg(stream, msgq, eventq, asyncReq, proc):
         """
         Reader thread helper
         """
@@ -190,7 +193,7 @@ class NodeCommClient(CommClient):
             if len(header) == 0:
                 if state == 'init':
                     log.info('0 byte line in stream when expecting header')
-                    return
+                    return proc.poll() != None
                 else:
                     state = "body"
             else:
@@ -210,7 +213,7 @@ class NodeCommClient(CommClient):
                     callback = asyncReq.pop(request_seq, None)
                     if callback:
                         callback(dict)
-                        return
+                        return False
                 else:
                     # Only put in the queue if wasn't an async request
                     msgq.put(jsonStr)
@@ -218,15 +221,16 @@ class NodeCommClient(CommClient):
                 eventq.put(jsonStr)
         else:
             log.info('Body length of 0 in server stream')
-            return
+            return False
 
     @staticmethod
-    def __reader(stream, msgq, eventq, asyncReq):
+    def __reader(stream, msgq, eventq, asyncReq, proc):
         """
         Main function for reader thread
         """
         while True:
-            NodeCommClient.__readMsg(stream, msgq, eventq, asyncReq)
+           if NodeCommClient.__readMsg(stream, msgq, eventq, asyncReq, proc):
+              return
 
     @staticmethod
     def __which(program):

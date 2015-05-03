@@ -30,7 +30,7 @@ def _cleanup_011():
     offset = this_file.find(os.path.sep + 'Installed Packages' + os.path.sep)
     if offset == -1:
         offset = this_file.find(os.path.sep + 'Packages' + os.path.sep)
-
+            
     if offset == -1:
         print('ERROR: Could not location parent packages folder')
         return
