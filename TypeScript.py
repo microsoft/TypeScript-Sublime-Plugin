@@ -14,6 +14,9 @@ import sublime_plugin
 logFileLevel = logging.WARN
 logConsLevel = logging.WARN
 
+nonBlankLinePattern = re.compile("[\S]+")
+validCompletionId = re.compile("[a-zA-Z_$\.][\w$\.]*\Z")
+
 def set_log_level(logger):
     logger.logFile.setLevel(logFileLevel)
     logger.console.setLevel(logConsLevel)
@@ -511,6 +514,10 @@ class TypeScriptListener(sublime_plugin.EventListener):
         self.pendingCompletions = []
         self.completionsReady = False
         self.completionsLoc = None
+        self.completionRequestSeq = None
+        self.completionRequestPrefix = None
+        self.completionRequestLoc = None
+        self.completionRequestMember = False
         self.completionView = None
         self.mruFileList = []
         self.pendingTimeout = 0
@@ -957,24 +964,33 @@ class TypeScriptListener(sublime_plugin.EventListener):
 
     # helper called back when completion info received from server
     def handleCompletionInfo(self, completionsResp):
-        if completionsResp["success"]:
+        self.pendingCompletions = []
+        if (not cli.ST2()):
+            view = active_view()
+            loc = view.sel()[0].begin()
+            prefixLen = len(self.completionRequestPrefix)
+            str = view.substr(sublime.Region(self.completionRequestLoc-prefixLen,loc))
+            if (not str.startswith(self.completionRequestPrefix)):
+                return
+            if (str.find(".") > 0):
+                if not self.completionRequestMember:
+                    print(str + " includes a dot but not req mem")
+                    return
+            if (len(str) > 0) and (not validCompletionId.match(str)):
+                return
+        if completionsResp["success"] and ((completionsResp["request_seq"] == self.completionRequestSeq) or cli.ST2()):
             completions = []
             rawCompletions = completionsResp["body"]
-
             if rawCompletions:
                 for rawCompletion in rawCompletions:
                     name = rawCompletion["name"]
                     completion = (name + "\t" + rawCompletion["kind"], name.replace("$", "\\$"))
                     completions.append(completion)
                 self.pendingCompletions = completions
-            else:
-                self.pendingCompletions = []
             if not cli.ST2():
                 self.completionsReady = True
                 active_view().run_command('hide_auto_complete')
                 self.run_auto_complete()
-        else:
-            self.pendingCompletions = []
 
     def run_auto_complete(self):
         active_view().run_command("auto_complete", {
@@ -989,27 +1005,27 @@ class TypeScriptListener(sublime_plugin.EventListener):
     def on_query_completions(self, view, prefix, locations):
         info = self.getInfo(view)
         if info:
-            print("complete with: " + prefix)
+            #print("complete with: \"" + prefix + "\" ready: " + str(self.completionsReady))
             info.completionPrefixSel = decrLocsToRegions(locations, len(prefix))
             if not cli.ST2():
                view.add_regions("apresComp", decrLocsToRegions(locations, 0), flags=sublime.HIDDEN)
             if (not self.completionsReady) or cli.ST2():
-                if info.lastCompletionLoc:
-                    if ((len(prefix) > 0) and ((len(prefix)-1)+info.lastCompletionLoc == locations[0]) and (prefix.startswith(info.lastCompletionPrefix))):
-                        return (info.lastCompletions,
-                                sublime.INHIBIT_WORD_COMPLETIONS | sublime.INHIBIT_EXPLICIT_COMPLETIONS)
-
                 location = getLocationFromPosition(view, locations[0])
                 checkUpdateView(view)
                 if cli.ST2():
                     cli.service.completions(view.file_name(), location, prefix, self.handleCompletionInfo)
                 else:
+                    self.completionRequestLoc = locations[0]
+                    self.completionRequestPrefix = prefix
+                    self.completionRequestSeq = cli.service.seq
+                    if (locations[0] > 0):
+                        prevChar = view.substr(sublime.Region(locations[0]-1,locations[0]-1))
+                        self.completionRequestMember = (prevChar == ".")
+                    else:
+                        self.completionRequestMember = False
                     cli.service.asyncCompletions(view.file_name(), location, prefix, self.handleCompletionInfo)
             completions = self.pendingCompletions
             info.lastCompletionLoc = locations[0]
-            if self.completionsReady:
-                info.lastCompletions = completions
-                info.lastCompletionPrefix = prefix
             self.pendingCompletions = []
             self.completionsReady = False
             return (completions, sublime.INHIBIT_WORD_COMPLETIONS | sublime.INHIBIT_EXPLICIT_COMPLETIONS)
@@ -1084,7 +1100,7 @@ class TypescriptSignaturePanel(sublime_plugin.TextCommand):
             result = ""
             if displayParts:
                 for part in displayParts:
-                    result += part.text
+                    result += part["text"]
             return result
 
         for signature in response_dict["body"]["items"]:
@@ -1099,7 +1115,7 @@ class TypescriptSignaturePanel(sublime_plugin.TextCommand):
                         snippetText += ", "
 
                     paramText = ""
-                    paramText += get_text_from_parts(param.displayParts)
+                    paramText += get_text_from_parts(param["displayParts"])
                     signatureText += paramText
                     snippetText += "${" + str(paramIdx) + ":" + paramText + "}"
                     paramIdx += 1
@@ -1548,9 +1564,6 @@ class TypescriptFormatSelection(sublime_plugin.TextCommand):
 class TypescriptFormatDocument(sublime_plugin.TextCommand):
     def run(self, text):
         formatRange(text, self.view, 0, self.view.size())
-
-
-nonBlankLinePattern = re.compile("[\S]+")
 
 
 # command to format the current line
