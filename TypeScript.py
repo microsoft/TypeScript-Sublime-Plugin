@@ -273,14 +273,9 @@ def buildRefInfo(refInfoV):
 class EditorClient:
     """ A singleton class holding information for the entire application that must be accessible globally"""
     def __init__(self):
-        # load formatting settings and set callbacks for setting changes
-        settings = sublime.load_settings('Preferences.sublime-settings')
-        for setting_name in ['tab_size', 'indent_size', 'translate_tabs_to_spaces']:
-            settings.add_on_change(setting_name, self.load_format_settings)
-        self.load_format_settings()
-        
         # retrieve the path to tsserver.js
         # first see if user set the path to the file
+        settings = sublime.load_settings('Preferences.sublime-settings')
         proc_file = settings.get('typescript_proc_file')
         if not proc_file:
             # otherwise, get tsserver.js from package directory
@@ -295,11 +290,17 @@ class EditorClient:
         self.available_tempfile_list = []
         self.tmpseq = 0
 
+        # load formatting settings and set callbacks for setting changes
+        for setting_name in ['tab_size', 'indent_size', 'translate_tabs_to_spaces']:
+            settings.add_on_change(setting_name, self.load_format_settings)
+        self.load_format_settings()
+
     def load_format_settings(self):
         settings = sublime.load_settings('Preferences.sublime-settings')
         self.tab_size = settings.get('tab_size', 4)
         self.indent_size = settings.get('indent_size', 4)
         self.translate_tab_to_spaces = settings.get('translate_tabs_to_spaces', False)
+        self.set_features()
 
     def is_st2(self):
         if not hasattr(self, '_is_st2'):
