@@ -451,6 +451,7 @@ def open_file(view):
     cli.service.open(view.file_name())
 
 def tab_size_changed():
+    view = active_view()
     reconfig_file(view)
     clientInfo = cli.get_or_add_file(view.file_name())
     clientInfo.pending_changes = True
@@ -874,7 +875,7 @@ class TypeScriptListener(sublime_plugin.EventListener):
     # usually called by Sublime when the buffer is modified
     # not called for undo, redo
     def on_modified(self, view):
-        logger.log.debug("enter on_modified " + str(view.id()))
+#        logger.log.debug("enter on_modified " + str(view.id()))
         # it is a special view
         if is_special_view(view):
             logger.log.debug("enter on_modified: special view. started: %s, insert_text_finished: %s" % 
@@ -918,7 +919,7 @@ class TypeScriptListener(sublime_plugin.EventListener):
                         # request reload because we have strange insert
                         info.clientInfo.pending_changes = True
                 self.setOnIdleTimer(100)
-        logger.log.debug("exit on_modified " + str(view.id()))
+#        logger.log.debug("exit on_modified " + str(view.id()))
 
     # ST3 only
     # called by ST3 for some, but not all, text commands
@@ -1542,6 +1543,7 @@ class TypescriptFormatOnKey(sublime_plugin.TextCommand):
             return
         formatResp = cli.service.formatOnKey(self.view.file_name(), getLocationFromView(self.view), key)
         if formatResp["success"]:
+#            logger.log.debug(str(formatResp))
             codeEdits = formatResp["body"]
             applyFormattingChanges(text, self.view, codeEdits)
 
