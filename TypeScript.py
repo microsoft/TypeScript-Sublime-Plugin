@@ -300,7 +300,6 @@ class EditorClient:
         self.tab_size = settings.get('tab_size', 4)
         self.indent_size = settings.get('indent_size', 4)
         self.translate_tab_to_spaces = settings.get('translate_tabs_to_spaces', False)
-        self.set_features()
 
     def is_st2(self):
         if not hasattr(self, '_is_st2'):
