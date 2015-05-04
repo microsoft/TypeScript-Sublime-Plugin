@@ -159,13 +159,13 @@ def extractLineOffset(lineOffset):
 class ClientFileInfo:
     def __init__(self, filename):
         self.filename = filename
-        self.pendingChanges = False
-        self.changeCount = 0
+        self.pending_changes = False
+        self.change_count = 0
         self.errors = {
             'syntacticDiag': [], 
             'semanticDiag': [], 
         }
-        self.renameOnLoad = None
+        self.rename_on_load = None
 
 # a reference to a source file, line, offset; next and prev refer to the
 # next and previous reference in a view containing references
@@ -270,77 +270,86 @@ def buildRefInfo(refInfoV):
         refInfo.addMapping(key, buildRef(dict[key]))
     return refInfo
 
-
-# hold information that must be accessible globally; this is a singleton
 class EditorClient:
+    """ A singleton class holding information that must be accessible globally. """
     def __init__(self):
+        # load formatting settings and set callbacks for setting changes
+        settings = sublime.load_settings('Preferences.sublime-settings')
+        for setting_name in ['tab_size', 'indent_size', 'translate_tabs_to_spaces']:
+            settings.add_on_change(setting_name, self.load_format_settings)
+        self.load_format_settings()
+        
         # retrieve the path to tsserver.js
         # first see if user set the path to the file
-        settings = sublime.load_settings('Preferences.sublime-settings')
-        procFile = settings.get('typescript_proc_file')
-        if not procFile:
+        proc_file = settings.get('typescript_proc_file')
+        if not proc_file:
             # otherwise, get tsserver.js from package directory
-            procFile = os.path.join(pluginDir, "tsserver", "tsserver.js")
-        print("spawning node module: " + procFile)
+            proc_file = os.path.join(pluginDir, "tsserver", "tsserver.js")
+        print("spawning node module: " + proc_file)
         
-        self.nodeClient = NodeCommClient(procFile)
-        self.service = ServiceProxy(self.nodeClient)
-        self.fileMap = {}
-        self.refInfo = None
-        self.versionST2 = False
+        self.node_client = NodeCommClient(proc_file)
+        self.service = ServiceProxy(self.node_client)
+        self.file_map = {}
+        self.ref_info = None
         self.seq_to_tempfile_name = {}
         self.available_tempfile_list = []
         self.tmpseq = 0
 
-    def ST2(self):
-       return self.versionST2
-    
-    def setFeatures(self):
-       if int(sublime.version()) < 3000:
-          self.versionST2 = True
-       hostInfo = "Sublime Text version " + str(sublime.version())
-       # Preferences Settings
-       pref_settings = sublime.load_settings('Preferences.sublime-settings')
-       tabSize = pref_settings.get('tab_size', 4)
-       indentSize = pref_settings.get('indent_size', tabSize)
-       tabsToSpaces = pref_settings.get('translate_tabs_to_spaces', True)
-       formatOptions = buildSimpleFormatOptions(tabSize, indentSize, tabsToSpaces)
-       self.service.configure(hostInfo, None, formatOptions)
+    def load_format_settings(self):
+        settings = sublime.load_settings('Preferences.sublime-settings')
+        self.tab_size = settings.get('tab_size', 4)
+        self.indent_size = settings.get('indent_size', 4)
+        self.translate_tab_to_spaces = settings.get('translate_tabs_to_spaces', False)
 
-    def reloadRequired(self, view):
-       clientInfo = self.getOrAddFile(view.file_name())
-       return self.versionST2 or clientInfo.pendingChanges or (clientInfo.changeCount < view.change_count())
+    def is_st2(self):
+        if not hasattr(self, '_is_st2'):
+            self._is_st2 = int(sublime.version()) < 3000
+        return self._is_st2
+    
+    def set_features(self):
+        host_info = "Sublime Text version " + str(sublime.version())
+        # Preferences Settings
+        format_options = {
+            "tabSize": self.tab_size, 
+            "indentSize": self.indent_size, 
+            "convertTabsToSpaces": self.translate_tab_to_spaces
+            }
+        self.service.configure(host_info, None, format_options)
+
+    def reload_required(self, view):
+       client_info = self.get_or_add_file(view.file_name())
+       return self.is_st2() or client_info.pending_changes or (client_info.change_count < view.change_count())
 
     # ref info is for Find References view
     # TODO: generalize this so that there can be multiple
     # for example, one for Find References and one for build errors
-    def disposeRefInfo(self):
-        self.refInfo = None
+    def dispose_ref_info(self):
+        self.ref_info = None
 
-    def initRefInfo(self, firstLine, refId):
-        self.refInfo = RefInfo(firstLine, refId)
-        return self.refInfo
+    def init_ref_info(self, firstLine, refId):
+        self.ref_info = RefInfo(firstLine, refId)
+        return self.ref_info
 
-    def updateRefInfo(self, refInfo):
-        self.refInfo = refInfo
+    def update_ref_info(self, refInfo):
+        self.ref_info = refInfo
 
-    def getRefInfo(self):
-        return self.refInfo
+    def get_ref_info(self):
+        return self.ref_info
 
-    # get or add per-file information that must be globally acessible
-    def getOrAddFile(self, filename):
+    def get_or_add_file(self, filename):
+        """Get or add per-file information that must be globally acessible """ 
         if (os.name == "nt") and filename:
             filename = filename.replace('/','\\')
-        if not filename in self.fileMap:
-            clientInfo = ClientFileInfo(filename)
-            self.fileMap[filename] = clientInfo
+        if not filename in self.file_map:
+            client_info = ClientFileInfo(filename)
+            self.file_map[filename] = client_info
         else:
-            clientInfo = self.fileMap[filename]
-        return clientInfo
+            client_info = self.file_map[filename]
+        return client_info
 
-    def hasErrors(self, filename):
-        clientInfo = self.getOrAddFile(filename)
-        return (len(clientInfo.errors['syntacticDiag']) > 0) or (len(clientInfo.errors['semanticDiag']) > 0)
+    def has_errors(self, filename):
+        client_info = self.get_or_add_file(filename)
+        return (len(client_info.errors['syntacticDiag']) > 0) or (len(client_info.errors['semanticDiag']) > 0)
 
 
 # per-file info that will only be accessible from TypeScriptListener instance
@@ -441,24 +450,23 @@ def reconfig_file(view):
 def open_file(view):
     cli.service.open(view.file_name())
 
-def tab_size_changed(view):
+def tab_size_changed():
     reconfig_file(view)
-    clientInfo = cli.getOrAddFile(view.file_name())
-    clientInfo.pendingChanges = True
+    clientInfo = cli.get_or_add_file(view.file_name())
+    clientInfo.pending_changes = True
 
 def setFilePrefs(view):
     settings = view.settings()
     settings.set('use_tab_stops', False)
-#    settings.set('translate_tabs_to_spaces', True)
-    settings.add_on_change('tab_size',lambda: tab_size_changed(view))
-    settings.add_on_change('indent_size',lambda: tab_size_changed(view))
-    settings.add_on_change('translate_tabs_to_spaces',lambda: tab_size_changed(view))
+    settings.add_on_change('tab_size', tab_size_changed)
+    settings.add_on_change('indent_size', tab_size_changed)
+    settings.add_on_change('translate_tabs_to_spaces', tab_size_changed)
     reconfig_file(view)
 
 # given a list of regions and a (possibly zero-length) string to insert, 
 # send the appropriate change information to the server
 def sendReplaceChangesForRegions(view, regions, insertString):
-    if cli.ST2() or (not is_typescript(view)):
+    if cli.is_st2() or (not is_typescript(view)):
        return
     for region in regions:
         location = getLocationFromPosition(view, region.begin())
@@ -492,18 +500,18 @@ def reloadBuffer(view, clientInfo=None):
       tmpfile.write(text)
       tmpfile.flush()
       cli.service.reloadAsync(view.file_name(), tmpfileName, recv_reload_response)
-      if not cli.ST2():
+      if not cli.is_st2():
          if not clientInfo:
-            clientInfo = cli.getOrAddFile(view.file_name())
-         clientInfo.changeCount = view.change_count()
-         clientInfo.pendingChanges = False
+            clientInfo = cli.get_or_add_file(view.file_name())
+         clientInfo.change_count = view.change_count()
+         clientInfo.pending_changes = False
 
 # if we have changes to the view not accounted for by change messages, 
 # send the whole buffer through a temporary file
 def checkUpdateView(view):
     if is_typescript(view):
-        clientInfo = cli.getOrAddFile(view.file_name())
-        if cli.reloadRequired(view):
+        clientInfo = cli.get_or_add_file(view.file_name())
+        if cli.reload_required(view):
             reloadBuffer(view, clientInfo)
 
 
@@ -528,7 +536,6 @@ class TypeScriptListener(sublime_plugin.EventListener):
         self.about_to_close_all = False
         self.was_paren_pressed = False
 
-
     def getInfo(self, view):
         info = None
         if view.file_name() is not None:
@@ -540,7 +547,7 @@ class TypeScriptListener(sublime_plugin.EventListener):
                     info = FileInfo(view.file_name(), None)
                     info.view = view
                     settings = view.settings()
-                    info.clientInfo = cli.getOrAddFile(view.file_name())
+                    info.clientInfo = cli.get_or_add_file(view.file_name())
                     setFilePrefs(view)
                     self.fileMap[view.file_name()] = info
                     open_file(view)
@@ -548,7 +555,7 @@ class TypeScriptListener(sublime_plugin.EventListener):
                        if not view.is_loading():
                           reloadBuffer(view, info.clientInfo)
                        else:
-                          info.clientInfo.pendingChanges = True
+                          info.clientInfo.pending_changes = True
                     if (info in self.mruFileList):
                         self.mruFileList.remove(info)
                     self.mruFileList.append(info)
@@ -557,7 +564,7 @@ class TypeScriptListener(sublime_plugin.EventListener):
     def change_count(self, view):
         info = self.getInfo(view)
         if info:
-            if cli.ST2():
+            if cli.is_st2():
                 return info.modCount
             else:
                 return view.change_count()
@@ -649,7 +656,7 @@ class TypeScriptListener(sublime_plugin.EventListener):
                 else:
                     regionKey = 'semanticDiag'
                 view.erase_regions(regionKey)
-                clientInfo = cli.getOrAddFile(filename)
+                clientInfo = cli.get_or_add_file(filename)
                 clientInfo.errors[regionKey] = []
                 errRegions = []
                 if diags:
@@ -665,9 +672,9 @@ class TypeScriptListener(sublime_plugin.EventListener):
                             region = sublime.Region(start, end)
                             errRegions.append(region)
                             clientInfo.errors[regionKey].append((region, text))
-                info.hasErrors = cli.hasErrors(filename)
+                info.hasErrors = cli.has_errors(filename)
                 self.update_status(view, info)
-                if cli.ST2():
+                if cli.is_st2():
                    view.add_regions(regionKey, errRegions, "keyword", "", sublime.DRAW_OUTLINED)
                 else:
                    view.add_regions(regionKey, errRegions, "keyword", "", 
@@ -730,17 +737,17 @@ class TypeScriptListener(sublime_plugin.EventListener):
 
     def on_load(self, view):
         logger.view_debug(view, "enter on_load")
-        clientInfo = cli.getOrAddFile(view.file_name())
+        clientInfo = cli.get_or_add_file(view.file_name())
 
         # reset the "close_all" flag when open new files
         if self.about_to_close_all:
             self.about_to_close_all = False
 
         print("loaded " + view.file_name())
-        if clientInfo and clientInfo.renameOnLoad:
+        if clientInfo and clientInfo.rename_on_load:
             view.run_command('typescript_delayed_rename_file',
                              { "locsName" : clientInfo.renameOnLoad })
-            clientInfo.renameOnLoad = None
+            clientInfo.rename_on_load = None
         logger.view_debug(view, "exit on_load")
 
     def on_window_command(self, window, command_name, args):
@@ -808,7 +815,7 @@ class TypeScriptListener(sublime_plugin.EventListener):
                     plugin_loaded()
 
                 if view.is_scratch() and (view.name() == "Find References"):
-                    cli.disposeRefInfo()
+                    cli.dispose_ref_info()
                 else:
                     info = self.getInfo(view)
                 if info:
@@ -829,12 +836,12 @@ class TypeScriptListener(sublime_plugin.EventListener):
         info = self.getInfo(view)
         if info:
             if not info.clientInfo:
-                info.clientInfo = cli.getOrAddFile(view.file_name())
-            if (info.clientInfo.changeCount < self.change_count(view)) and (info.lastModChangeCount != self.change_count(view)):
+                info.clientInfo = cli.get_or_add_file(view.file_name())
+            if (info.clientInfo.change_count < self.change_count(view)) and (info.lastModChangeCount != self.change_count(view)):
                 # detected a change to the view for which Sublime did not call
                 # on_modified
                 # and for which we have no hope of discerning what changed
-                info.clientInfo.pendingChanges = True
+                info.clientInfo.pending_changes = True
             # save the current cursor position so that we can see (in
             # on_modified) what was inserted
             info.prevSel = copyRegionsStatic(view.sel())
@@ -887,7 +894,7 @@ class TypeScriptListener(sublime_plugin.EventListener):
             info = self.getInfo(view)
             if info:
                 info.modified = True
-                if cli.ST2():
+                if cli.is_st2():
                    info.modCount+=1
                 info.lastModChangeCount = self.change_count(view)
                 self.mod = True
@@ -895,11 +902,11 @@ class TypeScriptListener(sublime_plugin.EventListener):
     #            print("modified " + view.file_name() + " command " + lastCommand + " args " + str(args) + " rept " + str(rept))
                 if info.preChangeSent:
                     # change handled in on_text_command
-                    info.clientInfo.changeCount = self.change_count(view)
+                    info.clientInfo.change_count = self.change_count(view)
                     info.preChangeSent = False
                 elif lastCommand == "insert":
-                    if (not "\n" in args['characters']) and info.prevSel and (len(info.prevSel) == 1) and (info.prevSel[0].empty()) and (not info.clientInfo.pendingChanges):
-                        info.clientInfo.changeCount = self.change_count(view)
+                    if (not "\n" in args['characters']) and info.prevSel and (len(info.prevSel) == 1) and (info.prevSel[0].empty()) and (not info.clientInfo.pending_changes):
+                        info.clientInfo.change_count = self.change_count(view)
                         prevCursor = info.prevSel[0].begin()
                         cursor = view.sel()[0].begin()
                         key = view.substr(sublime.Region(prevCursor, cursor))
@@ -909,7 +916,7 @@ class TypeScriptListener(sublime_plugin.EventListener):
                         info.changeSent = True
                     else:
                         # request reload because we have strange insert
-                        info.clientInfo.pendingChanges = True
+                        info.clientInfo.pending_changes = True
                 self.setOnIdleTimer(100)
         logger.log.debug("exit on_modified " + str(view.id()))
 
@@ -931,7 +938,7 @@ class TypeScriptListener(sublime_plugin.EventListener):
                 # handle insertion of string from completion menu, so that
                 # it is fast to type completedName1.completedName2 (avoid a lag
                 # when completedName1 is committed)
-                if ((command_name == "commit_completion") or command_name == ("insert_best_completion")) and (len(view.sel()) == 1) and (not info.clientInfo.pendingChanges):
+                if ((command_name == "commit_completion") or command_name == ("insert_best_completion")) and (len(view.sel()) == 1) and (not info.clientInfo.pending_changes):
                     # get saved region that was pushed forward by insertion of
                     # the completion
                     apresCompReg = view.get_regions("apresComp")
@@ -954,7 +961,7 @@ class TypeScriptListener(sublime_plugin.EventListener):
                     reloadBuffer(view, info.clientInfo)
                 # we are up-to-date because either change was sent to server or
                 # whole buffer was sent to server
-                info.clientInfo.changeCount = view.change_count()
+                info.clientInfo.change_count = view.change_count()
             # reset flags and saved regions used for communication among
             # on_text_command, on_modified, on_selection_modified, 
             # on_post_text_command, and on_query_completion
@@ -965,7 +972,7 @@ class TypeScriptListener(sublime_plugin.EventListener):
     # helper called back when completion info received from server
     def handleCompletionInfo(self, completionsResp):
         self.pendingCompletions = []
-        if (not cli.ST2()):
+        if (not cli.is_st2()):
             view = active_view()
             loc = view.sel()[0].begin()
             prefixLen = len(self.completionRequestPrefix)
@@ -978,7 +985,7 @@ class TypeScriptListener(sublime_plugin.EventListener):
                     return
             if (len(str) > 0) and (not validCompletionId.match(str)):
                 return
-        if completionsResp["success"] and ((completionsResp["request_seq"] == self.completionRequestSeq) or cli.ST2()):
+        if completionsResp["success"] and ((completionsResp["request_seq"] == self.completionRequestSeq) or cli.is_st2()):
             completions = []
             rawCompletions = completionsResp["body"]
             if rawCompletions:
@@ -987,7 +994,7 @@ class TypeScriptListener(sublime_plugin.EventListener):
                     completion = (name + "\t" + rawCompletion["kind"], name.replace("$", "\\$"))
                     completions.append(completion)
                 self.pendingCompletions = completions
-            if not cli.ST2():
+            if not cli.is_st2():
                 self.completionsReady = True
                 active_view().run_command('hide_auto_complete')
                 self.run_auto_complete()
@@ -1007,12 +1014,12 @@ class TypeScriptListener(sublime_plugin.EventListener):
         if info:
             #print("complete with: \"" + prefix + "\" ready: " + str(self.completionsReady))
             info.completionPrefixSel = decrLocsToRegions(locations, len(prefix))
-            if not cli.ST2():
+            if not cli.is_st2():
                view.add_regions("apresComp", decrLocsToRegions(locations, 0), flags=sublime.HIDDEN)
-            if (not self.completionsReady) or cli.ST2():
+            if (not self.completionsReady) or cli.is_st2():
                 location = getLocationFromPosition(view, locations[0])
                 checkUpdateView(view)
-                if cli.ST2():
+                if cli.is_st2():
                     cli.service.completions(view.file_name(), location, prefix, self.handleCompletionInfo)
                 else:
                     self.completionRequestLoc = locations[0]
@@ -1206,7 +1213,7 @@ class TypescriptQuickInfoDoc(sublime_plugin.TextCommand):
 # (or to erase error text from status line if no error text for location)
 class TypescriptErrorInfo(sublime_plugin.TextCommand):
     def run(self, text):
-        clientInfo = cli.getOrAddFile(self.view.file_name())
+        clientInfo = cli.get_or_add_file(self.view.file_name())
         pt = self.view.sel()[0].begin()
         errorText = ""
         for (region, text) in clientInfo.errors['syntacticDiag']:
@@ -1291,8 +1298,8 @@ class TypescriptFinishRenameCommand(sublime_plugin.TextCommand):
                 activeWindow = sublime.active_window()
                 renameView = activeWindow.find_open_file(file)
                 if not renameView:
-                    clientInfo = cli.getOrAddFile(file)
-                    clientInfo.renameOnLoad = {"locs": innerLocs, "name": newName}
+                    clientInfo = cli.get_or_add_file(file)
+                    clientInfo.rename_on_load = {"locs": innerLocs, "name": newName}
                     activeWindow.open_file(file)
                 elif renameView != self.view:
                     renameView.run_command('typescript_delayed_rename_file',
@@ -1358,7 +1365,7 @@ def updateRefLine(refInfo, curLine, view):
     view.erase_regions("curref")
     caretPos = view.text_point(curLine, 0)
     # sublime 2 doesn't support custom icons
-    icon = "Packages/" + pluginName + "/icons/arrow-right3.png" if not cli.ST2() else ""
+    icon = "Packages/" + pluginName + "/icons/arrow-right3.png" if not cli.is_st2() else ""
     view.add_regions("curref", [sublime.Region(caretPos, caretPos + 1)], 
                      "keyword", icon, 
                      sublime.HIDDEN)
@@ -1370,7 +1377,7 @@ class TypescriptGoToRefCommand(sublime_plugin.TextCommand):
     def run(self, text):
         pos = self.view.sel()[0].begin()
         cursor = self.view.rowcol(pos)
-        refInfo = cli.getRefInfo()
+        refInfo = cli.get_ref_info()
         mapping = refInfo.getMapping(str(cursor[0]))
         if mapping:
            (filename, l, c, p, n) = mapping.asTuple()
@@ -1385,7 +1392,7 @@ class TypescriptNextRefCommand(sublime_plugin.TextCommand):
     def run(self, text):
         refView = getRefView()
         if refView:
-            refInfo = cli.getRefInfo()
+            refInfo = cli.get_ref_info()
             line = refInfo.nextRefLine()
             pos = refView.text_point(int(line), 0)
             setCaretPos(refView, pos)
@@ -1398,7 +1405,7 @@ class TypescriptPrevRefCommand(sublime_plugin.TextCommand):
     def run(self, text):
         refView = getRefView()
         if refView:
-            refInfo = cli.getRefInfo()
+            refInfo = cli.get_ref_info()
             line = refInfo.prevRefLine()
             pos = refView.text_point(int(line), 0)
             setCaretPos(refView, pos)
@@ -1409,7 +1416,7 @@ class TypescriptPrevRefCommand(sublime_plugin.TextCommand):
 def highlightIds(view, refId):
     idRegions = view.find_all("(?<=\W)" + refId + "(?=\W)") 
     if idRegions and (len(idRegions) > 0):
-       if cli.ST2():
+       if cli.is_st2():
           view.add_regions("refid", idRegions, "constant.numeric", "", sublime.DRAW_OUTLINED)
        else:
           view.add_regions("refid", idRegions, "constant.numeric", 
@@ -1459,7 +1466,7 @@ class TypescriptPopulateRefs(sublime_plugin.TextCommand):
                 cursor = self.view.rowcol(pos)
                 line = str(cursor[0])
                 if not refInfo:
-                    refInfo = cli.initRefInfo(line, refId)
+                    refInfo = cli.init_ref_info(line, refId)
                 refInfo.addMapping(line, Ref(filename, l, c, prevLine))
                 if prevLine:
                     mapping = refInfo.getMapping(prevLine)
@@ -1506,13 +1513,12 @@ def applyFormattingChanges(text, view, codeEdits):
             newText = codeEdit["newText"]
             applyEdit(text, view, startl, startc, endl, endc, ntext=newText)
 
-
 def insertText(view, edit, loc, text):
     view.insert(edit, loc, text)
     sendReplaceChangesForRegions(view, [sublime.Region(loc, loc)], text)
-    if not cli.ST2():
-        clientInfo = cli.getOrAddFile(view.file_name())
-        clientInfo.changeCount = view.change_count()
+    if not cli.is_st2():
+        clientInfo = cli.get_or_add_file(view.file_name())
+        clientInfo.change_count = view.change_count()
     checkUpdateView(view)
 
 
@@ -1549,9 +1555,9 @@ def formatRange(text, view, begin, end):
     if formatResp["success"]:
         codeEdits = formatResp["body"]
         applyFormattingChanges(text, view, codeEdits)
-    if not cli.ST2():
-        clientInfo = cli.getOrAddFile(view.file_name())
-        clientInfo.changeCount = view.change_count()
+    if not cli.is_st2():
+        clientInfo = cli.get_or_add_file(view.file_name())
+        clientInfo.change_count = view.change_count()
 
 
 # command to format the current selection
@@ -1612,7 +1618,7 @@ class TypescriptPasteAndFormat(sublime_plugin.TextCommand):
             return
         checkUpdateView(view)
         beforePaste = copyRegionsStatic(view.sel())
-        if cli.ST2():
+        if cli.is_st2():
             view.add_regions("apresPaste", copyRegions(view.sel()), "", "", sublime.HIDDEN)
         else:
             view.add_regions("apresPaste", copyRegions(view.sel()), flags = sublime.HIDDEN)
@@ -1719,7 +1725,7 @@ def plugin_loaded():
     print('initialize typescript...')
     print(sublime.version())
     cli = EditorClient()
-    cli.setFeatures()
+    cli.set_features()
 
     if popup_manager is None and TOOLTIP_SUPPORT:
         # Full path to template file
@@ -1743,7 +1749,7 @@ def plugin_loaded():
         if refInfoV:
            print("got refinfo from settings")
            refInfo = buildRefInfo(refInfoV)
-           cli.updateRefInfo(refInfo)
+           cli.update_ref_info(refInfo)
            refView.set_scratch(True)
            highlightIds(refView, refInfo.getRefId())
            curLine = refInfo.getRefLine()
@@ -1759,13 +1765,12 @@ def plugin_loaded():
     else:
        print("ref view not found")
 
-
 # this unload is not always called on exit
 def plugin_unloaded():
     print('typescript plugin unloaded')
     refView = getRefView()
     if refView:
-        refInfo = cli.getRefInfo()
+        refInfo = cli.get_ref_info()
         if refInfo:
             refView.settings().set('refinfo', refInfo.asValue())
     cli.service.exit()

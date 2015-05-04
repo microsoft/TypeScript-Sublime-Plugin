@@ -192,7 +192,7 @@ class NodeCommClient(CommClient):
 
             if len(header) == 0:
                 if state == 'init':
-                    log.info('0 byte line in stream when expecting header')
+                    # log.info('0 byte line in stream when expecting header')
                     return proc.poll() != None
                 else:
                     state = "body"
