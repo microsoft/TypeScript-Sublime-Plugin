@@ -1531,11 +1531,6 @@ def setCaretPos(view, pos):
 # format on ";", "}", or "\n"; called by typing these keys in a ts file
 # in the case of "\n", this is only called when no completion dialogue visible
 class TypescriptFormatOnKey(sublime_plugin.TextCommand):
-    def is_enabled(self):
-        settings = sublime.load_settings('Preferences.sublime-settings')
-        _is_enabled = settings.get('typescript_auto_format', True)
-        return _is_enabled
-
     def run(self, text, key = "", insertKey = True):
         if 0 == len(key):
             return
