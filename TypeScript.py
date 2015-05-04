@@ -271,7 +271,7 @@ def buildRefInfo(refInfoV):
     return refInfo
 
 class EditorClient:
-    """ A singleton class holding information that must be accessible globally. """
+    """ A singleton class holding information for the entire application that must be accessible globally"""
     def __init__(self):
         # load formatting settings and set callbacks for setting changes
         settings = sublime.load_settings('Preferences.sublime-settings')
@@ -300,6 +300,7 @@ class EditorClient:
         self.tab_size = settings.get('tab_size', 4)
         self.indent_size = settings.get('indent_size', 4)
         self.translate_tab_to_spaces = settings.get('translate_tabs_to_spaces', False)
+        self.set_features()
 
     def is_st2(self):
         if not hasattr(self, '_is_st2'):
@@ -313,7 +314,7 @@ class EditorClient:
             "tabSize": self.tab_size, 
             "indentSize": self.indent_size, 
             "convertTabsToSpaces": self.translate_tab_to_spaces
-            }
+        }
         self.service.configure(host_info, None, format_options)
 
     def reload_required(self, view):
@@ -466,7 +467,7 @@ def setFilePrefs(view):
 # given a list of regions and a (possibly zero-length) string to insert, 
 # send the appropriate change information to the server
 def sendReplaceChangesForRegions(view, regions, insertString):
-    if cli.is_st2() or (not is_typescript(view)):
+    if cli.is_st2() or not is_typescript(view):
        return
     for region in regions:
         location = getLocationFromPosition(view, region.begin())
