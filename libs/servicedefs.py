@@ -1,8 +1,8 @@
+import sublime, sublime_plugin
+
 class Location:
+    """Object containing line and offset (one-based) of file location"""
     def __init__(self, line, offset):
-        """
-        Object containing line and offset (one-based) of file location
-        """
         self.line = line
         self.offset = offset
 

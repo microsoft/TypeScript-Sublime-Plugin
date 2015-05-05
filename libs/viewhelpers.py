@@ -1,0 +1,235 @@
+import sublime, sublime_plugin
+import os
+
+from .helpers import *
+from .globalvars import *
+import codecs
+
+
+class FileInfo:
+    """Per-file info that will only be accessible from TypeScriptListener instance"""
+    def __init__(self, filename, cc):
+        self.filename = filename
+        self.change_sent = False
+        self.pre_change_sent = False
+        self.modified = False
+        self.completion_prefix_sel = None
+        self.completion_sel = None
+        self.last_completion_loc = None
+        self.last_completions = None
+        self.last_completion_prefix = None
+        self.prev_sel = None
+        self.view = None
+        self.has_errors = False
+        self.client_info = None
+        self.change_count_err_req = -1
+        self.last_modify_change_count = cc
+        self.modify_count = 0
+
+def active_view():
+    """Return currently active view"""
+    return sublime.active_window().active_view()
+
+def is_typescript(view):
+    """Test if the outer syntactic scope is 'source.ts' """
+    if not view.file_name():
+        return False
+    try:
+        location = view.sel()[0].begin()
+    except:
+        return False
+
+    return view.match_selector(location, 'source.ts')
+
+def is_typescript_scope(view, scope_sel):
+    """Test if the cursor is in a syntactic scope specified by selector scopeSel"""
+    try:
+        location = view.sel()[0].begin()
+    except:
+        return False
+
+    return view.match_selector(location, scope_sel)
+
+def is_special_view(view):
+    """Determine if the current view is a special view.
+
+    Special views are mostly refering to panels. They are different from normal views 
+    in that they cannot be the active_view of their windows, therefore their ids 
+    shouldn't be equal to the current view id.
+    """
+    return view.window() and view.id() != view.window().active_view().id()
+
+def get_location_from_view(view):
+    """Returns the Location tuple of the beginning of the first selected region in the view"""
+    region = view.sel()[0]
+    return get_location_from_region(view, region)
+
+def get_location_from_region(view, region):
+    """Returns the Location tuple of the beginning of the given region"""
+    position = region.begin()
+    return get_location_from_position(view, position)
+
+def get_location_from_position(view, position):
+    """Returns the LineOffset object of the given text position"""
+    cursor = view.rowcol(position)
+    line = cursor[0] + 1
+    offset = cursor[1] + 1
+    return Location(line, offset)
+
+def open_file(view):
+    """Open the file on the server"""
+    cli.service.open(view.file_name())
+
+def reconfig_file(view):
+    host_info = "Sublime Text version " + str(sublime.version())
+    # Preferences Settings
+    view_settings = self.view.settings()
+    tab_size = view_settings.get('tab_size', 4)
+    indent_size = view_settings.get('indent_size', tab_size)
+    tabs_to_spaces = view_settings.get('translate_tabs_to_spaces', True)
+    format_options = {
+        "tabSize": tab_size, 
+        "indentSize": indent_size, 
+        "convertTabsToSpaces": translate_tab_to_spaces
+    }
+    cli.service.configure(host_info, view.file_name(), format_options)
+
+def set_file_prefs(view):
+    settings = view.settings()
+    settings.set('use_tab_stops', False)
+    settings.add_on_change('tab_size', tab_size_changed)
+    settings.add_on_change('indent_size', tab_size_changed)
+    settings.add_on_change('translate_tabs_to_spaces', tab_size_changed)
+    reconfig_file(view)
+
+def tab_size_changed():
+    view = active_view()
+    reconfig_file(view)
+    client_info = cli.get_or_add_file(view.file_name())
+    client_info.pending_changes = True
+
+def set_caret_pos(view, pos):
+    view.sel().clear()
+    view.sel().add(pos)
+
+def get_tempfile_name():
+    """Get the first unused temp file name to avoid conflicts"""
+    seq = cli.service.seq
+    if len(cli.available_tempfile_list) > 0:
+        tempfile_name = cli.available_tempfile_list.pop()
+    else:
+        tempfile_name = os.path.join(PLUGIN_DIR, ".tmpbuf"+str(cli.tmpseq))
+        cli.tmpseq += 1
+    cli.seq_to_tempfile_name[seq] = tempfile_name
+    return tempfile_name
+
+def recv_reload_response(reload_resp):
+    """Post process after receiving a reload response"""
+    if reload_resp["request_seq"] in cli.seq_to_tempfile_name:
+        tempfile_name = cli.seq_to_tempfile_name.pop(reload_resp["request_seq"])
+        if tempfile_name:
+            cli.available_tempfile_list.append(tempfile_name)
+
+def reload_buffer(view, client_info=None):
+    """Write the buffer of view to a temporary file and have the server reload it"""
+    if not view.is_loading():
+        tmpfile_name = get_tempfile_name()
+        tmpfile = codecs.open(tmpfile_name, "w", "utf-8")
+        text = view.substr(sublime.Region(0, view.size()))
+        tmpfile.write(text)
+        tmpfile.flush()
+        cli.service.reloadAsync(view.file_name(), tmpfile_name, recv_reload_response)
+        if not IS_ST2:
+            if not client_info:
+                client_info = cli.get_or_add_file(view.file_name())
+                client_info.change_count = view.change_count()
+                client_info.pending_changes = False
+
+def check_update_view(view):
+    """Check if the buffer in the view needs to be reloaded
+
+    If we have changes to the view not accounted for by change messages, 
+    send the whole buffer through a temporary file
+    """
+    if is_typescript(view):
+        client_info = cli.get_or_add_file(view.file_name())
+        if cli.reload_required(view):
+            reload_buffer(view, client_info)
+
+def send_replace_changes_for_regions(view, regions, insert_string):
+    """
+    Given a list of regions and a (possibly zero-length) string to insert, 
+    send the appropriate change information to the server.
+    """
+    if IS_ST2 or not is_typescript(view):
+        return
+    for region in regions:
+        location = get_location_from_position(view, region.begin())
+        end_location = get_location_from_position(view, region.end())
+        cli.service.change(view.file_name(), location, end_location, insert_string)
+
+def apply_edit(text, view, startl, startc, endl, endc, ntext=""):
+    """Apply a single edit specification to a view"""
+    begin = view.text_point(startl, startc)
+    end = view.text_point(endl, endc)
+    region = sublime.Region(begin, end)
+    send_replace_changes_for_regions(view, [region], ntext)
+    # break replace into two parts to avoid selection changes
+    if region.size() > 0:
+        view.erase(text, region)
+    if (len(ntext) > 0):
+        view.insert(text, begin, ntext)
+
+def apply_formatting_changes(text, view, code_edits):
+    """Apply a set of edits to a view"""
+    if code_edits:
+        for code_edit in code_edits[::-1]:
+            startlc = code_edit["start"]
+            (startl, startc) = extract_line_offset(startlc)
+            endlc = code_edit["end"]
+            (endl, endc) = extract_line_offset(endlc)
+            newText = code_edit["newText"]
+            apply_edit(text, view, startl, startc, endl, endc, ntext=newText)
+
+def insert_text(view, edit, loc, text):
+    view.insert(edit, loc, text)
+    send_replace_changes_for_regions(view, [sublime.Region(loc, loc)], text)
+    if not IS_ST2:
+        client_info = cli.get_or_add_file(view.file_name())
+        client_info.change_count = view.change_count()
+    check_update_view(view)
+
+def format_range(text, view, begin, end):
+    """Format a range of locations in the view"""
+    if (not is_typescript(view)):
+        print("To run this command, please first assign a file name to the view")
+        return
+    check_update_view(view)
+    format_resp = cli.service.format(
+        view.file_name(), 
+        get_location_from_position(view, begin), 
+        get_location_from_position(view, end)
+    )
+    if format_resp["success"]:
+        code_edits = format_resp["body"]
+        apply_formatting_changes(text, view, code_edits)
+    if not IS_ST2:
+        client_info = cli.get_or_add_file(view.file_name())
+        client_info.change_count = view.change_count()
+
+
+def getRefView(create=True):
+    """
+    If the FindReferences view is active, get it
+    TODO: generalize this so that we can find any scratch view
+    containing references to other files
+    """
+    active_window = sublime.active_window()
+    for view in active_window.views():
+        if view.name() == "Find References":
+            return view
+    if create:
+        refView = active_window.new_file()
+        refView.set_name("Find References")
+        refView.set_scratch(True)
+        return refView

@@ -1,7 +1,8 @@
 import sublime
-from logger import log
-from workscheduler import work_scheduler
-from servicedefs import Location
+
+from .logger import log
+from .workscheduler import work_scheduler
+from .servicedefs import Location
 
 
 class PopupManager():

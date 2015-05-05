@@ -5,16 +5,15 @@ import time
 import json
 import sublime
 import sublime_plugin
-from logger import log
+
+from .logger import log
+from . import jsonhelpers
 
 # queue module name changed from Python 2 to 3
 if int(sublime.version()) < 3000:
    import Queue as queue
 else:
    import queue
-
-import jsonhelpers
-import servicedefs
 
 class CommClient:
     def getEvent(self): pass

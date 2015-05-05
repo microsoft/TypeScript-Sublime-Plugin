@@ -1,10 +1,8 @@
 import collections
-import json
 
-import jsonhelpers
-import servicedefs
-from nodeclient import CommClient
-from servicedefs import Location
+from . import jsonhelpers
+from .nodeclient import CommClient
+from .servicedefs import Location
 
 class ServiceProxy:
     def __init__(self, comm=CommClient()):
