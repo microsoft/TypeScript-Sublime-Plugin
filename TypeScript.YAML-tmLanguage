@@ -21,7 +21,7 @@ repository:
 
   control-statement:
     name: keyword.control.ts
-    match: \b(break|catch|continue|declare|do|else|finally|for|if|return|switch|throw|try|while)\b
+    match: \b(break|catch|continue|declare|do|else|finally|for|if|return|switch|throw|try|while|with|super)\b
 
   switch-case: 
     name: case.expr.ts
@@ -100,7 +100,7 @@ repository:
     - include: '#static-modifier'
     - include: '#property-accessor'
 
-  object-type:
+  type-object:
     name: meta.object.type.ts
     begin: \{
     beginCaptures:
@@ -225,10 +225,9 @@ repository:
   type-annotation:
     name: meta.type.annotation.ts
     begin: ":"
-    end: (?=$|[,);\}\]]|//)|(?==[^>])|(?<=\}|[a-zA-Z_$]|>)\s*(?=\{)
+    end: (?=$|[,);\}\]]|//)|(?==[^>])|(?<=[\}>\]\)]|[a-zA-Z_$])\s*(?=\{)
     patterns:
     - include: '#type'
-    - include: '#comment'
 
   type:
     name: meta.type.ts
@@ -236,10 +235,10 @@ repository:
     - include: '#type-primitive'
     - include: '#type-parameters'
     - include: '#type-tuple'
-    - include: '#object-type'
+    - include: '#type-object'
     - include: '#type-operator'
-    - include: '#paren-type-or-function-type-parameters'
-    - include: '#function-type-return-type'
+    - include: '#type-paren-or-function-type-parameters'
+    - include: '#type-function-return-type'
     - include: '#type-name'
 
   function-type-parameters:
@@ -257,18 +256,20 @@ repository:
     - include: '#variable-initializer'
 
   type-primitive:
-    name: storage.type.ts
+    name: meta.type.primitive.ts
     match: '\b(string|number|boolean|symbol|any|void)\b'
+    captures:
+      '1': { name: storage.type.ts }
 
   # Parenthesis can contain either types and function parameters
   # (number | string) or (param: number, param2: string)
   # and it can be nested, for example
   # (number | (param: number, param2: string) => void)
-  paren-type-or-function-type-parameters:
+  type-paren-or-function-type-parameters:
     name: meta.type.paren.cover.ts
     begin: '(?:\b(new)\b)?\s*\('
     beginCaptures:
-      '1': { name: keyword.operator.ts }
+      '1': { name: keyword.control.ts }
     end: '\)'
     patterns:
     - include: '#comment'
@@ -279,12 +280,12 @@ repository:
     name: keyword.operator.type.ts
     match: '[.|]'
 
-  function-type-return-type:
-    name: meta.function.type.return.ts
+  type-function-return-type:
+    name: meta.type.function.return.ts
     begin: '=>'
     beginCaptures:
       '0': { name: keyword.operator.ts }
-    end: (?=[,\)\{=;]|//|$)
+    end: (?=\s*[,\)\{=;]|//|$)
     patterns:
     - include: '#type'
 
@@ -301,8 +302,10 @@ repository:
     - include: '#comment'
 
   type-name:
-    name: entity.name.type.ts
+    name: meta.type.name.ts
     match: '[a-zA-Z_$][.\w$]*'
+    captures:
+      '1': { name: entity.name.type.ts }
 
   type-parameters:
     name: meta.type.parameters.ts
@@ -329,6 +332,7 @@ repository:
   expression:
     name: meta.expression.ts
     patterns:
+    - include: '#for-in-simple'
     - include: '#string'
     - include: '#regex'
     - include: '#template'
@@ -348,10 +352,10 @@ repository:
     - include: '#storage-keyword'
     - include: '#control-statement'
     - include: '#switch-case'
-    - include: '#for-in-simple'
+    
   for-in-simple:
     name: forin.expr.ts
-    match: (?<=\()\s*\b(var|let|const)\s+([a-zA-Z_$][\w$]*)\s+(in)\b
+    match: (?<=\()\s*\b(var|let|const)\s+([a-zA-Z_$][\w$]*)\s+(in|of)\b
     captures:
       '1': { name: storage.type.ts }
       '3': { name: keyword.operator.ts }
