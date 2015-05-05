@@ -21,7 +21,7 @@ repository:
 
   control-statement:
     name: keyword.control.ts
-    match: \b(break|catch|continue|declare|do|else|finally|for|if|return|switch|throw|try|while)\b
+    match: \b(break|catch|continue|declare|do|else|finally|for|if|return|switch|throw|try|while|with|super)\b
 
   switch-case: 
     name: case.expr.ts
@@ -332,6 +332,7 @@ repository:
   expression:
     name: meta.expression.ts
     patterns:
+    - include: '#for-in-simple'
     - include: '#string'
     - include: '#regex'
     - include: '#template'
@@ -351,11 +352,10 @@ repository:
     - include: '#storage-keyword'
     - include: '#control-statement'
     - include: '#switch-case'
-    - include: '#for-in-simple'
     
   for-in-simple:
     name: forin.expr.ts
-    match: (?<=\()\s*\b(var|let|const)\s+([a-zA-Z_$][\w$]*)\s+(in)\b
+    match: (?<=\()\s*\b(var|let|const)\s+([a-zA-Z_$][\w$]*)\s+(in|of)\b
     captures:
       '1': { name: storage.type.ts }
       '3': { name: keyword.operator.ts }
@@ -394,7 +394,7 @@ repository:
 
   expression-operator:
     name: keyword.operator.ts
-    match: =>|\b(delete|export|import|in|of|instanceof|module|new|typeof|void)\b
+    match: =>|\b(delete|export|import|in|instanceof|module|new|typeof|void)\b
 
   arithmetic-operator:
     name: keyword.operator.arithmetic.ts

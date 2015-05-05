@@ -193,7 +193,7 @@
 		<key>control-statement</key>
 		<dict>
 			<key>match</key>
-			<string>\b(break|catch|continue|declare|do|else|finally|for|if|return|switch|throw|try|while)\b</string>
+			<string>\b(break|catch|continue|declare|do|else|finally|for|if|return|switch|throw|try|while|with|super)\b</string>
 			<key>name</key>
 			<string>keyword.control.ts</string>
 		</dict>
@@ -286,6 +286,10 @@
 			<array>
 				<dict>
 					<key>include</key>
+					<string>#for-in-simple</string>
+				</dict>
+				<dict>
+					<key>include</key>
 					<string>#string</string>
 				</dict>
 				<dict>
@@ -360,16 +364,12 @@
 					<key>include</key>
 					<string>#switch-case</string>
 				</dict>
-				<dict>
-					<key>include</key>
-					<string>#for-in-simple</string>
-				</dict>
 			</array>
 		</dict>
 		<key>expression-operator</key>
 		<dict>
 			<key>match</key>
-			<string>=&gt;|\b(delete|export|import|in|of|instanceof|module|new|typeof|void)\b</string>
+			<string>=&gt;|\b(delete|export|import|in|instanceof|module|new|typeof|void)\b</string>
 			<key>name</key>
 			<string>keyword.operator.ts</string>
 		</dict>
@@ -418,7 +418,7 @@
 				</dict>
 			</dict>
 			<key>match</key>
-			<string>(?&lt;=\()\s*\b(var|let|const)\s+([a-zA-Z_$][\w$]*)\s+(in)\b</string>
+			<string>(?&lt;=\()\s*\b(var|let|const)\s+([a-zA-Z_$][\w$]*)\s+(in|of)\b</string>
 			<key>name</key>
 			<string>forin.expr.ts</string>
 		</dict>
