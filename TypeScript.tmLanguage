@@ -310,6 +310,10 @@
 				</dict>
 				<dict>
 					<key>include</key>
+					<string>#function-type-parameters</string>
+				</dict>
+				<dict>
+					<key>include</key>
 					<string>#paren-expression</string>
 				</dict>
 				<dict>
@@ -1424,11 +1428,19 @@
 				</dict>
 				<dict>
 					<key>include</key>
-					<string>#type</string>
+					<string>#parameter-name</string>
 				</dict>
 				<dict>
 					<key>include</key>
-					<string>#function-type-parameters</string>
+					<string>#type-annotation</string>
+				</dict>
+				<dict>
+					<key>include</key>
+					<string>#variable-initializer</string>
+				</dict>
+				<dict>
+					<key>include</key>
+					<string>#type</string>
 				</dict>
 			</array>
 		</dict>
