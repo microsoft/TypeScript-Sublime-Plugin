@@ -1,13 +1,14 @@
 import sublime, sublime_plugin
 import os
+import codecs
 
 from .helpers import *
 from .globalvars import *
-import codecs
 
 
 class FileInfo:
     """Per-file info that will only be accessible from TypeScriptListener instance"""
+
     def __init__(self, filename, cc):
         self.filename = filename
         self.change_sent = False
@@ -26,9 +27,11 @@ class FileInfo:
         self.last_modify_change_count = cc
         self.modify_count = 0
 
+
 def active_view():
     """Return currently active view"""
     return sublime.active_window().active_view()
+
 
 def is_typescript(view):
     """Test if the outer syntactic scope is 'source.ts' """
@@ -41,6 +44,7 @@ def is_typescript(view):
 
     return view.match_selector(location, 'source.ts')
 
+
 def is_typescript_scope(view, scope_sel):
     """Test if the cursor is in a syntactic scope specified by selector scopeSel"""
     try:
@@ -49,6 +53,7 @@ def is_typescript_scope(view, scope_sel):
         return False
 
     return view.match_selector(location, scope_sel)
+
 
 def is_special_view(view):
     """Determine if the current view is a special view.
@@ -59,15 +64,18 @@ def is_special_view(view):
     """
     return view.window() and view.id() != view.window().active_view().id()
 
+
 def get_location_from_view(view):
     """Returns the Location tuple of the beginning of the first selected region in the view"""
     region = view.sel()[0]
     return get_location_from_region(view, region)
 
+
 def get_location_from_region(view, region):
     """Returns the Location tuple of the beginning of the given region"""
     position = region.begin()
     return get_location_from_position(view, position)
+
 
 def get_location_from_position(view, position):
     """Returns the LineOffset object of the given text position"""
@@ -76,9 +84,11 @@ def get_location_from_position(view, position):
     offset = cursor[1] + 1
     return Location(line, offset)
 
+
 def open_file(view):
     """Open the file on the server"""
     cli.service.open(view.file_name())
+
 
 def reconfig_file(view):
     host_info = "Sublime Text version " + str(sublime.version())
@@ -88,11 +98,12 @@ def reconfig_file(view):
     indent_size = view_settings.get('indent_size', tab_size)
     tabs_to_spaces = view_settings.get('translate_tabs_to_spaces', True)
     format_options = {
-        "tabSize": tab_size, 
-        "indentSize": indent_size, 
+        "tabSize": tab_size,
+        "indentSize": indent_size,
         "convertTabsToSpaces": translate_tab_to_spaces
     }
     cli.service.configure(host_info, view.file_name(), format_options)
+
 
 def set_file_prefs(view):
     settings = view.settings()
@@ -102,15 +113,18 @@ def set_file_prefs(view):
     settings.add_on_change('translate_tabs_to_spaces', tab_size_changed)
     reconfig_file(view)
 
+
 def tab_size_changed():
     view = active_view()
     reconfig_file(view)
     client_info = cli.get_or_add_file(view.file_name())
     client_info.pending_changes = True
 
+
 def set_caret_pos(view, pos):
     view.sel().clear()
     view.sel().add(pos)
+
 
 def get_tempfile_name():
     """Get the first unused temp file name to avoid conflicts"""
@@ -118,10 +132,11 @@ def get_tempfile_name():
     if len(cli.available_tempfile_list) > 0:
         tempfile_name = cli.available_tempfile_list.pop()
     else:
-        tempfile_name = os.path.join(PLUGIN_DIR, ".tmpbuf"+str(cli.tmpseq))
+        tempfile_name = os.path.join(PLUGIN_DIR, ".tmpbuf" + str(cli.tmpseq))
         cli.tmpseq += 1
     cli.seq_to_tempfile_name[seq] = tempfile_name
     return tempfile_name
+
 
 def recv_reload_response(reload_resp):
     """Post process after receiving a reload response"""
@@ -129,6 +144,7 @@ def recv_reload_response(reload_resp):
         tempfile_name = cli.seq_to_tempfile_name.pop(reload_resp["request_seq"])
         if tempfile_name:
             cli.available_tempfile_list.append(tempfile_name)
+
 
 def reload_buffer(view, client_info=None):
     """Write the buffer of view to a temporary file and have the server reload it"""
@@ -145,6 +161,7 @@ def reload_buffer(view, client_info=None):
                 client_info.change_count = view.change_count()
                 client_info.pending_changes = False
 
+
 def check_update_view(view):
     """Check if the buffer in the view needs to be reloaded
 
@@ -155,6 +172,7 @@ def check_update_view(view):
         client_info = cli.get_or_add_file(view.file_name())
         if cli.reload_required(view):
             reload_buffer(view, client_info)
+
 
 def send_replace_changes_for_regions(view, regions, insert_string):
     """
@@ -168,6 +186,7 @@ def send_replace_changes_for_regions(view, regions, insert_string):
         end_location = get_location_from_position(view, region.end())
         cli.service.change(view.file_name(), location, end_location, insert_string)
 
+
 def apply_edit(text, view, startl, startc, endl, endc, ntext=""):
     """Apply a single edit specification to a view"""
     begin = view.text_point(startl, startc)
@@ -180,6 +199,7 @@ def apply_edit(text, view, startl, startc, endl, endc, ntext=""):
     if (len(ntext) > 0):
         view.insert(text, begin, ntext)
 
+
 def apply_formatting_changes(text, view, code_edits):
     """Apply a set of edits to a view"""
     if code_edits:
@@ -191,6 +211,7 @@ def apply_formatting_changes(text, view, code_edits):
             newText = code_edit["newText"]
             apply_edit(text, view, startl, startc, endl, endc, ntext=newText)
 
+
 def insert_text(view, edit, loc, text):
     view.insert(edit, loc, text)
     send_replace_changes_for_regions(view, [sublime.Region(loc, loc)], text)
@@ -199,6 +220,7 @@ def insert_text(view, edit, loc, text):
         client_info.change_count = view.change_count()
     check_update_view(view)
 
+
 def format_range(text, view, begin, end):
     """Format a range of locations in the view"""
     if (not is_typescript(view)):
@@ -206,8 +228,8 @@ def format_range(text, view, begin, end):
         return
     check_update_view(view)
     format_resp = cli.service.format(
-        view.file_name(), 
-        get_location_from_position(view, begin), 
+        view.file_name(),
+        get_location_from_position(view, begin),
         get_location_from_position(view, end)
     )
     if format_resp["success"]:
@@ -218,7 +240,7 @@ def format_range(text, view, begin, end):
         client_info.change_count = view.change_count()
 
 
-def getRefView(create=True):
+def get_ref_view(create=True):
     """
     If the FindReferences view is active, get it
     TODO: generalize this so that we can find any scratch view
@@ -229,7 +251,7 @@ def getRefView(create=True):
         if view.name() == "Find References":
             return view
     if create:
-        refView = active_window.new_file()
-        refView.set_name("Find References")
-        refView.set_scratch(True)
-        return refView
+        ref_view = active_window.new_file()
+        ref_view.set_name("Find References")
+        ref_view.set_scratch(True)
+        return ref_view

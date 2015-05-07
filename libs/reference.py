@@ -30,7 +30,7 @@ def build_ref_info(ref_info_tuple):
     """Build a RefInfo object from a serialized RefInfo"""
     (dict, currentLine, first_line, last_line, ref_id) = ref_info_tuple
     ref_info = RefInfo(first_line, ref_id)
-    ref_info.setRefLine(currentLine)
+    ref_info.set_ref_line(currentLine)
     ref_info.setLastLine(last_line)
     for key in dict.keys():
         ref_info.addMapping(key, build_ref(dict[key]))
