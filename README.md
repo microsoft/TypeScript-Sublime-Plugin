@@ -15,14 +15,14 @@ look something like:
 
 ```
 cd ~/"Library/Application Support/Sublime Text 3/Packages"
-git clone https://github.com/Microsoft/TypeScript-Sublime-Plugin.git TypeScript
+git clone --depth=1 https://github.com/Microsoft/TypeScript-Sublime-Plugin.git TypeScript
 ```
 
 And on Windows something like:
 
 ```
 cd "%APPDATA%\Sublime Text 3\Packages"
-git clone https://github.com/Microsoft/TypeScript-Sublime-Plugin.git TypeScript
+git clone --depth=1 https://github.com/Microsoft/TypeScript-Sublime-Plugin.git TypeScript
 ```
 
 Note if you are using the portable version of Sublime Text, the location will be
