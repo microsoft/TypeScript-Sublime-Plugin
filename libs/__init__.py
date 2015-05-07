@@ -1,15 +1,16 @@
 from .nodeclient import NodeCommClient
 from .popupmanager import PopupManager
 from .serviceproxy import ServiceProxy
+from .editorclient import cli
+from .popupmanager import get_popup_manager
 
 __all__ = [
+    'cli',
     'logger',
-    'globalvars',
+    'get_popup_manager',
     'NodeCommClient',
     'jsonhelpers',
-    'logger',
     'PopupManager',
-    'servicedefs',
     'ServiceProxy',
     'workscheduler'
 ]

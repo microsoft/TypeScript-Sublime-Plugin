@@ -1,5 +1,36 @@
-# singleton that receives event calls from Sublime
+from ..commands import *
+from ..libs import *
+from ..libs.viewhelpers import *
+from ..libs.texthelpers import *
+import sublime_plugin
+
+
+
+class FileInfo:
+    """Per-file info that will only be accessible from TypeScriptListener instance"""
+
+    def __init__(self, filename, cc):
+        self.filename = filename
+        self.change_sent = False
+        self.pre_change_sent = False
+        self.modified = False
+        self.completion_prefix_sel = None
+        self.completion_sel = None
+        self.last_completion_loc = None
+        self.last_completions = None
+        self.last_completion_prefix = None
+        self.prev_sel = None
+        self.view = None
+        self.has_errors = False
+        self.client_info = None
+        self.change_count_err_req = -1
+        self.last_modify_change_count = cc
+        self.modify_count = 0
+
+
 class TypeScriptListener(sublime_plugin.EventListener):
+    """Singleton that receives event calls from Sublime"""
+
     def __init__(self):
         self.fileMap = {}
         self.pendingCompletions = []
@@ -17,7 +48,7 @@ class TypeScriptListener(sublime_plugin.EventListener):
         self.changeFocus = False
         self.mod = False
         self.about_to_close_all = False
-        self.was_paren_pressed = False
+        # self.was_paren_pressed = False
 
     def getInfo(self, view):
         info = None
@@ -25,8 +56,8 @@ class TypeScriptListener(sublime_plugin.EventListener):
             if is_typescript(view):
                 info = self.fileMap.get(view.file_name())
                 if not info:
-                    if not cli:
-                        plugin_loaded()
+                    #if not cli:
+                    #    plugin_loaded()
                     info = FileInfo(view.file_name(), None)
                     info.view = view
                     settings = view.settings()
@@ -98,7 +129,7 @@ class TypeScriptListener(sublime_plugin.EventListener):
                     files.append(groupActiveView.file_name())
                     check_update_view(groupActiveView)
             if len(files) > 0:
-                cli.service.requestGetError(errDelay, files)
+                cli.service.request_get_err(errDelay, files)
             self.errRefreshRequested = True
             self.setOnIdleTimer(errDelay + 300)
 
@@ -203,7 +234,7 @@ class TypeScriptListener(sublime_plugin.EventListener):
     # check the event queue and dispatch any events
     def onIdle(self):
         view = active_view()
-        ev = cli.service.getEvent()
+        ev = cli.service.get_event()
         if ev is not None:
             self.dispatchEvent(ev)
             self.errRefreshRequested = False
@@ -246,6 +277,8 @@ class TypeScriptListener(sublime_plugin.EventListener):
     def on_text_command(self, view, command_name, args):
         # If we had a popup session active, and we get the command to hide it,
         # then do the necessary clean up
+
+        popup_manager = get_popup_manager()
         if command_name == 'hide_popup':
             popup_manager.on_close_popup()
 
@@ -277,7 +310,7 @@ class TypeScriptListener(sublime_plugin.EventListener):
 
     # update the status line with error info and quick info if no error info
     def update_status(self, view, info):
-        ev = cli.service.getEvent()
+        ev = cli.service.get_event()
         if ev is not None:
             self.dispatchEvent(ev)
         if info.has_errors:
@@ -294,8 +327,8 @@ class TypeScriptListener(sublime_plugin.EventListener):
         logger.view_debug(view, "enter on_close")
         if not self.about_to_close_all:
             if view.file_name() in self.mruFileList:
-                if not cli:
-                    plugin_loaded()
+                #if not cli:
+                #    plugin_loaded()
 
                 if view.is_scratch() and (view.name() == "Find References"):
                     cli.dispose_ref_info()
@@ -316,6 +349,7 @@ class TypeScriptListener(sublime_plugin.EventListener):
         if not is_typescript(view):
             return
 
+        popup_manager = get_popup_manager()
         info = self.getInfo(view)
         if info:
             if not info.client_info:
@@ -466,7 +500,7 @@ class TypeScriptListener(sublime_plugin.EventListener):
                 if not self.completionRequestMember:
                     print(str + " includes a dot but not req mem")
                     return
-            if (len(str) > 0) and (not validCompletionId.match(str)):
+            if (len(str) > 0) and (not VALID_COMPLETION_ID_PATTERN.match(str)):
                 return
         if completionsResp["success"] and ((completionsResp["request_seq"] == self.completionRequestSeq) or IS_ST2):
             completions = []
@@ -513,7 +547,7 @@ class TypeScriptListener(sublime_plugin.EventListener):
                         self.completionRequestMember = (prevChar == ".")
                     else:
                         self.completionRequestMember = False
-                    cli.service.asyncCompletions(view.file_name(), location, prefix, self.handleCompletionInfo)
+                    cli.service.async_completions(view.file_name(), location, prefix, self.handleCompletionInfo)
             completions = self.pendingCompletions
             info.last_completion_loc = locations[0]
             self.pendingCompletions = []

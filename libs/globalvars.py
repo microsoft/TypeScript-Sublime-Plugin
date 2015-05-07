@@ -1,10 +1,14 @@
-import sublime, sublime_plugin
 import os
-from .editorclient import EditorClient
+import re
+
+import sublime
+from .logger import *
+
 
 # get the directory path to this file; 
 LIBS_DIR = os.path.dirname(os.path.abspath(__file__))
 PLUGIN_DIR = os.path.dirname(LIBS_DIR)
+PACKAGES_DIR = os.path.dirname(PLUGIN_DIR)
 PLUGIN_NAME = os.path.basename(PLUGIN_DIR)
 
 # only Sublime Text 3 build after 3072 support tooltip
@@ -16,5 +20,15 @@ IS_ST2 = int(sublime.version()) < 3000
 # Todo: add explanation
 SUBLIME_WORD_MASK = 515
 
-# the singliton EditorClient instance
-cli = EditorClient.get_instance()
+# set logging levels
+LOG_FILE_LEVEL = logging.WARN
+LOG_CONSOLE_LEVEL = logging.WARN
+
+# Todo: add explanation
+NON_BLANK_LINE_PATTERN = re.compile("[\S]+")
+VALID_COMPLETION_ID_PATTERN = re.compile("[a-zA-Z_$\.][\w$\.]*\Z")
+
+
+def set_log_level(logger):
+    logger.logFile.setLevel(LOG_FILE_LEVEL)
+    logger.console.setLevel(LOG_CONSOLE_LEVEL)

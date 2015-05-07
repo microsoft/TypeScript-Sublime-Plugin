@@ -1,15 +1,25 @@
-import sublime, sublime_plugin
-import os
-
-from builtins import classmethod
-from .globalvars import *
+from .reference import RefInfo
 from .nodeclient import NodeCommClient
 from .serviceproxy import ServiceProxy
+from .globalvars import *
+
+
+class ClientFileInfo:
+    """per-file, globally-accessible information"""
+    def __init__(self, filename):
+        self.filename = filename
+        self.pending_changes = False
+        self.change_count = 0
+        self.errors = {
+            'syntacticDiag': [],
+            'semanticDiag': [],
+        }
+        self.rename_on_load = None
+
 
 class EditorClient:
-    instance = None
+    """A singleton class holding information for the entire application that must be accessible globally"""
 
-    """ A singleton class holding information for the entire application that must be accessible globally"""
     def __init__(self):
         # retrieve the path to tsserver.js
         # first see if user set the path to the file
@@ -19,7 +29,7 @@ class EditorClient:
             # otherwise, get tsserver.js from package directory
             proc_file = os.path.join(PLUGIN_DIR, "tsserver", "tsserver.js")
         print("spawning node module: " + proc_file)
-        
+
         self.node_client = NodeCommClient(proc_file)
         self.service = ServiceProxy(self.node_client)
         self.file_map = {}
@@ -44,15 +54,15 @@ class EditorClient:
         host_info = "Sublime Text version " + str(sublime.version())
         # Preferences Settings
         format_options = {
-            "tabSize": self.tab_size, 
-            "indentSize": self.indent_size, 
+            "tabSize": self.tab_size,
+            "indentSize": self.indent_size,
             "convertTabsToSpaces": self.translate_tab_to_spaces
         }
         self.service.configure(host_info, None, format_options)
 
     def reload_required(self, view):
-       client_info = self.get_or_add_file(view.file_name())
-       return IS_ST2 or client_info.pending_changes or client_info.change_count < view.change_count()
+        client_info = self.get_or_add_file(view.file_name())
+        return IS_ST2 or client_info.pending_changes or client_info.change_count < view.change_count()
 
     # ref info is for Find References view
     # TODO: generalize this so that there can be multiple
@@ -60,20 +70,20 @@ class EditorClient:
     def dispose_ref_info(self):
         self.ref_info = None
 
-    def init_ref_info(self, firstLine, refId):
-        self.ref_info = RefInfo(firstLine, refId)
+    def init_ref_info(self, first_line, ref_id):
+        self.ref_info = RefInfo(first_line, ref_id)
         return self.ref_info
 
-    def update_ref_info(self, refInfo):
-        self.ref_info = refInfo
+    def update_ref_info(self, ref_info):
+        self.ref_info = ref_info
 
     def get_ref_info(self):
         return self.ref_info
 
     def get_or_add_file(self, filename):
-        """Get or add per-file information that must be globally acessible """ 
+        """Get or add per-file information that must be globally accessible """
         if (os.name == "nt") and filename:
-            filename = filename.replace('/','\\')
+            filename = filename.replace('/', '\\')
         if not filename in self.file_map:
             client_info = ClientFileInfo(filename)
             self.file_map[filename] = client_info
@@ -85,8 +95,5 @@ class EditorClient:
         client_info = self.get_or_add_file(filename)
         return (len(client_info.errors['syntacticDiag']) > 0) or (len(client_info.errors['semanticDiag']) > 0)
 
-    @classmethod
-    def get_instance(cls):
-        if not cls.instance:
-            cls.instance = EditorClient()
-        return cls.instance
+# The globally accessible instance
+cli = EditorClient()

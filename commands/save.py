@@ -12,4 +12,4 @@ class TypescriptSave(sublime_plugin.TextCommand):
         if not is_typescript(self.view):
             print("To run this command, please first assign a file name to the view")
             return
-        cli.service.saveto(self.view.file_name(), "/tmp/curstate")
+        cli.service.save_to(self.view.file_name(), "/tmp/curstate")

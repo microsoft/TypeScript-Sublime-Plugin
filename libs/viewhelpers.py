@@ -1,31 +1,8 @@
-import sublime, sublime_plugin
-import os
 import codecs
 
-from .helpers import *
 from .globalvars import *
-
-
-class FileInfo:
-    """Per-file info that will only be accessible from TypeScriptListener instance"""
-
-    def __init__(self, filename, cc):
-        self.filename = filename
-        self.change_sent = False
-        self.pre_change_sent = False
-        self.modified = False
-        self.completion_prefix_sel = None
-        self.completion_sel = None
-        self.last_completion_loc = None
-        self.last_completions = None
-        self.last_completion_prefix = None
-        self.prev_sel = None
-        self.view = None
-        self.has_errors = False
-        self.client_info = None
-        self.change_count_err_req = -1
-        self.last_modify_change_count = cc
-        self.modify_count = 0
+from .editorclient import cli
+from .texthelpers import *
 
 
 def active_view():
@@ -93,10 +70,10 @@ def open_file(view):
 def reconfig_file(view):
     host_info = "Sublime Text version " + str(sublime.version())
     # Preferences Settings
-    view_settings = self.view.settings()
+    view_settings = view.settings()
     tab_size = view_settings.get('tab_size', 4)
     indent_size = view_settings.get('indent_size', tab_size)
-    tabs_to_spaces = view_settings.get('translate_tabs_to_spaces', True)
+    translate_tab_to_spaces = view_settings.get('translate_tabs_to_spaces', True)
     format_options = {
         "tabSize": tab_size,
         "indentSize": indent_size,
@@ -154,7 +131,7 @@ def reload_buffer(view, client_info=None):
         text = view.substr(sublime.Region(0, view.size()))
         tmpfile.write(text)
         tmpfile.flush()
-        cli.service.reloadAsync(view.file_name(), tmpfile_name, recv_reload_response)
+        cli.service.reload_async(view.file_name(), tmpfile_name, recv_reload_response)
         if not IS_ST2:
             if not client_info:
                 client_info = cli.get_or_add_file(view.file_name())
