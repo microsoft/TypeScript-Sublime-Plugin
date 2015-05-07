@@ -32,8 +32,9 @@ log.addHandler(console)
 
 log.info('Logging configured to log to file: {0}'.format(filePath))
 
+
 def view_debug(view, message):
-    fileName = view.file_name()
-    viewName = view.name()
-    name = viewName if fileName == None else fileName
+    filename = view.file_name()
+    view_name = view.name()
+    name = view_name if filename is None else filename
     log.debug(message + ": " + name)

@@ -1,12 +1,25 @@
-import sublime, sublime_plugin
+import sublime
+
+
+class Location:
+    """Object containing line and offset (one-based) of file location"""
+
+    def __init__(self, line, offset):
+        self.line = line
+        self.offset = offset
+
+    def to_dict(self):
+        return {"line": self.line, "offset": self.offset}
+
 
 class StaticRegion:
     """Region that will not change as buffer is modified"""
+
     def __init__(self, a, b):
         self.a = a
         self.b = b
 
-    def toRegion(self):
+    def to_region(self):
         return sublime.Region(self.a, self.b)
 
     def begin(self):
@@ -15,25 +28,31 @@ class StaticRegion:
     def empty(self):
         return self.a == self.b
 
+
 def copy_region(r):
     """Copy a region (this is needed because the original region may change)"""
     return sublime.Region(r.begin(), r.end())
+
 
 def copy_regions(regions):
     """Copy a list of regions"""
     return [copy_region(r) for r in regions]
 
+
 def region_to_static_region(r):
     """Copy a region into a static region"""
     return StaticRegion(r.begin(), r.end())
 
+
 def static_regions_to_regions(static_regions):
     """Convert a list of static regions to ordinary regions"""
-    return [sr.toRegion() for sr in static_regions]
+    return [sr.to_region() for sr in static_regions]
+
 
 def regions_to_static_regions(regions):
     """Copy a list of regions into a list of static regions"""
     return [region_to_static_region(r) for r in regions]
+
 
 def decrease_empty_regions(empty_regions, amount):
     """
@@ -42,9 +61,11 @@ def decrease_empty_regions(empty_regions, amount):
     """
     return [sublime.Region(r.begin() - amount, r.end() - amount) for r in empty_regions]
 
+
 def decrease_locs_to_regions(locs, amount):
     """Move the given locations by amount, and then return the corresponding regions"""
     return [sublime.Region(loc - amount, loc - amount) for loc in locs]
+
 
 def extract_line_offset(line_offset):
     """
@@ -58,4 +79,11 @@ def extract_line_offset(line_offset):
     else:
         line = line_offset.line - 1
         offset = line_offset.offset - 1
-    return (line, offset)
+    return line, offset
+
+def escape_html(str):
+    """Escape html content
+
+    Note: only use for short strings
+    """
+    return str.replace('&', '&amp;').replace('<', '&lt;').replace('>', "&gt;")

@@ -20,7 +20,7 @@
   <component name="ProjectModuleManager">
     <modules />
   </component>
-  <component name="ProjectRootManager" version="2" project-jdk-name="Python 3.4.3 (C:\tools\python3\python.exe)" project-jdk-type="Python SDK" />
+  <component name="ProjectRootManager" version="2" project-jdk-name="Python 3.4.3 (C:\bin\python3\python.exe)" project-jdk-type="Python SDK" />
   <component name="PropertiesComponent">
     <property name="options.lastSelected" value="reference.settingsdialog.IDE.editor.colors.Font" />
     <property name="options.splitter.main.proportions" value="0.3" />
