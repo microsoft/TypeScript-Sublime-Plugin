@@ -124,8 +124,7 @@ def highlight_ids(view, ref_id):
 def update_ref_line(ref_info, cur_line, view):
     """Update the given line in reference view
 
-    Place the caret on the currently-referenced line and
-    update the reference line to go to next
+    Update the gutter icon
     """
     # Todo: make sure the description is right
 

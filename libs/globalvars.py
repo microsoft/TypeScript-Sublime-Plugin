@@ -17,7 +17,7 @@ TOOLTIP_SUPPORT = int(sublime.version()) >= 3072
 # determine if the host is sublime text 2
 IS_ST2 = int(sublime.version()) < 3000
 
-# Todo: add explanation
+# detect if quick info is available for symbol
 SUBLIME_WORD_MASK = 515
 
 # set logging levels

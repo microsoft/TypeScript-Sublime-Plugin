@@ -5,9 +5,66 @@ from .editorclient import cli
 from .texthelpers import *
 
 
+class FileInfo:
+    """Per-file info"""
+
+    def __init__(self, filename, cc):
+        self.filename = filename
+        self.change_sent = False
+        self.pre_change_sent = False
+        self.modified = False
+        self.completion_prefix_sel = None
+        self.completion_sel = None
+        self.last_completion_loc = None
+        self.last_completions = None
+        self.last_completion_prefix = None
+        self.prev_sel = None
+        self.view = None
+        self.has_errors = False
+        self.client_info = None
+        self.change_count_err_req = -1
+        self.last_modify_change_count = cc
+        self.modify_count = 0
+
+
+_file_map = dict()
+_most_recent_used_file_list = []
+
+
+def get_info(view):
+    """Find the file info on the server that matches the given view"""
+    info = None
+    if view.file_name() is not None:
+        file_name = view.file_name()
+        if is_typescript(view):
+            info = _file_map.get(file_name)
+            if not info:
+                info = FileInfo(file_name, None)
+                info.view = view
+                info.client_info = cli.get_or_add_file(file_name)
+                set_file_prefs(view)
+                _file_map[file_name] = info
+                # Open the file on the server
+                open_file(view)
+                if view.is_dirty():
+                    if not view.is_loading():
+                        reload_buffer(view, info.client_info)
+                    else:
+                        info.client_info.pending_changes = True
+                if info in _most_recent_used_file_list:
+                    _most_recent_used_file_list.remove(info)
+                _most_recent_used_file_list.append(info)
+    return info
+
+
 def active_view():
     """Return currently active view"""
     return sublime.active_window().active_view()
+
+
+def active_window():
+    """Return currently active window"""
+    return sublime.active_window()
 
 
 def is_typescript(view):
@@ -35,7 +92,7 @@ def is_typescript_scope(view, scope_sel):
 def is_special_view(view):
     """Determine if the current view is a special view.
 
-    Special views are mostly refering to panels. They are different from normal views 
+    Special views are mostly referring to panels. They are different from normal views
     in that they cannot be the active_view of their windows, therefore their ids 
     shouldn't be equal to the current view id.
     """
@@ -223,12 +280,11 @@ def get_ref_view(create=True):
     TODO: generalize this so that we can find any scratch view
     containing references to other files
     """
-    active_window = sublime.active_window()
-    for view in active_window.views():
+    for view in active_window().views():
         if view.name() == "Find References":
             return view
     if create:
-        ref_view = active_window.new_file()
+        ref_view = active_window().new_file()
         ref_view.set_name("Find References")
         ref_view.set_scratch(True)
         return ref_view

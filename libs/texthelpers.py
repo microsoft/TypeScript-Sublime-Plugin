@@ -1,5 +1,6 @@
 import sublime
 
+from .globalvars import *
 
 class Location:
     """Object containing line and offset (one-based) of file location"""
@@ -87,3 +88,34 @@ def escape_html(str):
     Note: only use for short strings
     """
     return str.replace('&', '&amp;').replace('<', '&lt;').replace('>', "&gt;")
+
+
+def left_expand_empty_region(self, regions):
+    """Expand region list one to left for backspace change info"""
+    result = []
+    for region in regions:
+        if region.empty():
+            result.append(sublime.Region(region.begin() - 1, region.end()))
+        else:
+            result.append(region)
+    return result
+
+
+def right_expand_empty_region(self, regions):
+    """Expand region list one to right for delete key change info"""
+    result = []
+    for region in regions:
+        if region.empty():
+            result.append(sublime.Region(region.begin(), region.end() + 1))
+        else:
+            result.append(region)
+    return result
+
+
+def change_count(self, view):
+    info = self.getInfo(view)
+    if info:
+        if IS_ST2:
+            return info.modify_count
+        else:
+            return view.change_count()

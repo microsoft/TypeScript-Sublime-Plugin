@@ -1,31 +1,9 @@
-from ..commands import *
+import sublime_plugin
+
 from ..libs import *
 from ..libs.viewhelpers import *
 from ..libs.texthelpers import *
-import sublime_plugin
 
-
-
-class FileInfo:
-    """Per-file info that will only be accessible from TypeScriptListener instance"""
-
-    def __init__(self, filename, cc):
-        self.filename = filename
-        self.change_sent = False
-        self.pre_change_sent = False
-        self.modified = False
-        self.completion_prefix_sel = None
-        self.completion_sel = None
-        self.last_completion_loc = None
-        self.last_completions = None
-        self.last_completion_prefix = None
-        self.prev_sel = None
-        self.view = None
-        self.has_errors = False
-        self.client_info = None
-        self.change_count_err_req = -1
-        self.last_modify_change_count = cc
-        self.modify_count = 0
 
 
 class TypeScriptListener(sublime_plugin.EventListener):
@@ -33,14 +11,6 @@ class TypeScriptListener(sublime_plugin.EventListener):
 
     def __init__(self):
         self.fileMap = {}
-        self.pendingCompletions = []
-        self.completionsReady = False
-        self.completionsLoc = None
-        self.completionRequestSeq = None
-        self.completionRequestPrefix = None
-        self.completionRequestLoc = None
-        self.completionRequestMember = False
-        self.completionView = None
         self.mruFileList = []
         self.pendingTimeout = 0
         self.pendingSelectionTimeout = 0
@@ -48,53 +18,13 @@ class TypeScriptListener(sublime_plugin.EventListener):
         self.changeFocus = False
         self.mod = False
         self.about_to_close_all = False
-        # self.was_paren_pressed = False
+        self.was_paren_pressed = False
 
-    def getInfo(self, view):
-        info = None
-        if view.file_name() is not None:
-            if is_typescript(view):
-                info = self.fileMap.get(view.file_name())
-                if not info:
-                    #if not cli:
-                    #    plugin_loaded()
-                    info = FileInfo(view.file_name(), None)
-                    info.view = view
-                    settings = view.settings()
-                    info.client_info = cli.get_or_add_file(view.file_name())
-                    set_file_prefs(view)
-                    self.fileMap[view.file_name()] = info
-                    open_file(view)
-                    if view.is_dirty():
-                       if not view.is_loading():
-                          reload_buffer(view, info.client_info)
-                       else:
-                          info.client_info.pending_changes = True
-                    if (info in self.mruFileList):
-                        self.mruFileList.remove(info)
-                    self.mruFileList.append(info)
-        return info
-           
-    def change_count(self, view):
-        info = self.getInfo(view)
-        if info:
-            if IS_ST2:
-                return info.modify_count
-            else:
-                return view.change_count()
+
 
     # called by Sublime when a view receives focus
     def on_activated(self, view):
         logger.view_debug(view, "enter on_activated " + str(view.id()))
-        if is_special_view(view):
-            if TypescriptNavToCommand.navto_panel_started:
-                # The current view is the QuickPanel. Set insert_text_finished to false to suppress 
-                # handling in on_modified
-                TypescriptNavToCommand.insert_text_finished = False
-                view.run_command("insert", {"characters": TypescriptNavToCommand.input_text})
-                # Re-enable the handling in on_modified
-                TypescriptNavToCommand.insert_text_finished = True
-
         if not self.about_to_close_all:
             info = self.getInfo(view)
             if info:
@@ -133,37 +63,19 @@ class TypeScriptListener(sublime_plugin.EventListener):
             self.errRefreshRequested = True
             self.setOnIdleTimer(errDelay + 300)
 
-    # expand region list one to left for backspace change info
-    def expandEmptyLeft(self, regions):
-        result = []
-        for region in regions:
-            if region.empty():
-                result.append(sublime.Region(region.begin() - 1, region.end()))
-            else:
-                result.append(region)
-        return result
 
-    # expand region list one to right for delete key change info
-    def expandEmptyRight(self, regions):
-        result = []
-        for region in regions:
-            if region.empty():
-                result.append(sublime.Region(region.begin(), region.end() + 1))
-            else:
-                result.append(region)
-        return result
 
     # error messages arrived from the server; show them in view
     def showErrorMsgs(self, diagEvtBody, syntactic):
         filename = diagEvtBody["file"]
         if (os.name == 'nt') and filename:
-           filename = filename.replace('/', '\\')
+            filename = filename.replace('/', '\\')
         diags = diagEvtBody["diagnostics"]
         info = self.fileMap.get(filename)
         if info:
             view = info.view
-            if not (info.changeCountErrReq == self.change_count(view)):
-                self.setOnIdleTimer(200)                
+            if not (info.change_count_err_req == self.change_count(view)):
+                self.setOnIdleTimer(200)
             else:
                 if syntactic:
                     regionKey = 'syntacticDiag'
@@ -189,12 +101,13 @@ class TypeScriptListener(sublime_plugin.EventListener):
                 info.hasErrors = cli.has_errors(filename)
                 self.update_status(view, info)
                 if IS_ST2:
-                   view.add_regions(regionKey, errRegions, "keyword", "", sublime.DRAW_OUTLINED)
+                    view.add_regions(regionKey, errRegions, "keyword", "", sublime.DRAW_OUTLINED)
                 else:
-                   view.add_regions(regionKey, errRegions, "keyword", "", 
-                                    sublime.DRAW_NO_FILL + sublime.DRAW_NO_OUTLINE + sublime.DRAW_SQUIGGLY_UNDERLINE) 
+                    view.add_regions(regionKey, errRegions, "keyword", "",
+                                     sublime.DRAW_NO_FILL + sublime.DRAW_NO_OUTLINE + sublime.DRAW_SQUIGGLY_UNDERLINE)
 
-    # event arrived from the server; call appropriate handler
+                    # event arrived from the server; call appropriate handler
+
     def dispatchEvent(self, ev):
         evtype = ev["event"]
         if evtype == 'syntaxDiag':
@@ -204,11 +117,11 @@ class TypeScriptListener(sublime_plugin.EventListener):
 
     # set timer to go off when selection is idle
     def setOnSelectionIdleTimer(self, ms):
-        self.pendingSelectionTimeout+=1
+        self.pendingSelectionTimeout += 1
         sublime.set_timeout(self.handleSelectionTimeout, ms)
-        
+
     def handleSelectionTimeout(self):
-        self.pendingSelectionTimeout-=1
+        self.pendingSelectionTimeout -= 1
         if self.pendingSelectionTimeout == 0:
             self.onSelectionIdle()
 
@@ -222,11 +135,11 @@ class TypeScriptListener(sublime_plugin.EventListener):
 
     # set timer to go off when file not being modified
     def setOnIdleTimer(self, ms):
-        self.pendingTimeout+=1
+        self.pendingTimeout += 1
         sublime.set_timeout(self.handleTimeout, ms)
-        
+
     def handleTimeout(self):
-        self.pendingTimeout-=1
+        self.pendingTimeout -= 1
         if self.pendingTimeout == 0:
             self.onIdle()
 
@@ -260,7 +173,7 @@ class TypeScriptListener(sublime_plugin.EventListener):
         print("loaded " + view.file_name())
         if clientInfo and clientInfo.rename_on_load:
             view.run_command('typescript_delayed_rename_file',
-                             { "locsName" : clientInfo.renameOnLoad })
+                             {"locsName": clientInfo.renameOnLoad})
             clientInfo.rename_on_load = None
         logger.view_debug(view, "exit on_load")
 
@@ -268,7 +181,7 @@ class TypeScriptListener(sublime_plugin.EventListener):
         # logger.log.debug("notice window command: " + command_name)
         if command_name in ["close_all", "exit", "close_window", "close_project"]:
             self.about_to_close_all = True
-        
+
     # ST3 only
     # for certain text commands, learn what changed and notify the
     # server, to avoid sending the whole buffer during completion
@@ -288,10 +201,10 @@ class TypeScriptListener(sublime_plugin.EventListener):
             info.pre_change_sent = True
             if command_name == "left_delete":
                 # backspace
-                send_replace_changes_for_regions(view, self.expandEmptyLeft(view.sel()), "")
+                send_replace_changes_for_regions(view, self.left_expand_empty_region(view.sel()), "")
             elif command_name == "right_delete":
                 # delete
-                send_replace_changes_for_regions(view, self.expandEmptyRight(view.sel()), "")
+                send_replace_changes_for_regions(view, self.right_expand_empty_region(view.sel()), "")
             else:
                 # notify on_modified and on_post_text_command events that
                 # nothing was handled
@@ -305,7 +218,7 @@ class TypeScriptListener(sublime_plugin.EventListener):
                     # a region that will be
                     # moved by the inserted text
                     info.completion_sel = copy_regions(view.sel())
-                    view.add_regions("apresComp", copy_regions(view.sel()), 
+                    view.add_regions("apresComp", copy_regions(view.sel()),
                                      flags=sublime.HIDDEN)
 
     # update the status line with error info and quick info if no error info
@@ -327,7 +240,7 @@ class TypeScriptListener(sublime_plugin.EventListener):
         logger.view_debug(view, "enter on_close")
         if not self.about_to_close_all:
             if view.file_name() in self.mruFileList:
-                #if not cli:
+                # if not cli:
                 #    plugin_loaded()
 
                 if view.is_scratch() and (view.name() == "Find References"):
@@ -354,7 +267,8 @@ class TypeScriptListener(sublime_plugin.EventListener):
         if info:
             if not info.client_info:
                 info.client_info = cli.get_or_add_file(view.file_name())
-            if (info.client_info.change_count < self.change_count(view)) and (info.last_modify_change_count != self.change_count(view)):
+            if (info.client_info.change_count < self.change_count(view)) and (
+                        info.last_modify_change_count != self.change_count(view)):
                 # detected a change to the view for which Sublime did not call
                 # on_modified
                 # and for which we have no hope of discerning what changed
@@ -369,11 +283,11 @@ class TypeScriptListener(sublime_plugin.EventListener):
                 self.setOnSelectionIdleTimer(1250)
             else:
                 self.setOnSelectionIdleTimer(50)
-            self.mod = False    
+            self.mod = False
             # hide the doc info output panel if it's up
             panelView = sublime.active_window().get_output_panel("doc")
             if panelView.window():
-                sublime.active_window().run_command("hide_panel", { "cancel" : True })
+                sublime.active_window().run_command("hide_panel", {"cancel": True})
 
         if TOOLTIP_SUPPORT:
             # Always reset this flag
@@ -391,38 +305,24 @@ class TypeScriptListener(sublime_plugin.EventListener):
     # usually called by Sublime when the buffer is modified
     # not called for undo, redo
     def on_modified(self, view):
-#        logger.log.debug("enter on_modified " + str(view.id()))
-        # it is a special view
-        if is_special_view(view):
-            logger.log.debug("enter on_modified: special view. started: %s, insert_text_finished: %s" % 
-                   (TypescriptNavToCommand.navto_panel_started, TypescriptNavToCommand.insert_text_finished))
-
-            if TypescriptNavToCommand.navto_panel_started and TypescriptNavToCommand.insert_text_finished:
-                new_content = view.substr(sublime.Region(0, view.size()))
-                sublime.active_window().run_command("hide_overlay")
-                sublime.set_timeout(
-                    lambda:sublime.active_window().run_command("typescript_nav_to", {'input_text': new_content}),
-                    0)
-
-            logger.log.debug("exit on_modified: special view. started: %s, insert_text_finished: %s" % 
-                   (TypescriptNavToCommand.navto_panel_started, TypescriptNavToCommand.insert_text_finished))
-        # it is a normal view
-        else:
+        # logger.log.debug("enter on_modified " + str(view.id()))
+        if not is_special_view(view):
             info = self.getInfo(view)
             if info:
                 info.modified = True
                 if IS_ST2:
-                   info.modify_count+=1
+                    info.modify_count += 1
                 info.last_modify_change_count = self.change_count(view)
                 self.mod = True
                 (lastCommand, args, rept) = view.command_history(0)
-    #            print("modified " + view.file_name() + " command " + lastCommand + " args " + str(args) + " rept " + str(rept))
+                #print("modified " + view.file_name() + " command " + lastCommand + " args " + str(args) + " rept " + str(rept))
                 if info.pre_change_sent:
                     # change handled in on_text_command
                     info.client_info.change_count = self.change_count(view)
                     info.pre_change_sent = False
                 elif lastCommand == "insert":
-                    if (not "\n" in args['characters']) and info.prev_sel and (len(info.prev_sel) == 1) and (info.prev_sel[0].empty()) and (not info.client_info.pending_changes):
+                    if (not "\n" in args['characters']) and info.prev_sel and (len(info.prev_sel) == 1) and (
+                            info.prev_sel[0].empty()) and (not info.client_info.pending_changes):
                         info.client_info.change_count = self.change_count(view)
                         prevCursor = info.prev_sel[0].begin()
                         cursor = view.sel()[0].begin()
@@ -435,7 +335,7 @@ class TypeScriptListener(sublime_plugin.EventListener):
                         # request reload because we have strange insert
                         info.client_info.pending_changes = True
                 self.setOnIdleTimer(100)
-#        logger.log.debug("exit on_modified " + str(view.id()))
+            #        logger.log.debug("exit on_modified " + str(view.id()))
 
     # ST3 only
     # called by ST3 for some, but not all, text commands
@@ -455,7 +355,8 @@ class TypeScriptListener(sublime_plugin.EventListener):
                 # handle insertion of string from completion menu, so that
                 # it is fast to type completedName1.completedName2 (avoid a lag
                 # when completedName1 is committed)
-                if ((command_name == "commit_completion") or command_name == ("insert_best_completion")) and (len(view.sel()) == 1) and (not info.client_info.pending_changes):
+                if ((command_name == "commit_completion") or command_name == ("insert_best_completion")) and (
+                            len(view.sel()) == 1) and (not info.client_info.pending_changes):
                     # get saved region that was pushed forward by insertion of
                     # the completion
                     apresCompReg = view.get_regions("apresComp")
@@ -464,13 +365,18 @@ class TypeScriptListener(sublime_plugin.EventListener):
                     # insertion string is from region saved in
                     # on_query_completion to region pushed forward by
                     # completion insertion
-                    insertionString = view.substr(sublime.Region(info.completion_prefix_sel[0].begin(), apresCompReg[0].begin()))
-                    send_replace_changes_for_regions(view, buildReplaceRegions(info.completion_prefix_sel, info.completion_sel), insertionString)
+                    insertionString = view.substr(
+                        sublime.Region(info.completion_prefix_sel[0].begin(), apresCompReg[0].begin()))
+                    send_replace_changes_for_regions(view, buildReplaceRegions(info.completion_prefix_sel,
+                                                                               info.completion_sel), insertionString)
                     view.erase_regions("apresComp")
                     info.last_completion_loc = None
-                elif ((command_name == "typescript_format_on_key") or (command_name == "typescript_format_document") or (command_name == "typescript_format_selection") or (command_name == "typescript_format_line") or (command_name == "typescript_paste_and_format")):
-                     # changes were sent by the command so no need to
-                     print("handled changes for " + command_name)
+                elif ((command_name == "typescript_format_on_key") or (
+                            command_name == "typescript_format_document") or (
+                            command_name == "typescript_format_selection") or (command_name == "typescript_format_line") or (
+                            command_name == "typescript_paste_and_format")):
+                    # changes were sent by the command so no need to
+                    print("handled changes for " + command_name)
                 else:
                     print(command_name)
                     # give up and send whole buffer to server (do this eagerly
@@ -486,73 +392,6 @@ class TypeScriptListener(sublime_plugin.EventListener):
             info.modified = False
             info.completion_sel = None
 
-    # helper called back when completion info received from server
-    def handleCompletionInfo(self, completionsResp):
-        self.pendingCompletions = []
-        if (not IS_ST2):
-            view = active_view()
-            loc = view.sel()[0].begin()
-            prefixLen = len(self.completionRequestPrefix)
-            str = view.substr(sublime.Region(self.completionRequestLoc-prefixLen,loc))
-            if (not str.startswith(self.completionRequestPrefix)):
-                return
-            if (str.find(".") > 0):
-                if not self.completionRequestMember:
-                    print(str + " includes a dot but not req mem")
-                    return
-            if (len(str) > 0) and (not VALID_COMPLETION_ID_PATTERN.match(str)):
-                return
-        if completionsResp["success"] and ((completionsResp["request_seq"] == self.completionRequestSeq) or IS_ST2):
-            completions = []
-            rawCompletions = completionsResp["body"]
-            if rawCompletions:
-                for rawCompletion in rawCompletions:
-                    name = rawCompletion["name"]
-                    completion = (name + "\t" + rawCompletion["kind"], name.replace("$", "\\$"))
-                    completions.append(completion)
-                self.pendingCompletions = completions
-            if not IS_ST2:
-                self.completionsReady = True
-                active_view().run_command('hide_auto_complete')
-                self.run_auto_complete()
-
-    def run_auto_complete(self):
-        active_view().run_command("auto_complete", {
-            'disable_auto_insert': True, 
-            'api_completions_only': True, 
-            'next_completion_if_showing': False, 
-            'auto_complete_commit_on_tab': True, 
-        })
-
-    # synchronous for now; can change to async by adding hide/show from the
-    # handler
-    def on_query_completions(self, view, prefix, locations):
-        info = self.getInfo(view)
-        if info:
-            #print("complete with: \"" + prefix + "\" ready: " + str(self.completionsReady))
-            info.completion_prefix_sel = decrease_locs_to_regions(locations, len(prefix))
-            if not IS_ST2:
-               view.add_regions("apresComp", decrease_locs_to_regions(locations, 0), flags=sublime.HIDDEN)
-            if (not self.completionsReady) or IS_ST2:
-                location = get_location_from_position(view, locations[0])
-                check_update_view(view)
-                if IS_ST2:
-                    cli.service.completions(view.file_name(), location, prefix, self.handleCompletionInfo)
-                else:
-                    self.completionRequestLoc = locations[0]
-                    self.completionRequestPrefix = prefix
-                    self.completionRequestSeq = cli.service.seq
-                    if (locations[0] > 0):
-                        prevChar = view.substr(sublime.Region(locations[0]-1,locations[0]-1))
-                        self.completionRequestMember = (prevChar == ".")
-                    else:
-                        self.completionRequestMember = False
-                    cli.service.async_completions(view.file_name(), location, prefix, self.handleCompletionInfo)
-            completions = self.pendingCompletions
-            info.last_completion_loc = locations[0]
-            self.pendingCompletions = []
-            self.completionsReady = False
-            return (completions, sublime.INHIBIT_WORD_COMPLETIONS | sublime.INHIBIT_EXPLICIT_COMPLETIONS)
 
     def on_query_context(self, view, key, operator, operand, match_all):
         if key == 'is_popup_visible' and TOOLTIP_SUPPORT:

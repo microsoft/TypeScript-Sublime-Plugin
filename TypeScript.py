@@ -60,6 +60,7 @@ def plugin_loaded():
     from on_activated or on_close if necessary.
     """
     # Todo: explain
+    # Todo: wrap the following into a function in module 'libs.reference'
     ref_view = get_ref_view(False)
     if ref_view:
         settings = ref_view.settings()

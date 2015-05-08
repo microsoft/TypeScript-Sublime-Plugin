@@ -4,10 +4,11 @@ from ..libs import *
 from ..libs.viewhelpers import *
 from ..libs.reference import *
 
-# find references command
+
 class TypescriptFindReferencesCommand(sublime_plugin.TextCommand):
+    """Find references command"""
     def run(self, text):
-        if (not is_typescript(self.view)):
+        if not is_typescript(self.view):
             print("To run this command, please first assign a file name to the view")
             return
         check_update_view(self.view)
