@@ -7,13 +7,11 @@ if sys.version_info < (3, 0):
     from libs.reference import *
     from libs.viewhelpers import *
     from commands import *
-    from listeners.listener import *
 else:
     from .libs import *
     from .libs.reference import *
     from .libs.viewhelpers import *
     from .commands import *
-    from .listeners.listener import *
 
 # Enable Python Tools for visual studio remote debugging
 try:
@@ -59,8 +57,6 @@ def plugin_loaded():
     Note: this is not always called on startup by Sublime, so we call it
     from on_activated or on_close if necessary.
     """
-    # Todo: explain
-    # Todo: wrap the following into a function in module 'libs.reference'
     ref_view = get_ref_view(False)
     if ref_view:
         settings = ref_view.settings()

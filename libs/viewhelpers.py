@@ -10,8 +10,12 @@ class FileInfo:
 
     def __init__(self, filename, cc):
         self.filename = filename
-        self.change_sent = False
+        # 'pre_change_sent' means the change to this file is already sent to the server
+        # used between 'on_text_command' and 'on_modified'
         self.pre_change_sent = False
+        # 'change_sent' has the same function with 'pre_change_sent', only it is
+        # used between 'on_modified' and 'on_selection_modified'
+        self.change_sent = False
         self.modified = False
         self.completion_prefix_sel = None
         self.completion_sel = None
@@ -28,7 +32,7 @@ class FileInfo:
 
 
 _file_map = dict()
-_most_recent_used_file_list = []
+most_recent_used_file_list = []
 
 
 def get_info(view):
@@ -51,10 +55,14 @@ def get_info(view):
                         reload_buffer(view, info.client_info)
                     else:
                         info.client_info.pending_changes = True
-                if info in _most_recent_used_file_list:
-                    _most_recent_used_file_list.remove(info)
-                _most_recent_used_file_list.append(info)
+                if info in most_recent_used_file_list:
+                    most_recent_used_file_list.remove(info)
+                most_recent_used_file_list.append(info)
     return info
+
+
+def get_info_with_filename(filename):
+    return _file_map[filename] if filename in _file_map else None
 
 
 def active_view():
@@ -288,3 +296,12 @@ def get_ref_view(create=True):
         ref_view.set_name("Find References")
         ref_view.set_scratch(True)
         return ref_view
+
+
+def change_count(view):
+    info = get_info(view)
+    if info:
+        if IS_ST2:
+            return info.modify_count
+        else:
+            return view.change_count()

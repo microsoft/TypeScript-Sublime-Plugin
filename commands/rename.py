@@ -51,10 +51,12 @@ class TypescriptFinishRenameCommand(sublime_plugin.TextCommand):
                 active_window = sublime.active_window()
                 rename_view = active_window.find_open_file(file)
                 if not rename_view:
+                    # File not loaded but on disk
                     client_info = cli.get_or_add_file(file)
                     client_info.rename_on_load = {"locs": inner_locations, "name": new_name}
                     active_window.open_file(file)
                 elif rename_view != self.view:
+                    # File opened but not current one
                     rename_view.run_command('typescript_delayed_rename_file',
                                            {"locsName": {"locs": inner_locations, "name": new_name}})
                 else:
@@ -68,7 +70,7 @@ class TypescriptFinishRenameCommand(sublime_plugin.TextCommand):
 
 
 class TypescriptDelayedRenameFile(sublime_plugin.TextCommand):
-    # Todo: explain
+    # Rename in 'on_load' method
     def run(self, text, locsName=None):
         if locsName['locs'] and (len(locsName['name']) > 0):
             locs = locsName['locs']

@@ -1,10 +1,11 @@
-import sublime_plugin
+import sublime
 
 from ..libs.viewhelpers import *
 from ..libs.texthelpers import *
+from .eventhub import EventHub
 
 
-class CompletionEventListener(sublime_plugin.EventListener):
+class CompletionEventListener:
     def __init__(self):
         self.completions_ready = False
         self.completions_loc = None
@@ -15,7 +16,63 @@ class CompletionEventListener(sublime_plugin.EventListener):
         self.if_completion_request_member = False
         self.completion_view = None
         self.pending_completions = []
+        self.modified = False
 
+    def on_activated_with_info(self, view, info):
+        info.last_completion_loc = None
+        # save cursor in case we need to read what was inserted
+        info.prev_sel = regions_to_static_regions(view.sel())
+
+    def on_text_command_with_info(self, view, command_name, args, info):
+        if command_name in ["commit_completion", "insert_best_completion"]:
+            # for finished completion, remember current cursor and set
+            # a region that will be moved by the inserted text
+            info.completion_sel = copy_regions(view.sel())
+            view.add_regions(
+                "apresComp",
+                copy_regions(view.sel()),
+                flags=sublime.HIDDEN
+            )
+
+    def on_modified_with_info(self, view, info):
+        self.modified = True
+
+    def on_selection_modified_with_info(self, view, info):
+        if self.modified:
+            # backspace past start of completion
+            if info.last_completion_loc and info.last_completion_loc > view.sel()[0].begin():
+                view.run_command('hide_auto_complete')
+        self.modified = False
+
+    def on_post_text_command_with_info(self, view, command_name, args, info):
+        if not info.change_sent and info.modified:
+            # file is modified but on_text_command and on_modified did not
+            # handle it
+            # handle insertion of string from completion menu, so that
+            # it is fast to type completedName1.completedName2 (avoid a lag
+            # when completedName1 is committed)
+            if command_name in ["commit_completion", "insert_best_completion"] and \
+                    len(view.sel()) == 1 and \
+                    not info.client_info.pending_changes:
+                # get saved region that was pushed forward by insertion of
+                # the completion
+                apres_comp_region = view.get_regions("apresComp")
+                # note: assuming sublime makes all regions empty for
+                # completion -- which the doc claims is true,
+                # the insertion string is from region saved in
+                # on_query_completion to region pushed forward by
+                # completion insertion
+                insertion_string = view.substr(
+                    sublime.Region(info.completion_prefix_sel[0].begin(), apres_comp_region[0].begin()))
+                send_replace_changes_for_regions(
+                    view,
+                    build_replace_regions(
+                        info.completion_prefix_sel,
+                        info.completion_sel
+                    ),
+                    insertion_string)
+                view.erase_regions("apresComp")
+                info.last_completion_loc = None
 
     def on_query_completions(self, view, prefix, locations):
         """
@@ -52,7 +109,6 @@ class CompletionEventListener(sublime_plugin.EventListener):
             self.completions_ready = False
             return completions, sublime.INHIBIT_WORD_COMPLETIONS | sublime.INHIBIT_EXPLICIT_COMPLETIONS
 
-
     def run_auto_complete(self):
         active_view().run_command("auto_complete", {
             'disable_auto_insert': True,
@@ -60,7 +116,6 @@ class CompletionEventListener(sublime_plugin.EventListener):
             'next_completion_if_showing': False,
             'auto_complete_commit_on_tab': True,
         })
-
 
     def handle_completion_info(self, completions_resp):
         """Helper callback when completion info received from server"""
@@ -94,3 +149,12 @@ class CompletionEventListener(sublime_plugin.EventListener):
                 self.completions_ready = True
                 active_view().run_command('hide_auto_complete')
                 self.run_auto_complete()
+
+
+listener = CompletionEventListener()
+EventHub.subscribe("on_query_completions", listener.on_query_completions)
+EventHub.subscribe("on_activated_with_info", listener.on_activated_with_info)
+EventHub.subscribe("on_text_command_with_info", listener.on_text_command_with_info)
+EventHub.subscribe("on_modified_with_info", listener.on_modified_with_info)
+EventHub.subscribe("on_selection_modified_with_info", listener.on_selection_modified_with_info)
+EventHub.subscribe("on_post_text_command_with_info", listener.on_post_text_command_with_info)

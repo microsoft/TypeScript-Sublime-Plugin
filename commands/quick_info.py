@@ -36,7 +36,7 @@ class TypescriptQuickInfoDoc(sublime_plugin.TextCommand):
     def handle_quick_info(self, quick_info_resp_dict):
         if quick_info_resp_dict["success"]:
             info_str = quick_info_resp_dict["body"]["displayString"]
-            # Todo: explain
+            # Todo: explain (depends on the if)
             finfoStr = info_str
             doc_str = quick_info_resp_dict["body"]["documentation"]
             if len(doc_str) > 0:

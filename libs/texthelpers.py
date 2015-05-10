@@ -82,15 +82,15 @@ def extract_line_offset(line_offset):
         offset = line_offset.offset - 1
     return line, offset
 
-def escape_html(str):
+def escape_html(raw_string):
     """Escape html content
 
     Note: only use for short strings
     """
-    return str.replace('&', '&amp;').replace('<', '&lt;').replace('>', "&gt;")
+    return raw_string.replace('&', '&amp;').replace('<', '&lt;').replace('>', "&gt;")
 
 
-def left_expand_empty_region(self, regions):
+def left_expand_empty_region(regions):
     """Expand region list one to left for backspace change info"""
     result = []
     for region in regions:
@@ -101,7 +101,7 @@ def left_expand_empty_region(self, regions):
     return result
 
 
-def right_expand_empty_region(self, regions):
+def right_expand_empty_region(regions):
     """Expand region list one to right for delete key change info"""
     result = []
     for region in regions:
@@ -111,11 +111,12 @@ def right_expand_empty_region(self, regions):
             result.append(region)
     return result
 
-
-def change_count(self, view):
-    info = self.getInfo(view)
-    if info:
-        if IS_ST2:
-            return info.modify_count
-        else:
-            return view.change_count()
+def build_replace_regions(empty_regions_a, empty_regions_b):
+    """
+    Given two list of cursor locations, connect each pair of locations for form
+    a list of regions, used for replacement later
+    """
+    rr = []
+    for i in range(len(empty_regions_a)):
+        rr.append(sublime.Region(empty_regions_a[i].begin(), empty_regions_b[i].begin()))
+    return rr

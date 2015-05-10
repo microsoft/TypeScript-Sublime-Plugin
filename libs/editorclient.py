@@ -6,6 +6,7 @@ from .globalvars import *
 
 class ClientFileInfo:
     """per-file, globally-accessible information"""
+
     def __init__(self, filename):
         self.filename = filename
         self.pending_changes = False
@@ -84,7 +85,7 @@ class EditorClient:
         """Get or add per-file information that must be globally accessible """
         if (os.name == "nt") and filename:
             filename = filename.replace('/', '\\')
-        if not filename in self.file_map:
+        if filename not in self.file_map:
             client_info = ClientFileInfo(filename)
             self.file_map[filename] = client_info
         else:
