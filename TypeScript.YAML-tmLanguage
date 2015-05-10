@@ -336,6 +336,7 @@ repository:
     - include: '#string'
     - include: '#regex'
     - include: '#template'
+    - include: '#template-html'
     - include: '#comment'
     - include: '#literal'
     - include: '#paren-expression'
@@ -455,6 +456,17 @@ repository:
     patterns:
     - include: '#qstring-single'
     - include: '#qstring-double'
+
+  template-html:
+    contentName: meta.template.ts
+    begin: template\s*:\s*(\`)
+    beginCaptures:
+      '1': { name: string.template.ts}
+    end: \`
+    endCaptures:
+      '0': { name: string.template.ts}
+    patterns:
+    - include: text.html.basic
 
   template:
     name: meta.template.ts
