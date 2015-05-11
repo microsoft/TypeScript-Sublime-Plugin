@@ -24,6 +24,7 @@ __all__ = [
     "TypescriptPasteAndFormat",
     "TypescriptGoToDefinitionCommand",
     "TypescriptGoToTypeCommand",
+    "TypescriptGoToRefCommand",
     "TypescriptNavToCommand",
     "TypescriptQuickInfo",
     "TypescriptQuickInfoDoc",

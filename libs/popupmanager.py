@@ -1,6 +1,6 @@
 from string import Template
 
-from . import logger
+from .logger import log
 from .globalvars import *
 from .workscheduler import work_scheduler
 from .texthelpers import Location
@@ -234,9 +234,9 @@ def get_popup_manager():
 
             print(rel_path)
 
-            logger.log.info('Popup resource path: {0}'.format(rel_path))
+            log.info('Popup resource path: {0}'.format(rel_path))
             popup_text = sublime.load_resource(rel_path)
-            logger.log.info('Loaded tooltip template from {0}'.format(rel_path))
+            log.info('Loaded tooltip template from {0}'.format(rel_path))
 
             PopupManager.html_template = Template(popup_text)
             _popup_manager = PopupManager(cli.service)

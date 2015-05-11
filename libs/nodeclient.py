@@ -191,12 +191,12 @@ class NodeCommClient(CommClient):
         body_length = 0
         while state != "body":
             header = stream.readline().strip()
-            log.debug(
-                'Stream state: "{0}".  Read header: "{1}"'.format(
-                    state,
-                    header if header else 'None'
-                )
-            )
+            # log.debug(
+            #     'Stream state: "{0}".  Read header: "{1}"'.format(
+            #         state,
+            #         header if header else 'None'
+            #     )
+            # )
 
             if len(header) == 0:
                 if state == 'init':

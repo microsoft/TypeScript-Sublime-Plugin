@@ -14,7 +14,6 @@ class CompletionEventListener:
         self.completion_request_prefix = None
         self.completion_request_loc = None
         self.if_completion_request_member = False
-        self.completion_view = None
         self.pending_completions = []
         self.modified = False
 
@@ -109,14 +108,6 @@ class CompletionEventListener:
             self.completions_ready = False
             return completions, sublime.INHIBIT_WORD_COMPLETIONS | sublime.INHIBIT_EXPLICIT_COMPLETIONS
 
-    def run_auto_complete(self):
-        active_view().run_command("auto_complete", {
-            'disable_auto_insert': True,
-            'api_completions_only': True,
-            'next_completion_if_showing': False,
-            'auto_complete_commit_on_tab': True,
-        })
-
     def handle_completion_info(self, completions_resp):
         """Helper callback when completion info received from server"""
         self.pending_completions = []
@@ -150,6 +141,13 @@ class CompletionEventListener:
                 active_view().run_command('hide_auto_complete')
                 self.run_auto_complete()
 
+    def run_auto_complete(self):
+        active_view().run_command("auto_complete", {
+            'disable_auto_insert': True,
+            'api_completions_only': True,
+            'next_completion_if_showing': False,
+            'auto_complete_commit_on_tab': True,
+        })
 
 listener = CompletionEventListener()
 EventHub.subscribe("on_query_completions", listener.on_query_completions)

@@ -9,7 +9,7 @@ class RenameEventListener:
         if client_info and client_info.rename_on_load:
             view.run_command(
                 'typescript_delayed_rename_file',
-                {"locsName": client_info.renameOnLoad}
+                {"locs_name": client_info.renameOnLoad}
             )
             client_info.rename_on_load = None
 

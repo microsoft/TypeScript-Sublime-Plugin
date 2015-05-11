@@ -104,9 +104,9 @@ def build_ref_info(ref_info_tuple):
     (dict, current_line, first_line, last_line, ref_id) = ref_info_tuple
     ref_info = RefInfo(first_line, ref_id)
     ref_info.set_ref_line(current_line)
-    ref_info.setLastLine(last_line)
+    ref_info.set_last_line(last_line)
     for key in dict.keys():
-        ref_info.addMapping(key, build_ref(dict[key]))
+        ref_info.add_mapping(key, build_ref(dict[key]))
     return ref_info
 
 

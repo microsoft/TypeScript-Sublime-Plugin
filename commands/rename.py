@@ -25,7 +25,7 @@ class TypescriptRenameCommand(sublime_plugin.TextCommand):
             def on_done(new_name):
                 args = {"newName": new_name, "outerLocs": outer_locations}
                 args_json_str = jsonhelpers.encode(args)
-                self.view.run_command('typescript_finish_rename', {"argsJson": args_json_str})
+                self.view.run_command('typescript_finish_rename', {"args_json": args_json_str})
 
             if len(outer_locations) > 0:
                 sublime.active_window().show_input_panel(
@@ -58,7 +58,7 @@ class TypescriptFinishRenameCommand(sublime_plugin.TextCommand):
                 elif rename_view != self.view:
                     # File opened but not current one
                     rename_view.run_command('typescript_delayed_rename_file',
-                                           {"locsName": {"locs": inner_locations, "name": new_name}})
+                                           {"locs_name": {"locs": inner_locations, "name": new_name}})
                 else:
                     for inner_location in inner_locations:
                         start_location = inner_location["start"]
@@ -71,10 +71,10 @@ class TypescriptFinishRenameCommand(sublime_plugin.TextCommand):
 
 class TypescriptDelayedRenameFile(sublime_plugin.TextCommand):
     # Rename in 'on_load' method
-    def run(self, text, locsName=None):
-        if locsName['locs'] and (len(locsName['name']) > 0):
-            locs = locsName['locs']
-            name = locsName['name']
+    def run(self, text, locs_name=None):
+        if locs_name['locs'] and (len(locs_name['name']) > 0):
+            locs = locs_name['locs']
+            name = locs_name['name']
             for innerLoc in locs:
                 startlc = innerLoc['start']
                 (startl, startc) = extract_line_offset(startlc)

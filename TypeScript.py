@@ -6,11 +6,13 @@ if sys.version_info < (3, 0):
     from libs import *
     from libs.reference import *
     from libs.viewhelpers import *
+    from listeners import *
     from commands import *
 else:
     from .libs import *
     from .libs.reference import *
     from .libs.viewhelpers import *
+    from .listeners import *
     from .commands import *
 
 # Enable Python Tools for visual studio remote debugging

@@ -22,15 +22,10 @@ SUBLIME_WORD_MASK = 515
 
 # set logging levels
 LOG_FILE_LEVEL = logging.WARN
-LOG_CONSOLE_LEVEL = logging.WARN
+LOG_CONSOLE_LEVEL = logging.DEBUG
 
 NON_BLANK_LINE_PATTERN = re.compile("[\S]+")
 VALID_COMPLETION_ID_PATTERN = re.compile("[a-zA-Z_$\.][\w$\.]*\Z")
 
 # idle time length in millisecond
 IDLE_TIME_LENGTH = 20
-
-
-def set_log_level(logger):
-    logger.logFile.setLevel(LOG_FILE_LEVEL)
-    logger.console.setLevel(LOG_CONSOLE_LEVEL)

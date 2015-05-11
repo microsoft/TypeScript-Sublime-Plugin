@@ -1,12 +1,20 @@
 import sublime_plugin
 
 from ..libs.viewhelpers import *
+from ..libs import *
 from .eventhub import EventHub
+from .completion import CompletionEventListener
+from .format import FormatEventListener
+from .idle import IdleListener
+from .nav_to import NavToEventListener
+from .rename import RenameEventListener
+from .tooltip import TooltipEventListener
 
 
 class TypeScriptEventListener(sublime_plugin.EventListener):
     """To avoid duplicated behavior among event listeners"""
     def on_activated(self, view):
+        log.debug("on_activated")
         if is_special_view(view):
             self.on_activated_special_view(view)
         else:
@@ -15,12 +23,15 @@ class TypeScriptEventListener(sublime_plugin.EventListener):
                 self.on_activated_with_info(view, info)
 
     def on_activated_special_view(self, view):
+        log.debug("on_activated_special_view")
         EventHub.run_listeners("on_activated_special_view", view)
 
     def on_activated_with_info(self, view, info):
+        log.debug("on_activated_with_info")
         EventHub.run_listeners("on_activated_with_info", view, info)
 
     def on_modified(self, view):
+        log.debug("on_modified")
         """
         Usually called by Sublime when the buffer is modified
         not called for undo, redo
@@ -33,9 +44,11 @@ class TypeScriptEventListener(sublime_plugin.EventListener):
                 self.on_modified_with_info(view, info)
 
     def on_modified_special_view(self, view):
+        log.debug("on_modified_special_view")
         EventHub.run_listeners("on_modified_special_view", view)
 
     def on_modified_with_info(self, view, info):
+        log.debug("on_modified_with_info")
         # A series state-updating for the info object to sync the file content on the server
         info.modified = True
         # Todo: explain
@@ -74,6 +87,7 @@ class TypeScriptEventListener(sublime_plugin.EventListener):
         Called by Sublime when the cursor moves (or when text is selected)
         called after on_modified (when on_modified is called)
         """
+        log.debug("on_selection_modified")
         # Todo: why do we only check this here? anyway to globally disable the listener for non-ts files
         if not is_typescript(view):
             return
@@ -85,6 +99,7 @@ class TypeScriptEventListener(sublime_plugin.EventListener):
             self.on_selection_modified_with_info(view, info)
 
     def on_selection_modified_with_info(self, view, info):
+        log.debug("on_selection_modified_with_info")
         if not info.client_info:
             info.client_info = cli.get_or_add_file(view.file_name())
 
@@ -103,10 +118,11 @@ class TypeScriptEventListener(sublime_plugin.EventListener):
         EventHub.run_listeners("on_selection_modified_with_info", view, info)
 
     def on_load(self, view):
-        print("loaded " + view.file_name())
+        log.debug("on_load")
         EventHub.run_listeners("on_load", view)
 
     def on_window_command(self, window, command_name, args):
+        log.debug("on_window_command")
         if command_name == "exit":
             cli.service.exit()
         if command_name in ["close_all", "close_window", "close_project"]:
@@ -122,12 +138,14 @@ class TypeScriptEventListener(sublime_plugin.EventListener):
         If we had a popup session active, and we get the command to
         hide it, then do the necessary clean up.
         """
+        log.debug("on_text_command")
         EventHub.run_listeners("on_text_command", view, command_name, args)
         info = get_info(view)
         if info:
             self.on_text_command_with_info(view, command_name, args, info)
 
     def on_text_command_with_info(self, view, command_name, args, info):
+        log.debug("on_text_command_with_info")
         info.change_sent = True
         info.pre_change_sent = True
         if command_name == "left_delete":
@@ -152,10 +170,11 @@ class TypeScriptEventListener(sublime_plugin.EventListener):
         called by ST3 for some, but not all, text commands
         not called for insert command
         """
+        log.debug("on_post_text_command")
         info = get_info(view)
         if info:
             if not info.change_sent and info.modified:
-                self.on_post_text_command(view, command_name, args, info)
+                self.on_post_text_command_with_info(view, command_name, args, info)
 
                 # we are up-to-date because either change was sent to server or
                 # whole buffer was sent to server
@@ -168,6 +187,7 @@ class TypeScriptEventListener(sublime_plugin.EventListener):
             info.completion_sel = None
 
     def on_post_text_command_with_info(self, view, command_name, args, info):
+        log.debug("on_post_text_command_with_info")
         if command_name not in \
             ["commit_completion",
              "insert_best_completion"
@@ -183,12 +203,15 @@ class TypeScriptEventListener(sublime_plugin.EventListener):
         EventHub.run_listeners("on_post_text_command_with_info", view, command_name, args, info)
 
     def on_query_completions(self, view, prefix, locations):
-        EventHub.run_listeners("on_query_completions", view, prefix, locations)
+        log.debug("on_query_completions")
+        return EventHub.run_listener_with_return("on_query_completions", view, prefix, locations)
 
     def on_query_context(self, view, key, operator, operand, match_all):
+        log.debug("on_query_context")
         EventHub.run_listeners("on_query_context", view, key, operator, operand, match_all)
 
     def on_close(self, view):
+        log.debug("on_close")
         file_name = view.file_name()
         if view.is_scratch() and view.name() == "Find References":
             cli.dispose_ref_info()

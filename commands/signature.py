@@ -66,7 +66,7 @@ class TypescriptSignaturePopup(sublime_plugin.TextCommand):
         return TOOLTIP_SUPPORT and is_typescript(self.view)
 
     def run(self, edit, move=None):
-        logger.log.debug('In run for signature popup with move: {0}'.format(move if move else 'None'))
+        log.debug('In run for signature popup with move: {0}'.format(move if move else 'None'))
         if not TOOLTIP_SUPPORT:
             return
 

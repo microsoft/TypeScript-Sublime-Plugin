@@ -12,4 +12,4 @@ class FormatEventListener:
             print("handled changes for " + command_name)
 
 listener = FormatEventListener()
-EventHub.subscribe("on_query_completions", listener.on_post_text_command_with_info)
+EventHub.subscribe("on_post_text_command_with_info", listener.on_post_text_command_with_info)
