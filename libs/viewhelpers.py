@@ -37,6 +37,9 @@ most_recent_used_file_list = []
 
 def get_info(view):
     """Find the file info on the server that matches the given view"""
+    if not cli.initialized:
+        return None
+
     info = None
     if view.file_name() is not None:
         file_name = view.file_name()

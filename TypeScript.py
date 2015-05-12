@@ -59,6 +59,8 @@ def plugin_loaded():
     Note: this is not always called on startup by Sublime, so we call it
     from on_activated or on_close if necessary.
     """
+    log.debug("plugin_loaded started")
+    cli.initialize()
     ref_view = get_ref_view(False)
     if ref_view:
         settings = ref_view.settings()
@@ -81,6 +83,7 @@ def plugin_loaded():
                 window.run_command('close')
     else:
         print("ref view not found")
+    log.debug("plugin_loaded ended")
 
 
 def plugin_unloaded():

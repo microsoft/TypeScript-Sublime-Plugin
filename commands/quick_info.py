@@ -33,10 +33,13 @@ class TypescriptQuickInfoDoc(sublime_plugin.TextCommand):
     Command to show the doc string associated with quick info;
     re-runs quick info in case info has changed
     """
+    def is_enabled(self):
+        return is_typescript(self.view)
+
     def handle_quick_info(self, quick_info_resp_dict):
         if quick_info_resp_dict["success"]:
             info_str = quick_info_resp_dict["body"]["displayString"]
-            # Todo: explain (depends on the if)
+            # The finfoStr depends on the if result
             finfoStr = info_str
             doc_str = quick_info_resp_dict["body"]["documentation"]
             if len(doc_str) > 0:
@@ -60,16 +63,9 @@ class TypescriptQuickInfoDoc(sublime_plugin.TextCommand):
             self.view.erase_status("typescript_info")
 
     def run(self, text):
-        if not is_typescript(self.view):
-            print("To run this command, please first assign a file name to the view")
-            return
         check_update_view(self.view)
         word_at_sel = self.view.classify(self.view.sel()[0].begin())
         if word_at_sel & SUBLIME_WORD_MASK:
             cli.service.quick_info(self.view.file_name(), get_location_from_view(self.view), self.handle_quick_info)
         else:
             self.view.erase_status("typescript_info")
-
-    def is_enabled(self):
-        return is_typescript(self.view)
-

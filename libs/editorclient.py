@@ -22,6 +22,26 @@ class EditorClient:
     """A singleton class holding information for the entire application that must be accessible globally"""
 
     def __init__(self):
+        self.file_map = {}
+        self.ref_info = None
+        self.seq_to_tempfile_name = {}
+        self.available_tempfile_list = []
+        self.tmpseq = 0
+        self.node_client = None
+        self.service = None
+        self.initialized = False
+
+        self.tab_size = 4
+        self.indent_size = 4
+        self.translate_tab_to_spaces = False
+
+    def initialize(self):
+        """
+        Sublime_api methods can only be executed in plugin_loaded, and they will
+        return None if executed during import time. Therefore the cli needs to be
+        initialized during loading time
+        """
+
         # retrieve the path to tsserver.js
         # first see if user set the path to the file
         settings = sublime.load_settings('Preferences.sublime-settings')
@@ -33,16 +53,13 @@ class EditorClient:
 
         self.node_client = NodeCommClient(proc_file)
         self.service = ServiceProxy(self.node_client)
-        self.file_map = {}
-        self.ref_info = None
-        self.seq_to_tempfile_name = {}
-        self.available_tempfile_list = []
-        self.tmpseq = 0
 
         # load formatting settings and set callbacks for setting changes
         for setting_name in ['tab_size', 'indent_size', 'translate_tabs_to_spaces']:
             settings.add_on_change(setting_name, self.load_format_settings)
         self.load_format_settings()
+
+        self.initialized = True
 
     def load_format_settings(self):
         settings = sublime.load_settings('Preferences.sublime-settings')

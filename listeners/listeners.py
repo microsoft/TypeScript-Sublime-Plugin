@@ -222,3 +222,7 @@ class TypeScriptEventListener(sublime_plugin.EventListener):
                     most_recent_used_file_list.remove(info)
                 # notify the server that the file is closed
                 cli.service.close(file_name)
+
+    def on_pre_save(self, view):
+        log.debug("on_pre_save")
+        check_update_view(view)

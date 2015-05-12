@@ -17,3 +17,4 @@ ptvsd/*
 sublime.py
 sublime_plugin.py
 .idea/*
+.settings/*

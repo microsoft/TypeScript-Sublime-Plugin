@@ -7,10 +7,10 @@ from ..libs.reference import *
 
 class TypescriptRenameCommand(sublime_plugin.TextCommand):
     """Rename command"""
+    def is_enabled(self):
+        return is_typescript(self.view)
+
     def run(self, text):
-        if not is_typescript(self.view):
-            print("To run this command, please first assign a file name to the view")
-            return
         check_update_view(self.view)
         rename_response = cli.service.rename(self.view.file_name(), get_location_from_view(self.view))
         if rename_response["success"]:
@@ -40,6 +40,9 @@ class TypescriptFinishRenameCommand(sublime_plugin.TextCommand):
     Called from on_done handler in finish_rename command
     on_done is called by input panel for new name
     """
+    def is_enabled(self):
+        return is_typescript(self.view)
+
     def run(self, text, args_json=""):
         args = jsonhelpers.decode(args_json)
         new_name = args["newName"]
@@ -71,6 +74,9 @@ class TypescriptFinishRenameCommand(sublime_plugin.TextCommand):
 
 class TypescriptDelayedRenameFile(sublime_plugin.TextCommand):
     # Rename in 'on_load' method
+    def is_enabled(self):
+        return is_typescript(self.view)
+
     def run(self, text, locs_name=None):
         if locs_name['locs'] and (len(locs_name['name']) > 0):
             locs = locs_name['locs']

@@ -7,10 +7,10 @@ from ..libs.reference import *
 
 class TypescriptFindReferencesCommand(sublime_plugin.TextCommand):
     """Find references command"""
+    def is_enabled(self):
+        return is_typescript(self.view)
+
     def run(self, text):
-        if not is_typescript(self.view):
-            print("To run this command, please first assign a file name to the view")
-            return
         check_update_view(self.view)
         references_resp = cli.service.references(self.view.file_name(), get_location_from_view(self.view))
         if references_resp["success"]:

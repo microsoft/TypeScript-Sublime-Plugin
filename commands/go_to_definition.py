@@ -3,12 +3,13 @@ import sublime_plugin
 from ..libs.viewhelpers import *
 from ..libs.reference import *
 
-# go to definition command
+
 class TypescriptGoToDefinitionCommand(sublime_plugin.TextCommand):
+    """Go to definition command"""
+    def is_enabled(self):
+        return is_typescript(self.view)
+
     def run(self, text):
-        if not is_typescript(self.view):
-            print("To run this command, please first assign a file name to the view")
-            return
         check_update_view(self.view)
         definitionResp = cli.service.definition(self.view.file_name(), get_location_from_view(self.view))
         if definitionResp["success"]:
