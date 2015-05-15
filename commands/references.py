@@ -3,13 +3,11 @@ import sublime_plugin
 from ..libs import *
 from ..libs.viewhelpers import *
 from ..libs.reference import *
+from .base_command import TypeScriptBaseTextCommand
 
 
-class TypescriptFindReferencesCommand(sublime_plugin.TextCommand):
+class TypescriptFindReferencesCommand(TypeScriptBaseTextCommand):
     """Find references command"""
-    def is_enabled(self):
-        return is_typescript(self.view)
-
     def run(self, text):
         check_update_view(self.view)
         references_resp = cli.service.references(self.view.file_name(), get_location_from_view(self.view))
@@ -53,9 +51,9 @@ class TypescriptNextRefCommand(sublime_plugin.TextCommand):
             ref_view.run_command('typescript_go_to_ref')
 
 
-# command: go to previous reference in active references file
 # TODO: generalize this to work for all types of references
 class TypescriptPrevRefCommand(sublime_plugin.TextCommand):
+    """Go to previous reference in active references file"""
     def run(self, text):
         ref_view = get_ref_view()
         if ref_view:
@@ -66,11 +64,12 @@ class TypescriptPrevRefCommand(sublime_plugin.TextCommand):
             ref_view.run_command('typescript_go_to_ref')
 
 
-# helper command called by TypescriptFindReferences; put the references in the
-# references buffer
 # TODO: generalize this to populate any type of references file
-# (such as build errors)
 class TypescriptPopulateRefs(sublime_plugin.TextCommand):
+    """
+    Helper command called by TypescriptFindReferences; put the references in the
+    references buffer (such as build errors)
+    """
     def run(self, text, argsJson):
         args = jsonhelpers.decode(argsJson)
         file_name = args["filename"]

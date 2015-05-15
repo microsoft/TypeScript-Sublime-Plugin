@@ -1,5 +1,6 @@
 from ..libs.viewhelpers import *
 from ..libs.texthelpers import *
+from ..libs import log
 from .eventhub import EventHub
 
 
@@ -22,7 +23,7 @@ class IdleListener:
         self.set_on_selection_idle_timer(IDLE_TIME_LENGTH)
         self.change_focus = True
 
-    def on_modified_with_info(self, view, info):
+    def post_on_modified(self, view):
         self.modified = True
         self.set_on_idle_timer(100)
 
@@ -142,6 +143,7 @@ class IdleListener:
         If file hasn't been modified for a time check the event
         queue and dispatch any events.
         """
+        log.debug("enter on_idle")
         view = active_view()
         ev = cli.service.get_event()
         if ev is not None:
@@ -155,6 +157,7 @@ class IdleListener:
             self.set_on_idle_timer(50)
         info = get_info(view)
         if info:
+            log.debug("asking for errors")
             # request errors
             self.refresh_errors(view, info, 500)
 
@@ -178,5 +181,5 @@ class IdleListener:
 
 listener = IdleListener()
 EventHub.subscribe("on_activated_with_info", listener.on_activated_with_info)
-EventHub.subscribe("on_modified_with_info", listener.on_modified_with_info)
+EventHub.subscribe("post_on_modified", listener.post_on_modified)
 EventHub.subscribe("on_selection_modified_with_info", listener.on_selection_modified_with_info)

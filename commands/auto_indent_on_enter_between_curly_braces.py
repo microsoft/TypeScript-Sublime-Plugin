@@ -1,19 +1,14 @@
-import sublime_plugin
+from ..libs.viewhelpers import is_typescript, insert_text, set_caret_pos
+from .base_command import TypeScriptBaseTextCommand
 
-from ..libs.viewhelpers import *
 
-
-class TypescriptAutoIndentOnEnterBetweenCurlyBrackets(sublime_plugin.TextCommand):
+class TypescriptAutoIndentOnEnterBetweenCurlyBrackets(TypeScriptBaseTextCommand):
     """
     handle the case of hitting enter between {} to auto indent and format
     """
 
     def run(self, text):
-        print("TypescriptAutoIndentOnEnterBetweenCurlyBrackets")
         view = self.view
-        if not is_typescript(view):
-            print("To run this command, please first assign a file name to the view")
-            return
         view.run_command('typescript_format_on_key', {"key": "\n"})
         loc = view.sel()[0].begin()
         row, offset = view.rowcol(loc)

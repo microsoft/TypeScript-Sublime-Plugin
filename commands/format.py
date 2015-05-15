@@ -1,18 +1,12 @@
-import sublime_plugin
-
 from ..libs.viewhelpers import *
-from ..libs.texthelpers import *
-from ..libs.reference import *
+from .base_command import TypeScriptBaseTextCommand
 
 
-class TypescriptFormatOnKey(sublime_plugin.TextCommand):
+class TypescriptFormatOnKey(TypeScriptBaseTextCommand):
     """
     Format on ";", "}", or "\n"; called by typing these keys in a ts file
-    in the case of "\n", this is only called when no completion dialogue visible
+    in the case of "\n", this is only called when no completion dialogue is visible
     """
-    def is_enabled(self):
-        return is_typescript(self.view)
-
     def run(self, text, key="", insert_key=True):
         if 0 == len(key):
             return
@@ -30,30 +24,21 @@ class TypescriptFormatOnKey(sublime_plugin.TextCommand):
             apply_formatting_changes(text, self.view, code_edits)
 
 
-class TypescriptFormatSelection(sublime_plugin.TextCommand):
+class TypescriptFormatSelection(TypeScriptBaseTextCommand):
     """Command to format the current selection"""
-    def is_enabled(self):
-        return is_typescript(self.view)
-
     def run(self, text):
         r = self.view.sel()[0]
         format_range(text, self.view, r.begin(), r.end())
 
 
-class TypescriptFormatDocument(sublime_plugin.TextCommand):
+class TypescriptFormatDocument(TypeScriptBaseTextCommand):
     """Command to format the entire buffer"""
-    def is_enabled(self):
-        return is_typescript(self.view)
-
     def run(self, text):
         format_range(text, self.view, 0, self.view.size())
 
 
-class TypescriptFormatLine(sublime_plugin.TextCommand):
+class TypescriptFormatLine(TypeScriptBaseTextCommand):
     """Command to format the current line"""
-    def is_enabled(self):
-        return is_typescript(self.view)
-
     def run(self, text):
         line_region = self.view.line(self.view.sel()[0])
         line_text = self.view.substr(line_region)
@@ -61,16 +46,12 @@ class TypescriptFormatLine(sublime_plugin.TextCommand):
             format_range(text, self.view, line_region.begin(), line_region.end())
         else:
             position = self.view.sel()[0].begin()
-            cursor = self.view.rowcol(position)
-            line = cursor[0]
+            line, offset = self.view.rowcol(position)
             if line > 0:
-                self.view.run_command('typescript_format_on_key', {"key": "\n", "insertKey": False});
+                self.view.run_command('typescript_format_on_key', {"key": "\n", "insertKey": False})
 
 
-class TypescriptFormatBrackets(sublime_plugin.TextCommand):
-    def is_enabled(self):
-        return is_typescript(self.view)
-
+class TypescriptFormatBrackets(TypeScriptBaseTextCommand):
     def run(self, text):
         check_update_view(self.view)
         sel = self.view.sel()
@@ -87,10 +68,7 @@ class TypescriptFormatBrackets(sublime_plugin.TextCommand):
                 self.view.run_command('move', {"by": "characters", "forward": True})
 
 
-class TypescriptPasteAndFormat(sublime_plugin.TextCommand):
-    def is_enabled(self):
-        return is_typescript(self.view)
-
+class TypescriptPasteAndFormat(TypeScriptBaseTextCommand):
     def run(self, text):
         view = self.view
         check_update_view(view)
@@ -102,9 +80,8 @@ class TypescriptPasteAndFormat(sublime_plugin.TextCommand):
         view.run_command("paste")
         regions_after_paste = view.get_regions("apresPaste")
         view.erase_regions("apresPaste")
-        for i in range(len(regions_before_paste)):
-            rb = regions_before_paste[i]
-            ra = regions_after_paste[i]
-            rb_line_start = view.line(rb.begin()).begin()
-            ra_line_end = view.line(ra.begin()).end()
-            format_range(text, view, rb_line_start, ra_line_end)
+
+        for rb, ra in zip(regions_before_paste, regions_after_paste):
+            line_start = view.line(rb.begin()).begin()
+            line_end = view.line(ra.begin()).end()
+            format_range(text, view, line_start, line_end)

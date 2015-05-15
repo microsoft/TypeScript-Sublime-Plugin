@@ -1,10 +1,9 @@
-import sublime_plugin
-
 from ..libs.viewhelpers import *
 from ..libs.texthelpers import escape_html
+from .base_command import TypeScriptBaseTextCommand
 
 
-class TypescriptQuickInfo(sublime_plugin.TextCommand):
+class TypescriptQuickInfo(TypeScriptBaseTextCommand):
     """Command currently called only from event handlers"""
     def handle_quick_info(self, quick_info_resp_dict):
         if quick_info_resp_dict["success"]:
@@ -24,18 +23,12 @@ class TypescriptQuickInfo(sublime_plugin.TextCommand):
         else:
             self.view.erase_status("typescript_info")
 
-    def is_enabled(self):
-        return is_typescript(self.view)
 
-
-class TypescriptQuickInfoDoc(sublime_plugin.TextCommand):
+class TypescriptQuickInfoDoc(TypeScriptBaseTextCommand):
     """
     Command to show the doc string associated with quick info;
     re-runs quick info in case info has changed
     """
-    def is_enabled(self):
-        return is_typescript(self.view)
-
     def handle_quick_info(self, quick_info_resp_dict):
         if quick_info_resp_dict["success"]:
             info_str = quick_info_resp_dict["body"]["displayString"]

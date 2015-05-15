@@ -111,7 +111,7 @@ def build_ref_info(ref_info_tuple):
 
 
 def highlight_ids(view, ref_id):
-    """Highlight all occurrences of refId in view"""
+    """Highlight all occurrences of ref_id in view"""
     id_regions = view.find_all("(?<=\W)" + ref_id + "(?=\W)")
     if id_regions and (len(id_regions) > 0):
         if IS_ST2:

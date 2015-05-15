@@ -31,17 +31,18 @@ class TypeScriptEventListener(sublime_plugin.EventListener):
         EventHub.run_listeners("on_activated_with_info", view, info)
 
     def on_modified(self, view):
-        log.debug("on_modified")
         """
         Usually called by Sublime when the buffer is modified
         not called for undo, redo
         """
+        log.debug("on_modified")
         if is_special_view(view):
             self.on_modified_special_view(view)
         else:
             info = get_info(view)
             if info:
                 self.on_modified_with_info(view, info)
+        self.post_on_modified(view)
 
     def on_modified_special_view(self, view):
         log.debug("on_modified_special_view")
@@ -81,6 +82,9 @@ class TypeScriptEventListener(sublime_plugin.EventListener):
 
         # Other listeners
         EventHub.run_listeners("on_modified_with_info", view, info)
+
+    def post_on_modified(self, view):
+        EventHub.run_listeners("post_on_modified", view)
 
     def on_selection_modified(self, view):
         """

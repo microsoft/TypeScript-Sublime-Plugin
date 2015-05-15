@@ -7,7 +7,7 @@ from .eventhub import EventHub
 class NavToEventListener:
     """Event listeners for the TypescriptNavToCommand"""
     def on_activated_special_view(self, view):
-        if TypescriptNavToCommand.navto_panel_started:
+        if TypescriptNavToCommand.nav_to_panel_started:
             # The current view is the QuickPanel. Set insert_text_finished to false to suppress
             # handling in on_modified
             TypescriptNavToCommand.insert_text_finished = False
@@ -17,9 +17,9 @@ class NavToEventListener:
 
     def on_modified_special_view(self, view):
         logger.log.debug("enter on_modified: special view. started: %s, insert_text_finished: %s" %
-                         (TypescriptNavToCommand.navto_panel_started, TypescriptNavToCommand.insert_text_finished))
+                         (TypescriptNavToCommand.nav_to_panel_started, TypescriptNavToCommand.insert_text_finished))
 
-        if TypescriptNavToCommand.navto_panel_started and TypescriptNavToCommand.insert_text_finished:
+        if TypescriptNavToCommand.nav_to_panel_started and TypescriptNavToCommand.insert_text_finished:
             new_content = view.substr(sublime.Region(0, view.size()))
             active_window().run_command("hide_overlay")
             sublime.set_timeout(
@@ -27,7 +27,7 @@ class NavToEventListener:
                 0)
 
         logger.log.debug("exit on_modified: special view. started: %s, insert_text_finished: %s" %
-                         (TypescriptNavToCommand.navto_panel_started, TypescriptNavToCommand.insert_text_finished))
+                         (TypescriptNavToCommand.nav_to_panel_started, TypescriptNavToCommand.insert_text_finished))
 
 listener = NavToEventListener()
 EventHub.subscribe("on_activated_special_view", listener.on_activated_special_view)

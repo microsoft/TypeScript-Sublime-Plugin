@@ -1,9 +1,10 @@
 import sublime_plugin
 
-from ..libs.viewhelpers import *
+from ..libs.viewhelpers import cli
+from .base_command import TypeScriptBaseTextCommand
 
 
-class TypescriptErrorInfo(sublime_plugin.TextCommand):
+class TypescriptErrorInfo(TypeScriptBaseTextCommand):
     """
     Command called from event handlers to show error text in status line
     (or to erase error text from status line if no error text for location)
@@ -15,9 +16,11 @@ class TypescriptErrorInfo(sublime_plugin.TextCommand):
         for (region, text) in client_info.errors['syntacticDiag']:
             if region.contains(pt):
                 error_text = text
+                break
         for (region, text) in client_info.errors['semanticDiag']:
             if region.contains(pt):
                 error_text = text
+                break
         if len(error_text) > 0:
             self.view.set_status("typescript_error", error_text)
         else:
