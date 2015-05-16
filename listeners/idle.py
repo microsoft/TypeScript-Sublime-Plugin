@@ -82,8 +82,8 @@ class IdleListener:
                     for diagno in diagnos:
                         start_location = diagno["start"]
                         end_location = diagno["end"]
-                        (line, offset) = extract_line_offset(start_location)
-                        (end_line, end_offset) = extract_line_offset(end_location)
+                        line, offset = extract_line_offset(start_location)
+                        end_line, end_offset = extract_line_offset(end_location)
                         text = diagno["text"]
                         start = view.text_point(line, offset)
                         end = view.text_point(end_line, end_offset)

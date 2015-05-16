@@ -232,29 +232,27 @@ def send_replace_changes_for_regions(view, regions, insert_string):
         cli.service.change(view.file_name(), location, end_location, insert_string)
 
 
-def apply_edit(text, view, startl, startc, endl, endc, ntext=""):
+def apply_edit(text, view, start_line, start_offset, end_line, end_offset, new_text=""):
     """Apply a single edit specification to a view"""
-    begin = view.text_point(startl, startc)
-    end = view.text_point(endl, endc)
+    begin = view.text_point(start_line, start_offset)
+    end = view.text_point(end_line, end_offset)
     region = sublime.Region(begin, end)
-    send_replace_changes_for_regions(view, [region], ntext)
+    send_replace_changes_for_regions(view, [region], new_text)
     # break replace into two parts to avoid selection changes
     if region.size() > 0:
         view.erase(text, region)
-    if (len(ntext) > 0):
-        view.insert(text, begin, ntext)
+    if len(new_text) > 0:
+        view.insert(text, begin, new_text)
 
 
 def apply_formatting_changes(text, view, code_edits):
     """Apply a set of edits to a view"""
     if code_edits:
         for code_edit in code_edits[::-1]:
-            startlc = code_edit["start"]
-            (startl, startc) = extract_line_offset(startlc)
-            endlc = code_edit["end"]
-            (endl, endc) = extract_line_offset(endlc)
-            newText = code_edit["newText"]
-            apply_edit(text, view, startl, startc, endl, endc, ntext=newText)
+            start_line, start_offset = extract_line_offset(code_edit["start"])
+            end_line, end_offset = extract_line_offset(code_edit["end"])
+            new_text = code_edit["newText"]
+            apply_edit(text, view, start_line, start_offset, end_line, end_offset, new_text=new_text)
 
 
 def insert_text(view, edit, loc, text):
@@ -268,7 +266,7 @@ def insert_text(view, edit, loc, text):
 
 def format_range(text, view, begin, end):
     """Format a range of locations in the view"""
-    if (not is_typescript(view)):
+    if not is_typescript(view):
         print("To run this command, please first assign a file name to the view")
         return
     check_update_view(view)
@@ -308,3 +306,8 @@ def change_count(view):
             return info.modify_count
         else:
             return view.change_count()
+
+
+# def get_delete_indent_space_number(view, pos):
+#     line, offset =
+#     tab_size = view.settings().get("tab_size", 1)

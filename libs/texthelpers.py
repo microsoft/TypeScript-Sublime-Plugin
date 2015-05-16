@@ -2,8 +2,12 @@ import sublime
 
 from .globalvars import *
 
+
 class Location:
-    """Object containing line and offset (one-based) of file location"""
+    """Object containing line and offset (one-based) of file location
+
+    Location is a server protocol. Both line and offset are 1-based.
+    """
 
     def __init__(self, line, offset):
         self.line = line
@@ -82,6 +86,7 @@ def extract_line_offset(line_offset):
         offset = line_offset.offset - 1
     return line, offset
 
+
 def escape_html(raw_string):
     """Escape html content
 
@@ -90,12 +95,12 @@ def escape_html(raw_string):
     return raw_string.replace('&', '&amp;').replace('<', '&lt;').replace('>', "&gt;")
 
 
-def left_expand_empty_region(regions):
+def left_expand_empty_region(regions, number=1):
     """Expand region list one to left for backspace change info"""
     result = []
     for region in regions:
         if region.empty():
-            result.append(sublime.Region(region.begin() - 1, region.end()))
+            result.append(sublime.Region(region.begin() - number, region.end()))
         else:
             result.append(region)
     return result
@@ -110,6 +115,7 @@ def right_expand_empty_region(regions):
         else:
             result.append(region)
     return result
+
 
 def build_replace_regions(empty_regions_a, empty_regions_b):
     """

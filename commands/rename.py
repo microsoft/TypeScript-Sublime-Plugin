@@ -59,7 +59,7 @@ class TypescriptFinishRenameCommand(TypeScriptBaseTextCommand):
                         start_line, start_offset = extract_line_offset(inner_location["start"])
                         end_line, end_offset = extract_line_offset(inner_location["end"])
                         apply_edit(text, self.view, start_line, start_offset, end_line,
-                                   end_offset, ntext=new_name)
+                                   end_offset, new_text=new_name)
 
 
 class TypescriptDelayedRenameFile(TypeScriptBaseTextCommand):
@@ -72,4 +72,4 @@ class TypescriptDelayedRenameFile(TypeScriptBaseTextCommand):
                 start_line, start_offset = extract_line_offset(inner_location['start'])
                 end_line, end_offset = extract_line_offset(inner_location['end'])
                 apply_edit(text, self.view, start_line, start_offset, end_line,
-                           end_offset, ntext=name)
+                           end_offset, new_text=name)
