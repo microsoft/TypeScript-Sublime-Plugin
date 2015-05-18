@@ -32,7 +32,6 @@ class FileInfo:
 
 
 _file_map = dict()
-most_recent_used_file_list = []
 
 
 def get_info(view):
@@ -58,9 +57,9 @@ def get_info(view):
                         reload_buffer(view, info.client_info)
                     else:
                         info.client_info.pending_changes = True
-                if info in most_recent_used_file_list:
-                    most_recent_used_file_list.remove(info)
-                most_recent_used_file_list.append(info)
+                # if info in most_recent_used_file_list:
+                #     most_recent_used_file_list.remove(info)
+                # most_recent_used_file_list.append(info)
     return info
 
 
@@ -306,8 +305,3 @@ def change_count(view):
             return info.modify_count
         else:
             return view.change_count()
-
-
-# def get_delete_indent_space_number(view, pos):
-#     line, offset =
-#     tab_size = view.settings().get("tab_size", 1)

@@ -220,12 +220,12 @@ class TypeScriptEventListener(sublime_plugin.EventListener):
         if view.is_scratch() and view.name() == "Find References":
             cli.dispose_ref_info()
         else:
-            info = get_info(view)
-            if info:
-                if info in most_recent_used_file_list:
-                    most_recent_used_file_list.remove(info)
-                # notify the server that the file is closed
-                cli.service.close(file_name)
+            # info = get_info(view)
+            # if info:
+            #     if info in most_recent_used_file_list:
+            #         most_recent_used_file_list.remove(info)
+            # notify the server that the file is closed
+            cli.service.close(file_name)
 
     def on_pre_save(self, view):
         log.debug("on_pre_save")
