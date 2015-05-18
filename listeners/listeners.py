@@ -212,7 +212,7 @@ class TypeScriptEventListener(sublime_plugin.EventListener):
 
     def on_query_context(self, view, key, operator, operand, match_all):
         log.debug("on_query_context")
-        EventHub.run_listeners("on_query_context", view, key, operator, operand, match_all)
+        return EventHub.run_listener_with_return("on_query_context", view, key, operator, operand, match_all)
 
     def on_close(self, view):
         log.debug("on_close")

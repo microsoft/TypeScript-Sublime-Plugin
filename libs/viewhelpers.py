@@ -203,8 +203,8 @@ def reload_buffer(view, client_info=None):
         if not IS_ST2:
             if not client_info:
                 client_info = cli.get_or_add_file(view.file_name())
-                client_info.change_count = view.change_count()
-                client_info.pending_changes = False
+            client_info.change_count = view.change_count()
+            client_info.pending_changes = False
 
 
 def check_update_view(view):

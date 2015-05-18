@@ -24,8 +24,9 @@ class IdleListener:
         self.change_focus = True
 
     def post_on_modified(self, view):
-        self.modified = True
-        self.set_on_idle_timer(100)
+        if not is_special_view(view):
+            self.modified = True
+            self.set_on_idle_timer(100)
 
     def on_selection_modified_with_info(self, view, info):
         if self.modified:
