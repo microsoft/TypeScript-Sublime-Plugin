@@ -111,14 +111,6 @@
         ]
     },
     {
-        "keys": [ "?" ],
-        "command": "typescript_signature_panel",
-        "context": [
-            { "key": "preceding_text", "operator": "regex_contains", "operand": "\\($" },
-            { "key": "selector", "operator": "equal", "operand": "source.ts" }
-        ]
-    },
-    {
         "keys": ["("],
         "command": "typescript_signature_popup",
         "context": [
