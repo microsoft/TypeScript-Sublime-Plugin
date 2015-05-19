@@ -1,5 +1,5 @@
 from ..libs import *
-from ..libs.viewhelpers import *
+from ..libs.view_helpers import *
 from ..libs.reference import *
 from .base_command import TypeScriptBaseTextCommand
 
@@ -20,7 +20,7 @@ class TypescriptRenameCommand(TypeScriptBaseTextCommand):
 
             def on_done(new_name):
                 args = {"newName": new_name, "outerLocs": outer_locations}
-                args_json_str = jsonhelpers.encode(args)
+                args_json_str = json_helpers.encode(args)
                 self.view.run_command('typescript_finish_rename', {"args_json": args_json_str})
 
             if len(outer_locations) > 0:
@@ -37,7 +37,7 @@ class TypescriptFinishRenameCommand(TypeScriptBaseTextCommand):
     on_done is called by input panel for new name
     """
     def run(self, text, args_json=""):
-        args = jsonhelpers.decode(args_json)
+        args = json_helpers.decode(args_json)
         new_name = args["newName"]
         outer_locations = args["outerLocs"]
         if len(outer_locations) > 0:

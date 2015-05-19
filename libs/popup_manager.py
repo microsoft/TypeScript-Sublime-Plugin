@@ -1,10 +1,10 @@
 from string import Template
 
 from .logger import log
-from .globalvars import *
-from .workscheduler import work_scheduler
-from .texthelpers import Location
-from .editorclient import cli
+from .global_vars import *
+from .work_scheduler import work_scheduler
+from .text_helpers import Location
+from .editor_client import cli
 
 
 class PopupManager():

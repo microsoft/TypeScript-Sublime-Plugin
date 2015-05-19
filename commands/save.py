@@ -1,4 +1,4 @@
-from ..libs.viewhelpers import *
+from ..libs.view_helpers import *
 from .base_command import TypeScriptBaseTextCommand
 
 

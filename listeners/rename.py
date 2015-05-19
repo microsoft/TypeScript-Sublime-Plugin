@@ -1,5 +1,5 @@
 from ..libs import *
-from .eventhub import EventHub
+from .event_hub import EventHub
 
 
 class RenameEventListener:

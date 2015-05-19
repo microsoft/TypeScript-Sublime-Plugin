@@ -1,5 +1,5 @@
 import sublime_plugin
-from ..libs.viewhelpers import is_typescript, active_view
+from ..libs.view_helpers import is_typescript, active_view
 
 
 class TypeScriptBaseTextCommand(sublime_plugin.TextCommand):

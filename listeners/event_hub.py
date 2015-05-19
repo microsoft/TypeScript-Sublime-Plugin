@@ -17,6 +17,9 @@ class EventHub:
 
     @classmethod
     def run_listener_with_return(cls, key, *args):
+        """Return the first non-None result, otherwise return None"""
         if key in cls.listener_dict.keys():
-            return cls.listener_dict[key][0](*args)
-
+            res = cls.listener_dict[key][0](*args)
+            if res is not None:
+                return res
+        return None

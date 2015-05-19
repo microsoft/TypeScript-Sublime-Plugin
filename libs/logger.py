@@ -10,7 +10,7 @@ by the properties below.
 
 import logging
 from os import path
-from .globalvars import LOG_CONSOLE_LEVEL, LOG_FILE_LEVEL
+from .global_vars import LOG_CONSOLE_LEVEL, LOG_FILE_LEVEL
 
 # The default path to the log file created for diagnostic output
 _pluginRoot = path.dirname(path.dirname(path.abspath(__file__)))

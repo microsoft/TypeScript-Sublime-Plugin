@@ -1,4 +1,4 @@
-from .eventhub import EventHub
+from .event_hub import EventHub
 
 
 class FormatEventListener:

@@ -1,8 +1,8 @@
 import codecs
 
-from .globalvars import *
-from .editorclient import cli
-from .texthelpers import *
+from .global_vars import *
+from .editor_client import cli
+from .text_helpers import *
 
 
 class FileInfo:

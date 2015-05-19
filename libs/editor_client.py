@@ -1,7 +1,7 @@
 from .reference import RefInfo
-from .nodeclient import NodeCommClient
-from .serviceproxy import ServiceProxy
-from .globalvars import *
+from .node_client import NodeCommClient
+from .service_proxy import ServiceProxy
+from .global_vars import *
 
 
 class ClientFileInfo:

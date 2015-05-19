@@ -1,6 +1,6 @@
 import sublime_plugin
 
-from ..libs.viewhelpers import cli
+from ..libs.view_helpers import cli
 from .base_command import TypeScriptBaseTextCommand
 
 

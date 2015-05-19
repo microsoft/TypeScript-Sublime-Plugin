@@ -1,7 +1,7 @@
-from ..libs.globalvars import *
-from ..libs.viewhelpers import active_window
+from ..libs.global_vars import *
+from ..libs.view_helpers import active_window
 from ..libs import *
-from .eventhub import EventHub
+from .event_hub import EventHub
 
 
 class TooltipEventListener:

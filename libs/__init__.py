@@ -1,8 +1,8 @@
-from .nodeclient import NodeCommClient
-from .popupmanager import PopupManager
-from .serviceproxy import ServiceProxy
-from .editorclient import cli, EditorClient
-from .popupmanager import get_popup_manager
+from .node_client import NodeCommClient
+from .popup_manager import PopupManager
+from .service_proxy import ServiceProxy
+from .editor_client import cli, EditorClient
+from .popup_manager import get_popup_manager
 from .logger import log
 from . import logger
 
@@ -13,8 +13,8 @@ __all__ = [
     'log',
     'get_popup_manager',
     'NodeCommClient',
-    'jsonhelpers',
+    'json_helpers',
     'PopupManager',
     'ServiceProxy',
-    'workscheduler'
+    'work_scheduler'
 ]

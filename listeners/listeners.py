@@ -1,8 +1,8 @@
 import sublime_plugin
 
-from ..libs.viewhelpers import *
+from ..libs.view_helpers import *
 from ..libs import *
-from .eventhub import EventHub
+from .event_hub import EventHub
 from .completion import CompletionEventListener
 from .format import FormatEventListener
 from .idle import IdleListener

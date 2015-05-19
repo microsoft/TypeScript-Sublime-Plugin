@@ -1,7 +1,7 @@
-from ..libs.viewhelpers import *
-from ..libs.texthelpers import *
+from ..libs.view_helpers import *
+from ..libs.text_helpers import *
 from ..libs import log
-from .eventhub import EventHub
+from .event_hub import EventHub
 
 
 class IdleListener:
@@ -146,6 +146,7 @@ class IdleListener:
         """
         log.debug("enter on_idle")
         view = active_view()
+        log.debug("call get_event from on_idle")
         ev = cli.service.get_event()
         if ev is not None:
             self.dispatch_event(ev)
@@ -164,9 +165,11 @@ class IdleListener:
 
     def update_status(self, view, info):
         """Update the status line with error info and quick info if no error info"""
+        log.debug("call get_event from update_status")
         ev = cli.service.get_event()
         if ev is not None:
             self.dispatch_event(ev)
+            self.error_refresh_requested = False
 
         if info.has_errors:
             view.run_command('typescript_error_info')

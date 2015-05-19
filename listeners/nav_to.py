@@ -1,7 +1,7 @@
 from ..commands.nav_to import TypescriptNavToCommand
-from ..libs.viewhelpers import *
+from ..libs.view_helpers import *
 from ..libs import *
-from .eventhub import EventHub
+from .event_hub import EventHub
 
 
 class NavToEventListener:

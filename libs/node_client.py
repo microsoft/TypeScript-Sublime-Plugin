@@ -7,7 +7,7 @@ import sublime
 import sublime_plugin
 
 from .logger import log
-from . import jsonhelpers
+from . import json_helpers
 
 # queue module name changed from Python 2 to 3
 if int(sublime.version()) < 3000:
@@ -100,7 +100,7 @@ class NodeCommClient(CommClient):
                                             stdin=subprocess.PIPE, stdout=subprocess.PIPE)
 
     def makeTimeoutMsg(self, cmd, seq):
-        jsonDict = jsonhelpers.decode(cmd)
+        jsonDict = json_helpers.decode(cmd)
         timeoutMsg = {
             "seq": 0,
             "type": "response",
@@ -121,7 +121,7 @@ class NodeCommClient(CommClient):
             try:
                 while reqSeq < seq:
                     data = self.__msgq.get(True, 1)
-                    dict = jsonhelpers.decode(data)
+                    dict = json_helpers.decode(data)
                     reqSeq = dict['request_seq']
                 if cb:
                     cb(dict)
@@ -149,7 +149,7 @@ class NodeCommClient(CommClient):
             try:
                 while reqSeq < seq:
                     data = self.__msgq.get(True, 1)
-                    dict = jsonhelpers.decode(data)
+                    dict = json_helpers.decode(data)
                     reqSeq = dict['request_seq']
                 return dict
             except queue.Empty:
@@ -214,7 +214,7 @@ class NodeCommClient(CommClient):
             data = stream.read(body_length)
             log.debug('Read body of length: {0}'.format(body_length))
             data_json = data.decode("utf-8")
-            data_dict = jsonhelpers.decode(data_json)
+            data_dict = json_helpers.decode(data_json)
             if data_dict['type'] == "response":
                 request_seq = data_dict['request_seq']
                 log.debug('Body sequence#: {0}'.format(request_seq))

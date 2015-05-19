@@ -1,6 +1,6 @@
 import sublime
 
-from .globalvars import *
+from .global_vars import *
 
 
 class Location:

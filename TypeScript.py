@@ -5,13 +5,13 @@ import sys
 if sys.version_info < (3, 0):
     from libs import *
     from libs.reference import *
-    from libs.viewhelpers import *
+    from libs.view_helpers import *
     from listeners import *
     from commands import *
 else:
     from .libs import *
     from .libs.reference import *
-    from .libs.viewhelpers import *
+    from .libs.view_helpers import *
     from .listeners import *
     from .commands import *
 

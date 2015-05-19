@@ -1,5 +1,5 @@
-from ..libs.viewhelpers import *
-from ..libs.texthelpers import escape_html
+from ..libs.view_helpers import *
+from ..libs.text_helpers import escape_html
 from .base_command import TypeScriptBaseTextCommand
 
 
