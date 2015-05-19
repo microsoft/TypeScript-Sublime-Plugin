@@ -1,11 +1,13 @@
-import sublime
-from logger import log
-from workscheduler import work_scheduler
-from servicedefs import Location
+from string import Template
+
+from .logger import log
+from .global_vars import *
+from .work_scheduler import work_scheduler
+from .text_helpers import Location
+from .editor_client import cli
 
 
 class PopupManager():
-
     """ PopupManager manages the state and interaction with the popup window
 
     It uses the WorkScheduler class to handle sending requests to the server to
@@ -28,12 +30,12 @@ class PopupManager():
 
     def queue_signature_popup(self, view):
         cursor = view.rowcol(view.sel()[0].begin())
-        point = Location(cursor[0] + 1,  cursor[1] + 1)
+        point = Location(cursor[0] + 1, cursor[1] + 1)
         filename = view.file_name()
 
         # Define a function to do the request and notify on completion
         def get_signature_data(on_done):
-            self.proxy.asyncSignatureHelp(filename, point, '', on_done)
+            self.proxy.async_signature_help(filename, point, '', on_done)
 
         # Schedule the request
         self.scheduler.queue_request(get_signature_data,
@@ -57,11 +59,11 @@ class PopupManager():
         # Needs to be ajusted to 0-based indexing
         arg_span = self.signature_help["applicableSpan"]
         span_start = view.text_point(
-                                    arg_span["start"]["line"] - 1,
-                                    arg_span["start"]["offset"] - 2)
+            arg_span["start"]["line"] - 1,
+            arg_span["start"]["offset"] - 2)
         span_end = view.text_point(
-                                    arg_span["end"]["line"] - 1,
-                                    arg_span["end"]["offset"] - 1)
+            arg_span["end"]["line"] - 1,
+            arg_span["end"]["offset"] - 1)
         arg_region = sublime.Region(span_start, span_end)
         view.add_regions('argSpan', [arg_region],
                          flags=sublime.HIDDEN)
@@ -140,7 +142,7 @@ class PopupManager():
 
         def html_escape(str):
             return str.replace('&', '&amp;').replace(
-                                '<', '&lt;').replace('>', "&gt;")
+                '<', '&lt;').replace('>', "&gt;")
 
         def normalize_style(name):
             if name in ['methodName']:
@@ -197,8 +199,8 @@ class PopupManager():
                 self.current_parameter = len(item["parameters"]) - 1
             param = item["parameters"][self.current_parameter]
             activeParam = '<span class="param">{0}:</span> <i>{1}</i>'.format(
-                    param["name"],
-                    param["documentation"][0]["text"] if param["documentation"] else "")
+                param["name"],
+                param["documentation"][0]["text"] if param["documentation"] else "")
         else:
             activeParam = ''
 
@@ -208,3 +210,37 @@ class PopupManager():
                 "index": "{0}/{1}".format(self.signature_index + 1,
                                           len(self.signature_help["items"])),
                 "link": "link"}
+
+_popup_manager = None
+
+
+def get_popup_manager():
+    """Return the globally accessible popup_manager
+
+    Note: it is wrapped in a function because no sublime APIs can be called
+    during import time, namely no sublime API calls can be places at the
+    module top level
+    """
+    global _popup_manager
+
+    if TOOLTIP_SUPPORT:
+        if _popup_manager is None:
+            # Full path to template file
+            html_path = os.path.join(PLUGIN_DIR, 'popup.html')
+
+            # Needs to be in format such as: 'Packages/TypeScript/popup.html'
+            rel_path = html_path[len(PACKAGES_DIR) - len('Packages'):]
+            rel_path = rel_path.replace('\\', '/')  # Yes, even on Windows
+
+            print(rel_path)
+
+            log.info('Popup resource path: {0}'.format(rel_path))
+            popup_text = sublime.load_resource(rel_path)
+            log.info('Loaded tooltip template from {0}'.format(rel_path))
+
+            PopupManager.html_template = Template(popup_text)
+            _popup_manager = PopupManager(cli.service)
+    else:
+        _popup_manager = None
+
+    return _popup_manager

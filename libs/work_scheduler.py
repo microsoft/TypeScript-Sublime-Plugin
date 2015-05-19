@@ -1,7 +1,8 @@
 import sublime
 import threading
 import time
-from logger import log
+
+from .logger import log
 
 
 class WorkScheduler():
