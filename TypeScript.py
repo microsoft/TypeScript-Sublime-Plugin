@@ -1,19 +1,14 @@
 import sys
+import os
 
+sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 # Sublime/Python 2 & 3 differ in the name of this module, thus package import
 # needs to be handled slightly differently
-if sys.version_info < (3, 0):
-    from libs import *
-    from libs.reference import *
-    from libs.view_helpers import *
-    from listeners import *
-    from commands import *
-else:
-    from .libs import *
-    from .libs.reference import *
-    from .libs.view_helpers import *
-    from .listeners import *
-    from .commands import *
+from typescript_module.libs import *
+from typescript_module.libs.reference import *
+from typescript_module.libs.view_helpers import *
+from typescript_module.listeners import *
+from typescript_module.commands import *
 
 # Enable Python Tools for visual studio remote debugging
 try:
@@ -90,7 +85,7 @@ def plugin_unloaded():
     """
     Note: this unload is not always called on exit
     """
-    print('typescript plugin unloaded')
+    print('typescript_module plugin unloaded')
     ref_view = get_ref_view()
     if ref_view:
         ref_info = cli.get_ref_info()
