@@ -84,7 +84,7 @@ def plugin_unloaded():
     """
     Note: this unload is not always called on exit
     """
-    print('typescript_module plugin unloaded')
+    print('typescript plugin unloaded')
     ref_view = get_ref_view()
     if ref_view:
         ref_info = cli.get_ref_info()
