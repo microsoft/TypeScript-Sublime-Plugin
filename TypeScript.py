@@ -2,8 +2,7 @@ import sys
 import os
 
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
-# Sublime/Python 2 & 3 differ in the name of this module, thus package import
-# needs to be handled slightly differently
+
 from typescript_module.libs import *
 from typescript_module.libs.reference import *
 from typescript_module.libs.view_helpers import *

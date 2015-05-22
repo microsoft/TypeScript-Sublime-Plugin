@@ -29,4 +29,4 @@ NON_BLANK_LINE_PATTERN = re.compile("[\S]+")
 VALID_COMPLETION_ID_PATTERN = re.compile("[a-zA-Z_$\.][\w$\.]*\Z")
 
 # idle time length in millisecond
-IDLE_TIME_LENGTH = 20
+IDLE_TIME_LENGTH = 200
