@@ -156,8 +156,8 @@ class IdleListener:
             # reset the timer in case more events are on the queue
             self.set_on_idle_timer(50)
         elif self.error_refresh_requested:
-            # if the last request takes too long we'll abandon it
-            # to prevent infinite loop
+            # if the last request takes too long we'll drop it
+            # to prevent an infinite loop
             self.wait_count += 1
             if self.wait_count >= 20:
                 self.error_refresh_requested = False
