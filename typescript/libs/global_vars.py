@@ -1,9 +1,8 @@
 import os
 import re
-
+import logging
 import sublime
 from os.path import dirname
-from .logger import *
 
 
 # get the directory path to this file; 
@@ -23,7 +22,7 @@ SUBLIME_WORD_MASK = 515
 
 # set logging levels
 LOG_FILE_LEVEL = logging.WARN
-LOG_CONSOLE_LEVEL = logging.WARN
+LOG_CONSOLE_LEVEL = logging.DEBUG
 
 NON_BLANK_LINE_PATTERN = re.compile("[\S]+")
 VALID_COMPLETION_ID_PATTERN = re.compile("[a-zA-Z_$\.][\w$\.]*\Z")

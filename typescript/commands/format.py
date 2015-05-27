@@ -11,11 +11,6 @@ class TypescriptFormatOnKey(TypeScriptBaseTextCommand):
         if 0 == len(key):
             return
         check_update_view(self.view)
-        loc = self.view.sel()[0].begin()
-
-        if insert_key:
-            active_view().run_command('hide_auto_complete')
-            insert_text(self.view, text, loc, key)
 
         format_response = cli.service.format_on_key(self.view.file_name(), get_location_from_view(self.view), key)
         if format_response["success"]:
