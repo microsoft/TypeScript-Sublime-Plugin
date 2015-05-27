@@ -12,6 +12,7 @@ class TypescriptRenameCommand(TypeScriptBaseTextCommand):
         if rename_response["success"]:
             info_locations = rename_response["body"]
             # Todo: handle error when the symbol cannot be renamed (with 'localizedErrorMessage' property)
+            log.debug(info_locations["info"])
             display_name = info_locations["info"]["fullDisplayName"]
             outer_locations = info_locations["locs"]
 

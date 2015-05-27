@@ -1,19 +1,18 @@
 import sys
+import os
 
-# Sublime/Python 2 & 3 differ in the name of this module, thus package import
-# needs to be handled slightly differently
 if sys.version_info < (3, 0):
-    from libs import *
-    from libs.reference import *
-    from libs.view_helpers import *
-    from listeners import *
-    from commands import *
+    from typescript.libs import *
+    from typescript.libs.reference import *
+    from typescript.libs.view_helpers import *
+    from typescript.listeners import *
+    from typescript.commands import *
 else:
-    from .libs import *
-    from .libs.reference import *
-    from .libs.view_helpers import *
-    from .listeners import *
-    from .commands import *
+    from .typescript.libs import *
+    from .typescript.libs.reference import *
+    from .typescript.libs.view_helpers import *
+    from .typescript.listeners import *
+    from .typescript.commands import *
 
 # Enable Python Tools for visual studio remote debugging
 try:
