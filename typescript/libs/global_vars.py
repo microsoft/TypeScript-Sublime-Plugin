@@ -1,15 +1,17 @@
 import os
 import re
-
+import logging
 import sublime
 from os.path import dirname
-from .logger import *
 
 
-# get the directory path to this file; 
-LIBS_DIR = dirname(dirname(os.path.abspath(__file__)))
-PLUGIN_DIR = dirname(LIBS_DIR)
-PACKAGES_DIR = dirname(PLUGIN_DIR)
+# get the directory path to this file;
+if os.name == "nt":
+    MODULE_DIR = dirname(dirname(os.path.abspath(__file__)))
+else:
+    MODULE_DIR = dirname(os.environ["PWD"])
+
+PLUGIN_DIR = dirname(MODULE_DIR)
 PLUGIN_NAME = os.path.basename(PLUGIN_DIR)
 
 # only Sublime Text 3 build after 3072 support tooltip
