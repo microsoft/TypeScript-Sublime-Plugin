@@ -5,12 +5,13 @@ import sublime
 from os.path import dirname
 
 
-# get the directory path to this file;
-if os.name == "nt":
-    MODULE_DIR = dirname(dirname(os.path.abspath(__file__)))
-else:
-    MODULE_DIR = dirname(os.environ["PWD"])
-
+# Get the directory path to this file;
+# Note: MODULE_DIR, PLUGIN_DIR and PLUGIN_NAME only works correctly when:
+# 1. Using sublime 3
+# 2. Using sublime 2, and the plugin folder is not a symbol link
+# On sublime 2 with the plugin folder being a symbol link, the PLUGIN_FOLDER will points
+# to the linked real path instead, and the PLUGIN_NAME will be wrong too.
+MODULE_DIR = dirname(dirname(os.path.abspath(__file__)))
 PLUGIN_DIR = dirname(MODULE_DIR)
 PLUGIN_NAME = os.path.basename(PLUGIN_DIR)
 
