@@ -1,7 +1,7 @@
 from .event_hub import EventHub
 from ..libs.view_helpers import *
 from ..libs.logger import log
-
+from ..libs import cli
 
 class FormatEventListener:
     def on_post_text_command_with_info(self, view, command_name, args, info):
@@ -15,14 +15,11 @@ class FormatEventListener:
 
     def on_modified_with_info(self, view, info):
         log.debug("Format on key")
-        _settings = sublime.load_settings('Preferences.sublime-settings')
-        ts_auto_format_enabled = _settings.get("typescript_auto_format")
-        ts_auto_indent_enabled = _settings.get("typescript_auto_indent")
-        auto_match_enabled = _settings.get("auto_match_enabled")
 
         if (
             is_typescript(view) and
-            ts_auto_format_enabled and
+            cli.ts_auto_format_enabled and
+            info.prev_sel and
             len(info.prev_sel) == 1 and
             info.prev_sel[0].empty()
         ):
@@ -32,8 +29,8 @@ class FormatEventListener:
                 pos = info.prev_sel[0].begin()
                 if ";" in args["characters"]:
                     view.run_command("typescript_format_on_key", {"key": ";"})
-                elif "}" in args["characters"]:
-                    if auto_match_enabled:
+                if "}" in args["characters"]:
+                    if cli.auto_match_enabled:
                         prev_char = view.substr(pos - 1)
                         post_char = view.substr(pos + 1)
                         log.debug("prev_char: {0}, post_char: {1}".format(prev_char, post_char))
@@ -41,8 +38,8 @@ class FormatEventListener:
                             view.run_command("typescript_format_on_key", {"key": "}"})
                     else:
                         view.run_command("typescript_format_on_key", {"key": "}"})
-                elif "\n" in args["characters"]:
-                    if ts_auto_indent_enabled and view.score_selector(pos, "meta.scope.between-tag-pair") > 0:
+                if "\n" in args["characters"]:
+                    if cli.ts_auto_indent_enabled and view.score_selector(pos, "meta.scope.between-tag-pair") > 0:
                         view.run_command("typescript_format_on_key", {"key": "\n"})
 
 listener = FormatEventListener()
