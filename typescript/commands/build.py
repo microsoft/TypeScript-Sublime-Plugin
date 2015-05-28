@@ -1,6 +1,7 @@
 import sublime_plugin
 import sublime
 import os
+from ..libs.global_vars import IS_ST2
 
 
 class TypescriptBuildCommand(sublime_plugin.WindowCommand):
@@ -9,8 +10,9 @@ class TypescriptBuildCommand(sublime_plugin.WindowCommand):
         directory = os.path.dirname(file_name)
         if "tsconfig.json" in os.listdir(directory):
             self.window.run_command("exec", {
-                "shell_cmd": "tsc",
-                "file_regex": "^(.+?)\\((\\d+),(\\d+)\\): (.+)$"
+                "cmd": "tsc",
+                "file_regex": "^(.+?)\\((\\d+),(\\d+)\\): (.+)$",
+                "shell": True
             })
         else:
             sublime.active_window().show_input_panel(
@@ -23,7 +25,16 @@ class TypescriptBuildCommand(sublime_plugin.WindowCommand):
 
     def compile_inferred_project(self, params=""):
         file_name = self.window.active_view().file_name()
-        self.window.run_command("exec", {
-            "shell_cmd": "tsc {0} {1}".format(file_name, params),
-            "file_regex": "^(.+?)\\((\\d+),(\\d+)\\): (.+)$"
-        })
+        if not IS_ST2:
+            cmd = "tsc {0} {1}".format(file_name, params)
+            self.window.run_command("exec", {
+                "shell_cmd": cmd,
+                "file_regex": "^(.+?)\\((\\d+),(\\d+)\\): (.+)$"
+            })
+        else:
+            cmd = "tsc {0} {1}".format(file_name, params)
+            self.window.run_command("exec", {
+                "cmd": [cmd],
+                "file_regex": "^(.+?)\\((\\d+),(\\d+)\\): (.+)$",
+                "shell": True
+            })
