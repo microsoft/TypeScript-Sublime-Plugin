@@ -10,7 +10,7 @@ class TypescriptBuildCommand(sublime_plugin.WindowCommand):
         directory = os.path.dirname(file_name)
         if "tsconfig.json" in os.listdir(directory):
             self.window.run_command("exec", {
-                "cmd": "tsc",
+                "cmd": ["tsc"],
                 "file_regex": "^(.+?)\\((\\d+),(\\d+)\\): (.+)$",
                 "shell": True
             })
