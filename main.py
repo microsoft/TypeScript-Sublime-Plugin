@@ -73,7 +73,7 @@ def plugin_loaded():
         privacy_file_view = sublime.active_window().open_file(privacy_file)
         # TODO: get real prompt text
         res = sublime.ok_cancel_dialog("The TypeScript plugin collects anonymous usage data and sends it to Microsoft to help improve the product. \n\nIf you do not want your usage data to be sent to Microsoft click Cancel, otherwise click Ok. \n\nGo to www.typescriptlang.org/telemetry for more information.", "I Accept")
-        target = open(telFile, "w")
+        target = open(tel_file, "w")
         target.write("Accepted" if res else "Rejected")
         target.close()
 
