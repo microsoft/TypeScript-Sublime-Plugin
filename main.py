@@ -60,24 +60,24 @@ def plugin_loaded():
     """
     log.debug("plugin_loaded started")
 
-	"""
-	Check for an existing telemetry acknowledgement file, if not present, prompt for opt in/out of telemetry collection and record the result
-	Users should only ever see this prompt once per privacy policy iteration (ie first launch with telemetry then never again unless privacy policy changes)
-	"""
+    """
+    Check for an existing telemetry acknowledgement file, if not present, prompt for opt in/out of telemetry collection and record the result
+    Users should only ever see this prompt once per privacy policy iteration (ie first launch with telemetry then never again unless privacy policy changes)
+    """
     this_file = os.path.abspath(__file__)
     tel_file = this_file[0:this_file.rfind(os.path.sep)] + os.path.sep + "telemetryAcknowledgement.txt"
     if not os.path.isfile(tel_file):
-		# TODO: get real privacy file text
-		privacy_file = this_file[0:this_file.rfind(os.path.sep)] + os.path.sep + "privacyPolicy.txt"
-		log.warn(privacy_file)
-		privacy_file_view = sublime.active_window().open_file(privacy_file)
-		# TODO: get real prompt text
-		res = sublime.ok_cancel_dialog("The TypeScript plugin collects anonymous usage data and sends it to Microsoft to help improve the product. \n\nIf you do not want your usage data to be sent to Microsoft click Cancel, otherwise click Ok. \n\nGo to www.typescriptlang.org/telemetry for more information.", "I Accept")
-		target = open(telFile, "w")
-		target.write("Accepted" if res else "Rejected")
-		target.close()
-    
-	cli.initialize()
+        # TODO: get real privacy file text
+        privacy_file = this_file[0:this_file.rfind(os.path.sep)] + os.path.sep + "privacyPolicy.txt"
+        log.warn(privacy_file)
+        privacy_file_view = sublime.active_window().open_file(privacy_file)
+        # TODO: get real prompt text
+        res = sublime.ok_cancel_dialog("The TypeScript plugin collects anonymous usage data and sends it to Microsoft to help improve the product. \n\nIf you do not want your usage data to be sent to Microsoft click Cancel, otherwise click Ok. \n\nGo to www.typescriptlang.org/telemetry for more information.", "I Accept")
+        target = open(telFile, "w")
+        target.write("Accepted" if res else "Rejected")
+        target.close()
+
+    cli.initialize()
     ref_view = get_ref_view(False)
     if ref_view:
         settings = ref_view.settings()
