@@ -17,8 +17,7 @@ class TypescriptBuildCommand(sublime_plugin.WindowCommand):
                 tsconfig_dir = dirname(project_info["body"]["configFileName"])
                 self.window.run_command("exec", {
                     "cmd": [get_node_path(), TSC_PATH, "-p", tsconfig_dir],
-                    "file_regex": "^(.+?)\\((\\d+),(\\d+)\\): (.+)$",
-                    "shell": True
+                    "file_regex": "^(.+?)\\((\\d+),(\\d+)\\): (.+)$"
                 })
             else:
                 sublime.active_window().show_input_panel(
@@ -32,10 +31,10 @@ class TypescriptBuildCommand(sublime_plugin.WindowCommand):
     def compile_inferred_project(self, params=""):
         file_name = self.window.active_view().file_name()
         cmd = [get_node_path(), TSC_PATH, file_name]
+        print(cmd)
         if params != "":
             cmd.extend(params.split(' '))
         self.window.run_command("exec", {
             "cmd": cmd,
-            "file_regex": "^(.+?)\\((\\d+),(\\d+)\\): (.+)$",
-            "shell": True
+            "file_regex": "^(.+?)\\((\\d+),(\\d+)\\): (.+)$"
         })
