@@ -1,4 +1,5 @@
 from ..libs.view_helpers import *
+from ..libs import log
 from .base_command import TypeScriptBaseTextCommand
 
 
@@ -8,6 +9,8 @@ class TypescriptFormatOnKey(TypeScriptBaseTextCommand):
     in the case of "\n", this is only called when no completion dialogue is visible
     """
     def run(self, text, key="", insert_key=True):
+        log.debug("running TypescriptFormatOnKey")
+
         if 0 == len(key):
             return
         check_update_view(self.view)
@@ -27,6 +30,7 @@ class TypescriptFormatOnKey(TypeScriptBaseTextCommand):
 class TypescriptFormatSelection(TypeScriptBaseTextCommand):
     """Command to format the current selection"""
     def run(self, text):
+        log.debug("running TypescriptFormatSelection")
         r = self.view.sel()[0]
         format_range(text, self.view, r.begin(), r.end())
 
@@ -34,12 +38,14 @@ class TypescriptFormatSelection(TypeScriptBaseTextCommand):
 class TypescriptFormatDocument(TypeScriptBaseTextCommand):
     """Command to format the entire buffer"""
     def run(self, text):
+        log.debug("running TypescriptFormatDocument")
         format_range(text, self.view, 0, self.view.size())
 
 
 class TypescriptFormatLine(TypeScriptBaseTextCommand):
     """Command to format the current line"""
     def run(self, text):
+        log.debug("running TypescriptFormatLine")
         line_region = self.view.line(self.view.sel()[0])
         line_text = self.view.substr(line_region)
         if NON_BLANK_LINE_PATTERN.search(line_text):
@@ -53,6 +59,7 @@ class TypescriptFormatLine(TypeScriptBaseTextCommand):
 
 class TypescriptFormatBrackets(TypeScriptBaseTextCommand):
     def run(self, text):
+        log.debug("running TypescriptFormatBrackets")
         check_update_view(self.view)
         sel = self.view.sel()
         if len(sel) == 1:
@@ -70,6 +77,7 @@ class TypescriptFormatBrackets(TypeScriptBaseTextCommand):
 
 class TypescriptPasteAndFormat(TypeScriptBaseTextCommand):
     def run(self, text):
+        log.debug("running TypescriptPasteAndFormat")
         view = self.view
         check_update_view(view)
         regions_before_paste = regions_to_static_regions(view.sel())
@@ -93,6 +101,7 @@ class TypescriptAutoIndentOnEnterBetweenCurlyBrackets(TypeScriptBaseTextCommand)
     """
 
     def run(self, text):
+        log.debug("running TypescriptAutoIndentOnEnterBetweenCurlyBrackets")
         view = self.view
         view.run_command('typescript_format_on_key', {"key": "\n"})
         loc = view.sel()[0].begin()
