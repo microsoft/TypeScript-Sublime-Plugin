@@ -78,10 +78,6 @@ class EditorClient:
         }
         self.service.configure(host_info, None, format_options)
 
-    def reload_required(self, view):
-        client_info = self.get_or_add_file(view.file_name())
-        return IS_ST2 or client_info.pending_changes or client_info.change_count < view.change_count()
-
     # ref info is for Find References view
     # TODO: generalize this so that there can be multiple
     # for example, one for Find References and one for build errors
@@ -111,7 +107,7 @@ class EditorClient:
 
     def has_errors(self, filename):
         client_info = self.get_or_add_file(filename)
-        return (len(client_info.errors['syntacticDiag']) > 0) or (len(client_info.errors['semanticDiag']) > 0)
+        return len(client_info.errors['syntacticDiag']) > 0 or len(client_info.errors['semanticDiag']) > 0
 
 # The globally accessible instance
 cli = EditorClient()

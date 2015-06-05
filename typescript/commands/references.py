@@ -16,7 +16,7 @@ class TypescriptFindReferencesCommand(TypeScriptBaseTextCommand):
             cursor = self.view.rowcol(pos)
             line = str(cursor[0] + 1)
             args = {"line": line, "filename": self.view.file_name(), "referencesRespBody": references_resp["body"]}
-            args_json_str = jsonhelpers.encode(args)
+            args_json_str = json_helpers.encode(args)
             ref_view = get_ref_view()
             ref_view.run_command('typescript_populate_refs', {"argsJson": args_json_str})
 
@@ -71,7 +71,7 @@ class TypescriptPopulateRefs(sublime_plugin.TextCommand):
     references buffer (such as build errors)
     """
     def run(self, text, argsJson):
-        args = jsonhelpers.decode(argsJson)
+        args = json_helpers.decode(argsJson)
         file_name = args["filename"]
         line = args["line"]
         ref_display_string = args["referencesRespBody"]["symbolDisplayString"]
