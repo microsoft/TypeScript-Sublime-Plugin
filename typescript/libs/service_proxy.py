@@ -178,6 +178,12 @@ class ServiceProxy:
         response_dict = self.__comm.sendCmdSync(json_str, req_dict["seq"])
         return response_dict
 
+    def project_info(self, file_name, need_file_name_list=False):
+        args = {"file": file_name, "needFileNameList": need_file_name_list}
+        req_dict = self.create_req_dict("projectInfo", args)
+        json_str = json_helpers.encode(req_dict)
+        return self.__comm.sendCmdSync(json_str, req_dict["seq"])
+
     def create_req_dict(self, command_name, args=None):
         req_dict = {
             "command": command_name,

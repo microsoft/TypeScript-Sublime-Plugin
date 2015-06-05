@@ -1,40 +1,41 @@
 import sublime_plugin
-import sublime
-import os
-from ..libs.global_vars import IS_ST2
+
+from ..libs.global_vars import *
+from ..libs import cli
 
 
 class TypescriptBuildCommand(sublime_plugin.WindowCommand):
     def run(self):
+        if get_node_path() is None:
+            print("Cannot found node. Build cancelled.")
+            return
+
         file_name = self.window.active_view().file_name()
-        directory = os.path.dirname(file_name)
-        if "tsconfig.json" in os.listdir(directory):
-            self.window.run_command("exec", {
-                "cmd": ["tsc"],
-                "file_regex": "^(.+?)\\((\\d+),(\\d+)\\): (.+)$",
-                "shell": True
-            })
-        else:
-            sublime.active_window().show_input_panel(
-                "Build parameters: ",
-                "",  # initial text
-                self.compile_inferred_project,
-                None,  # on change
-                None   # on cancel
-            )
+        project_info = cli.service.project_info(file_name)
+        if project_info["success"]:
+            if "configFileName" in project_info["body"]:
+                tsconfig_dir = dirname(project_info["body"]["configFileName"])
+                self.window.run_command("exec", {
+                    "cmd": [get_node_path(), TSC_PATH, "-p", tsconfig_dir],
+                    "file_regex": "^(.+?)\\((\\d+),(\\d+)\\): (.+)$",
+                    "shell": True
+                })
+            else:
+                sublime.active_window().show_input_panel(
+                    "Build parameters: ",
+                    "",  # initial text
+                    self.compile_inferred_project,
+                    None,  # on change
+                    None   # on cancel
+                )
 
     def compile_inferred_project(self, params=""):
         file_name = self.window.active_view().file_name()
-        if not IS_ST2:
-            cmd = "tsc {0} {1}".format(file_name, params)
-            self.window.run_command("exec", {
-                "shell_cmd": cmd,
-                "file_regex": "^(.+?)\\((\\d+),(\\d+)\\): (.+)$"
-            })
-        else:
-            cmd = "tsc {0} {1}".format(file_name, params)
-            self.window.run_command("exec", {
-                "cmd": [cmd],
-                "file_regex": "^(.+?)\\((\\d+),(\\d+)\\): (.+)$",
-                "shell": True
-            })
+        cmd = [get_node_path(), TSC_PATH, file_name]
+        if params != "":
+            cmd.extend(params.split(' '))
+        self.window.run_command("exec", {
+            "cmd": cmd,
+            "file_regex": "^(.+?)\\((\\d+),(\\d+)\\): (.+)$",
+            "shell": True
+        })
