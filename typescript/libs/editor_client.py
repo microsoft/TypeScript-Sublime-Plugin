@@ -3,6 +3,8 @@ from .node_client import NodeCommClient
 from .service_proxy import ServiceProxy
 from .global_vars import *
 
+from .logger import *
+from .telemetry import *
 
 class ClientFileInfo:
     """per-file, globally-accessible information"""
@@ -34,6 +36,7 @@ class EditorClient:
         self.tab_size = 4
         self.indent_size = 4
         self.translate_tab_to_spaces = False
+        self.send_metrics = False
 
     def initialize(self):
         """
@@ -59,7 +62,17 @@ class EditorClient:
             settings.add_on_change(setting_name, self.load_format_settings)
         self.load_format_settings()
 
+        # load telemetry settings and set callbacks for setting changes
+        settings.add_on_change(telemetry_setting_name, self.load_telemetry_settings)
+        self.load_telemetry_settings()
+
         self.initialized = True
+
+    def load_telemetry_settings(self):
+        settings = sublime.load_settings('Preferences.sublime-settings')
+        telemetry_acceptance = settings.get(telemetry_setting_name, False)
+        self.send_metrics = False if not telemetry_acceptance else telemetry_acceptance['accepted']
+        self.set_features()
 
     def load_format_settings(self):
         settings = sublime.load_settings('Preferences.sublime-settings')
@@ -71,12 +84,13 @@ class EditorClient:
     def set_features(self):
         host_info = "Sublime Text version " + str(sublime.version())
         # Preferences Settings
-        format_options = {
+        editor_options = {
             "tabSize": self.tab_size,
             "indentSize": self.indent_size,
-            "convertTabsToSpaces": self.translate_tab_to_spaces
+            "convertTabsToSpaces": self.translate_tab_to_spaces,
+            "sendMetrics": self.send_metrics
         }
-        self.service.configure(host_info, None, format_options)
+        self.service.configure(host_info, None, editor_options)
 
     # ref info is for Find References view
     # TODO: generalize this so that there can be multiple

@@ -7,10 +7,12 @@ if sys.version_info < (3, 0):
     from typescript.libs.view_helpers import *
     from typescript.listeners import *
     from typescript.commands import *
+    from typescript.libs.telemetry import *
 else:
     from .typescript.libs import *
     from .typescript.libs.reference import *
     from .typescript.libs.view_helpers import *
+    from .typescript.libs.telemetry import *
     from .typescript.listeners import *
     from .typescript.commands import *
 
@@ -59,7 +61,23 @@ def plugin_loaded():
     from on_activated or on_close if necessary.
     """
     log.debug("plugin_loaded started")
+
+    settings = sublime.load_settings('Preferences.sublime-settings')
+    if not settings.has(telemetry_setting_name):
+        # TODO: get real privacy file text
+        this_file = os.path.abspath(__file__)
+        privacy_file = this_file[0:this_file.rfind(os.path.sep)] + os.path.sep + "privacyPolicy.txt"
+        sublime.active_window().open_file(privacy_file)
+        # TODO: get real prompt text
+        res = sublime.yes_no_cancel_dialog("The TypeScript plugin collects anonymous usage data and sends it to Microsoft to help improve the product. \n\nIf you do not want your usage data to be sent to Microsoft click Cancel, otherwise click Ok. \n\nGo to www.typescriptlang.org/telemetry for more information.", "Accept", "Decline")
+        acceptance_result = 'true' if res == sublime.DIALOG_YES else 'false'
+        # TODO: this causes bools to be set as strings, need to use json for real?
+        telemetry_settings_value = { "version": privacy_policy_version, "accepted": acceptance_result } 
+        settings.set(telemetry_setting_name, telemetry_settings_value) 
+        sublime.save_settings('Preferences.sublime-settings')
+
     cli.initialize()
+
     ref_view = get_ref_view(False)
     if ref_view:
         settings = ref_view.settings()
