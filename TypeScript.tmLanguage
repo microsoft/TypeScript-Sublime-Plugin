@@ -702,7 +702,7 @@
 				</dict>
 			</dict>
 			<key>end</key>
-			<string>(?=[&lt;(;]|$)</string>
+			<string>(?=[(;]|$)</string>
 			<key>name</key>
 			<string>new.expr.ts</string>
 			<key>patterns</key>
@@ -1361,10 +1361,15 @@
 		<key>type-parameters</key>
 		<dict>
 			<key>begin</key>
-			<string>&lt;</string>
+			<string>(\w+)?(&lt;)</string>
 			<key>beginCaptures</key>
 			<dict>
-				<key>0</key>
+				<key>1</key>
+				<dict>
+					<key>name</key>
+					<string>entity.name.type.ts</string>
+				</dict>
+				<key>2</key>
 				<dict>
 					<key>name</key>
 					<string>meta.brace.angle.ts</string>

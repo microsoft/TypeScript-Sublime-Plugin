@@ -309,9 +309,10 @@ repository:
 
   type-parameters:
     name: meta.type.parameters.ts
-    begin: '<'
+    begin: '(\w+)?(<)'
     beginCaptures:
-      '0': { name: meta.brace.angle.ts }
+      '1': { name: entity.name.type.ts }
+      '2': { name: meta.brace.angle.ts }
     end: '(?=$)|(>)'  
     endCaptures:
       '2': { name: meta.brace.angle.ts }
@@ -381,7 +382,7 @@ repository:
     beginCaptures:
       '1': { name: keyword.operator.ts }
     # new-expr ends just before any type or call arguments. Type arguments will be picked up by #cast.
-    end: '(?=[<(;]|$)'
+    end: '(?=[(;]|$)'
     patterns:
     - include: '#type'
 
