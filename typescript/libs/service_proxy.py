@@ -155,10 +155,10 @@ class ServiceProxy:
         args = {"file": path, "line": location.line, "offset": location.offset}
         req_dict = self.create_req_dict("quickinfo", args)
         json_str = json_helpers.encode(req_dict)
-        self.__comm.sendCmd(
-            lambda json_dict: None if onCompleted is None else onCompleted(json_dict),
+        self.__comm.sendCmdAsync(
             json_str,
-            req_dict["seq"]
+            req_dict["seq"],
+            lambda json_dict: None if onCompleted is None else onCompleted(json_dict)
         )
 
     def get_event(self):
