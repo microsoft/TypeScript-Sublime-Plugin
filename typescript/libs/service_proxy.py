@@ -1,6 +1,7 @@
 import collections
 
 from . import json_helpers
+from .global_vars import IS_ST2
 from .node_client import CommClient
 from .text_helpers import Location
 
@@ -155,11 +156,18 @@ class ServiceProxy:
         args = {"file": path, "line": location.line, "offset": location.offset}
         req_dict = self.create_req_dict("quickinfo", args)
         json_str = json_helpers.encode(req_dict)
-        self.__comm.sendCmdAsync(
-            json_str,
-            req_dict["seq"],
-            lambda json_dict: None if onCompleted is None else onCompleted(json_dict)
-        )
+        if not IS_ST2:
+            self.__comm.sendCmdAsync(
+                json_str,
+                req_dict["seq"],
+                lambda json_dict: None if onCompleted is None else onCompleted(json_dict)
+            )
+        else:
+            self.__comm.sendCmd(
+                lambda json_dict: None if onCompleted is None else onCompleted(json_dict),
+                json_str,
+                req_dict["seq"]
+            )
 
     def get_event(self):
         event_json_str = self.__comm.getEvent()
