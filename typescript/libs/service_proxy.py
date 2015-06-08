@@ -46,9 +46,9 @@ class ServiceProxy:
         req_dict = self.create_req_dict("completions", args)
         json_str = json_helpers.encode(req_dict)
         self.__comm.sendCmd(
-            lambda json_dict: None if on_completed is None else on_completed(json_dict),
             json_str,
-            req_dict["seq"]
+            req_dict["seq"],
+            lambda json_dict: None if on_completed is None else on_completed(json_dict)
         )
 
     def async_completions(self, path, location=Location(1, 1), prefix="", on_completed=None):
@@ -62,9 +62,9 @@ class ServiceProxy:
         req_dict = self.create_req_dict("signatureHelp", args)
         json_str = json_helpers.encode(req_dict)
         self.__comm.sendCmd(
-            lambda response_dict: None if on_completed is None else on_completed(response_dict),
             json_str,
-            req_dict["seq"]
+            req_dict["seq"],
+            lambda response_dict: None if on_completed is None else on_completed(response_dict)
         )
 
     def async_signature_help(self, path, location=Location(1, 1), prefix="", on_completed=None):
@@ -156,17 +156,18 @@ class ServiceProxy:
         args = {"file": path, "line": location.line, "offset": location.offset}
         req_dict = self.create_req_dict("quickinfo", args)
         json_str = json_helpers.encode(req_dict)
+        callback = lambda json_dict: None if onCompleted is None else onCompleted(json_dict)
         if not IS_ST2:
             self.__comm.sendCmdAsync(
                 json_str,
                 req_dict["seq"],
-                lambda json_dict: None if onCompleted is None else onCompleted(json_dict)
+                callback
             )
         else:
             self.__comm.sendCmd(
-                lambda json_dict: None if onCompleted is None else onCompleted(json_dict),
                 json_str,
-                req_dict["seq"]
+                req_dict["seq"],
+                callback
             )
 
     def get_event(self):

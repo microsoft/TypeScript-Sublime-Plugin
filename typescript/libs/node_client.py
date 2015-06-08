@@ -21,7 +21,7 @@ class CommClient:
 
     def postCmd(self, cmd): pass
 
-    def sendCmd(self, cb, cmd): pass
+    def sendCmd(self, cmd, cb): pass
 
     def sendCmdSync(self, cmd): pass
 
@@ -111,7 +111,7 @@ class NodeCommClient(CommClient):
         }
         return timeoutMsg
 
-    def sendCmd(self, cb, cmd, seq):
+    def sendCmd(self, cmd, seq, cb):
         """
         send single-line command string; no sequence number; wait for response
         this assumes stdin/stdout; for TCP, need to add correlation with sequence numbers
