@@ -353,6 +353,7 @@ repository:
     - include: '#declaration'
     - include: '#cast'
     - include: '#new-expr'
+    - include: '#function-call'
     - include: '#block'
     - include: '#expression-operator'
     - include: '#relational-operator'
@@ -369,7 +370,13 @@ repository:
     captures:
       '1': { name: storage.type.ts }
       '3': { name: keyword.operator.ts }
-      
+
+  function-call:
+    name: functioncall.expr.ts
+    patterns:
+    - include: '#type-parameters'
+    - include: '#paren-expression'
+
   cast:
     name: cast.expr.ts
     # To differentiate a cast vs a relational <, this regexp tries to use the surrounding context
@@ -378,10 +385,10 @@ repository:
     # '<=' and '<<=' are definately not type assertions, as they are assignment operators.
     begin: '(?:(?<=return|throw|yield|[=(,:>]))\s*(<)(?!<?\=)'
     beginCaptures:
-      '1': { name: keyword.operator.type.ts }
+      '1': { name: meta.brace.angle.ts }
     end: '>'
     endCaptures:
-      '0': { name: keyword.operator.type.ts }
+      '0': { name: meta.brace.angle.ts }
     patterns:
     - include: '#type'
 

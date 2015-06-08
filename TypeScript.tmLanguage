@@ -122,7 +122,7 @@
 				<key>1</key>
 				<dict>
 					<key>name</key>
-					<string>keyword.operator.type.ts</string>
+					<string>meta.brace.angle.ts</string>
 				</dict>
 			</dict>
 			<key>end</key>
@@ -132,7 +132,7 @@
 				<key>0</key>
 				<dict>
 					<key>name</key>
-					<string>keyword.operator.type.ts</string>
+					<string>meta.brace.angle.ts</string>
 				</dict>
 			</dict>
 			<key>name</key>
@@ -330,6 +330,10 @@
 				</dict>
 				<dict>
 					<key>include</key>
+					<string>#function-call</string>
+				</dict>
+				<dict>
+					<key>include</key>
 					<string>#block</string>
 				</dict>
 				<dict>
@@ -421,6 +425,22 @@
 			<string>(?&lt;=\()\s*\b(var|let|const)\s+([a-zA-Z_$][\w$]*)\s+(in|of)\b</string>
 			<key>name</key>
 			<string>forin.expr.ts</string>
+		</dict>
+		<key>function-call</key>
+		<dict>
+			<key>name</key>
+			<string>functioncall.expr.ts</string>
+			<key>patterns</key>
+			<array>
+				<dict>
+					<key>include</key>
+					<string>#type-parameters</string>
+				</dict>
+				<dict>
+					<key>include</key>
+					<string>#paren-expression</string>
+				</dict>
+			</array>
 		</dict>
 		<key>function-declaration</key>
 		<dict>
