@@ -135,57 +135,6 @@
             { "key": "selector", "operator": "equal", "operand": "source.ts" },
             { "key": "is_popup_visible"}
         ]
-    },    // In case when auto match is enabled, only format if not within {}
-    {
-        "keys": [ "}" ],
-        "command": "typescript_format_on_key",
-        "args": { "key": "}" },
-        "context": [
-            { "key": "selector", "operator": "equal", "operand": "source.ts" },
-            { "key": "setting.typescript_auto_format", "operator": "equal", "operand": true },
-            { "key": "setting.auto_match_enabled", "operator": "equal", "operand": true },
-            { "key": "num_selections", "operator": "equal", "operand": 1},
-            { "key": "selection_empty", "operator": "equal", "operand": true },
-
-            { "key": "preceding_text", "operator": "not_regex_contains", "operand": "\\{$" },
-            { "key": "following_text", "operator": "not_regex_contains", "operand": "^\\}" }
-        ]
-    },
-    // In case when auto match is disabled, format the block regardless
-    {
-        "keys": [ "}" ],
-        "command": "typescript_format_on_key",
-        "args": { "key": "}" },
-        "context": [
-            { "key": "num_selections", "operator": "equal", "operand": 1},
-            { "key": "setting.typescript_auto_format", "operator": "equal", "operand": true },
-            { "key": "selection_empty", "operator": "equal", "operand": true, "match_all": true },
-            { "key": "selector", "operator": "equal", "operand": "source.ts" },
-            { "key": "setting.auto_match_enabled", "operator": "equal", "operand": false }
-        ]
-    },
-    {
-        "keys": [ ";" ],
-        "command": "typescript_format_on_key",
-        "args": { "key": ";" },
-        "context": [
-            { "key": "selection_empty", "operator": "equal", "operand": true, "match_all": true },
-            { "key": "setting.typescript_auto_format", "operator": "equal", "operand": true },
-            { "key": "selector", "operator": "equal", "operand": "source.ts" }
-        ]
-    },
-    {
-        "keys": [ "enter" ],
-        "command": "typescript_format_on_key",
-        "args": { "key": "\n" },
-        "context": [
-            { "key": "setting.typescript_auto_indent", "operator": "equal", "operand": true },
-            { "key": "auto_complete_visible", "operator": "equal", "operand": false },
-            { "key": "selector", "operator": "not_equal", "operand": "meta.scope.between-tag-pair" },
-            { "key": "selection_empty", "operator": "equal", "operand": true, "match_all": true },
-            { "key": "num_selections", "operator": "equal", "operand": 1},
-            { "key": "selector", "operator": "equal", "operand": "source.ts" }
-        ]
     },
     {
         "keys": [ "enter" ],

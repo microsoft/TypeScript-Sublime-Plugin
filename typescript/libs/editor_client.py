@@ -34,6 +34,9 @@ class EditorClient:
         self.tab_size = 4
         self.indent_size = 4
         self.translate_tab_to_spaces = False
+        self.ts_auto_format_enabled = True
+        self.ts_auto_indent_enabled = True
+        self.auto_match_enabled = True
 
     def initialize(self):
         """
@@ -55,7 +58,14 @@ class EditorClient:
         self.service = ServiceProxy(self.node_client)
 
         # load formatting settings and set callbacks for setting changes
-        for setting_name in ['tab_size', 'indent_size', 'translate_tabs_to_spaces']:
+        for setting_name in [
+            'tab_size',
+            'indent_size',
+            'translate_tabs_to_spaces',
+            'typescript_auto_format',
+            'typescript_auto_indent',
+            'auto_match_enabled'
+        ]:
             settings.add_on_change(setting_name, self.load_format_settings)
         self.load_format_settings()
 
@@ -66,6 +76,9 @@ class EditorClient:
         self.tab_size = settings.get('tab_size', 4)
         self.indent_size = settings.get('indent_size', 4)
         self.translate_tab_to_spaces = settings.get('translate_tabs_to_spaces', False)
+        self.ts_auto_format_enabled = settings.get("typescript_auto_format")
+        self.ts_auto_indent_enabled = settings.get("typescript_auto_indent")
+        self.auto_match_enabled = settings.get("auto_match_enabled")
         self.set_features()
 
     def set_features(self):
