@@ -48,7 +48,7 @@ class ServiceProxy:
         self.__comm.sendCmd(
             json_str,
             req_dict["seq"],
-            lambda json_dict: None if on_completed is None else on_completed(json_dict)
+            lambda response_dict: None if on_completed is None else on_completed(response_dict)
         )
 
     def async_completions(self, path, location=Location(1, 1), prefix="", on_completed=None):
@@ -152,11 +152,11 @@ class ServiceProxy:
         response_dict = self.__comm.sendCmdSync(json_str, req_dict["seq"])
         return response_dict
 
-    def quick_info(self, path, location=Location(1, 1), onCompleted=None):
+    def quick_info(self, path, location=Location(1, 1), on_completed=None):
         args = {"file": path, "line": location.line, "offset": location.offset}
         req_dict = self.create_req_dict("quickinfo", args)
         json_str = json_helpers.encode(req_dict)
-        callback = lambda json_dict: None if onCompleted is None else onCompleted(json_dict)
+        callback = on_completed or (lambda: None)
         if not IS_ST2:
             self.__comm.sendCmdAsync(
                 json_str,
