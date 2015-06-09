@@ -47,15 +47,15 @@ class ServiceProxy:
         json_str = json_helpers.encode(req_dict)
         self.__comm.sendCmd(
             json_str,
-            req_dict["seq"],
-            lambda response_dict: None if on_completed is None else on_completed(response_dict)
+            lambda response_dict: None if on_completed is None else on_completed(response_dict),
+            req_dict["seq"]
         )
 
     def async_completions(self, path, location=Location(1, 1), prefix="", on_completed=None):
         args = {"file": path, "line": location.line, "offset": location.offset, "prefix": prefix}
         req_dict = self.create_req_dict("completions", args)
         json_str = json_helpers.encode(req_dict)
-        self.__comm.sendCmdAsync(json_str, req_dict["seq"], on_completed)
+        self.__comm.sendCmdAsync(json_str, on_completed, req_dict["seq"])
 
     def signature_help(self, path, location=Location(1, 1), prefix="", on_completed=None):
         args = {"file": path, "line": location.line, "offset": location.offset, "prefix": prefix}
@@ -63,15 +63,15 @@ class ServiceProxy:
         json_str = json_helpers.encode(req_dict)
         self.__comm.sendCmd(
             json_str,
-            req_dict["seq"],
-            lambda response_dict: None if on_completed is None else on_completed(response_dict)
+            lambda response_dict: None if on_completed is None else on_completed(response_dict),
+            req_dict["seq"]
         )
 
     def async_signature_help(self, path, location=Location(1, 1), prefix="", on_completed=None):
         args = {"file": path, "line": location.line, "offset": location.offset, "prefix": prefix}
         req_dict = self.create_req_dict("signatureHelp", args)
         json_str = json_helpers.encode(req_dict)
-        self.__comm.sendCmdAsync(json_str, req_dict["seq"], on_completed)
+        self.__comm.sendCmdAsync(json_str, on_completed, req_dict["seq"])
 
     def definition(self, path, location=Location(1, 1)):
         args = {"file": path, "line": location.line, "offset": location.offset}
@@ -130,7 +130,7 @@ class ServiceProxy:
         args = {"file": path, "tmpfile": alternate_path}
         req_dict = self.create_req_dict("reload", args)
         json_str = json_helpers.encode(req_dict)
-        self.__comm.sendCmdAsync(json_str, req_dict["seq"], on_completed)
+        self.__comm.sendCmdAsync(json_str, on_completed, req_dict["seq"])
 
     def rename(self, path, location=Location(1, 1)):
         args = {"file": path, "line": location.line, "offset": location.offset}
@@ -160,14 +160,14 @@ class ServiceProxy:
         if not IS_ST2:
             self.__comm.sendCmdAsync(
                 json_str,
-                req_dict["seq"],
-                callback
+                callback,
+                req_dict["seq"]
             )
         else:
             self.__comm.sendCmd(
                 json_str,
-                req_dict["seq"],
-                callback
+                callback,
+                req_dict["seq"]
             )
 
     def get_event(self):
