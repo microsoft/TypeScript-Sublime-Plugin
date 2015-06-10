@@ -8,7 +8,7 @@ class TypescriptFormatOnKey(TypeScriptBaseTextCommand):
     Format on ";", "}", or "\n"; called by typing these keys in a ts file
     in the case of "\n", this is only called when no completion dialogue is visible
     """
-    def run(self, text, key="", insert_key=True):
+    def run(self, text, key=""):
         log.debug("running TypescriptFormatOnKey")
 
         if 0 == len(key):
@@ -49,7 +49,7 @@ class TypescriptFormatLine(TypeScriptBaseTextCommand):
             position = self.view.sel()[0].begin()
             line, offset = self.view.rowcol(position)
             if line > 0:
-                self.view.run_command('typescript_format_on_key', {"key": "\n", "insertKey": False})
+                self.view.run_command('typescript_format_on_key', {"key": "\n"})
 
 
 class TypescriptFormatBrackets(TypeScriptBaseTextCommand):
@@ -66,7 +66,7 @@ class TypescriptFormatBrackets(TypeScriptBaseTextCommand):
                 bracket_char = self.view.substr(bracket_pos)
             if bracket_char == "}":
                 self.view.run_command('move', {"by": "characters", "forward": True})
-                self.view.run_command('typescript_format_on_key', {"key": "}", "insertKey": False})
+                self.view.run_command('typescript_format_on_key', {"key": "}"})
                 self.view.run_command('move', {"by": "characters", "forward": True})
 
 
