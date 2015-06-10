@@ -19,6 +19,7 @@ class ServiceProxy:
         req_dict = self.create_req_dict("exit")
         json_str = json_helpers.encode(req_dict)
         self.__comm.postCmd(json_str)
+        self.__comm.postCmdToWorker(json_str)
 
     def configure(self, host_info="Sublime Text", file=None, format_options=None):
         args = {"hostInfo": host_info, "formatOptions": format_options, "file": file}
@@ -39,6 +40,7 @@ class ServiceProxy:
         req_dict = self.create_req_dict("change", args)
         json_str = json_helpers.encode(req_dict)
         self.__comm.postCmd(json_str)
+        self.__comm.postCmdToWorker(json_str)
 
     def completions(self, path, location=Location(1, 1), prefix="", on_completed=None):
         args = {"file": path, "line": location.line, "offset": location.offset, "prefix": prefix}
@@ -104,12 +106,14 @@ class ServiceProxy:
         req_dict = self.create_req_dict("open", args)
         json_str = json_helpers.encode(req_dict)
         self.__comm.postCmd(json_str)
+        self.__comm.postCmdToWorker(json_str)
 
     def close(self, path):
         args = {"file": path}
         req_dict = self.create_req_dict("close", args)
         json_str = json_helpers.encode(req_dict)
         self.__comm.postCmd(json_str)
+        self.__comm.postCmdToWorker(json_str)
 
     def references(self, path, location=Location(1, 1)):
         args = {"file": path, "line": location.line, "offset": location.offset}
@@ -122,14 +126,15 @@ class ServiceProxy:
         args = {"file": path, "tmpfile": alternate_path}
         req_dict = self.create_req_dict("reload", args)
         json_str = json_helpers.encode(req_dict)
-        response_dict = self.__comm.sendCmdSync(json_str, req_dict["seq"])
-        return response_dict
+        self.__comm.postCmd(json_str)
+        self.__comm.postCmdToWorker(json_str)
 
     def reload_async(self, path, alternate_path, on_completed):
         args = {"file": path, "tmpfile": alternate_path}
         req_dict = self.create_req_dict("reload", args)
         json_str = json_helpers.encode(req_dict)
         self.__comm.sendCmdAsync(json_str, req_dict["seq"], on_completed)
+        self.__comm.postCmdToWorker(json_str)
 
     def rename(self, path, location=Location(1, 1)):
         args = {"file": path, "line": location.line, "offset": location.offset}
@@ -142,7 +147,7 @@ class ServiceProxy:
         args = {"files": pathList, "delay": delay}
         req_dict = self.create_req_dict("geterr", args)
         json_str = json_helpers.encode(req_dict)
-        self.__comm.postCmd(json_str)
+        self.__comm.postCmdToWorker(json_str)
 
     def type(self, path, location=Location(1, 1)):
         args = {"file": path, "line": location.line, "offset": location.offset}
