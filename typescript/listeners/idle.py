@@ -3,6 +3,8 @@ from ..libs.text_helpers import *
 from ..libs import log
 from .event_hub import EventHub
 
+from ..commands import TypescriptProjectErrorList
+
 
 class IdleListener:
     def __init__(self):
@@ -58,6 +60,8 @@ class IdleListener:
                     check_update_view(group_active_view)
             if len(files) > 0:
                 cli.service.request_get_err(error_delay, files)
+                if cli.project_error_list_enabled:
+                    cli.service.request_get_err_for_project(error_delay, active_view().file_name())
                 self.error_info_requested_not_received = True
             self.wait_count = 0
             self.set_on_idle_timer(error_delay + 300)
@@ -156,6 +160,15 @@ class IdleListener:
         if self.pending_timeout == 0:
             self.on_idle()
 
+    def update_project_error_list(self):
+        # Retrieve the project wide errors
+        test_ev = cli.service.get_event_from_worker()
+        error_list_panel = TypescriptProjectErrorList.error_list_panel
+        if is_view_visible(error_list_panel):
+            while test_ev:
+                error_list_panel.run_command("append", {"characters": str(test_ev) + "\n"})
+                test_ev = cli.service.get_event_from_worker()
+
     def on_idle(self):
         """Callback after the idle status is confirmed
 
@@ -164,6 +177,10 @@ class IdleListener:
         """
         view = active_view()
         log.debug("call get_event from on_idle")
+
+        if cli.project_error_list_enabled:
+            self.update_project_error_list()
+
         ev = cli.service.get_event()
         if ev is not None:
             self.error_info_requested_not_received = False

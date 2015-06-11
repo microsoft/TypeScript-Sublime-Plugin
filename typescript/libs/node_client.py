@@ -17,17 +17,29 @@ else:
 
 
 class CommClient:
+    def serverStarted(self): pass
+
+    def workerStarted(self): pass
+
     def getEvent(self): pass
+
+    def getEventFromWorker(self): pass
 
     def postCmd(self, cmd): pass
 
+    def postCmdToWorker(self, cmd): pass
+
     def sendCmd(self, cb, cmd): pass
+
+    def sendCmdToWorker(self, cmd): pass
 
     def sendCmdSync(self, cmd): pass
 
+    def sendCmdToWorkerSync(self, cmd): pass
+
     def sendCmdAsync(self, cmd): pass
 
-    def postCmdToWorker(self, cmd): pass
+    def sendCmdToWorkerAsync(self, cmd): pass
 
 
 class NodeCommClient(CommClient):
@@ -45,6 +57,7 @@ class NodeCommClient(CommClient):
         # create response and event queues
         self.__msgq = queue.Queue()
         self.__eventq = queue.Queue()
+        self.__worker_eventq = queue.Queue()
 
         # start node process
         pref_settings = sublime.load_settings('Preferences.sublime-settings')
@@ -92,18 +105,19 @@ class NodeCommClient(CommClient):
             readerThread.daemon = True
             readerThread.start()
 
-        # start the worker thread
-        if self.__workerProc and not self.__workerProc.poll():
-            log.debug("worker proc {0}".format(self.__workerProc))
-            log.debug("starting worker thread")
-            worker_thread = threading.Thread(
-                target = NodeCommClient.__reader,
-                args = (
-                    self.__workerProc.stdout, self.__msgq, self.__eventq, self.asyncReq, self.__workerProc
+        if pref_settings.get('project_error_list'):
+            # start the worker thread
+            if self.__workerProc and not self.__workerProc.poll():
+                log.debug("worker proc {0}".format(self.__workerProc))
+                log.debug("starting worker thread")
+                worker_thread = threading.Thread(
+                    target=NodeCommClient.__reader,
+                    args=(
+                        self.__workerProc.stdout, self.__msgq, self.__worker_eventq, self.asyncReq, self.__workerProc
+                    )
                 )
-            )
-            worker_thread.daemon = True
-            worker_thread.start()
+                worker_thread.daemon = True
+                worker_thread.start()
 
         self.__debugProc = None
         self.__breakpoints = []
@@ -165,11 +179,36 @@ class NodeCommClient(CommClient):
         if self.postCmd(cmd):
             self.asyncReq[seq] = cb
 
+    def sendCmdToWorkerAsync(self, cmd, seq, cb):
+        """
+        Sends the command and registers a callback
+        """
+        if self.postCmdToWorker(cmd):
+            self.asyncReq[seq] = cb
+
     def sendCmdSync(self, cmd, seq):
         """
         Sends the command and wait for the result and returns it
         """
         if self.postCmd(cmd):
+            reqSeq = -1
+            try:
+                while reqSeq < seq:
+                    data = self.__msgq.get(True, 1)
+                    dict = json_helpers.decode(data)
+                    reqSeq = dict['request_seq']
+                return dict
+            except queue.Empty:
+                print("queue timeout")
+                return self.makeTimeoutMsg(cmd, seq)
+        else:
+            return self.makeTimeoutMsg(cmd, seq)
+
+    def sendCmdToWorkerSync(self, cmd, seq):
+        """
+        Sends the command and wait for the result and returns it
+        """
+        if self.postCmdToWorker(cmd):
             reqSeq = -1
             try:
                 while reqSeq < seq:
@@ -217,6 +256,13 @@ class NodeCommClient(CommClient):
         """
         try:
             ev = self.__eventq.get(False)
+        except:
+            return None
+        return ev
+
+    def getEventFromWorker(self):
+        try:
+            ev = self.__worker_eventq.get(False)
         except:
             return None
         return ev

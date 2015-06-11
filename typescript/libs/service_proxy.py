@@ -3,6 +3,7 @@ import collections
 from . import json_helpers
 from .node_client import CommClient
 from .text_helpers import Location
+from .editor_client import cli
 
 
 class ServiceProxy:
@@ -26,6 +27,8 @@ class ServiceProxy:
         req_dict = self.create_req_dict("configure", args)
         json_str = json_helpers.encode(req_dict)
         response_dict = self.__comm.sendCmdSync(json_str, req_dict["seq"])
+        if self.__comm.workerStarted():
+            self.__comm.sendCmdToWorkerSync(json_str, req_dict["seq"])
         return response_dict
 
     def change(self, path, begin_location=Location(1, 1), end_location=Location(1, 1), insertString=""):
@@ -40,7 +43,8 @@ class ServiceProxy:
         req_dict = self.create_req_dict("change", args)
         json_str = json_helpers.encode(req_dict)
         self.__comm.postCmd(json_str)
-        self.__comm.postCmdToWorker(json_str)
+        if self.__comm.workerStarted():
+            self.__comm.postCmdToWorker(json_str)
 
     def completions(self, path, location=Location(1, 1), prefix="", on_completed=None):
         args = {"file": path, "line": location.line, "offset": location.offset, "prefix": prefix}
@@ -92,6 +96,8 @@ class ServiceProxy:
         req_dict = self.create_req_dict("format", args)
         json_str = json_helpers.encode(req_dict)
         response_dict = self.__comm.sendCmdSync(json_str, req_dict["seq"])
+        if self.__comm.workerStarted():
+            self.__comm.sendCmdToWorkerSync(json_str, req_dict["seq"])
         return response_dict
 
     def format_on_key(self, path, location=Location(1, 1), key=""):
@@ -99,6 +105,8 @@ class ServiceProxy:
         req_dict = self.create_req_dict("formatonkey", args)
         json_str = json_helpers.encode(req_dict)
         response_dict = self.__comm.sendCmdSync(json_str, req_dict["seq"])
+        if self.__comm.workerStarted():
+            self.__comm.sendCmdToWorkerSync(json_str, req_dict["seq"])
         return response_dict
 
     def open(self, path):
@@ -106,14 +114,16 @@ class ServiceProxy:
         req_dict = self.create_req_dict("open", args)
         json_str = json_helpers.encode(req_dict)
         self.__comm.postCmd(json_str)
-        self.__comm.postCmdToWorker(json_str)
+        if self.__comm.workerStarted():
+            self.__comm.postCmdToWorker(json_str)
 
     def close(self, path):
         args = {"file": path}
         req_dict = self.create_req_dict("close", args)
         json_str = json_helpers.encode(req_dict)
         self.__comm.postCmd(json_str)
-        self.__comm.postCmdToWorker(json_str)
+        if self.__comm.workerStarted():
+            self.__comm.postCmdToWorker(json_str)
 
     def references(self, path, location=Location(1, 1)):
         args = {"file": path, "line": location.line, "offset": location.offset}
@@ -126,28 +136,40 @@ class ServiceProxy:
         args = {"file": path, "tmpfile": alternate_path}
         req_dict = self.create_req_dict("reload", args)
         json_str = json_helpers.encode(req_dict)
-        self.__comm.postCmd(json_str)
-        self.__comm.postCmdToWorker(json_str)
+        response_dict = self.__comm.sendCmdSync(json_str, req_dict["seq"])
+        if self.__comm.workerStarted():
+            self.__comm.sendCmdToWorkerSync(json_str, req_dict["seq"])
+        return response_dict
 
     def reload_async(self, path, alternate_path, on_completed):
         args = {"file": path, "tmpfile": alternate_path}
         req_dict = self.create_req_dict("reload", args)
         json_str = json_helpers.encode(req_dict)
         self.__comm.sendCmdAsync(json_str, req_dict["seq"], on_completed)
-        self.__comm.postCmdToWorker(json_str)
+        if self.__comm.workerStarted():
+            self.__comm.sendCmdToWorkerAsync(json_str, req_dict["seq"], None)
 
     def rename(self, path, location=Location(1, 1)):
         args = {"file": path, "line": location.line, "offset": location.offset}
         req_dict = self.create_req_dict("rename", args)
         json_str = json_helpers.encode(req_dict)
         response_dict = self.__comm.sendCmdSync(json_str, req_dict["seq"])
+        if self.__comm.workerStarted():
+            self.__comm.sendCmdSync(json_str, req_dict["seq"])
         return response_dict
 
     def request_get_err(self, delay=0, pathList=[]):
         args = {"files": pathList, "delay": delay}
         req_dict = self.create_req_dict("geterr", args)
         json_str = json_helpers.encode(req_dict)
-        self.__comm.postCmdToWorker(json_str)
+        self.__comm.postCmd(json_str)
+
+    def request_get_err_for_project(self, delay=0, path=""):
+        args = {"file": path, "delay": delay}
+        req_dict = self.create_req_dict("geterrForProject", args)
+        json_str = json_helpers.encode(req_dict)
+        if self.__comm.workerStarted():
+            self.__comm.postCmdToWorker(json_str)
 
     def type(self, path, location=Location(1, 1)):
         args = {"file": path, "line": location.line, "offset": location.offset}
@@ -168,6 +190,10 @@ class ServiceProxy:
 
     def get_event(self):
         event_json_str = self.__comm.getEvent()
+        return json_helpers.decode(event_json_str) if event_json_str is not None else None
+
+    def get_event_from_worker(self):
+        event_json_str = self.__comm.getEventFromWorker()
         return json_helpers.decode(event_json_str) if event_json_str is not None else None
 
     def save_to(self, path, alternatePath):

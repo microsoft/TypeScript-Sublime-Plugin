@@ -10,5 +10,6 @@
  { "caption" : "TypeScript: Rename", "command": "typescript_rename" },
  { "caption" : "TypeScript: PasteAndFormat", "command": "typescript_paste_and_format" },
  { "caption" : "TypeScript: FormatLine", "command": "typescript_format_line" },
- { "caption" : "TypeScript: FormatBlock", "command": "typescript_format_brackets" }
+ { "caption" : "TypeScript: FormatBlock", "command": "typescript_format_brackets" },
+ { "caption" : "TypeScript: ShowErrorList", "command": "typescript_project_error_list" }
 ]

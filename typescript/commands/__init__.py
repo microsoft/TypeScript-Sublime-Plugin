@@ -1,4 +1,4 @@
-from .error_info import TypescriptErrorInfo
+from .error_info import TypescriptErrorInfo, TypescriptProjectErrorList
 from .go_to_definition import TypescriptGoToDefinitionCommand
 from .go_to_type import TypescriptGoToTypeCommand
 from .nav_to import TypescriptNavToCommand
@@ -31,6 +31,7 @@ from .rename import (
 __all__ = [
     "TypescriptAutoIndentOnEnterBetweenCurlyBrackets",
     "TypescriptErrorInfo",
+    "TypescriptProjectErrorList",
     "TypescriptFormatBrackets",
     "TypescriptFormatDocument",
     "TypescriptFormatLine",

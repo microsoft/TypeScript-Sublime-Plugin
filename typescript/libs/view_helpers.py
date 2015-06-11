@@ -57,9 +57,9 @@ def get_info(view):
                         reload_buffer(view, info.client_info)
                     else:
                         info.client_info.pending_changes = True
-                # if info in most_recent_used_file_list:
-                #     most_recent_used_file_list.remove(info)
-                # most_recent_used_file_list.append(info)
+                        # if info in most_recent_used_file_list:
+                        #     most_recent_used_file_list.remove(info)
+                        # most_recent_used_file_list.append(info)
     return info
 
 
@@ -213,9 +213,11 @@ def reload_buffer(view, client_info=None):
             client_info.change_count = info.modify_count
         client_info.pending_changes = False
 
+
 def reload_required(view):
     client_info = cli.get_or_add_file(view.file_name())
     return client_info.pending_changes or client_info.change_count < change_count(view)
+
 
 def check_update_view(view):
     """Check if the buffer in the view needs to be reloaded
@@ -316,3 +318,8 @@ def change_count(view):
             return info.modify_count
         else:
             return view.change_count()
+
+
+def is_view_visible(view):
+    """The only way to tell a view is visible seems to be to test if it has an attached window"""
+    return view.window() is not None
