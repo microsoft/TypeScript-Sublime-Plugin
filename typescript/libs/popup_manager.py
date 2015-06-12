@@ -263,7 +263,7 @@ def get_popup_manager():
             html_path = os.path.join(PLUGIN_DIR, 'popup.html')
 
             # Needs to be in format such as: 'Packages/TypeScript/popup.html'
-            rel_path = html_path[len(PACKAGES_DIR) - len('Packages'):]
+            rel_path = html_path[len(sublime.packages_path()) - len('Packages'):]
             rel_path = rel_path.replace('\\', '/')  # Yes, even on Windows
 
             print(rel_path)

@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>name</key>
+	<string>TypeScript Indent</string>
+	<key>scope</key>
+	<string>source.ts</string>
+	<key>settings</key>
+	<dict>
+		<key>bracketIndentNextLinePattern</key>
+		<string>(?x)
+  ^ \s* \b(if|while|else)\b [^;]* $
+  | ^ \s* \b(for)\b .* $
+</string>
+		<key>decreaseIndentPattern</key>
+		<string>^(.*\*/)?\s*\}.*$</string>
+		<key>increaseIndentPattern</key>
+		<string>^.*\{[^}"']*$</string>
+	</dict>
+	<key>uuid</key>
+	<string>77966fa8-af34-4f1e-8535-e556d5063853</string>
+</dict>
+</plist>
