@@ -5,7 +5,6 @@ from .editor_client import cli, EditorClient
 from .popup_manager import get_popup_manager
 from .logger import log
 from . import logger
-
 __all__ = [
     'cli',
     'EditorClient',

@@ -1,3 +1,5 @@
+import re
+
 from string import Template
 
 from .logger import log
@@ -270,6 +272,8 @@ def get_popup_manager():
 
             log.info('Popup resource path: {0}'.format(rel_path))
             popup_text = sublime.load_resource(rel_path)
+            re_remove = re.compile("[\n\t\r]")
+            popup_text = re_remove.sub("", popup_text)
             log.info('Loaded tooltip template from {0}'.format(rel_path))
 
             PopupManager.html_template = Template(popup_text)
