@@ -1,4 +1,4 @@
-from .reference import RefInfo
+﻿from .reference import RefInfo
 from .node_client import NodeCommClient
 from .service_proxy import ServiceProxy
 from .global_vars import *

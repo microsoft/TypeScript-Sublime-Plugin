@@ -1,5 +1,5 @@
 {
     "typescript_auto_format": true,
     "auto_complete_commit_on_tab": true,
-    "project_error_list": false
+    "project_error_list": true
 }

@@ -62,6 +62,7 @@ class NodeCommClient(CommClient):
         # start node process
         pref_settings = sublime.load_settings('Preferences.sublime-settings')
         node_path = pref_settings.get('node_path')
+        project_error_list_enabled = pref_settings.get('project_error_list')
         if node_path:
             node_path = os.path.expandvars(node_path)
         if not node_path:
@@ -85,14 +86,20 @@ class NodeCommClient(CommClient):
                     si.dwFlags |= subprocess.SW_HIDE | subprocess.STARTF_USESHOWWINDOW
                     self.__serverProc = subprocess.Popen([node_path, scriptPath],
                                                          stdin=subprocess.PIPE, stdout=subprocess.PIPE, startupinfo=si)
-                    self.__workerProc = subprocess.Popen([node_path, scriptPath],
-                                                         stdin=subprocess.PIPE, stdout=subprocess.PIPE, startupinfo=si)
+                    if project_error_list_enabled:
+                        self.__workerProc = subprocess.Popen([node_path, scriptPath],
+                                                             stdin=subprocess.PIPE, stdout=subprocess.PIPE, startupinfo=si)
+                    else:
+                        self.__workerProc = None
                 else:
                     log.debug("opening " + node_path + " " + scriptPath)
                     self.__serverProc = subprocess.Popen([node_path, scriptPath],
                                                          stdin=subprocess.PIPE, stdout=subprocess.PIPE)
-                    self.__workerProc = subprocess.Popen([node_path, scriptPath],
-                                                         stdin=subprocess.PIPE, stdout=subprocess.PIPE)
+                    if project_error_list_enabled:
+                        self.__workerProc = subprocess.Popen([node_path, scriptPath],
+                                                             stdin=subprocess.PIPE, stdout=subprocess.PIPE)
+                    else:
+                        self.__workerProc = None
             except:
                 self.__serverProc = None
                 self.__workerProc = None
@@ -105,7 +112,7 @@ class NodeCommClient(CommClient):
             readerThread.daemon = True
             readerThread.start()
 
-        if pref_settings.get('project_error_list'):
+        if project_error_list_enabled:
             # start the worker thread
             if self.__workerProc and not self.__workerProc.poll():
                 log.debug("worker proc {0}".format(self.__workerProc))

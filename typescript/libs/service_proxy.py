@@ -1,9 +1,6 @@
-import collections
-
 from . import json_helpers
 from .node_client import CommClient
 from .text_helpers import Location
-from .editor_client import cli
 
 
 class ServiceProxy:
