@@ -29,7 +29,7 @@
 			<key>match</key>
 			<string>\*|/|\-\-|\-|\+\+|\+|%</string>
 			<key>name</key>
-			<string>keyword.operator.ts</string>
+			<string>keyword.operator.arithmetic.ts</string>
 		</dict>
 		<key>array-literal</key>
 		<dict>
@@ -68,7 +68,7 @@
 			<key>match</key>
 			<string>&lt;&lt;=|&gt;&gt;=|&gt;&gt;&gt;=|\*=|(?&lt;!\()/=|%=|\+=|\-=|&amp;=|\^=</string>
 			<key>name</key>
-			<string>keyword.operator.ts</string>
+			<string>keyword.operator.assignment.ts</string>
 		</dict>
 		<key>block</key>
 		<dict>
@@ -115,23 +115,35 @@
 		</dict>
 		<key>cast</key>
 		<dict>
-			<key>captures</key>
+			<key>begin</key>
+			<string>(?:(?&lt;=return|throw|yield|[=(,:&gt;]))\s*(&lt;)(?!&lt;?\=)</string>
+			<key>beginCaptures</key>
 			<dict>
 				<key>1</key>
 				<dict>
 					<key>name</key>
-					<string>storage.type.ts</string>
-				</dict>
-				<key>2</key>
-				<dict>
-					<key>name</key>
-					<string>storage.type.ts</string>
+					<string>keyword.operator.type.ts</string>
 				</dict>
 			</dict>
-			<key>match</key>
-			<string>&lt;\s*([a-zA-Z_$][.\w$]*)\s*(?:&lt;([a-zA-Z_$][.\w$]*)&gt;)?\s*(\[\])*\s*&gt;</string>
+			<key>end</key>
+			<string>&gt;</string>
+			<key>endCaptures</key>
+			<dict>
+				<key>0</key>
+				<dict>
+					<key>name</key>
+					<string>keyword.operator.type.ts</string>
+				</dict>
+			</dict>
 			<key>name</key>
 			<string>cast.expr.ts</string>
+			<key>patterns</key>
+			<array>
+				<dict>
+					<key>include</key>
+					<string>#type</string>
+				</dict>
+			</array>
 		</dict>
 		<key>comment</key>
 		<dict>
@@ -181,7 +193,7 @@
 		<key>control-statement</key>
 		<dict>
 			<key>match</key>
-			<string>\b(break|catch|continue|declare|do|else|finally|for|if|return|switch|throw|try|while)\b</string>
+			<string>\b(break|catch|continue|debugger|declare|do|else|finally|for|if|return|switch|throw|try|while|with|super)\b</string>
 			<key>name</key>
 			<string>keyword.control.ts</string>
 		</dict>
@@ -274,6 +286,10 @@
 			<array>
 				<dict>
 					<key>include</key>
+					<string>#for-in-simple</string>
+				</dict>
+				<dict>
+					<key>include</key>
 					<string>#string</string>
 				</dict>
 				<dict>
@@ -348,10 +364,6 @@
 					<key>include</key>
 					<string>#switch-case</string>
 				</dict>
-				<dict>
-					<key>include</key>
-					<string>#for-in-simple</string>
-				</dict>
 			</array>
 		</dict>
 		<key>expression-operator</key>
@@ -363,7 +375,9 @@
 		</dict>
 		<key>field-declaration</key>
 		<dict>
-			<key>captures</key>
+			<key>begin</key>
+			<string>(?&lt;!\()\s*\b([a-zA-Z_$][\w$]*)\s*(\?\s*)?(?=(=|:))</string>
+			<key>beginCaptures</key>
 			<dict>
 				<key>1</key>
 				<dict>
@@ -376,10 +390,17 @@
 					<string>keyword.operator.ts</string>
 				</dict>
 			</dict>
-			<key>match</key>
-			<string>(?&lt;!\()\s*\b([a-zA-Z_$][\w$]*)\s*(\?\s*)?(?=(=|:))</string>
+			<key>end</key>
+			<string>(?=\}|;|,|\n)|(?&lt;=\})</string>
 			<key>name</key>
 			<string>meta.field.declaration.ts</string>
+			<key>patterns</key>
+			<array>
+				<dict>
+					<key>include</key>
+					<string>#expression</string>
+				</dict>
+			</array>
 		</dict>
 		<key>for-in-simple</key>
 		<dict>
@@ -397,7 +418,7 @@
 				</dict>
 			</dict>
 			<key>match</key>
-			<string>(?&lt;=\()\s*\b(var|let|const)\s+([a-zA-Z_$][\w$]*)\s+(in)\b</string>
+			<string>(?&lt;=\()\s*\b(var|let|const)\s+([a-zA-Z_$][\w$]*)\s+(in|of)\b</string>
 			<key>name</key>
 			<string>forin.expr.ts</string>
 		</dict>
@@ -426,6 +447,10 @@
 			<array>
 				<dict>
 					<key>include</key>
+					<string>#function-overload-declaration</string>
+				</dict>
+				<dict>
+					<key>include</key>
 					<string>#comment</string>
 				</dict>
 				<dict>
@@ -434,7 +459,7 @@
 				</dict>
 				<dict>
 					<key>include</key>
-					<string>#function-parameters</string>
+					<string>#function-type-parameters</string>
 				</dict>
 				<dict>
 					<key>include</key>
@@ -446,7 +471,27 @@
 				</dict>
 			</array>
 		</dict>
-		<key>function-parameters</key>
+		<key>function-overload-declaration</key>
+		<dict>
+			<key>captures</key>
+			<dict>
+				<key>1</key>
+				<dict>
+					<key>name</key>
+					<string>storage.type.function.ts</string>
+				</dict>
+				<key>2</key>
+				<dict>
+					<key>name</key>
+					<string>entity.name.function.ts</string>
+				</dict>
+			</dict>
+			<key>match</key>
+			<string>\b(function)\b(?:\s+([a-zA-Z_$][\w$]*))?\s*</string>
+			<key>name</key>
+			<string>meta.function.overload.ts</string>
+		</dict>
+		<key>function-type-parameters</key>
 		<dict>
 			<key>begin</key>
 			<string>\(</string>
@@ -469,7 +514,7 @@
 				</dict>
 			</dict>
 			<key>name</key>
-			<string>meta.function-parameters.ts</string>
+			<string>meta.function.type.parameter.ts</string>
 			<key>patterns</key>
 			<array>
 				<dict>
@@ -487,74 +532,6 @@
 				<dict>
 					<key>include</key>
 					<string>#variable-initializer</string>
-				</dict>
-			</array>
-		</dict>
-		<key>function-type-parameters</key>
-		<dict>
-			<key>begin</key>
-			<string>(\()</string>
-			<key>beginCaptures</key>
-			<dict>
-				<key>1</key>
-				<dict>
-					<key>name</key>
-					<string>meta.brace.round.ts</string>
-				</dict>
-			</dict>
-			<key>end</key>
-			<string>(\))</string>
-			<key>endCaptures</key>
-			<dict>
-				<key>1</key>
-				<dict>
-					<key>name</key>
-					<string>meta.brace.round.ts</string>
-				</dict>
-			</dict>
-			<key>name</key>
-			<string>meta.function.type.ts</string>
-			<key>patterns</key>
-			<array>
-				<dict>
-					<key>include</key>
-					<string>#comment</string>
-				</dict>
-				<dict>
-					<key>include</key>
-					<string>#parameter-name</string>
-				</dict>
-				<dict>
-					<key>include</key>
-					<string>#type-annotation</string>
-				</dict>
-				<dict>
-					<key>include</key>
-					<string>#variable-initializer</string>
-				</dict>
-			</array>
-		</dict>
-		<key>function-type-return-type</key>
-		<dict>
-			<key>begin</key>
-			<string>=&gt;</string>
-			<key>beginCaptures</key>
-			<dict>
-				<key>0</key>
-				<dict>
-					<key>name</key>
-					<string>keyword.operator.ts</string>
-				</dict>
-			</dict>
-			<key>end</key>
-			<string>(?=[,\)\{=;]|//)</string>
-			<key>name</key>
-			<string>meta.function.type.return.ts</string>
-			<key>patterns</key>
-			<array>
-				<dict>
-					<key>include</key>
-					<string>#type</string>
 				</dict>
 			</array>
 		</dict>
@@ -655,7 +632,7 @@
 			<key>match</key>
 			<string>\!|&amp;|~|\||&amp;&amp;|\|\|</string>
 			<key>name</key>
-			<string>keyword.operator.ts</string>
+			<string>keyword.operator.arithmetic.ts</string>
 		</dict>
 		<key>method-declaration</key>
 		<dict>
@@ -685,7 +662,7 @@
 				</dict>
 			</dict>
 			<key>end</key>
-			<string>(?=\}|;|,)|(?&lt;=\})</string>
+			<string>(?=\}|;|,|\n)|(?&lt;=\})</string>
 			<key>name</key>
 			<string>meta.method.declaration.ts</string>
 			<key>patterns</key>
@@ -700,7 +677,7 @@
 				</dict>
 				<dict>
 					<key>include</key>
-					<string>#function-parameters</string>
+					<string>#function-type-parameters</string>
 				</dict>
 				<dict>
 					<key>include</key>
@@ -714,23 +691,27 @@
 		</dict>
 		<key>new-expr</key>
 		<dict>
-			<key>captures</key>
+			<key>begin</key>
+			<string>\b(new)\b</string>
+			<key>beginCaptures</key>
 			<dict>
 				<key>1</key>
 				<dict>
 					<key>name</key>
 					<string>keyword.operator.ts</string>
 				</dict>
-				<key>2</key>
-				<dict>
-					<key>name</key>
-					<string>storage.type.ts</string>
-				</dict>
 			</dict>
-			<key>match</key>
-			<string>\b(new)\b\s*([a-zA-Z_$][.\w$]*)</string>
+			<key>end</key>
+			<string>(?=[&lt;(;]|$)</string>
 			<key>name</key>
 			<string>new.expr.ts</string>
+			<key>patterns</key>
+			<array>
+				<dict>
+					<key>include</key>
+					<string>#type</string>
+				</dict>
+			</array>
 		</dict>
 		<key>null-literal</key>
 		<dict>
@@ -900,54 +881,6 @@
 				</dict>
 			</array>
 		</dict>
-		<key>object-type</key>
-		<dict>
-			<key>begin</key>
-			<string>\{</string>
-			<key>beginCaptures</key>
-			<dict>
-				<key>0</key>
-				<dict>
-					<key>name</key>
-					<string>meta.brace.curly.ts</string>
-				</dict>
-			</dict>
-			<key>end</key>
-			<string>\}</string>
-			<key>endCaptures</key>
-			<dict>
-				<key>0</key>
-				<dict>
-					<key>name</key>
-					<string>meta.brace.curly.ts</string>
-				</dict>
-			</dict>
-			<key>name</key>
-			<string>meta.object.type.ts</string>
-			<key>patterns</key>
-			<array>
-				<dict>
-					<key>include</key>
-					<string>#comment</string>
-				</dict>
-				<dict>
-					<key>include</key>
-					<string>#field-declaration</string>
-				</dict>
-				<dict>
-					<key>include</key>
-					<string>#method-declaration</string>
-				</dict>
-				<dict>
-					<key>include</key>
-					<string>#indexer-declaration</string>
-				</dict>
-				<dict>
-					<key>include</key>
-					<string>#type-annotation</string>
-				</dict>
-			</array>
-		</dict>
 		<key>parameter-name</key>
 		<dict>
 			<key>captures</key>
@@ -1076,12 +1009,12 @@
 			<key>match</key>
 			<string>===|==|=|!=|!==|&lt;=|&gt;=|&lt;&gt;|&lt;|&gt;</string>
 			<key>name</key>
-			<string>keyword.operator.ts</string>
+			<string>keyword.operator.comparison.ts</string>
 		</dict>
 		<key>return-type</key>
 		<dict>
 			<key>begin</key>
-			<string>(?&lt;=\)):</string>
+			<string>(?&lt;=\))\s*:</string>
 			<key>end</key>
 			<string>(?=$)|(?=\{|;|//)</string>
 			<key>name</key>
@@ -1254,7 +1187,7 @@
 			<array>
 				<dict>
 					<key>include</key>
-					<string>#type-name</string>
+					<string>#type-primitive</string>
 				</dict>
 				<dict>
 					<key>include</key>
@@ -1262,19 +1195,27 @@
 				</dict>
 				<dict>
 					<key>include</key>
-					<string>#type-union</string>
+					<string>#type-tuple</string>
 				</dict>
 				<dict>
 					<key>include</key>
-					<string>#object-type</string>
+					<string>#type-object</string>
 				</dict>
 				<dict>
 					<key>include</key>
-					<string>#function-type-parameters</string>
+					<string>#type-operator</string>
 				</dict>
 				<dict>
 					<key>include</key>
-					<string>#function-type-return-type</string>
+					<string>#type-paren-or-function-type-parameters</string>
+				</dict>
+				<dict>
+					<key>include</key>
+					<string>#type-function-return-type</string>
+				</dict>
+				<dict>
+					<key>include</key>
+					<string>#type-name</string>
 				</dict>
 			</array>
 		</dict>
@@ -1283,7 +1224,7 @@
 			<key>begin</key>
 			<string>:</string>
 			<key>end</key>
-			<string>(?=$|[,);\}\[\]]|//)|(?==[^&gt;])|(?&lt;=\}|[a-zA-Z_$]|&gt;)\s*(?=\{)</string>
+			<string>(?=$|[,);\}\]]|//)|(?==[^&gt;])|(?&lt;=[\}&gt;\]\)]|[a-zA-Z_$])\s*(?=\{)</string>
 			<key>name</key>
 			<string>meta.type.annotation.ts</string>
 			<key>patterns</key>
@@ -1291,10 +1232,6 @@
 				<dict>
 					<key>include</key>
 					<string>#type</string>
-				</dict>
-				<dict>
-					<key>include</key>
-					<string>#comment</string>
 				</dict>
 			</array>
 		</dict>
@@ -1327,12 +1264,99 @@
 				</dict>
 			</array>
 		</dict>
+		<key>type-function-return-type</key>
+		<dict>
+			<key>begin</key>
+			<string>=&gt;</string>
+			<key>beginCaptures</key>
+			<dict>
+				<key>0</key>
+				<dict>
+					<key>name</key>
+					<string>keyword.operator.ts</string>
+				</dict>
+			</dict>
+			<key>end</key>
+			<string>(?=\s*[,\)\{=;]|//|$)</string>
+			<key>name</key>
+			<string>meta.type.function.return.ts</string>
+			<key>patterns</key>
+			<array>
+				<dict>
+					<key>include</key>
+					<string>#type</string>
+				</dict>
+			</array>
+		</dict>
 		<key>type-name</key>
 		<dict>
+			<key>captures</key>
+			<dict>
+				<key>1</key>
+				<dict>
+					<key>name</key>
+					<string>entity.name.type.ts</string>
+				</dict>
+			</dict>
 			<key>match</key>
 			<string>[a-zA-Z_$][.\w$]*</string>
 			<key>name</key>
-			<string>storage.type.ts</string>
+			<string>meta.type.name.ts</string>
+		</dict>
+		<key>type-object</key>
+		<dict>
+			<key>begin</key>
+			<string>\{</string>
+			<key>beginCaptures</key>
+			<dict>
+				<key>0</key>
+				<dict>
+					<key>name</key>
+					<string>meta.brace.curly.ts</string>
+				</dict>
+			</dict>
+			<key>end</key>
+			<string>\}</string>
+			<key>endCaptures</key>
+			<dict>
+				<key>0</key>
+				<dict>
+					<key>name</key>
+					<string>meta.brace.curly.ts</string>
+				</dict>
+			</dict>
+			<key>name</key>
+			<string>meta.object.type.ts</string>
+			<key>patterns</key>
+			<array>
+				<dict>
+					<key>include</key>
+					<string>#comment</string>
+				</dict>
+				<dict>
+					<key>include</key>
+					<string>#field-declaration</string>
+				</dict>
+				<dict>
+					<key>include</key>
+					<string>#method-declaration</string>
+				</dict>
+				<dict>
+					<key>include</key>
+					<string>#indexer-declaration</string>
+				</dict>
+				<dict>
+					<key>include</key>
+					<string>#type-annotation</string>
+				</dict>
+			</array>
+		</dict>
+		<key>type-operator</key>
+		<dict>
+			<key>match</key>
+			<string>[.|]</string>
+			<key>name</key>
+			<string>keyword.operator.type.ts</string>
 		</dict>
 		<key>type-parameters</key>
 		<dict>
@@ -1376,21 +1400,41 @@
 				</dict>
 			</array>
 		</dict>
-		<key>type-union</key>
+		<key>type-paren-or-function-type-parameters</key>
 		<dict>
 			<key>begin</key>
-			<string>(\|)</string>
+			<string>(?:\b(new)\b)?\s*\(</string>
 			<key>beginCaptures</key>
 			<dict>
 				<key>1</key>
 				<dict>
 					<key>name</key>
-					<string>keyword.operator.ts</string>
+					<string>keyword.control.ts</string>
 				</dict>
 			</dict>
 			<key>end</key>
-			<string>([a-zA-Z_$][.\w$]*)</string>
-			<key>endCaptures</key>
+			<string>\)</string>
+			<key>name</key>
+			<string>meta.type.paren.cover.ts</string>
+			<key>patterns</key>
+			<array>
+				<dict>
+					<key>include</key>
+					<string>#comment</string>
+				</dict>
+				<dict>
+					<key>include</key>
+					<string>#type</string>
+				</dict>
+				<dict>
+					<key>include</key>
+					<string>#function-type-parameters</string>
+				</dict>
+			</array>
+		</dict>
+		<key>type-primitive</key>
+		<dict>
+			<key>captures</key>
 			<dict>
 				<key>1</key>
 				<dict>
@@ -1398,10 +1442,41 @@
 					<string>storage.type.ts</string>
 				</dict>
 			</dict>
+			<key>match</key>
+			<string>\b(string|number|boolean|symbol|any|void)\b</string>
 			<key>name</key>
-			<string>meta.type.union.ts</string>
+			<string>meta.type.primitive.ts</string>
+		</dict>
+		<key>type-tuple</key>
+		<dict>
+			<key>begin</key>
+			<string>\[</string>
+			<key>beginCaptures</key>
+			<dict>
+				<key>0</key>
+				<dict>
+					<key>name</key>
+					<string>meta.brace.square.ts</string>
+				</dict>
+			</dict>
+			<key>end</key>
+			<string>\]</string>
+			<key>endCaptures</key>
+			<dict>
+				<key>0</key>
+				<dict>
+					<key>name</key>
+					<string>meta.brace.square.ts</string>
+				</dict>
+			</dict>
+			<key>name</key>
+			<string>meta.type.tuple.ts</string>
 			<key>patterns</key>
 			<array>
+				<dict>
+					<key>include</key>
+					<string>#type</string>
+				</dict>
 				<dict>
 					<key>include</key>
 					<string>#comment</string>

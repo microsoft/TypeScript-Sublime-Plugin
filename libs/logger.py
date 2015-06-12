@@ -10,6 +10,7 @@ by the properties below.
 
 import logging
 from os import path
+from .global_vars import LOG_CONSOLE_LEVEL, LOG_FILE_LEVEL
 
 # The default path to the log file created for diagnostic output
 _pluginRoot = path.dirname(path.dirname(path.abspath(__file__)))
@@ -32,8 +33,16 @@ log.addHandler(console)
 
 log.info('Logging configured to log to file: {0}'.format(filePath))
 
+
 def view_debug(view, message):
-    fileName = view.file_name()
-    viewName = view.name()
-    name = viewName if fileName == None else fileName
+    filename = view.file_name()
+    view_name = view.name()
+    name = view_name if filename is None else filename
     log.debug(message + ": " + name)
+
+
+logFile.setLevel(LOG_FILE_LEVEL)
+console.setLevel(LOG_CONSOLE_LEVEL)
+
+
+
