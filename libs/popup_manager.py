@@ -12,6 +12,12 @@ class PopupManager():
 
     It uses the WorkScheduler class to handle sending requests to the server to
     ensure good performance.
+
+    The main challenge is that certain activities, such as cursor movement, can
+    automatically dismiss the popup - even though the cursor may still be in the
+    argument list. Therefore the class listens to the on_hidden event, and will
+    redisplay if necessary (i.e. if the cursor is still in the argument list).
+    If the popup is explicitly dismissed, on_close_popup is called.
     """
 
     html_template = ''
@@ -28,8 +34,8 @@ class PopupManager():
         self.signature_index = 0
         self.current_parameter = 0
 
-        # Used to avoid looping
-        self.suppress_onhidden = 0
+        # Track current popup location to see if we only need to update the text
+        self.current_location = None
 
     def queue_signature_popup(self, view):
         cursor = view.rowcol(view.sel()[0].begin())
@@ -59,14 +65,14 @@ class PopupManager():
         self.current_parameter = responseJson["body"]["argumentIndex"]
 
         # Add a region to track the arg list as the user types
-        # Needs to be ajusted to 0-based indexing
+        # Needs to be adjusted to 0-based indexing
         arg_span = self.signature_help["applicableSpan"]
         span_start = view.text_point(
             arg_span["start"]["line"] - 1,
             arg_span["start"]["offset"] - 2)
         span_end = view.text_point(
             arg_span["end"]["line"] - 1,
-            arg_span["end"]["offset"] - 1)
+            arg_span["end"]["offset"])
 
         arg_region = sublime.Region(span_start, span_end)
         view.add_regions('argSpan', [arg_region],
@@ -95,22 +101,21 @@ class PopupManager():
                 cursor_line_start
             ).end()
 
-        # Need to hide/redisplay in case location moved, but this triggers an
-        # on_hidden loop if we don't ignore the event (which occurs later)
-        # from the hide message
-        if self.current_view.is_popup_visible():
-            self.suppress_onhidden += 1
-            log.debug('+suppress_onhidden: {0}'.format(self.suppress_onhidden))
-            self.current_view.hide_popup()
-
-        self.current_view.show_popup(
-            popup_text,
-            sublime.COOPERATE_WITH_AUTO_COMPLETE,
-            on_navigate=self.on_navigate,
-            on_hide=self.on_hidden,
-            location=location,
-            max_width=800)
-
+        # If the popup is currently visible and at the right location, then
+        # call 'update' instead of 'show', else this can get in a loop when show
+        # causes the old popup to be hidden (and on_hidden is called), as well
+        # as causing some unnecessary UI flickering.
+        if self.current_view.is_popup_visible() and self.current_location == location:
+            self.current_view.update_popup(popup_text)
+        else:
+            self.current_location = location
+            self.current_view.show_popup(
+                popup_text,
+                sublime.COOPERATE_WITH_AUTO_COMPLETE,
+                on_navigate=self.on_navigate,
+                on_hide=self.on_hidden,
+                location=location,
+                max_width=800)
 
     def move_next(self):
         if not self.signature_help:
@@ -140,12 +145,7 @@ class PopupManager():
             log.debug('No current view for popup session. Hiding popup')
             return
 
-        # Did we hide the popup ourselves in order to redisplay it?
-        if self.suppress_onhidden > 0:
-            self.suppress_onhidden -= 1
-            log.debug('-suppress_onhidden: {0}'.format(self.suppress_onhidden))
-            return
-
+        # If we're still in the arg list, then redisplay
         cursor_region = self.current_view.sel()[0]
         arg_regions = self.current_view.get_regions('argSpan')
         if len(arg_regions):
