@@ -84,6 +84,7 @@ class TypeScriptEventListener(sublime_plugin.EventListener):
         EventHub.run_listeners("on_modified_with_info", view, info)
 
     def post_on_modified(self, view):
+        log.debug("post_on_modified")
         EventHub.run_listeners("post_on_modified", view)
 
     def on_selection_modified(self, view):

@@ -26,7 +26,7 @@ class FileInfo:
         self.view = None
         self.has_errors = False
         self.client_info = None
-        self.change_count_err_req = -1
+        self.change_count_when_last_err_req_sent = -1
         self.last_modify_change_count = cc
         self.modify_count = 0
 
@@ -37,7 +37,7 @@ _file_map = dict()
 def get_info(view):
     """Find the file info on the server that matches the given view"""
     if not cli.initialized:
-        return None
+        cli.initialize()
 
     info = None
     if view.file_name() is not None:
@@ -106,7 +106,7 @@ def is_special_view(view):
     in that they cannot be the active_view of their windows, therefore their ids 
     shouldn't be equal to the current view id.
     """
-    return view.window() and view.id() != view.window().active_view().id()
+    return view is not None and view.window() and view.id() != view.window().active_view().id()
 
 
 def get_location_from_view(view):
@@ -198,13 +198,24 @@ def reload_buffer(view, client_info=None):
         text = view.substr(sublime.Region(0, view.size()))
         tmpfile.write(text)
         tmpfile.flush()
-        cli.service.reload_async(view.file_name(), tmpfile_name, recv_reload_response)
-        if not IS_ST2:
-            if not client_info:
-                client_info = cli.get_or_add_file(view.file_name())
-            client_info.change_count = view.change_count()
-            client_info.pending_changes = False
 
+        if not client_info:
+            client_info = cli.get_or_add_file(view.file_name())
+
+        if not IS_ST2:
+            cli.service.reload_async(view.file_name(), tmpfile_name, recv_reload_response)
+            client_info.change_count = view.change_count()
+        else:
+            # Sublime 2 doesn't have good support for multi threading
+            reload_response = cli.service.reload(view.file_name(), tmpfile_name)
+            recv_reload_response(reload_response)
+            info = get_info(view)
+            client_info.change_count = info.modify_count
+        client_info.pending_changes = False
+
+def reload_required(view):
+    client_info = cli.get_or_add_file(view.file_name())
+    return client_info.pending_changes or client_info.change_count < change_count(view)
 
 def check_update_view(view):
     """Check if the buffer in the view needs to be reloaded
@@ -214,7 +225,7 @@ def check_update_view(view):
     """
     if is_typescript(view):
         client_info = cli.get_or_add_file(view.file_name())
-        if cli.reload_required(view):
+        if reload_required(view):
             reload_buffer(view, client_info)
 
 
@@ -223,7 +234,7 @@ def send_replace_changes_for_regions(view, regions, insert_string):
     Given a list of regions and a (possibly zero-length) string to insert, 
     send the appropriate change information to the server.
     """
-    if IS_ST2 or not is_typescript(view):
+    if not is_typescript(view):
         return
     for region in regions:
         location = get_location_from_position(view, region.begin())

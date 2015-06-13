@@ -1,3 +1,5 @@
+import re
+
 from string import Template
 
 from .logger import log
@@ -263,13 +265,15 @@ def get_popup_manager():
             html_path = os.path.join(PLUGIN_DIR, 'popup.html')
 
             # Needs to be in format such as: 'Packages/TypeScript/popup.html'
-            rel_path = html_path[len(PACKAGES_DIR) - len('Packages'):]
+            rel_path = html_path[len(sublime.packages_path()) - len('Packages'):]
             rel_path = rel_path.replace('\\', '/')  # Yes, even on Windows
 
             print(rel_path)
 
             log.info('Popup resource path: {0}'.format(rel_path))
             popup_text = sublime.load_resource(rel_path)
+            re_remove = re.compile("[\n\t\r]")
+            popup_text = re_remove.sub("", popup_text)
             log.info('Loaded tooltip template from {0}'.format(rel_path))
 
             PopupManager.html_template = Template(popup_text)

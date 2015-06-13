@@ -1,6 +1,8 @@
 TypeScript Plugin for Sublime Text
 ==================================
 
+[![Join the chat at https://gitter.im/Microsoft/TypeScript-Sublime-Plugin](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/Microsoft/TypeScript-Sublime-Plugin?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
+
 The plugin uses an IO wrapper around the TypeScript language services to provide
 an enhanced Sublime Text experience when working with TypeScript code.
 
