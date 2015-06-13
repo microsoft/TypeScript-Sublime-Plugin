@@ -27,6 +27,7 @@ from .rename import (
     TypescriptFinishRenameCommand,
     TypescriptRenameCommand
 )
+from .build import TypescriptBuildCommand
 
 __all__ = [
     "TypescriptAutoIndentOnEnterBetweenCurlyBrackets",
@@ -54,5 +55,6 @@ __all__ = [
     "TypescriptSave",
     "TypescriptShowDoc",
     "TypescriptSignaturePanel",
-    "TypescriptSignaturePopup"
+    "TypescriptSignaturePopup",
+    "TypescriptBuildCommand"
 ]
