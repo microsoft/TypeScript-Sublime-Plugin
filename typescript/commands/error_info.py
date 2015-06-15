@@ -1,4 +1,4 @@
-import sublime_plugin
+﻿import sublime_plugin
 
 from ..libs.view_helpers import cli
 from .base_command import TypeScriptBaseTextCommand, TypeScriptBaseWindowCommand
@@ -32,7 +32,13 @@ class TypescriptProjectErrorList(TypeScriptBaseWindowCommand):
     error_list_panel = None
 
     def run(self):
-        # if self.window.get_output_panel("errorList") is None:
-        if not TypescriptProjectErrorList.error_list_panel:
+        if not self.is_panel_active():
             TypescriptProjectErrorList.error_list_panel = self.window.create_output_panel("errorList")
+            cli.node_client.startWorker()
         self.window.run_command("show_panel", {"panel": "output.errorList"})
+        
+    def is_panel_active(self):
+        view = TypescriptProjectErrorList.error_list_panel
+        return view is not None and is_view_visible(view)
+
+

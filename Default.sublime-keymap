@@ -74,15 +74,6 @@
         ]
     },
     {
-        "keys": [ "alt+,"],
-        "command": "typescript_signature_popup",
-        "context": [
-            { "key": "selector", "operator": "equal", "operand": "source.ts" },
-            { "key": "tooltip_supported", "operator": "equal", "operand": true}
-
-        ]
-    },
-    {
         "keys": [ "ctrl+t", "ctrl+q" ],
         "command": "typescript_quick_info_doc",
         "context": [
@@ -134,6 +125,15 @@
         "context": [
             { "key": "selector", "operator": "equal", "operand": "source.ts" },
             { "key": "is_popup_visible"}
+        ]
+    },    // In case when auto match is enabled, only format if not within {}
+    {
+        "keys": [ "alt+,"],
+        "command": "typescript_signature_popup",
+        "context": [
+            { "key": "selector", "operator": "equal", "operand": "source.ts" },
+            { "key": "tooltip_supported", "operator": "equal", "operand": true}
+
         ]
     },
     {

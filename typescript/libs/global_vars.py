@@ -1,4 +1,4 @@
-import os
+﻿import os
 import re
 import logging
 import sublime
@@ -28,6 +28,17 @@ else:
     else:
         PLUGIN_DIR = dirname(dirname(dirname(os.path.abspath(__file__))))
 PLUGIN_NAME = os.path.basename(PLUGIN_DIR)
+
+# The node path will be initialized in the node_client.py module
+_node_path = None
+def get_node_path():
+    return _node_path
+
+TSC_PATH = os.path.join(PLUGIN_DIR, "tsserver", "tsc.js")
+
+_project_error_list_started = False
+def is_project_error_list_started():
+    return _project_error_list_started
 
 # only Sublime Text 3 build after 3072 support tooltip
 TOOLTIP_SUPPORT = int(sublime.version()) >= 3072

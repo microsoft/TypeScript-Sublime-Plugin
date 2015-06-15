@@ -10,7 +10,11 @@
  { "caption" : "TypeScript: Rename", "command": "typescript_rename" },
  { "caption" : "TypeScript: PasteAndFormat", "command": "typescript_paste_and_format" },
  { "caption" : "TypeScript: FormatLine", "command": "typescript_format_line" },
+<<<<<<< HEAD
  { "caption" : "TypeScript: FormatBlock", "command": "typescript_format_brackets" },
- { "caption" : "TypeScript: SignatureInfo", "command": "typescript_signature_popup" },
  { "caption" : "TypeScript: ShowErrorList", "command": "typescript_project_error_list" }
+=======
+ { "caption" : "TypeScript: SignatureInfo", "command": "typescript_signature_popup" },
+ { "caption" : "TypeScript: FormatBlock", "command": "typescript_format_brackets" }
+>>>>>>> 88af18b997cba9d623e43ccdffb73b9814ea90a0
 ]

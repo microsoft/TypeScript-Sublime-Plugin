@@ -1,4 +1,4 @@
-from ..libs.view_helpers import *
+﻿from ..libs.view_helpers import *
 from ..libs.text_helpers import *
 from ..libs import log
 from .event_hub import EventHub
@@ -15,12 +15,13 @@ class ProjectErrorListener:
 
     def on_activated_with_info(self, view, info):
         # Ask server for initial error diagnostics
-        self.request_errors(view, info, 200)
-        self.set_on_idle_timer(IDLE_TIME_LENGTH)
-        self.just_changed_focus = True
+        if is_project_error_list_started():
+            self.request_errors(view, info, 200)
+            self.set_on_idle_timer(IDLE_TIME_LENGTH)
+            self.just_changed_focus = True
 
     def post_on_modified(self, view):
-        if not is_special_view(view):
+        if not is_special_view(view) and is_project_error_list_started()::
             self.modified = True
             self.set_on_idle_timer(100)
 
