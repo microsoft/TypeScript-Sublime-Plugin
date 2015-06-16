@@ -36,7 +36,6 @@ class EditorClient:
         self.translate_tab_to_spaces = False
         self.ts_auto_format_enabled = True
         self.ts_auto_indent_enabled = True
-        self.project_error_list_enabled = False
         self.auto_match_enabled = True
 
     def initialize(self):
@@ -69,9 +68,6 @@ class EditorClient:
         ]:
             settings.add_on_change(setting_name, self.load_format_settings)
         self.load_format_settings()
-
-        # project_error_list should only be set once.
-        self.project_error_list_enabled = settings.get('project_error_list')
 
         self.initialized = True
 

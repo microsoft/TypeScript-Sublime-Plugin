@@ -3,6 +3,7 @@
 from .global_vars import *
 from .editor_client import cli
 from .text_helpers import *
+from .panel_manager import get_panel_manager
 
 
 class FileInfo:
@@ -59,7 +60,7 @@ def get_info(view):
                     else:
                         info.client_info.pending_changes = True
                         
-            if is_worker_active():
+            if get_panel_manager().is_panel_active("errorlist"):
                 info_on_worker = _file_map_on_worker.get(file_name)
                 if not info_on_worker:
                     _file_map_on_worker[file_name] = info

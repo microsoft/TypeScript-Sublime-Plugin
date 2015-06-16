@@ -51,8 +51,3 @@ VALID_COMPLETION_ID_PATTERN = re.compile("[a-zA-Z_$\.][\w$\.]*\Z")
 
 # idle time length in millisecond
 IDLE_TIME_LENGTH = 200
-
-# if the worker process for error list is running
-_is_worker_active = False
-def is_worker_active():
-    return _is_worker_active

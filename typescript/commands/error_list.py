@@ -1,14 +1,12 @@
-from ..libs import global_vars
+﻿from ..libs import cli
+from ..libs.view_helpers import active_view, get_info
+from ..libs.panel_manager import get_panel_manager
+from ..listeners.project_error_list import start_timer
 from .base_command import TypeScriptBaseWindowCommand
 
 class TypescriptProjectErrorList(TypeScriptBaseWindowCommand):
 
-    error_list_panel = None
-
     def run(self):
-        if not TypescriptProjectErrorList.error_list_panel:
-            TypescriptProjectErrorList.error_list_panel = self.window.create_output_panel("errorList")
-
         if not cli.node_client.workerStarted():
             view = active_view()
             # start worker process
@@ -17,11 +15,8 @@ class TypescriptProjectErrorList(TypeScriptBaseWindowCommand):
             get_info(view)
             # send the first error request
             cli.service.request_get_err_for_project(0, view.file_name())
+            start_timer()
 
-        global_vars._is_worker_active = True
-        self.window.run_command("show_panel", {"panel": "output.errorList"})
-
-    @staticmethod
-    def is_worker_active():
-        panel = TypescriptProjectErrorList.error_list_panel  
-        return panel is not None and is_view_visible(panel)
+        panel_manager = get_panel_manager()
+        panel_manager.add_panel("errorlist")
+        panel_manager.show_panel("errorlist")
