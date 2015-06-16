@@ -15,7 +15,7 @@ class ProjectErrorListener:
 
     def on_activated_with_info(self, view, info):
         # Ask server for initial error diagnostics
-        if is_project_error_list_started():
+        if is_worker_active():
             self.request_errors(view, info, 200)
             self.set_on_idle_timer(IDLE_TIME_LENGTH)
             self.just_changed_focus = True
@@ -37,18 +37,16 @@ class ProjectErrorListener:
             self.on_idle()
 
     def on_idle(self):
-        if cli.project_error_list_enabled:
-            self.update_project_error_list()
+        self.update_project_error_list()
 
-        view = active_view()
-        info = get_info(view)
+        info = get_info(active_view())
         if info:
             log.debug("asking for project errors")
             # request errors
             self.request_errors(view, info, 500)
 
     def request_errors(self, view, info, error_delay):
-        if info and cli.project_error_list_enabled and (
+        if info and (
             self.just_changed_focus or
             info.change_count_when_last_err_req_sent < change_count(view)
         ):

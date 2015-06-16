@@ -36,10 +36,6 @@ def get_node_path():
 
 TSC_PATH = os.path.join(PLUGIN_DIR, "tsserver", "tsc.js")
 
-_project_error_list_started = False
-def is_project_error_list_started():
-    return _project_error_list_started
-
 # only Sublime Text 3 build after 3072 support tooltip
 TOOLTIP_SUPPORT = int(sublime.version()) >= 3072
 
@@ -55,3 +51,8 @@ VALID_COMPLETION_ID_PATTERN = re.compile("[a-zA-Z_$\.][\w$\.]*\Z")
 
 # idle time length in millisecond
 IDLE_TIME_LENGTH = 200
+
+# if the worker process for error list is running
+_is_worker_active = False
+def is_worker_active():
+    return _is_worker_active

@@ -1,7 +1,7 @@
 ﻿import sublime_plugin
 
-from ..libs.view_helpers import cli
-from .base_command import TypeScriptBaseTextCommand, TypeScriptBaseWindowCommand
+from ..libs.view_helpers import *
+from .base_command import TypeScriptBaseTextCommand
 
 
 class TypescriptErrorInfo(TypeScriptBaseTextCommand):
@@ -25,20 +25,3 @@ class TypescriptErrorInfo(TypeScriptBaseTextCommand):
             self.view.set_status("typescript_error", error_text)
         else:
             self.view.erase_status("typescript_error")
-
-
-class TypescriptProjectErrorList(TypeScriptBaseWindowCommand):
-
-    error_list_panel = None
-
-    def run(self):
-        if not self.is_panel_active():
-            TypescriptProjectErrorList.error_list_panel = self.window.create_output_panel("errorList")
-            cli.node_client.startWorker()
-        self.window.run_command("show_panel", {"panel": "output.errorList"})
-        
-    def is_panel_active(self):
-        view = TypescriptProjectErrorList.error_list_panel
-        return view is not None and is_view_visible(view)
-
-

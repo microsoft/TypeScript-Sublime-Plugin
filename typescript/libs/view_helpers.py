@@ -1,4 +1,4 @@
-import codecs
+﻿import codecs
 
 from .global_vars import *
 from .editor_client import cli
@@ -32,6 +32,7 @@ class FileInfo:
 
 
 _file_map = dict()
+_file_map_on_worker = dict()
 
 
 def get_info(view):
@@ -57,9 +58,17 @@ def get_info(view):
                         reload_buffer(view, info.client_info)
                     else:
                         info.client_info.pending_changes = True
-                        # if info in most_recent_used_file_list:
-                        #     most_recent_used_file_list.remove(info)
-                        # most_recent_used_file_list.append(info)
+                        
+            if is_worker_active():
+                info_on_worker = _file_map_on_worker.get(file_name)
+                if not info_on_worker:
+                    _file_map_on_worker[file_name] = info
+                    open_file_on_worker(view)
+                    if view.is_dirty():
+                        if not view.is_loading():
+                            reload_buffer_on_worker(view)
+            else:
+                _file_map_on_worker.clear()
     return info
 
 
@@ -133,6 +142,9 @@ def open_file(view):
     """Open the file on the server"""
     cli.service.open(view.file_name())
 
+def open_file_on_worker(view):
+    """Open the file on the worker process"""
+    cli.service.open_on_worker(view.file_name())
 
 def reconfig_file(view):
     host_info = "Sublime Text version " + str(sublime.version())
@@ -213,6 +225,22 @@ def reload_buffer(view, client_info=None):
             client_info.change_count = info.modify_count
         client_info.pending_changes = False
 
+def reload_buffer_on_worker(view):
+    """Reload the buffer content on the worker process
+
+    Note: the worker process won't change the client_info object to avoid synchronization issues
+    """
+    if not view.is_loading():
+        tmpfile_name = get_tempfile_name()
+        tmpfile = codecs.open(tmpfile_name, "w", "utf-8")
+        text = view.substr(sublime.Region(0, view.size()))
+        tmpfile.write(text)
+        tmpfile.flush()
+        if not IS_ST2:
+            cli.service.reload_async(view.file_name(), tmpfile_name, recv_reload_response)
+        else:
+            reload_response = cli.service.reload(view.file_name(), tmpfile_name)
+            recv_reload_response(reload_response)
 
 def reload_required(view):
     client_info = cli.get_or_add_file(view.file_name())

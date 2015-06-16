@@ -1,4 +1,5 @@
-from .error_info import TypescriptErrorInfo, TypescriptProjectErrorList
+﻿from .error_info import TypescriptErrorInfo
+from .error_list import TypescriptProjectErrorList
 from .go_to_definition import TypescriptGoToDefinitionCommand
 from .go_to_type import TypescriptGoToTypeCommand
 from .nav_to import TypescriptNavToCommand

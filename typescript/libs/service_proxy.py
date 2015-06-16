@@ -120,6 +120,13 @@ class ServiceProxy:
         if self.__comm.workerStarted():
             self.__comm.postCmdToWorker(json_str)
 
+    def open_on_worker(self, path):
+        args = {"file": path}
+        req_dict = self.create_req_dict("open", args)
+        json_str = json_helpers.encode(req_dict)
+        if self.__comm.workerStarted():
+            self.__comm.postCmdToWorker(json_str)
+
     def close(self, path):
         args = {"file": path}
         req_dict = self.create_req_dict("close", args)
