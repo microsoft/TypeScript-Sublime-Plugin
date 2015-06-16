@@ -25,7 +25,7 @@ class TypescriptBuildCommand(sublime_plugin.WindowCommand):
             else:
                 sublime.active_window().show_input_panel(
                     "Build parameters: ",
-                    self.build_parameters,
+                    TypescriptBuildCommand.build_parameters, # initial text
                     lambda params: self.compile_inferred_project(file_name, params),
                     None,  # on change
                     None   # on cancel
@@ -40,4 +40,4 @@ class TypescriptBuildCommand(sublime_plugin.WindowCommand):
             "cmd": cmd,
             "file_regex": "^(.+?)\\((\\d+),(\\d+)\\): (.+)$"
         })
-        self.build_parameters = params
+        TypescriptBuildCommand.build_parameters = params
