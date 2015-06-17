@@ -711,6 +711,10 @@
 					<key>include</key>
 					<string>#type</string>
 				</dict>
+				<dict>
+					<key>include</key>
+					<string>#comment</string>
+				</dict>
 			</array>
 		</dict>
 		<key>null-literal</key>
@@ -847,23 +851,54 @@
 		</dict>
 		<key>object-heritage</key>
 		<dict>
-			<key>captures</key>
+			<key>begin</key>
+			<string>(?:\s*\b(extends|implements))</string>
+			<key>beginCaptures</key>
 			<dict>
 				<key>1</key>
 				<dict>
 					<key>name</key>
 					<string>keyword.other.ts</string>
 				</dict>
-				<key>2</key>
+			</dict>
+			<key>end</key>
+			<string>(?=\{)</string>
+			<key>endCaptures</key>
+			<dict>
+				<key>1</key>
+				<dict>
+					<key>name</key>
+					<string>brace.curly.ts</string>
+				</dict>
+			</dict>
+			<key>name</key>
+			<string>meta.object.heritage.ts</string>
+			<key>patterns</key>
+			<array>
+				<dict>
+					<key>include</key>
+					<string>#object-heritage-parent</string>
+				</dict>
+				<dict>
+					<key>include</key>
+					<string>#comment</string>
+				</dict>
+			</array>
+		</dict>
+		<key>object-heritage-parent</key>
+		<dict>
+			<key>captures</key>
+			<dict>
+				<key>1</key>
 				<dict>
 					<key>name</key>
 					<string>storage.type.ts</string>
 				</dict>
 			</dict>
 			<key>match</key>
-			<string>(?:\b(extends|implements)\b|,)(?:\s+([a-zA-Z_$][.\w$]*))</string>
+			<string>(?:\s*([a-zA-Z_$][\w$]*))</string>
 			<key>name</key>
-			<string>meta.object.heritage.ts</string>
+			<string>meta.object.heritage.parent.ts</string>
 		</dict>
 		<key>object-member</key>
 		<dict>

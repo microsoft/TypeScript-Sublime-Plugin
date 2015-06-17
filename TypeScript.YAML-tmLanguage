@@ -76,10 +76,21 @@ repository:
 
   object-heritage:
     name: meta.object.heritage.ts
-    match: (?:\b(extends|implements)\b|,)(?:\s+([a-zA-Z_$][.\w$]*))
+    begin: '(?:\s*\b(extends|implements))'
+    beginCaptures:
+      '1': { name: keyword.other.ts }
+    end: (?=\{)
+    endCaptures:
+      '1': { name: brace.curly.ts }
+    patterns:
+    - include: '#object-heritage-parent'
+    - include: '#comment'
+  
+  object-heritage-parent:
+    name: meta.object.heritage.parent.ts
+    match: '(?:\s*([a-zA-Z_$][\w$]*))'
     captures:
-       '1': { name: keyword.other.ts }
-       '2': { name: storage.type.ts } 
+      '1': { name: storage.type.ts }
 
   object-body:
     name: meta.object.body.ts
@@ -384,6 +395,7 @@ repository:
     end: '(?=[<(;]|$)'
     patterns:
     - include: '#type'
+    - include: '#comment'
 
   object-member:
     name: meta.object.member.ts
