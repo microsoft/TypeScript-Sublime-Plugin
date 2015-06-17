@@ -18,8 +18,7 @@ class IdleListener:
         self.request_errors(view, info, 200)
 
         # set modified and selection idle timers, so we can read
-        # diagnostics and update
-        # status line
+        # diagnostics and update status line
         self.set_on_idle_timer(IDLE_TIME_LENGTH)
         self.set_on_selection_idle_timer(IDLE_TIME_LENGTH)
         self.just_changed_focus = True

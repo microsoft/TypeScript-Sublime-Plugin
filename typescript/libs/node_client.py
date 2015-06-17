@@ -122,14 +122,13 @@ class NodeCommClient(CommClient):
                 [node_path, self.script_path], stdin=subprocess.PIPE, stdout=subprocess.PIPE)
 
         # start reader thread
-        if self.__serverProc and (not self.__serverProc.poll()):
-            log.debug("server proc " + str(self.__serverProc))
-            log.debug("starting reader thread")
-            readerThread = threading.Thread(target=NodeCommClient.__reader, args=(
-                self.__serverProc.stdout, self.__msgq, self.__eventq, self.asyncReq, self.__serverProc))
-            readerThread.daemon = True
-            readerThread.start()
-            log.debug("readerThread.is_alive: {0}".format(readerThread.is_alive()))
+        if self.__workerProc and (not self.__workerProc.poll()):
+            log.debug("worker proc " + str(self.__workerProc))
+            log.debug("starting worker thread")
+            workerThread = threading.Thread(target=NodeCommClient.__reader, args=(
+                self.__workerProc.stdout, self.__msgq, self.__worker_eventq, self.asyncReq, self.__workerProc))
+            workerThread.daemon = True
+            workerThread.start()
 
     def stopWorker(self):
         NodeCommClient.stop_worker = True
@@ -308,12 +307,12 @@ class NodeCommClient(CommClient):
 
         if body_length > 0:
             data = stream.read(body_length)
-            log.debug('Read body of length: {0}'.format(body_length))
+            # log.debug('Read body of length: {0}'.format(body_length))
             data_json = data.decode("utf-8")
             data_dict = json_helpers.decode(data_json)
             if data_dict['type'] == "response":
                 request_seq = data_dict['request_seq']
-                log.debug('Body sequence#: {0}'.format(request_seq))
+                # log.debug('Body sequence#: {0}'.format(request_seq))
                 if request_seq in asyncReq:
                     callback = asyncReq.pop(request_seq, None)
                     if callback:

@@ -11,6 +11,7 @@ class ProjectErrorListener:
         self.modified = False
         self.error_info_requested_not_received = False
         self.pending_timeout = 0
+        self.errors = dict()
 
     def is_error_list_panel_active(self):
         return get_panel_manager().is_panel_active("errorlist")
@@ -46,7 +47,7 @@ class ProjectErrorListener:
         if info:
             log.debug("asking for project errors")
             if self.is_error_list_panel_active():
-                self.request_errors(view, info, 500)
+                self.request_errors(view, info, 100)
             else:
                 cli.node_client.stopWorker()
 
@@ -54,22 +55,55 @@ class ProjectErrorListener:
         test_ev = cli.service.get_event_from_worker()
         if test_ev:
             self.error_info_requested_not_received = False
-            panel_manager = get_panel_manager()
-            error_list_panel = panel_manager.get_panel("errorlist")
+            self.load_error(test_ev)
+
+            # There may be multiple events coming simultaniously
             while test_ev:
-                error_list_panel.run_command("append", {"characters": str(test_ev) + "\n"})
+                self.load_error(test_ev)                   
                 test_ev = cli.service.get_event_from_worker()
+
+            output_lines = []
+            for file in self.errors:
+                if len(self.errors[file]["syntaxDiag"]) + len(self.errors[file]["semanticDiag"]) > 0:
+                    output_lines.append(file)
+                    output_lines.extend(self.errors[file]["syntaxDiag"] + self.errors[file]["semanticDiag"])
+            get_panel_manager().write_lines_to_panel("errorlist", output_lines)
             self.set_on_idle_timer(50)
         elif self.error_info_requested_not_received:
             self.set_on_idle_timer(50)
 
+    def load_error(self, json_dict):
+        if json_dict["type"] != "event":
+            return
+
+        error_type = json_dict["event"]
+        if error_type not in ["syntaxDiag", "semanticDiag"]:
+            return
+
+        body = json_dict["body"]
+        if body is not None:
+            file = body["file"]
+            if file not in self.errors:
+                self.errors[file] = { "syntaxDiag": [], "semanticDiag": [] }
+            self.errors[file][error_type] = []
+            diags = body["diagnostics"]
+            for diag in diags:
+                message = "    ({0}, {1}) {2}".format(
+                    diag["start"]["line"],
+                    diag["start"]["offset"],
+                    diag["text"]
+                    )
+                self.errors[file][error_type].append(message)
+
     def request_errors(self, view, info, error_delay):
         if info and self.is_error_list_panel_active() and (
             self.just_changed_focus or
-            info.change_count_when_last_err_req_sent < change_count(view)
+            self.modified
         ):
             self.just_changed_focus = False
+            self.modified = False
             cli.service.request_get_err_for_project(error_delay, view.file_name())
+            self.error_info_requested_not_received = True
             self.set_on_idle_timer(error_delay + 300)
 
 listener = ProjectErrorListener()
