@@ -60,16 +60,17 @@ def get_info(view):
                     else:
                         info.client_info.pending_changes = True
                         
-            if get_panel_manager().is_panel_active("errorlist"):
-                info_on_worker = _file_map_on_worker.get(file_name)
-                if not info_on_worker:
-                    _file_map_on_worker[file_name] = info
-                    open_file_on_worker(view)
-                    if view.is_dirty():
-                        if not view.is_loading():
-                            reload_buffer_on_worker(view)
-            else:
-                _file_map_on_worker.clear()
+            if not IS_ST2:
+                if get_panel_manager().is_panel_active("errorlist"):
+                    info_on_worker = _file_map_on_worker.get(file_name)
+                    if not info_on_worker:
+                        _file_map_on_worker[file_name] = info
+                        open_file_on_worker(view)
+                        if view.is_dirty():
+                            if not view.is_loading():
+                                reload_buffer_on_worker(view)
+                else:
+                    _file_map_on_worker.clear()
     return info
 
 

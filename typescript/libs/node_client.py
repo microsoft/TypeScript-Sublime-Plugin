@@ -63,6 +63,10 @@ class NodeCommClient(CommClient):
         self.__eventq = queue.Queue()
         self.__worker_eventq = queue.Queue()
 
+        # create event handler maps
+        self.__event_handlers = dict()
+        self.__worker_event_handlers = dict()
+
         # start node process
         pref_settings = sublime.load_settings('Preferences.sublime-settings')
         node_path = pref_settings.get('node_path')
@@ -100,12 +104,19 @@ class NodeCommClient(CommClient):
             log.debug("server proc " + str(self.__serverProc))
             log.debug("starting reader thread")
             readerThread = threading.Thread(target=NodeCommClient.__reader, args=(
-                self.__serverProc.stdout, self.__msgq, self.__eventq, self.asyncReq, self.__serverProc))
+                self.__serverProc.stdout, self.__msgq, self.__eventq, self.asyncReq, self.__serverProc, self.__event_handlers))
             readerThread.daemon = True
             readerThread.start()
 
         self.__debugProc = None
         self.__breakpoints = []
+
+    def add_event_handler(self, event_name, cb, for_worker=False):
+        event_handlers = self.__worker_event_handlers if for_worker else self.__event_handlers
+        if event_name not in event_handlers:
+            event_handlers[event_name] = []
+        if cb not in event_handlers[event_name]:
+            event_handlers[event_name].append(cb)
 
     def startWorker(self):
         NodeCommClient.stop_worker = False
@@ -126,12 +137,14 @@ class NodeCommClient(CommClient):
             log.debug("worker proc " + str(self.__workerProc))
             log.debug("starting worker thread")
             workerThread = threading.Thread(target=NodeCommClient.__reader, args=(
-                self.__workerProc.stdout, self.__msgq, self.__worker_eventq, self.asyncReq, self.__workerProc))
+                self.__workerProc.stdout, self.__msgq, self.__worker_eventq, self.asyncReq, self.__workerProc, self.__worker_event_handlers))
             workerThread.daemon = True
             workerThread.start()
 
     def stopWorker(self):
         NodeCommClient.stop_worker = True
+        self.__workerProc.kill()
+        self.__workerProc = None
 
     def serverStarted(self):
         return self.__serverProc is not None
@@ -279,7 +292,7 @@ class NodeCommClient(CommClient):
         return ev
 
     @staticmethod
-    def __readMsg(stream, msgq, eventq, asyncReq, proc):
+    def __readMsg(stream, msgq, eventq, asyncReq, proc, asyncEventHandlers):
         """
         Reader thread helper
         """
@@ -287,12 +300,6 @@ class NodeCommClient(CommClient):
         body_length = 0
         while state != "body":
             header = stream.readline().strip()
-            # log.debug(
-            #     'Stream state: "{0}".  Read header: "{1}"'.format(
-            #         state,
-            #         header if header else 'None'
-            #     )
-            # )
             if len(header) == 0:
                 if state == 'init':
                     # log.info('0 byte line in stream when expecting header')
@@ -321,25 +328,34 @@ class NodeCommClient(CommClient):
                 else:
                     # Only put in the queue if wasn't an async request
                     msgq.put(data_json)
-            else:
-                eventq.put(data_json)
+            elif data_dict["type"] == "event":
+                event_name = data_dict["event"]
+                if event_name in asyncEventHandlers:
+                    for cb in asyncEventHandlers[event_name]:
+                        if global_vars.IS_ST2:
+                            sublime.set_timeout(lambda: cb(data_dict), 0)
+                        else:
+                            cb(data_dict)
+                    return False
+                else:
+                    eventq.put(data_json)
         else:
             log.info('Body length of 0 in server stream')
             return False
 
     @staticmethod
-    def __reader(stream, msgq, eventq, asyncReq, proc):
+    def __reader(stream, msgq, eventq, asyncReq, proc, eventHandlers):
         """ Main function for reader thread """
         while True:
-            if NodeCommClient.__readMsg(stream, msgq, eventq, asyncReq, proc):
+            if NodeCommClient.__readMsg(stream, msgq, eventq, asyncReq, proc, eventHandlers):
                 log.debug("server exited")
                 return
 
     @staticmethod
-    def __worker_reader(stream, msgq, eventq, asyncReq, proc):
+    def __worker_reader(stream, msgq, eventq, asyncReq, proc, eventHandlers):
         """ Main function for worker thread """
         while True:
-            if NodeCommClient.__readMsg(stream, msgq, eventq, asyncReq, proc) or NodeCommClient.stop_worker:
+            if NodeCommClient.__readMsg(stream, msgq, eventq, asyncReq, proc, eventHandlers) or NodeCommClient.stop_worker:
                 log.debug("worker exited")
                 return
 

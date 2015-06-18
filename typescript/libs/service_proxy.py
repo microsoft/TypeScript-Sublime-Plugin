@@ -1,4 +1,6 @@
-﻿from . import json_helpers
+﻿import sublime
+
+from . import json_helpers
 from .global_vars import IS_ST2
 from .node_client import CommClient
 from .text_helpers import Location
@@ -232,6 +234,12 @@ class ServiceProxy:
         req_dict = self.create_req_dict("projectInfo", args)
         json_str = json_helpers.encode(req_dict)
         return self.__comm.sendCmdSync(json_str, req_dict["seq"])
+    
+    def add_event_handler(self, event_name, cb):
+        self.__comm.add_event_handler(event_name, cb)
+
+    def add_event_handler_for_worker(self, event_name, cb):
+        self.__comm.add_event_handler(event_name, cb, True)
 
     def create_req_dict(self, command_name, args=None):
         req_dict = {
