@@ -318,7 +318,7 @@ repository:
 
   type-parameters:
     name: meta.type.parameters.ts
-    begin: '(\w+)?(<)'
+    begin: '([a-zA-Z_$][\w$]*)?(<)'
     beginCaptures:
       '1': { name: entity.name.type.ts }
       '2': { name: meta.brace.angle.ts }
