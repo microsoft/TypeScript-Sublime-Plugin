@@ -60,6 +60,9 @@ def get_info(view):
                     else:
                         info.client_info.pending_changes = True
                         
+            # This is for the case when a file is opened on server but not 
+            # on the worker, which could be caused by starting the worker
+            # for the first time
             if not IS_ST2:
                 if get_panel_manager().is_panel_active("errorlist"):
                     info_on_worker = _file_map_on_worker.get(file_name)
@@ -239,9 +242,9 @@ def reload_buffer_on_worker(view):
         tmpfile.write(text)
         tmpfile.flush()
         if not IS_ST2:
-            cli.service.reload_async(view.file_name(), tmpfile_name, recv_reload_response)
+            cli.service.reload_async_on_worker(view.file_name(), tmpfile_name, recv_reload_response)
         else:
-            reload_response = cli.service.reload(view.file_name(), tmpfile_name)
+            reload_response = cli.service.reload_on_worker(view.file_name(), tmpfile_name)
             recv_reload_response(reload_response)
 
 def reload_required(view):

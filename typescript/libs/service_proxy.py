@@ -20,12 +20,14 @@ class ServiceProxy:
         req_dict = self.create_req_dict("exit")
         json_str = json_helpers.encode(req_dict)
         self.__comm.postCmd(json_str)
-        self.__comm.postCmdToWorker(json_str)
+        if self.__comm.workerStarted():
+            self.__comm.postCmdToWorker(json_str)
 
     def stop_worker(self):
         req_dict = self.create_req_dict("exit")
         json_str = json_helpers.encode(req_dict)
-        self.__comm.postCmdToWorker(json_str)
+        if self.__comm.workerStarted():
+            self.__comm.postCmdToWorker(json_str)
 
     def configure(self, host_info="Sublime Text", file=None, format_options=None):
         args = {"hostInfo": host_info, "formatOptions": format_options, "file": file}
@@ -153,11 +155,26 @@ class ServiceProxy:
             self.__comm.sendCmdToWorkerSync(json_str, req_dict["seq"])
         return response_dict
 
+    def reload_on_worker(self, path, alternate_path):
+        args = {"file": path, "tmpfile": alternate_path}
+        req_dict = self.create_req_dict("reload", args)
+        json_str = json_helpers.encode(req_dict)
+        if self.__comm.workerStarted():
+            response_dict = self.__comm.sendCmdToWorkerSync(json_str, req_dict["seq"])
+            return response_dict
+
     def reload_async(self, path, alternate_path, on_completed):
         args = {"file": path, "tmpfile": alternate_path}
         req_dict = self.create_req_dict("reload", args)
         json_str = json_helpers.encode(req_dict)
         self.__comm.sendCmdAsync(json_str, on_completed, req_dict["seq"])
+        if self.__comm.workerStarted():
+            self.__comm.sendCmdToWorkerAsync(json_str, None, req_dict["seq"])
+
+    def reload_async_on_worker(self, path, alternate_path, on_completed):
+        args = {"file": path, "tmpfile": alternate_path}
+        req_dict = self.create_req_dict("reload", args)
+        json_str = json_helpers.encode(req_dict)
         if self.__comm.workerStarted():
             self.__comm.sendCmdToWorkerAsync(json_str, None, req_dict["seq"])
 

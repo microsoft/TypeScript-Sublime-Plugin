@@ -314,12 +314,12 @@ class NodeCommClient(CommClient):
 
         if body_length > 0:
             data = stream.read(body_length)
-            # log.debug('Read body of length: {0}'.format(body_length))
+            log.debug('Read body of length: {0}'.format(body_length))
             data_json = data.decode("utf-8")
             data_dict = json_helpers.decode(data_json)
             if data_dict['type'] == "response":
                 request_seq = data_dict['request_seq']
-                # log.debug('Body sequence#: {0}'.format(request_seq))
+                log.debug('Body sequence#: {0}'.format(request_seq))
                 if request_seq in asyncReq:
                     callback = asyncReq.pop(request_seq, None)
                     if callback:
