@@ -83,6 +83,7 @@ repository:
     endCaptures:
       '1': { name: brace.curly.ts }
     patterns:
+    - include: '#type-parameters'
     - include: '#object-heritage-parent'
     - include: '#comment'
   

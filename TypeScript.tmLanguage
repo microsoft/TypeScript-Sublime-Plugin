@@ -877,6 +877,10 @@
 			<array>
 				<dict>
 					<key>include</key>
+					<string>#type-parameters</string>
+				</dict>
+				<dict>
+					<key>include</key>
 					<string>#object-heritage-parent</string>
 				</dict>
 				<dict>
