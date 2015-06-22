@@ -561,7 +561,7 @@ interface Math {
       */
     atan(x: number): number;
     /**
-      * Returns the angle (in radians) from the X axis to a point (y,x).
+      * Returns the angle (in radians) from the X axis to a point.
       * @param y A numeric expression representing the cartesian y-coordinate.
       * @param x A numeric expression representing the cartesian x-coordinate.
       */
@@ -1237,10 +1237,40 @@ interface SymbolConstructor {
     isConcatSpreadable: symbol;
 
     /** 
-      * A method that returns the default iterator for an object.Called by the semantics of the 
+      * A method that returns the default iterator for an object. Called by the semantics of the 
       * for-of statement.
       */
     iterator: symbol;
+
+    /**
+      * A regular expression method that matches the regular expression against a string. Called 
+      * by the String.prototype.match method. 
+      */
+    match: symbol;
+
+    /** 
+      * A regular expression method that replaces matched substrings of a string. Called by the 
+      * String.prototype.replace method.
+      */
+    replace: symbol;
+
+    /**
+      * A regular expression method that returns the index within a string that matches the 
+      * regular expression. Called by the String.prototype.search method.
+      */
+    search: symbol;
+
+    /** 
+      * A function valued property that is the constructor function that is used to create 
+      * derived objects.
+      */
+    species: symbol;
+
+    /**
+      * A regular expression method that splits a string at the indices that match the regular 
+      * expression. Called by the String.prototype.split method.
+      */
+    split: symbol;
 
     /** 
       * A method that converts an object to a corresponding primitive value.Called by the ToPrimitive
@@ -1628,7 +1658,7 @@ interface IteratorResult<T> {
 }
 
 interface Iterator<T> {
-    next(): IteratorResult<T>;
+    next(value?: any): IteratorResult<T>;
     return?(value?: any): IteratorResult<T>;
     throw?(e?: any): IteratorResult<T>;
 }
@@ -4728,6 +4758,17 @@ declare module Reflect {
     function setPrototypeOf(target: any, proto: any): boolean;
 }
 
+interface PromiseLike<T> {
+    /**
+    * Attaches callbacks for the resolution and/or rejection of the Promise.
+    * @param onfulfilled The callback to execute when the Promise is resolved.
+    * @param onrejected The callback to execute when the Promise is rejected.
+    * @returns A Promise for the completion of which ever callback is executed.
+    */
+    then<TResult>(onfulfilled?: (value: T) => TResult | PromiseLike<TResult>, onrejected?: (reason: any) => TResult | PromiseLike<TResult>): PromiseLike<TResult>;
+    then<TResult>(onfulfilled?: (value: T) => TResult | PromiseLike<TResult>, onrejected?: (reason: any) => void): PromiseLike<TResult>;
+}
+
 /**
  * Represents the completion of an asynchronous operation
  */
@@ -4738,14 +4779,17 @@ interface Promise<T> {
     * @param onrejected The callback to execute when the Promise is rejected.
     * @returns A Promise for the completion of which ever callback is executed.
     */
-    then<TResult>(onfulfilled?: (value: T) => TResult | Promise<TResult>, onrejected?: (reason: any) => TResult | Promise<TResult>): Promise<TResult>;
+    then<TResult>(onfulfilled?: (value: T) => TResult | PromiseLike<TResult>, onrejected?: (reason: any) => TResult | PromiseLike<TResult>): Promise<TResult>;
+    then<TResult>(onfulfilled?: (value: T) => TResult | PromiseLike<TResult>, onrejected?: (reason: any) => void): Promise<TResult>;
 
     /**
      * Attaches a callback for only the rejection of the Promise.
      * @param onrejected The callback to execute when the Promise is rejected.
      * @returns A Promise for the completion of the callback.
      */
-    catch(onrejected?: (reason: any) => T | Promise<T>): Promise<T>;
+    catch(onrejected?: (reason: any) => T | PromiseLike<T>): Promise<T>;
+
+    [Symbol.toStringTag]: string;
 }
 
 interface PromiseConstructor {
@@ -4756,13 +4800,11 @@ interface PromiseConstructor {
 
     /**
      * Creates a new Promise.
-     * @param init A callback used to initialize the promise. This callback is passed two arguments: 
+     * @param executor A callback used to initialize the promise. This callback is passed two arguments: 
      * a resolve callback used resolve the promise with a value or the result of another promise, 
      * and a reject callback used to reject the promise with a provided reason or error.
      */
-    new <T>(init: (resolve: (value?: T | Promise<T>) => void, reject: (reason?: any) => void) => void): Promise<T>;
-
-    <T>(init: (resolve: (value?: T | Promise<T>) => void, reject: (reason?: any) => void) => void): Promise<T>;
+    new <T>(executor: (resolve: (value?: T | PromiseLike<T>) => void, reject: (reason?: any) => void) => void): Promise<T>;
 
     /**
      * Creates a Promise that is resolved with an array of results when all of the provided Promises 
@@ -4770,15 +4812,7 @@ interface PromiseConstructor {
      * @param values An array of Promises.
      * @returns A new Promise.
      */
-    all<T>(values: (T | Promise<T>)[]): Promise<T[]>;
-
-    /**
-     * Creates a Promise that is resolved with an array of results when all of the provided Promises
-     * resolve, or rejected when any Promise is rejected.
-     * @param values An array of values.
-     * @returns A new Promise.
-     */
-    all(values: Promise<void>[]): Promise<void>;
+    all<T>(values: Iterable<T | PromiseLike<T>>): Promise<T[]>;
 
     /**
      * Creates a Promise that is resolved or rejected when any of the provided Promises are resolved 
@@ -4786,7 +4820,7 @@ interface PromiseConstructor {
      * @param values An array of Promises.
      * @returns A new Promise.
      */
-    race<T>(values: (T | Promise<T>)[]): Promise<T>;
+    race<T>(values: Iterable<T | PromiseLike<T>>): Promise<T>;
 
     /**
      * Creates a new rejected promise for the provided reason.
@@ -4807,13 +4841,15 @@ interface PromiseConstructor {
       * @param value A promise.
       * @returns A promise whose internal state matches the provided promise.
       */
-    resolve<T>(value: T | Promise<T>): Promise<T>;
+    resolve<T>(value: T | PromiseLike<T>): Promise<T>;
 
     /**
      * Creates a new resolved promise .
      * @returns A resolved promise.
      */
     resolve(): Promise<void>;
+
+    [Symbol.species]: Function;
 }
 
 declare var Promise: PromiseConstructor;
@@ -8700,6 +8736,8 @@ interface HTMLCanvasElement extends HTMLElement {
       * Returns an object that provides methods and properties for drawing and manipulating images and graphics on a canvas element in a document. A context object includes information about colors, line widths, fonts, and other graphic parameters that can be drawn on a canvas.
       * @param contextId The identifier (ID) of the type of canvas to create. Internet Explorer 9 and Internet Explorer 10 support only a 2-D context using canvas.getContext("2d"); IE11 Preview also supports 3-D or WebGL context using canvas.getContext("experimental-webgl");
       */
+    getContext(contextId: "2d"): CanvasRenderingContext2D;
+    getContext(contextId: "experimental-webgl"): WebGLRenderingContext;
     getContext(contextId: string, ...args: any[]): CanvasRenderingContext2D | WebGLRenderingContext;
     /**
       * Returns a blob object encoded as a Portable Network Graphics (PNG) format from a canvas image or drawing.
@@ -12678,10 +12716,10 @@ declare var MediaQueryList: {
 interface MediaSource extends EventTarget {
     activeSourceBuffers: SourceBufferList;
     duration: number;
-    readyState: string;
+    readyState: number;
     sourceBuffers: SourceBufferList;
     addSourceBuffer(type: string): SourceBuffer;
-    endOfStream(error?: string): void;
+    endOfStream(error?: number): void;
     removeSourceBuffer(sourceBuffer: SourceBuffer): void;
 }
 
@@ -13410,7 +13448,7 @@ declare var PopStateEvent: {
 
 interface Position {
     coords: Coordinates;
-    timestamp: Date;
+    timestamp: number;
 }
 
 declare var Position: {
@@ -16091,9 +16129,17 @@ interface WebGLRenderingContext {
     stencilMaskSeparate(face: number, mask: number): void;
     stencilOp(fail: number, zfail: number, zpass: number): void;
     stencilOpSeparate(face: number, fail: number, zfail: number, zpass: number): void;
+    texImage2D(target: number, level: number, internalformat: number, width: number, height: number, border: number, format: number, type: number, pixels: ArrayBufferView): void;
+    texImage2D(target: number, level: number, internalformat: number, format: number, type: number, image: HTMLImageElement): void;
+    texImage2D(target: number, level: number, internalformat: number, format: number, type: number, canvas: HTMLCanvasElement): void;
+    texImage2D(target: number, level: number, internalformat: number, format: number, type: number, video: HTMLVideoElement): void;
     texImage2D(target: number, level: number, internalformat: number, format: number, type: number, pixels: ImageData): void;
     texParameterf(target: number, pname: number, param: number): void;
     texParameteri(target: number, pname: number, param: number): void;
+    texSubImage2D(target: number, level: number, xoffset: number, yoffset: number, width: number, height: number, format: number, type: number, pixels: ArrayBufferView): void;
+    texSubImage2D(target: number, level: number, xoffset: number, yoffset: number, format: number, type: number, image: HTMLImageElement): void;
+    texSubImage2D(target: number, level: number, xoffset: number, yoffset: number, format: number, type: number, canvas: HTMLCanvasElement): void;
+    texSubImage2D(target: number, level: number, xoffset: number, yoffset: number, format: number, type: number, video: HTMLVideoElement): void;
     texSubImage2D(target: number, level: number, xoffset: number, yoffset: number, format: number, type: number, pixels: ImageData): void;
     uniform1f(location: WebGLUniformLocation, x: number): void;
     uniform1fv(location: WebGLUniformLocation, v: any): void;
@@ -17181,6 +17227,7 @@ interface XMLHttpRequest extends EventTarget, XMLHttpRequestEventTarget {
     overrideMimeType(mime: string): void;
     send(data?: Document): void;
     send(data?: string): void;
+    send(data?: any): void;
     setRequestHeader(header: string, value: string): void;
     DONE: number;
     HEADERS_RECEIVED: number;
@@ -17332,14 +17379,17 @@ interface DocumentEvent {
     createEvent(eventInterface:"AriaRequestEvent"): AriaRequestEvent;
     createEvent(eventInterface:"AudioProcessingEvent"): AudioProcessingEvent;
     createEvent(eventInterface:"BeforeUnloadEvent"): BeforeUnloadEvent;
+    createEvent(eventInterface:"ClipboardEvent"): ClipboardEvent;
     createEvent(eventInterface:"CloseEvent"): CloseEvent;
     createEvent(eventInterface:"CommandEvent"): CommandEvent;
     createEvent(eventInterface:"CompositionEvent"): CompositionEvent;
+    createEvent(eventInterface:"CustomEvent"): CustomEvent;
     createEvent(eventInterface:"DeviceMotionEvent"): DeviceMotionEvent;
     createEvent(eventInterface:"DeviceOrientationEvent"): DeviceOrientationEvent;
     createEvent(eventInterface:"DragEvent"): DragEvent;
     createEvent(eventInterface:"ErrorEvent"): ErrorEvent;
     createEvent(eventInterface:"Event"): Event;
+    createEvent(eventInterface:"Events"): Event;
     createEvent(eventInterface:"FocusEvent"): FocusEvent;
     createEvent(eventInterface:"GamepadEvent"): GamepadEvent;
     createEvent(eventInterface:"HashChangeEvent"): HashChangeEvent;
@@ -17354,8 +17404,10 @@ interface DocumentEvent {
     createEvent(eventInterface:"MSSiteModeEvent"): MSSiteModeEvent;
     createEvent(eventInterface:"MessageEvent"): MessageEvent;
     createEvent(eventInterface:"MouseEvent"): MouseEvent;
+    createEvent(eventInterface:"MouseEvents"): MouseEvent;
     createEvent(eventInterface:"MouseWheelEvent"): MouseWheelEvent;
     createEvent(eventInterface:"MutationEvent"): MutationEvent;
+    createEvent(eventInterface:"MutationEvents"): MutationEvent;
     createEvent(eventInterface:"NavigationCompletedEvent"): NavigationCompletedEvent;
     createEvent(eventInterface:"NavigationEvent"): NavigationEvent;
     createEvent(eventInterface:"NavigationEventWithReferrer"): NavigationEventWithReferrer;
@@ -17366,6 +17418,7 @@ interface DocumentEvent {
     createEvent(eventInterface:"PopStateEvent"): PopStateEvent;
     createEvent(eventInterface:"ProgressEvent"): ProgressEvent;
     createEvent(eventInterface:"SVGZoomEvent"): SVGZoomEvent;
+    createEvent(eventInterface:"SVGZoomEvents"): SVGZoomEvent;
     createEvent(eventInterface:"ScriptNotifyEvent"): ScriptNotifyEvent;
     createEvent(eventInterface:"StorageEvent"): StorageEvent;
     createEvent(eventInterface:"TextEvent"): TextEvent;
@@ -17373,6 +17426,7 @@ interface DocumentEvent {
     createEvent(eventInterface:"TrackEvent"): TrackEvent;
     createEvent(eventInterface:"TransitionEvent"): TransitionEvent;
     createEvent(eventInterface:"UIEvent"): UIEvent;
+    createEvent(eventInterface:"UIEvents"): UIEvent;
     createEvent(eventInterface:"UnviewableContentIdentifiedEvent"): UnviewableContentIdentifiedEvent;
     createEvent(eventInterface:"WebGLContextEvent"): WebGLContextEvent;
     createEvent(eventInterface:"WheelEvent"): WheelEvent;
@@ -17964,6 +18018,7 @@ declare function addEventListener(type: "volumechange", listener: (ev: Event) =>
 declare function addEventListener(type: "waiting", listener: (ev: Event) => any, useCapture?: boolean): void;
 declare function addEventListener(type: "wheel", listener: (ev: WheelEvent) => any, useCapture?: boolean): void;
 declare function addEventListener(type: string, listener: EventListenerOrEventListenerObject, useCapture?: boolean): void;
+
 /////////////////////////////
 /// WorkerGlobalScope APIs 
 /////////////////////////////
