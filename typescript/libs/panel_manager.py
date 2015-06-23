@@ -38,8 +38,9 @@ class PanelManager:
     def is_panel_active(self, panel_name):
         return panel_name in self.panels and self.panels[panel_name].window() is not None
 
-    def show_panel(self, panel_name, initial_content_lines):
-        self.write_lines_to_panel(panel_name, initial_content_lines)
+    def show_panel(self, panel_name, initial_content_lines=None):
+        if initial_content_lines is not None:
+            self.write_lines_to_panel(panel_name, initial_content_lines)
         sublime.active_window().run_command("show_panel", {"panel": "output." + panel_name})
 
     def write_lines_to_panel(self, panel_name, lines):

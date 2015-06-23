@@ -15,16 +15,24 @@ class TypescriptProjectErrorList(sublime_plugin.WindowCommand):
     def run(self):
         panel_manager = get_panel_manager()
         panel_manager.add_panel("errorlist")
-        panel_manager.show_panel("errorlist", ["Starting worker for project error list..."])
+        
         if not cli.node_client.workerStarted():
-            view = active_view()
+            panel_manager.show_panel("errorlist", ["Starting worker for project error list..."])
             # start worker process
-            cli.node_client.startWorker()       
-            # load the active project
-            get_info(view)
-            # send the first error request
-            # cli.service.request_get_err_for_project(0, view.file_name())
-            start_timer()
+            cli.node_client.startWorker() 
+        else:
+            # The server is up already, so just show the panel without overwriting the content
+            panel_manager.show_panel("errorlist")
+
+        opened_views = [view for view in self.window.views() if view.file_name() is not None]
+        for opened_view in opened_views:          
+            # load each opened file
+            get_info(opened_view)
+
+        # send the first error request
+        # cli.service.request_get_err_for_project(0, view.file_name())
+        start_timer()
+
 
 class TypescriptGotoError(sublime_plugin.TextCommand):
 
