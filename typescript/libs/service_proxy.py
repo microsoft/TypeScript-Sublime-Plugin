@@ -1,6 +1,7 @@
 import collections
 
 from . import json_helpers
+from .global_vars import IS_ST2
 from .node_client import CommClient
 from .text_helpers import Location
 
@@ -45,8 +46,8 @@ class ServiceProxy:
         req_dict = self.create_req_dict("completions", args)
         json_str = json_helpers.encode(req_dict)
         self.__comm.sendCmd(
-            lambda json_dict: None if on_completed is None else on_completed(json_dict),
             json_str,
+            lambda response_dict: None if on_completed is None else on_completed(response_dict),
             req_dict["seq"]
         )
 
@@ -54,15 +55,15 @@ class ServiceProxy:
         args = {"file": path, "line": location.line, "offset": location.offset, "prefix": prefix}
         req_dict = self.create_req_dict("completions", args)
         json_str = json_helpers.encode(req_dict)
-        self.__comm.sendCmdAsync(json_str, req_dict["seq"], on_completed)
+        self.__comm.sendCmdAsync(json_str, on_completed, req_dict["seq"])
 
     def signature_help(self, path, location=Location(1, 1), prefix="", on_completed=None):
         args = {"file": path, "line": location.line, "offset": location.offset, "prefix": prefix}
         req_dict = self.create_req_dict("signatureHelp", args)
         json_str = json_helpers.encode(req_dict)
         self.__comm.sendCmd(
-            lambda response_dict: None if on_completed is None else on_completed(response_dict),
             json_str,
+            lambda response_dict: None if on_completed is None else on_completed(response_dict),
             req_dict["seq"]
         )
 
@@ -70,7 +71,7 @@ class ServiceProxy:
         args = {"file": path, "line": location.line, "offset": location.offset, "prefix": prefix}
         req_dict = self.create_req_dict("signatureHelp", args)
         json_str = json_helpers.encode(req_dict)
-        self.__comm.sendCmdAsync(json_str, req_dict["seq"], on_completed)
+        self.__comm.sendCmdAsync(json_str, on_completed, req_dict["seq"])
 
     def definition(self, path, location=Location(1, 1)):
         args = {"file": path, "line": location.line, "offset": location.offset}
@@ -129,7 +130,7 @@ class ServiceProxy:
         args = {"file": path, "tmpfile": alternate_path}
         req_dict = self.create_req_dict("reload", args)
         json_str = json_helpers.encode(req_dict)
-        self.__comm.sendCmdAsync(json_str, req_dict["seq"], on_completed)
+        self.__comm.sendCmdAsync(json_str, on_completed, req_dict["seq"])
 
     def rename(self, path, location=Location(1, 1)):
         args = {"file": path, "line": location.line, "offset": location.offset}
@@ -151,15 +152,23 @@ class ServiceProxy:
         response_dict = self.__comm.sendCmdSync(json_str, req_dict["seq"])
         return response_dict
 
-    def quick_info(self, path, location=Location(1, 1), onCompleted=None):
+    def quick_info(self, path, location=Location(1, 1), on_completed=None):
         args = {"file": path, "line": location.line, "offset": location.offset}
         req_dict = self.create_req_dict("quickinfo", args)
         json_str = json_helpers.encode(req_dict)
-        self.__comm.sendCmd(
-            lambda json_dict: None if onCompleted is None else onCompleted(json_dict),
-            json_str,
-            req_dict["seq"]
-        )
+        callback = on_completed or (lambda: None)
+        if not IS_ST2:
+            self.__comm.sendCmdAsync(
+                json_str,
+                callback,
+                req_dict["seq"]
+            )
+        else:
+            self.__comm.sendCmd(
+                json_str,
+                callback,
+                req_dict["seq"]
+            )
 
     def get_event(self):
         event_json_str = self.__comm.getEvent()
@@ -177,6 +186,12 @@ class ServiceProxy:
         json_str = json_helpers.encode(req_dict)
         response_dict = self.__comm.sendCmdSync(json_str, req_dict["seq"])
         return response_dict
+
+    def project_info(self, file_name, need_file_name_list=False):
+        args = {"file": file_name, "needFileNameList": need_file_name_list}
+        req_dict = self.create_req_dict("projectInfo", args)
+        json_str = json_helpers.encode(req_dict)
+        return self.__comm.sendCmdSync(json_str, req_dict["seq"])
 
     def create_req_dict(self, command_name, args=None):
         req_dict = {

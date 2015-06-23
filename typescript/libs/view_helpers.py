@@ -40,7 +40,7 @@ def get_info(view):
         cli.initialize()
 
     info = None
-    if view.file_name() is not None:
+    if view is not None and view.file_name() is not None:
         file_name = view.file_name()
         if is_typescript(view):
             info = _file_map.get(file_name)
@@ -106,7 +106,7 @@ def is_special_view(view):
     in that they cannot be the active_view of their windows, therefore their ids 
     shouldn't be equal to the current view id.
     """
-    return view.window() and view.id() != view.window().active_view().id()
+    return view is not None and view.window() and view.id() != view.window().active_view().id()
 
 
 def get_location_from_view(view):
