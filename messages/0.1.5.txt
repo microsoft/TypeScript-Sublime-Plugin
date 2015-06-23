@@ -4,7 +4,7 @@ Details about this package and its feature can be found on its GitHub
 repository at https://github.com/Microsoft/TypeScript-Sublime-Plugin.
 
 v0.1.5 updates:
-    - Fixed several issues issues with syntax highlighting
+    - Fixed several issues with syntax highlighting
     - Fixed performance issues caused by quickinfo requests on large files
     - Fixed the bug where users were unable to type the '}' and ';' keys
     - Fixed wrong indentation between curly braces
