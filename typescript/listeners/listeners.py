@@ -10,11 +10,23 @@ from .nav_to import NavToEventListener
 from .rename import RenameEventListener
 from .tooltip import TooltipEventListener
 
-
 class TypeScriptEventListener(sublime_plugin.EventListener):
     """To avoid duplicated behavior among event listeners"""
+
+    # List of views to be closed in close_all command.
+    #   - if None: We are not in the "close all" process.
+    #   - if is a list: We are in the "close all" process. Need to close all
+    #     views in this list.
+    # During the "close all" process, handling on_activated events is
+    # undesirable (not required and can be costly due to reloading buffers).
+    # This variable provides a way to know if the "close all" process is
+    # happening so we can ignore on_activated events.
+    close_all_views = None
+
     def on_activated(self, view):
         log.debug("on_activated")
+        if TypeScriptEventListener.__close_all_is_happening():
+            return            
         if is_special_view(view):
             self.on_activated_special_view(view)
         else:
@@ -131,8 +143,7 @@ class TypeScriptEventListener(sublime_plugin.EventListener):
         if command_name == "exit":
             cli.service.exit()
         if command_name in ["close_all", "close_window", "close_project"]:
-            # Todo: restart the server?
-            cli.service.exit()
+            TypeScriptEventListener.__store_close_all_views()
 
     def on_text_command(self, view, command_name, args):
         """
@@ -227,7 +238,31 @@ class TypeScriptEventListener(sublime_plugin.EventListener):
             #         most_recent_used_file_list.remove(info)
             # notify the server that the file is closed
             cli.service.close(file_name)
+        if TypeScriptEventListener.__close_all_is_happening():
+            TypeScriptEventListener.__remove_close_all_view(view)
 
     def on_pre_save(self, view):
         log.debug("on_pre_save")
         check_update_view(view)
+
+    @classmethod
+    def __close_all_is_happening(cls):
+        return cls.close_all_views is not None
+
+    @classmethod
+    def __store_close_all_views(cls):
+        window = sublime.active_window()
+        if window is None:
+            return
+        views = window.views()
+        if not views:
+            return
+        cls.close_all_views = views
+
+    @classmethod
+    def __remove_close_all_view(cls, view):
+        if view in cls.close_all_views:
+            cls.close_all_views.remove(view)
+            if not cls.close_all_views: # we just removed the last element
+                cls.close_all_views = None # None means close all process is done
+                log.debug("all views have been closed")
