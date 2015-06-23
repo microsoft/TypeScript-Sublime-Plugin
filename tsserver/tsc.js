@@ -691,6 +691,36 @@ var ts;
         Ternary[Ternary["True"] = -1] = "True";
     })(ts.Ternary || (ts.Ternary = {}));
     var Ternary = ts.Ternary;
+    function createFileMap(getCanonicalFileName) {
+        var files = {};
+        return {
+            get: get,
+            set: set,
+            contains: contains,
+            remove: remove,
+            forEachValue: forEachValueInMap
+        };
+        function set(fileName, value) {
+            files[normalizeKey(fileName)] = value;
+        }
+        function get(fileName) {
+            return files[normalizeKey(fileName)];
+        }
+        function contains(fileName) {
+            return hasProperty(files, normalizeKey(fileName));
+        }
+        function remove(fileName) {
+            var key = normalizeKey(fileName);
+            delete files[key];
+        }
+        function forEachValueInMap(f) {
+            forEachValue(files, f);
+        }
+        function normalizeKey(key) {
+            return getCanonicalFileName(normalizeSlashes(key));
+        }
+    }
+    ts.createFileMap = createFileMap;
     (function (Comparison) {
         Comparison[Comparison["LessThan"] = -1] = "LessThan";
         Comparison[Comparison["EqualTo"] = 0] = "EqualTo";
@@ -9688,7 +9718,7 @@ var ts;
                 token === 18 /* OpenBracketToken */) {
                 return parsePropertyOrMethodDeclaration(fullStart, decorators, modifiers);
             }
-            if (decorators) {
+            if (decorators || modifiers) {
                 // treat this as a property declaration with a missing name.
                 var name_3 = createMissingNode(65 /* Identifier */, true, ts.Diagnostics.Declaration_expected);
                 return parsePropertyDeclaration(fullStart, decorators, modifiers, name_3, undefined);
@@ -10146,7 +10176,7 @@ var ts;
                 case 85 /* ImportKeyword */:
                     return parseImportDeclarationOrImportEqualsDeclaration(fullStart, decorators, modifiers);
                 default:
-                    if (decorators) {
+                    if (decorators || modifiers) {
                         // We reached this point because we encountered an AtToken and assumed a declaration would
                         // follow. For recovery and error reporting purposes, return an incomplete declaration.                        
                         var node = createMissingNode(219 /* MissingDeclaration */, true, ts.Diagnostics.Declaration_expected);
@@ -10227,7 +10257,7 @@ var ts;
             }
             sourceFile.referencedFiles = referencedFiles;
             sourceFile.amdDependencies = amdDependencies;
-            sourceFile.amdModuleName = amdModuleName;
+            sourceFile.moduleName = amdModuleName;
         }
         function setExternalModuleIndicator(sourceFile) {
             sourceFile.externalModuleIndicator = ts.forEach(sourceFile.statements, function (node) {
@@ -11070,20 +11100,34 @@ var ts;
                         if (!ts.isExternalModule(location))
                             break;
                     case 206 /* ModuleDeclaration */:
-                        if (result = getSymbol(getSymbolOfNode(location).exports, name, meaning & 8914931 /* ModuleMember */)) {
-                            if (result.flags & meaning || !(result.flags & 8388608 /* Alias */ && getDeclarationOfAliasSymbol(result).kind === 218 /* ExportSpecifier */)) {
-                                break loop;
-                            }
-                            result = undefined;
-                        }
-                        else if (location.kind === 228 /* SourceFile */ ||
+                        var moduleExports = getSymbolOfNode(location).exports;
+                        if (location.kind === 228 /* SourceFile */ ||
                             (location.kind === 206 /* ModuleDeclaration */ && location.name.kind === 8 /* StringLiteral */)) {
-                            result = getSymbolOfNode(location).exports["default"];
+                            // It's an external module. Because of module/namespace merging, a module's exports are in scope,
+                            // yet we never want to treat an export specifier as putting a member in scope. Therefore,
+                            // if the name we find is purely an export specifier, it is not actually considered in scope.
+                            // Two things to note about this:
+                            //     1. We have to check this without calling getSymbol. The problem with calling getSymbol
+                            //        on an export specifier is that it might find the export specifier itself, and try to
+                            //        resolve it as an alias. This will cause the checker to consider the export specifier
+                            //        a circular alias reference when it might not be.
+                            //     2. We check === SymbolFlags.Alias in order to check that the symbol is *purely*
+                            //        an alias. If we used &, we'd be throwing out symbols that have non alias aspects,
+                            //        which is not the desired behavior.
+                            if (ts.hasProperty(moduleExports, name) &&
+                                moduleExports[name].flags === 8388608 /* Alias */ &&
+                                ts.getDeclarationOfKind(moduleExports[name], 218 /* ExportSpecifier */)) {
+                                break;
+                            }
+                            result = moduleExports["default"];
                             var localSymbol = ts.getLocalSymbolForExportDefault(result);
                             if (result && localSymbol && (result.flags & meaning) && localSymbol.name === name) {
                                 break loop;
                             }
                             result = undefined;
+                        }
+                        if (result = getSymbol(moduleExports, name, meaning & 8914931 /* ModuleMember */)) {
+                            break loop;
                         }
                         break;
                     case 205 /* EnumDeclaration */:
@@ -28957,10 +29001,10 @@ var ts;
                 emitSetters(exportStarFunction);
                 writeLine();
                 emitExecute(node, startIndex);
-                emitTempDeclarations(true);
                 decreaseIndent();
                 writeLine();
                 write("}"); // return
+                emitTempDeclarations(true);
             }
             function emitSetters(exportStarFunction) {
                 write("setters:[");
@@ -29093,7 +29137,11 @@ var ts;
                 ts.Debug.assert(!exportFunctionForFile);
                 // make sure that  name of 'exports' function does not conflict with existing identifiers
                 exportFunctionForFile = makeUniqueName("exports");
-                write("System.register([");
+                write("System.register(");
+                if (node.moduleName) {
+                    write("\"" + node.moduleName + "\", ");
+                }
+                write("[");
                 for (var i = 0; i < externalImports.length; ++i) {
                     var text = getExternalModuleNameText(externalImports[i]);
                     if (i !== 0) {
@@ -29173,8 +29221,8 @@ var ts;
                 collectExternalModuleInfo(node);
                 writeLine();
                 write("define(");
-                if (node.amdModuleName) {
-                    write("\"" + node.amdModuleName + "\", ");
+                if (node.moduleName) {
+                    write("\"" + node.moduleName + "\", ");
                 }
                 emitAMDDependencies(node, true);
                 write(") {");
@@ -29795,7 +29843,6 @@ var ts;
     function createProgram(rootNames, options, host) {
         var program;
         var files = [];
-        var filesByName = {};
         var diagnostics = ts.createDiagnosticCollection();
         var seenNoDefaultLib = options.noLib;
         var commonSourceDirectory;
@@ -29803,6 +29850,7 @@ var ts;
         var noDiagnosticsTypeChecker;
         var start = new Date().getTime();
         host = host || createCompilerHost(options);
+        var filesByName = ts.createFileMap(function (fileName) { return host.getCanonicalFileName(fileName); });
         ts.forEach(rootNames, function (name) { return processRootFile(name, false); });
         if (!seenNoDefaultLib) {
             processRootFile(host.getDefaultLibFileName(options), true);
@@ -29868,8 +29916,7 @@ var ts;
             return emitResult;
         }
         function getSourceFile(fileName) {
-            fileName = host.getCanonicalFileName(ts.normalizeSlashes(fileName));
-            return ts.hasProperty(filesByName, fileName) ? filesByName[fileName] : undefined;
+            return filesByName.get(fileName);
         }
         function getDiagnosticsHelper(sourceFile, getDiagnostics) {
             if (sourceFile) {
@@ -29967,18 +30014,18 @@ var ts;
         // Get source file from normalized fileName
         function findSourceFile(fileName, isDefaultLib, refFile, refStart, refLength) {
             var canonicalName = host.getCanonicalFileName(ts.normalizeSlashes(fileName));
-            if (ts.hasProperty(filesByName, canonicalName)) {
+            if (filesByName.contains(canonicalName)) {
                 // We've already looked for this file, use cached result
                 return getSourceFileFromCache(fileName, canonicalName, false);
             }
             else {
                 var normalizedAbsolutePath = ts.getNormalizedAbsolutePath(fileName, host.getCurrentDirectory());
                 var canonicalAbsolutePath = host.getCanonicalFileName(normalizedAbsolutePath);
-                if (ts.hasProperty(filesByName, canonicalAbsolutePath)) {
+                if (filesByName.contains(canonicalAbsolutePath)) {
                     return getSourceFileFromCache(normalizedAbsolutePath, canonicalAbsolutePath, true);
                 }
                 // We haven't looked for this file, do so now and cache result
-                var file = filesByName[canonicalName] = host.getSourceFile(fileName, options.target, function (hostErrorMessage) {
+                var file = host.getSourceFile(fileName, options.target, function (hostErrorMessage) {
                     if (refFile) {
                         diagnostics.add(ts.createFileDiagnostic(refFile, refStart, refLength, ts.Diagnostics.Cannot_read_file_0_Colon_1, fileName, hostErrorMessage));
                     }
@@ -29986,10 +30033,11 @@ var ts;
                         diagnostics.add(ts.createCompilerDiagnostic(ts.Diagnostics.Cannot_read_file_0_Colon_1, fileName, hostErrorMessage));
                     }
                 });
+                filesByName.set(canonicalName, file);
                 if (file) {
                     seenNoDefaultLib = seenNoDefaultLib || file.hasNoDefaultLib;
                     // Set the source file for normalized absolute path
-                    filesByName[canonicalAbsolutePath] = file;
+                    filesByName.set(canonicalAbsolutePath, file);
                     if (!options.noResolve) {
                         var basePath = ts.getDirectoryPath(fileName);
                         processReferencedFiles(file, basePath);
@@ -30005,7 +30053,7 @@ var ts;
                 return file;
             }
             function getSourceFileFromCache(fileName, canonicalName, useAbsolutePath) {
-                var file = filesByName[canonicalName];
+                var file = filesByName.get(canonicalName);
                 if (file && host.useCaseSensitiveFileNames()) {
                     var sourceFileName = useAbsolutePath ? ts.getNormalizedAbsolutePath(file.fileName, host.getCurrentDirectory()) : file.fileName;
                     if (canonicalName !== sourceFileName) {
@@ -30330,6 +30378,7 @@ var ts;
         {
             name: "out",
             type: "string",
+            isFilePath: true,
             description: ts.Diagnostics.Concatenate_and_emit_output_to_single_file,
             paramType: ts.Diagnostics.FILE
         },
