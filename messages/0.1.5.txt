@@ -5,12 +5,12 @@ repository at https://github.com/Microsoft/TypeScript-Sublime-Plugin.
 
 v0.1.5 updates:
 	- Code base refactored for easier future maintenance
-	- Fixed several issues in the syntax definition file
-	- Fixed performance issues caused by quick info request on large files
+	- Fixed several issues of the syntax definition file
+	- Fixed performance issues caused by quickinfo requests on large files
 	- Fixed the bug that "}" and ";" won't show up when the formatOnKey command fails
 	- Fixed wrong indentation between curly braces
 	- Fixed issues with signature tooltip positioning
 	- Fixed incorrect error spans for Sublime Text 2
-	- Resolved confusion caused by snippet triggers in the member list for auto completion
+	- Resolved confusion caused by certain snippet triggers in the auto completion member list 
 	- Added build function for configured projects (with tsconfig.json) and loose files. TypeScript files can now be built via "^+B"
 	- Updated the TypeScript language service to v1.5 (the same with Visual Studio 2015 RTM)
