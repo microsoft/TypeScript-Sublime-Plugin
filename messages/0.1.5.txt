@@ -11,5 +11,5 @@ v0.1.5 updates:
     - Fixed issues with signature tooltip positioning
     - Fixed incorrect error spans in Sublime Text 2
     - Resolved confusion caused by certain snippet triggers in the completion list 
-    - Added build functionality for loose files and projects configured with tsconfig.json. TypeScript files can now be built via menu "Tools" -> "Build"
+    - Added build functionality for loose files and projects configured with tsconfig.json. TypeScript files can now be built via "Tools" -> "Build" in the menu
     - Updated the TypeScript language service to v1.5 (will ship with Visual Studio 2015 RTM)
