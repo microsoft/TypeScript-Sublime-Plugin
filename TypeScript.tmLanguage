@@ -122,7 +122,7 @@
 				<key>1</key>
 				<dict>
 					<key>name</key>
-					<string>keyword.operator.type.ts</string>
+					<string>meta.brace.angle.ts</string>
 				</dict>
 			</dict>
 			<key>end</key>
@@ -132,7 +132,7 @@
 				<key>0</key>
 				<dict>
 					<key>name</key>
-					<string>keyword.operator.type.ts</string>
+					<string>meta.brace.angle.ts</string>
 				</dict>
 			</dict>
 			<key>name</key>
@@ -330,6 +330,10 @@
 				</dict>
 				<dict>
 					<key>include</key>
+					<string>#function-call</string>
+				</dict>
+				<dict>
+					<key>include</key>
 					<string>#block</string>
 				</dict>
 				<dict>
@@ -421,6 +425,22 @@
 			<string>(?&lt;=\()\s*\b(var|let|const)\s+([a-zA-Z_$][\w$]*)\s+(in|of)\b</string>
 			<key>name</key>
 			<string>forin.expr.ts</string>
+		</dict>
+		<key>function-call</key>
+		<dict>
+			<key>name</key>
+			<string>functioncall.expr.ts</string>
+			<key>patterns</key>
+			<array>
+				<dict>
+					<key>include</key>
+					<string>#type-parameters</string>
+				</dict>
+				<dict>
+					<key>include</key>
+					<string>#paren-expression</string>
+				</dict>
+			</array>
 		</dict>
 		<key>function-declaration</key>
 		<dict>
@@ -662,7 +682,7 @@
 				</dict>
 			</dict>
 			<key>end</key>
-			<string>(?=\}|;|,|\n)|(?&lt;=\})</string>
+			<string>(?=\}|;|,)|(?&lt;=\})</string>
 			<key>name</key>
 			<string>meta.method.declaration.ts</string>
 			<key>patterns</key>
@@ -685,9 +705,38 @@
 				</dict>
 				<dict>
 					<key>include</key>
+					<string>#method-overload-declaration</string>
+				</dict>
+				<dict>
+					<key>include</key>
 					<string>#decl-block</string>
 				</dict>
 			</array>
+		</dict>
+		<key>method-overload-declaration</key>
+		<dict>
+			<key>captures</key>
+			<dict>
+				<key>1</key>
+				<dict>
+					<key>name</key>
+					<string>keyword.operator.ts</string>
+				</dict>
+				<key>2</key>
+				<dict>
+					<key>name</key>
+					<string>entity.name.function.ts</string>
+				</dict>
+				<key>3</key>
+				<dict>
+					<key>name</key>
+					<string>keyword.operator.ts</string>
+				</dict>
+			</dict>
+			<key>match</key>
+			<string>(?:(new)|(?:([a-zA-Z_$][\.\w$]*)\s*(\??)))?\s*(?=\(|\&lt;)</string>
+			<key>name</key>
+			<string>meta.method.overload.declaration.ts</string>
 		</dict>
 		<key>new-expr</key>
 		<dict>
@@ -702,7 +751,7 @@
 				</dict>
 			</dict>
 			<key>end</key>
-			<string>(?=[&lt;(;]|$)</string>
+			<string>(?=[(;]|$)</string>
 			<key>name</key>
 			<string>new.expr.ts</string>
 			<key>patterns</key>
@@ -1361,10 +1410,15 @@
 		<key>type-parameters</key>
 		<dict>
 			<key>begin</key>
-			<string>&lt;</string>
+			<string>([a-zA-Z_$][\w$]*)?(&lt;)</string>
 			<key>beginCaptures</key>
 			<dict>
-				<key>0</key>
+				<key>1</key>
+				<dict>
+					<key>name</key>
+					<string>entity.name.type.ts</string>
+				</dict>
+				<key>2</key>
 				<dict>
 					<key>name</key>
 					<string>meta.brace.angle.ts</string>
