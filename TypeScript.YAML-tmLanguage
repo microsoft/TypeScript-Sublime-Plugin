@@ -411,7 +411,7 @@ repository:
 
   expression-operator:
     name: keyword.operator.ts
-    match: =>|\b(delete|export|import|in|instanceof|module|new|typeof|void)\b
+    match: =>|\b(delete|export|import|in|instanceof|module|namespace|new|typeof|void)\b
 
   arithmetic-operator:
     name: keyword.operator.arithmetic.ts
