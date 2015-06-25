@@ -1,4 +1,4 @@
-from .event_hub import EventHub
+﻿from .event_hub import EventHub
 from ..libs.view_helpers import *
 from ..libs.logger import log
 from ..libs import cli
@@ -24,8 +24,10 @@ class FormatEventListener:
             info.prev_sel[0].empty()
         ):
             last_command, args, repeat_times = view.command_history(0)
+            redo_command = view.command_history(1)[0]
             log.debug("last_command:{0}, args:{1}".format(last_command, args))
-            if last_command == "insert":
+            log.debug("redo_command:{0}".format(redo_command))
+            if last_command == "insert" and redo_command != "typescript_format_on_key":
                 pos = info.prev_sel[0].begin()
                 if ";" in args["characters"]:
                     view.run_command("typescript_format_on_key", {"key": ";"})
