@@ -89,16 +89,22 @@ class IdleListener:
                         start = view.text_point(line, offset)
                         end = view.text_point(end_line, end_offset)
                         if end <= view.size():
-                            region = sublime.Region(start, end)
+                            if start == view.size() and start == end:
+                                region = last_character_region(view)
+                            else:
+                                region = sublime.Region(start, end)
                             error_regions.append(region)
                             client_info.errors[region_key].append((region, diagno["text"]))
                 info.has_errors = cli.has_errors(filename)
                 self.update_status(view, info)
                 if IS_ST2:
-                    view.add_regions(region_key, error_regions, "keyword", "", sublime.DRAW_OUTLINED)
+                    view.add_regions(region_key, error_regions, "keyword", "", 
+                                     sublime.DRAW_OUTLINED)
                 else:
                     view.add_regions(region_key, error_regions, "keyword", "",
-                                     sublime.DRAW_NO_FILL + sublime.DRAW_NO_OUTLINE + sublime.DRAW_SQUIGGLY_UNDERLINE)
+                                     sublime.DRAW_NO_FILL +
+                                     sublime.DRAW_NO_OUTLINE +
+                                     sublime.DRAW_SQUIGGLY_UNDERLINE)
 
     def dispatch_event(self, ev):
         event_type = ev["event"]
