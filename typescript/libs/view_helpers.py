@@ -320,15 +320,15 @@ def change_count(view):
 def last_non_whitespace_position(view):
     """
     Returns the position of the last non-whitespace character of <view>.
-    Returns -1 if <view> contains no non-whitespace character.
+    Returns -1 if <view> only contains non-whitespace characters.
     """
     pos = view.size() - 1
     while pos >= 0 and view.substr(pos).isspace():
         pos -= 1
     return pos
 
-def last_character_region(view):
-    """Returns the last non whitespace character under <sublime.Region> format"""
+def last_visible_character_region(view):
+    """Returns a <sublime.Region> for the last non whitespace character"""
     pos = last_non_whitespace_position(view)
     return sublime.Region(pos, pos + 1)
 
