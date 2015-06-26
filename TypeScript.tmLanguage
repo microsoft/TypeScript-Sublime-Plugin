@@ -1156,7 +1156,7 @@
 			<array>
 				<dict>
 					<key>include</key>
-					<string>text.html.basic</string>
+					<string>text.html.handlebars</string>
 				</dict>
 			</array>
 		</dict>
