@@ -4,7 +4,7 @@ public set ${1:value}(v : ${2:string}) {
 	this.${3:_value} = v;
 }
 ]]></content>
-	<tabTrigger>set</tabTrigger>
+	<tabTrigger>setter</tabTrigger>
 	<scope>source.ts</scope>
     <description>set-property …</description>
 </snippet>
