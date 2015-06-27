@@ -13,12 +13,18 @@ from .tooltip import TooltipEventListener
 class TypeScriptEventListener(sublime_plugin.EventListener):
     """To avoid duplicated behavior among event listeners"""
 
+    # During the "close all" process, handling on_activated events is
+    # undesirable (not required and can be costly due to reloading buffers).
+    # This flag provides a way to know whether the "close all" process is
+    # happening so we can ignore unnecessary on_activated callbacks.
     about_to_close_all = False
 
     def on_activated(self, view):
         log.debug("on_activated")
+
         if TypeScriptEventListener.about_to_close_all:
             return
+
         if is_special_view(view):
             self.on_activated_special_view(view)
         else:
@@ -132,10 +138,17 @@ class TypeScriptEventListener(sublime_plugin.EventListener):
 
     def on_window_command(self, window, command_name, args):
         log.debug("on_window_command")
+
         if command_name == "exit":
             cli.service.exit()
-        if command_name in ["close_all", "close_window", "close_project"]:
-            TypeScriptEventListener.about_to_close_all = True
+
+        elif command_name in ["close_all", "close_window", "close_project"]:
+            # Only set <about_to_close_all> flag if there exists at least one
+            # view in the active window. This is important because we need
+            # some view's on_close callback to reset the flag.
+            window = sublime.active_window()
+            if window is not None and window.views():
+                TypeScriptEventListener.about_to_close_all = True
 
     def on_text_command(self, view, command_name, args):
         """
@@ -220,7 +233,7 @@ class TypeScriptEventListener(sublime_plugin.EventListener):
 
     def on_close(self, view):
         log.debug("on_close")
-        file_name = view.file_name()
+
         if view.is_scratch() and view.name() == "Find References":
             cli.dispose_ref_info()
         else:
@@ -229,7 +242,12 @@ class TypeScriptEventListener(sublime_plugin.EventListener):
             #     if info in most_recent_used_file_list:
             #         most_recent_used_file_list.remove(info)
             # notify the server that the file is closed
+            file_name = view.file_name()
             cli.service.close(file_name)
+
+        # If this is the last view that is closed by a close_all command,
+        # reset <about_to_close_all> flag.
+        print("about_to_close:" + str(TypeScriptEventListener.about_to_close_all))
         if TypeScriptEventListener.about_to_close_all:
             window = sublime.active_window()
             if window is None or not window.views():
