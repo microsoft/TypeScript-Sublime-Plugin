@@ -330,10 +330,6 @@
 				</dict>
 				<dict>
 					<key>include</key>
-					<string>#function-call</string>
-				</dict>
-				<dict>
-					<key>include</key>
 					<string>#block</string>
 				</dict>
 				<dict>
@@ -359,6 +355,10 @@
 				<dict>
 					<key>include</key>
 					<string>#storage-keyword</string>
+				</dict>
+				<dict>
+					<key>include</key>
+					<string>#function-call</string>
 				</dict>
 				<dict>
 					<key>include</key>
@@ -460,7 +460,7 @@
 				</dict>
 			</dict>
 			<key>end</key>
-			<string>(?=;|\})|(?&lt;=\})</string>
+			<string>(?=;|\}|\n)|(?&lt;=\})</string>
 			<key>name</key>
 			<string>meta.function.ts</string>
 			<key>patterns</key>
@@ -682,7 +682,7 @@
 				</dict>
 			</dict>
 			<key>end</key>
-			<string>(?=\}|;|,)|(?&lt;=\})</string>
+			<string>(?=\}|;|,|\n)|(?&lt;=\})</string>
 			<key>name</key>
 			<string>meta.method.declaration.ts</string>
 			<key>patterns</key>
