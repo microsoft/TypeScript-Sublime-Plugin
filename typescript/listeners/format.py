@@ -27,7 +27,11 @@ class FormatEventListener:
             redo_command = view.command_history(1)[0]
             log.debug("last_command:{0}, args:{1}".format(last_command, args))
             log.debug("redo_command:{0}".format(redo_command))
-            if last_command == "insert" and redo_command != "typescript_format_on_key":
+            if redo_command != "":
+                # in an undo session, avoid running format_on_key
+                return 
+
+            if last_command == "insert":
                 pos = info.prev_sel[0].begin()
                 if ";" in args["characters"]:
                     view.run_command("typescript_format_on_key", {"key": ";"})
