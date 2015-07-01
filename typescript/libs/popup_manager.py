@@ -52,7 +52,7 @@ class PopupManager():
             # This is because we only send one reload request after the
             # line-break and never send reload request after the other
             # character.
-            # We fix this issue by make sure a reload request is always sent
+            # We fix this issue by making sure a reload request is always sent
             # before every signature help request.
 
             # Check if user has just quickly typed a line-break followed
