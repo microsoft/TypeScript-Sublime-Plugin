@@ -445,30 +445,31 @@
 		<key>function-declaration</key>
 		<dict>
 			<key>begin</key>
-			<string>\b(function)\b(?:\s+([a-zA-Z_$][\w$]*))?\s*</string>
+			<string>\b(?:(export)\s+)?(function)(?:\s+([a-zA-Z_$][\w$]*))?\s*</string>
 			<key>beginCaptures</key>
 			<dict>
 				<key>1</key>
 				<dict>
 					<key>name</key>
-					<string>storage.type.function.ts</string>
+					<string>storage.modifier.ts</string>
 				</dict>
 				<key>2</key>
+				<dict>
+					<key>name</key>
+					<string>storage.type.function.ts</string>
+				</dict>
+				<key>3</key>
 				<dict>
 					<key>name</key>
 					<string>entity.name.function.ts</string>
 				</dict>
 			</dict>
 			<key>end</key>
-			<string>(?=;|\}|\n)|(?&lt;=\})</string>
+			<string>(?=;|\})|(?&lt;=\})</string>
 			<key>name</key>
 			<string>meta.function.ts</string>
 			<key>patterns</key>
 			<array>
-				<dict>
-					<key>include</key>
-					<string>#function-overload-declaration</string>
-				</dict>
 				<dict>
 					<key>include</key>
 					<string>#comment</string>
@@ -487,6 +488,10 @@
 				</dict>
 				<dict>
 					<key>include</key>
+					<string>#function-overload-declaration</string>
+				</dict>
+				<dict>
+					<key>include</key>
 					<string>#decl-block</string>
 				</dict>
 			</array>
@@ -498,16 +503,21 @@
 				<key>1</key>
 				<dict>
 					<key>name</key>
-					<string>storage.type.function.ts</string>
+					<string>storage.modifier.ts</string>
 				</dict>
 				<key>2</key>
+				<dict>
+					<key>name</key>
+					<string>storage.type.function.ts</string>
+				</dict>
+				<key>3</key>
 				<dict>
 					<key>name</key>
 					<string>entity.name.function.ts</string>
 				</dict>
 			</dict>
 			<key>match</key>
-			<string>\b(function)\b(?:\s+([a-zA-Z_$][\w$]*))?\s*</string>
+			<string>\b(?:(export)\s+)?(function)(?:\s+([a-zA-Z_$][\w$]*))?\s*</string>
 			<key>name</key>
 			<string>meta.function.overload.ts</string>
 		</dict>
@@ -657,32 +667,37 @@
 		<key>method-declaration</key>
 		<dict>
 			<key>begin</key>
-			<string>(?:\b(get|set)\s+)?(?:(new)|(?:([a-zA-Z_$][\.\w$]*)\s*(\??)))?\s*(?=\(|\&lt;)</string>
+			<string>\b(?:(public|private|protected)\s+)?(?:(get|set)\s+)?(?:(new)|(?:([a-zA-Z_$][\.\w$]*)\s*(\??)))?\s*(?=\(|\&lt;)</string>
 			<key>beginCaptures</key>
 			<dict>
 				<key>1</key>
 				<dict>
 					<key>name</key>
-					<string>storage.type.property.ts</string>
+					<string>storage.modifier.ts</string>
 				</dict>
 				<key>2</key>
 				<dict>
 					<key>name</key>
-					<string>keyword.operator.ts</string>
+					<string>storage.type.property.ts</string>
 				</dict>
 				<key>3</key>
 				<dict>
 					<key>name</key>
-					<string>entity.name.function.ts</string>
+					<string>keyword.operator.ts</string>
 				</dict>
 				<key>4</key>
+				<dict>
+					<key>name</key>
+					<string>entity.name.function.ts</string>
+				</dict>
+				<key>5</key>
 				<dict>
 					<key>name</key>
 					<string>keyword.operator.ts</string>
 				</dict>
 			</dict>
 			<key>end</key>
-			<string>(?=\}|;|,|\n)|(?&lt;=\})</string>
+			<string>(?=\}|;|,)|(?&lt;=\})</string>
 			<key>name</key>
 			<string>meta.method.declaration.ts</string>
 			<key>patterns</key>
@@ -720,21 +735,26 @@
 				<key>1</key>
 				<dict>
 					<key>name</key>
-					<string>keyword.operator.ts</string>
+					<string>storage.modifier.ts</string>
 				</dict>
 				<key>2</key>
 				<dict>
 					<key>name</key>
-					<string>entity.name.function.ts</string>
+					<string>keyword.operator.ts</string>
 				</dict>
 				<key>3</key>
+				<dict>
+					<key>name</key>
+					<string>entity.name.function.ts</string>
+				</dict>
+				<key>4</key>
 				<dict>
 					<key>name</key>
 					<string>keyword.operator.ts</string>
 				</dict>
 			</dict>
 			<key>match</key>
-			<string>(?:(new)|(?:([a-zA-Z_$][\.\w$]*)\s*(\??)))?\s*(?=\(|\&lt;)</string>
+			<string>\b(?:(public|private|protected)\s+)?(?:(new)|(?:([a-zA-Z_$][\.\w$]*)\s*(\??)))?\s*(?=\(|\&lt;)</string>
 			<key>name</key>
 			<string>meta.method.overload.declaration.ts</string>
 		</dict>
