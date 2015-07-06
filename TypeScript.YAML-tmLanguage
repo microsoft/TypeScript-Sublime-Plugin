@@ -127,12 +127,13 @@ repository:
 
   method-declaration:
     name: meta.method.declaration.ts
-    begin: '(?:\b(get|set)\s+)?(?:(new)|(?:([a-zA-Z_$][\.\w$]*)\s*(\??)))?\s*(?=\(|\<)'
+    begin: '\b(?:(public|private|protected)\s+)?(?:(get|set)\s+)?(?:(new)|(?:([a-zA-Z_$][\.\w$]*)\s*(\??)))?\s*(?=\(|\<)'
     beginCaptures:
-      '1': { name: storage.type.property.ts }
-      '2': { name: keyword.operator.ts }
-      '3': { name: entity.name.function.ts }
-      '4': { name: keyword.operator.ts }
+      '1': { name: storage.modifier.ts }
+      '2': { name: storage.type.property.ts }
+      '3': { name: keyword.operator.ts }
+      '4': { name: entity.name.function.ts }
+      '5': { name: keyword.operator.ts }
     end: '(?=\}|;|,)|(?<=\})'
     patterns:
     - include: '#comment'
@@ -144,11 +145,12 @@ repository:
 
   method-overload-declaration:
     name: meta.method.overload.declaration.ts
-    match: '(?:(new)|(?:([a-zA-Z_$][\.\w$]*)\s*(\??)))?\s*(?=\(|\<)'
+    match: '\b(?:(public|private|protected)\s+)?(?:(new)|(?:([a-zA-Z_$][\.\w$]*)\s*(\??)))?\s*(?=\(|\<)'
     captures:
-      '1': { name: keyword.operator.ts }
-      '2': { name: entity.name.function.ts }
-      '3': { name: keyword.operator.ts }
+      '1': { name: storage.modifier.ts }
+      '2': { name: keyword.operator.ts }
+      '3': { name: entity.name.function.ts }
+      '4': { name: keyword.operator.ts }
 
   indexer-declaration:
     name: meta.indexer.declaration.ts
@@ -172,25 +174,27 @@ repository:
       
   function-declaration:
     name: meta.function.ts
-    begin: \b(function)\b(?:\s+([a-zA-Z_$][\w$]*))?\s*
+    begin: \b(?:(export)\s+)?(function)(?:\s+([a-zA-Z_$][\w$]*))?\s*
     beginCaptures:
-      '1': { name: storage.type.function.ts }
-      '2': { name: entity.name.function.ts }
+      '1': { name: storage.modifier.ts }
+      '2': { name: storage.type.function.ts }
+      '3': { name: entity.name.function.ts }
     end: (?=;|\})|(?<=\})
     patterns:
-    - include: '#function-overload-declaration'
     - include: '#comment'
     - include: '#type-parameters'
     - include: '#function-type-parameters'
     - include: '#return-type'
+    - include: '#function-overload-declaration'
     - include: '#decl-block'
 
   function-overload-declaration:
     name: meta.function.overload.ts
-    match: \b(function)\b(?:\s+([a-zA-Z_$][\w$]*))?\s*
+    match: \b(?:(export)\s+)?(function)(?:\s+([a-zA-Z_$][\w$]*))?\s*
     captures:
-      '1': { name: storage.type.function.ts }
-      '2': { name: entity.name.function.ts }
+      '1': { name: storage.modifier.ts }
+      '2': { name: storage.type.function.ts }
+      '3': { name: entity.name.function.ts }
 
   block:
     name: meta.block.ts
@@ -353,7 +357,6 @@ repository:
     - include: '#declaration'
     - include: '#cast'
     - include: '#new-expr'
-    - include: '#function-call'
     - include: '#block'
     - include: '#expression-operator'
     - include: '#relational-operator'
@@ -361,6 +364,7 @@ repository:
     - include: '#logic-operator'
     - include: '#assignment-operator'
     - include: '#storage-keyword'
+    - include: '#function-call'
     - include: '#control-statement'
     - include: '#switch-case'
     
