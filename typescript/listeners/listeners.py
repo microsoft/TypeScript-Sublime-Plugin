@@ -52,8 +52,8 @@ class TypeScriptEventListener(sublime_plugin.EventListener):
         log.debug("on_modified_with_info")
 
         # A series state-updating for the info object to sync the file content on the server
-
         info.modified = True
+
         # Todo: explain
         if IS_ST2:
             info.modify_count += 1
