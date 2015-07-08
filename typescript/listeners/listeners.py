@@ -50,35 +50,47 @@ class TypeScriptEventListener(sublime_plugin.EventListener):
 
     def on_modified_with_info(self, view, info):
         log.debug("on_modified_with_info")
+
         # A series state-updating for the info object to sync the file content on the server
+
         info.modified = True
         # Todo: explain
         if IS_ST2:
             info.modify_count += 1
         info.last_modify_change_count = change_count(view)
         last_command, args, repeat_times = view.command_history(0)
+
         if info.pre_change_sent:
             # change handled in on_text_command
             info.client_info.change_count = change_count(view)
             info.pre_change_sent = False
-        elif last_command == "insert":
-            if (
-                "\n" not in args['characters']  # no new line inserted
-                and info.prev_sel  # it is not a newly opened file
-                and len(info.prev_sel) == 1  # not a multi-cursor session
-                and info.prev_sel[0].empty()  # the last selection is not a highlighted selection
-                and not info.client_info.pending_changes  # no pending changes in the buffer
-            ):
-                info.client_info.change_count = change_count(view)
-                prev_cursor = info.prev_sel[0].begin()
-                cursor = view.sel()[0].begin()
-                key = view.substr(sublime.Region(prev_cursor, cursor))
-                send_replace_changes_for_regions(view, static_regions_to_regions(info.prev_sel), key)
-                # mark change as handled so that on_post_text_command doesn't try to handle it
-                info.change_sent = True
-            else:
-                # request reload because we have strange insert
-                info.client_info.pending_changes = True
+
+        else:
+            if last_command == "insert":
+                if (
+                    "\n" not in args['characters']  # no new line inserted
+                    and info.prev_sel  # it is not a newly opened file
+                    and len(info.prev_sel) == 1  # not a multi-cursor session
+                    and info.prev_sel[0].empty()  # the last selection is not a highlighted selection
+                    and not info.client_info.pending_changes  # no pending changes in the buffer
+                ):
+                    info.client_info.change_count = change_count(view)
+                    prev_cursor = info.prev_sel[0].begin()
+                    cursor = view.sel()[0].begin()
+                    key = view.substr(sublime.Region(prev_cursor, cursor))
+                    send_replace_changes_for_regions(view, static_regions_to_regions(info.prev_sel), key)
+                    # mark change as handled so that on_post_text_command doesn't try to handle it
+                    info.change_sent = True
+                else:
+                    # request reload because we have strange insert
+                    info.client_info.pending_changes = True
+
+            # Reload buffer after insert_snippet.
+            # For Sublime 2 only. In Sublime 3, this logic is implemented in
+            # on_post_text_command callback.
+            # Issue: https://github.com/Microsoft/TypeScript-Sublime-Plugin/issues/277
+            if IS_ST2 and last_command == "insert_snippet":
+                reload_buffer(view);
 
         # Other listeners
         EventHub.run_listeners("on_modified_with_info", view, info)
