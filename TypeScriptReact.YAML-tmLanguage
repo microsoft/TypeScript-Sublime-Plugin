@@ -26,7 +26,7 @@ repository:
 
   control-statement:
     name: keyword.control.tsx
-    match: \b(break|catch|continue|debugger|declare|do|else|finally|for|if|return|switch|throw|try|while|with|super|as)\b
+    match: \b(break|catch|continue|debugger|declare|do|else|finally|for|if|return|switch|throw|try|while|with|super)\b
 
   switch-case: 
     name: case.expr.tsx
@@ -405,7 +405,7 @@ repository:
 
   expression-operator:
     name: keyword.operator.tsx
-    match: =>|\b(delete|export|import|in|instanceof|module|namespace|new|typeof|void)\b
+    match: =>|\b(delete|export|import|in|instanceof|module|namespace|new|typeof|void|as)\b
 
   arithmetic-operator:
     name: keyword.operator.arithmetic.tsx
@@ -674,7 +674,7 @@ repository:
     endCaptures:
       '1': {name: punctuation.definition.tag.end.tsx}
     patterns:
-    - include: '#comments'
+    - include: '#comment'
     - include: '#jsx-tag-attributes'
     - include: '#jsx-tag-attributes-illegal'
 
@@ -688,7 +688,7 @@ repository:
     endCaptures:
       '1': {name: punctuation.definition.tag.end.tsx}
     patterns:
-    - include: '#comments'
+    - include: '#comment'
 
   jsx-tag-invalid:
     name: invalid.illegal.tag.incomplete.tsx

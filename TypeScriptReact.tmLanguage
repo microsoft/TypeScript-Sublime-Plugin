@@ -161,7 +161,7 @@
 		<key>control-statement</key>
 		<dict>
 			<key>match</key>
-			<string>\b(break|catch|continue|debugger|declare|do|else|finally|for|if|return|switch|throw|try|while|with|super|as)\b</string>
+			<string>\b(break|catch|continue|debugger|declare|do|else|finally|for|if|return|switch|throw|try|while|with|super)\b</string>
 			<key>name</key>
 			<string>keyword.control.tsx</string>
 		</dict>
@@ -341,7 +341,7 @@
 		<key>expression-operator</key>
 		<dict>
 			<key>match</key>
-			<string>=&gt;|\b(delete|export|import|in|instanceof|module|namespace|new|typeof|void)\b</string>
+			<string>=&gt;|\b(delete|export|import|in|instanceof|module|namespace|new|typeof|void|as)\b</string>
 			<key>name</key>
 			<string>keyword.operator.tsx</string>
 		</dict>
@@ -880,7 +880,7 @@
 			<array>
 				<dict>
 					<key>include</key>
-					<string>#comments</string>
+					<string>#comment</string>
 				</dict>
 			</array>
 		</dict>
@@ -927,7 +927,7 @@
 			<array>
 				<dict>
 					<key>include</key>
-					<string>#comments</string>
+					<string>#comment</string>
 				</dict>
 				<dict>
 					<key>include</key>
