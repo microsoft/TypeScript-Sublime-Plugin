@@ -445,7 +445,7 @@
 		<key>function-declaration</key>
 		<dict>
 			<key>begin</key>
-			<string>\b(?:(export)\s+)?(function)(?:\s+([a-zA-Z_$][\w$]*))?\s*</string>
+			<string>\b(?:(export)\s+)?(function\b)(?:\s+([a-zA-Z_$][\w$]*))?\s*</string>
 			<key>beginCaptures</key>
 			<dict>
 				<key>1</key>
@@ -517,7 +517,7 @@
 				</dict>
 			</dict>
 			<key>match</key>
-			<string>\b(?:(export)\s+)?(function)(?:\s+([a-zA-Z_$][\w$]*))?\s*</string>
+			<string>\b(?:(export)\s+)?(function\b)(?:\s+([a-zA-Z_$][\w$]*))?\s*</string>
 			<key>name</key>
 			<string>meta.function.overload.ts</string>
 		</dict>
