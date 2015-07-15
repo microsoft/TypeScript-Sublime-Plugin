@@ -37,6 +37,7 @@ class EditorClient:
         self.indent_size = 4
         self.translate_tab_to_spaces = False
         self.send_metrics = False
+        self.telemetry_user_id = None
 
     def initialize(self):
         """
@@ -72,6 +73,7 @@ class EditorClient:
         settings = sublime.load_settings('Preferences.sublime-settings')
         telemetry_acceptance = settings.get(telemetry_setting_name, False)
         self.send_metrics = False if not telemetry_acceptance else telemetry_acceptance['accepted']
+        self.telemetry_user_id = None if not telemetry_acceptance else telemetry_acceptance['userID']
         self.set_features()
 
     def load_format_settings(self):
@@ -88,7 +90,8 @@ class EditorClient:
             "tabSize": self.tab_size,
             "indentSize": self.indent_size,
             "convertTabsToSpaces": self.translate_tab_to_spaces,
-            "sendMetrics": self.send_metrics
+            "sendMetrics": self.send_metrics,
+            "telemetryUserID": self.telemetry_user_id
         }
         self.service.configure(host_info, None, editor_options)
 

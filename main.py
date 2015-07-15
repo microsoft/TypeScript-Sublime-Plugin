@@ -1,5 +1,6 @@
 import sys
 import os
+import uuid
 
 if sys.version_info < (3, 0):
     from typescript.libs import *
@@ -71,8 +72,17 @@ def plugin_loaded():
         # TODO: get real prompt text
         res = sublime.yes_no_cancel_dialog("The TypeScript plugin collects anonymous usage data and sends it to Microsoft to help improve the product. \n\nIf you do not want your usage data to be sent to Microsoft click Cancel, otherwise click Ok. \n\nGo to www.typescriptlang.org/telemetry for more information.", "Accept", "Decline")
         acceptance_result = 'true' if res == sublime.DIALOG_YES else 'false'
+        
+        # If the user has an existing telemetry ID, re-use it
+        # If they have none and accept telemetry generate a random GUID for an ID
+        existing_telemetry_setting = settings.get(telemetry_setting_name, None) 
+        current_telemetry_user_id =  "None" if not existing_telemetry_setting else existing_telemetry_setting['userID']
+        if acceptance_result == 'true' and current_telemetry_user_id == "None":
+            current_telemetry_user_id = str(uuid.uuid4())
+
         # TODO: this causes bools to be set as strings, need to use json for real?
-        telemetry_settings_value = { "version": privacy_policy_version, "accepted": acceptance_result } 
+        telemetry_settings_value = { "version": privacy_policy_version, "accepted": acceptance_result, 'userID': current_telemetry_user_id } 
+
         settings.set(telemetry_setting_name, telemetry_settings_value) 
         sublime.save_settings('Preferences.sublime-settings')
 
