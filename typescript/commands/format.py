@@ -49,7 +49,7 @@ class TypescriptFormatLine(TypeScriptBaseTextCommand):
             position = self.view.sel()[0].begin()
             line, offset = self.view.rowcol(position)
             if line > 0:
-                self.view.run_command('typescript_format_on_key', {"key": "\n", "insertKey": False})
+                self.view.run_command('typescript_format_on_key', {"key": "\n", "insert_key": False})
 
 
 class TypescriptFormatBrackets(TypeScriptBaseTextCommand):
@@ -66,7 +66,7 @@ class TypescriptFormatBrackets(TypeScriptBaseTextCommand):
                 bracket_char = self.view.substr(bracket_pos)
             if bracket_char == "}":
                 self.view.run_command('move', {"by": "characters", "forward": True})
-                self.view.run_command('typescript_format_on_key', {"key": "}", "insertKey": False})
+                self.view.run_command('typescript_format_on_key', {"key": "}", "insert_key": False})
                 self.view.run_command('move', {"by": "characters", "forward": True})
 
 

@@ -42,7 +42,7 @@ def get_info(view):
         cli.initialize()
 
     info = None
-    if view.file_name() is not None:
+    if view is not None and view.file_name() is not None:
         file_name = view.file_name()
         if is_typescript(view):
             info = _file_map.get(file_name)
