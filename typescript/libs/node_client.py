@@ -8,6 +8,7 @@ import sublime_plugin
 
 from .logger import log
 from . import json_helpers
+from . import global_vars
 
 # queue module name changed from Python 2 to 3
 if int(sublime.version()) < 3000:
@@ -21,11 +22,11 @@ class CommClient:
 
     def postCmd(self, cmd): pass
 
-    def sendCmd(self, cb, cmd): pass
+    def sendCmd(self, cmd, cb): pass
 
     def sendCmdSync(self, cmd): pass
 
-    def sendCmdAsync(self, cmd): pass
+    def sendCmdAsync(self, cmd, cb): pass
 
 
 class NodeCommClient(CommClient):
@@ -60,6 +61,7 @@ class NodeCommClient(CommClient):
             print("To specify the node executable file name, use the 'node_path' setting")
             self.__serverProc = None
         else:
+            global_vars._node_path = node_path
             print("Found node executable at " + node_path)
             try:
                 if os.name == "nt":
@@ -111,7 +113,7 @@ class NodeCommClient(CommClient):
         }
         return timeoutMsg
 
-    def sendCmd(self, cb, cmd, seq):
+    def sendCmd(self, cmd, cb, seq):
         """
         send single-line command string; no sequence number; wait for response
         this assumes stdin/stdout; for TCP, need to add correlation with sequence numbers
@@ -133,7 +135,7 @@ class NodeCommClient(CommClient):
             if (cb):
                 cb(self.makeTimeoutMsg(cmd, seq))
 
-    def sendCmdAsync(self, cmd, seq, cb):
+    def sendCmdAsync(self, cmd, cb, seq):
         """
         Sends the command and registers a callback
         """

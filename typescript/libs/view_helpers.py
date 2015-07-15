@@ -40,7 +40,7 @@ def get_info(view):
         cli.initialize()
 
     info = None
-    if view.file_name() is not None:
+    if view is not None and view.file_name() is not None:
         file_name = view.file_name()
         if is_typescript(view):
             info = _file_map.get(file_name)
@@ -106,7 +106,7 @@ def is_special_view(view):
     in that they cannot be the active_view of their windows, therefore their ids 
     shouldn't be equal to the current view id.
     """
-    return view.window() and view.id() != view.window().active_view().id()
+    return view is not None and view.window() and view.id() != view.window().active_view().id()
 
 
 def get_location_from_view(view):
@@ -316,3 +316,19 @@ def change_count(view):
             return info.modify_count
         else:
             return view.change_count()
+
+def last_non_whitespace_position(view):
+    """
+    Returns the position of the last non-whitespace character of <view>.
+    Returns -1 if <view> only contains non-whitespace characters.
+    """
+    pos = view.size() - 1
+    while pos >= 0 and view.substr(pos).isspace():
+        pos -= 1
+    return pos
+
+def last_visible_character_region(view):
+    """Returns a <sublime.Region> for the last non whitespace character"""
+    pos = last_non_whitespace_position(view)
+    return sublime.Region(pos, pos + 1)
+
