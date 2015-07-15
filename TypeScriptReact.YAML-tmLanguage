@@ -179,7 +179,7 @@ repository:
       
   function-declaration:
     name: meta.function.tsx
-    begin: \b(?:(export)\s+)?(function)(?:\s+([a-zA-Z_$][\w$]*))?\s*
+    begin: \b(?:(export)\s+)?(function\b)(?:\s+([a-zA-Z_$][\w$]*))?\s*
     beginCaptures:
       '1': { name: storage.modifier.tsx }
       '2': { name: storage.type.function.tsx }
@@ -195,7 +195,7 @@ repository:
 
   function-overload-declaration:
     name: meta.function.overload.tsx
-    match: \b(?:(export)\s+)?(function)(?:\s+([a-zA-Z_$][\w$]*))?\s*
+    match: \b(?:(export)\s+)?(function\b)(?:\s+([a-zA-Z_$][\w$]*))?\s*
     captures:
       '1': { name: storage.modifier.tsx }
       '2': { name: storage.type.function.tsx }
