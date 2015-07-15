@@ -145,13 +145,6 @@
     },
     {
         "keys": [ "enter" ],
-        "command": "commit_completion",
-        "context": [
-            { "key": "auto_complete_visible", "operator": "equal", "operand": true }
-        ]
-    },
-    {
-        "keys": [ "enter" ],
         "command": "typescript_auto_indent_on_enter_between_curly_brackets",
         "context": [
             { "key": "setting.typescript_auto_indent", "operator": "equal", "operand": true },
