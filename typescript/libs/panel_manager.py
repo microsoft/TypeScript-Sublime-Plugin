@@ -16,7 +16,7 @@ class PanelManager:
         if panel_name in self.panels:
             self.panel_line_maps[panel_name] = map
 
-    def get_line_map(self, panel_name, map):
+    def get_line_map(self, panel_name):
         if panel_name in self.panel_line_maps:
             return self.panel_line_maps[panel_name]
 

@@ -59,7 +59,7 @@ class ProjectErrorListener:
         if body is not None:
             file = body["file"]
             if file not in self.errors:
-                self.errors[file] = { "syntaxDiag": [], "semanticDiag": [] }
+                self.errors[file] = {"syntaxDiag": [], "semanticDiag": []}
             self.errors[file][error_type] = []
             diags = body["diagnostics"]
             for diag in diags:
@@ -83,15 +83,27 @@ class ProjectErrorListener:
     def update_error_list_panel(self):
         log.debug("update error list panel")
         output_lines = []
-        output_line_map = []
+        output_line_map = dict()
+        cur_line_number = 0
         for file in self.errors:
+            start_line_number = len(output_lines)
             error_count = len(self.errors[file]["syntaxDiag"]) + len(self.errors[file]["semanticDiag"])
             if error_count > 0:
                 output_lines.append("{0} [{1} errors]".format(file, error_count))
                 output_lines.extend(self.errors[file]["syntaxDiag"] + self.errors[file]["semanticDiag"])
+                for cur_line_number in range(start_line_number, len(output_lines)):
+                    matches = re.findall("(?:\((\d+), (\d+)\))", output_lines[cur_line_number])
+                    if len(matches) > 0:
+                        row, col = matches[0]
+                        output_line_map[cur_line_number] = (file, row, col)
+
         if len(output_lines) == 0:
             output_lines = ["No error found in this project."]
+            # remove the gutter icon
+            get_panel_manager().get_panel("errorlist").erase_regions("cur_error")
+
         get_panel_manager().write_lines_to_panel("errorlist", output_lines)
+        get_panel_manager().set_line_map("errorlist", output_line_map)
 
     def request_errors(self, view, info, error_delay):
         if not self.event_handler_added:

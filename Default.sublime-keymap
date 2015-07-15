@@ -145,6 +145,13 @@
     },
     {
         "keys": [ "enter" ],
+        "command": "typescript_go_to_error",
+        "context": [
+            { "key": "selector", "operator": "equal", "operand": "text.error-list" }
+        ]
+    },
+    {
+        "keys": [ "enter" ],
         "command": "commit_completion",
         "context": [
             { "key": "auto_complete_visible", "operator": "equal", "operand": true }
