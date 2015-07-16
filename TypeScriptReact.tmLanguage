@@ -1712,7 +1712,7 @@
 				</dict>
 			</dict>
 			<key>end</key>
-			<string>(?=\s*[,\)\{=;]|//|$)</string>
+			<string>(?=\s*[,\)\{=;&gt;]|//|$)</string>
 			<key>name</key>
 			<string>meta.type.function.return.tsx</string>
 			<key>patterns</key>

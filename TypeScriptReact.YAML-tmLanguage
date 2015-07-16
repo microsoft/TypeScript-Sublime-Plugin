@@ -303,7 +303,7 @@ repository:
     begin: '=>'
     beginCaptures:
       '0': { name: keyword.operator.tsx }
-    end: (?=\s*[,\)\{=;]|//|$)
+    end: (?=\s*[,\)\{=;>]|//|$)
     patterns:
     - include: '#type'
 
