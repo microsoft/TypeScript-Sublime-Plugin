@@ -172,7 +172,6 @@ def set_file_prefs(view):
     settings.add_on_change('tab_size', tab_size_changed)
     settings.add_on_change('indent_size', tab_size_changed)
     settings.add_on_change('translate_tabs_to_spaces', tab_size_changed)
-    reconfig_file(view)
 
 
 def tab_size_changed():

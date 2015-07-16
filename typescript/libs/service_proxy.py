@@ -33,10 +33,9 @@ class ServiceProxy:
         args = {"hostInfo": host_info, "formatOptions": format_options, "file": file}
         req_dict = self.create_req_dict("configure", args)
         json_str = json_helpers.encode(req_dict)
-        response_dict = self.__comm.sendCmdSync(json_str, req_dict["seq"])
+        response_dict = self.__comm.postCmd(json_str)
         if self.__comm.workerStarted():
-            self.__comm.sendCmdToWorkerSync(json_str, req_dict["seq"])
-        return response_dict
+            self.__comm.postCmdToWorker(json_str)
 
     def change(self, path, begin_location=Location(1, 1), end_location=Location(1, 1), insertString=""):
         args = {
