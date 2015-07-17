@@ -160,6 +160,8 @@ def set_file_prefs(view):
 
 def tab_size_changed():
     view = active_view()
+    if view is None:
+        return
     reconfig_file(view)
     client_info = cli.get_or_add_file(view.file_name())
     client_info.pending_changes = True
