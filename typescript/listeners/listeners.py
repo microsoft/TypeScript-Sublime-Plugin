@@ -1,4 +1,4 @@
-﻿import sublime_plugin
+import sublime_plugin
 
 from ..libs.view_helpers import *
 from ..libs import *
@@ -128,7 +128,7 @@ class TypeScriptEventListener(sublime_plugin.EventListener):
 
     def on_window_command(self, window, command_name, args):
         log.debug("on_window_command")
-        if command_name == "hide_panel":
+        if command_name == "hide_panel" and cli.node_client.workerStarted():
             cli.node_client.stopWorker()
         if command_name == "exit":
             cli.service.exit()
