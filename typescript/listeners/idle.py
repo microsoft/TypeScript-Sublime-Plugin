@@ -65,36 +65,59 @@ class IdleListener:
         filename = diagno_event_body["file"]
         if os.name == 'nt' and filename:
             filename = filename.replace('/', '\\')
-        diagnos = diagno_event_body["diagnostics"]
+
         info = get_info_with_filename(filename)
-        if info:
-            view = info.view
-            if not info.change_count_when_last_err_req_sent == change_count(view):
-                log.debug("The error info is outdated")
-                self.set_on_idle_timer(200)
-            else:
-                region_key = 'syntacticDiag' if syntactic else 'semanticDiag'
-                view.erase_regions(region_key)
-                client_info = cli.get_or_add_file(filename)
-                client_info.errors[region_key] = []
-                error_regions = []
-                if diagnos:
-                    for diagno in diagnos:
-                        line, offset = extract_line_offset(diagno["start"])
-                        end_line, end_offset = extract_line_offset(diagno["end"])
-                        start = view.text_point(line, offset)
-                        end = view.text_point(end_line, end_offset)
-                        if end <= view.size():
-                            region = sublime.Region(start, end)
-                            error_regions.append(region)
-                            client_info.errors[region_key].append((region, diagno["text"]))
-                info.has_errors = cli.has_errors(filename)
-                self.update_status(view, info)
-                if IS_ST2:
-                    view.add_regions(region_key, error_regions, "keyword", "", sublime.DRAW_OUTLINED)
-                else:
-                    view.add_regions(region_key, error_regions, "keyword", "",
-                                     sublime.DRAW_NO_FILL + sublime.DRAW_NO_OUTLINE + sublime.DRAW_SQUIGGLY_UNDERLINE)
+        if not info:
+            return
+
+        view = info.view
+        if not info.change_count_when_last_err_req_sent == change_count(view):
+            log.debug("The error info is outdated")
+            self.set_on_idle_timer(200)
+            return
+
+        region_key = 'syntacticDiag' if syntactic else 'semanticDiag'
+        view.erase_regions(region_key)
+
+        client_info = cli.get_or_add_file(filename)
+        client_info.errors[region_key] = []
+        error_regions = []
+
+        diagnos = diagno_event_body["diagnostics"]
+        if diagnos:
+            for diagno in diagnos:
+                start_line, start_offset = extract_line_offset(diagno["start"])
+                start = view.text_point(start_line, start_offset)
+
+                end_line, end_offset = extract_line_offset(diagno["end"])
+                end = view.text_point(end_line, end_offset)
+
+                if end <= view.size():
+                    # Creates a <sublime.Region> from <start> to <end> to
+                    # highlight the error. If the region coincides with the
+                    # EOF character, use the region of the last visible
+                    # character instead so user can still see the highlight.
+                    if start == view.size() and start == end:
+                        region = last_visible_character_region(view)
+                    else:
+                        region = sublime.Region(start, end)
+
+                    client_info.errors[region_key].append((region, diagno["text"]))
+                    error_regions.append(region)
+
+        # Update status bar with error information
+        info.has_errors = cli.has_errors(filename)
+        self.update_status(view, info)
+
+        # Highlight error regions in view
+        if IS_ST2:
+            view.add_regions(region_key, error_regions, "keyword", "",
+                             sublime.DRAW_OUTLINED)
+        else:
+            view.add_regions(region_key, error_regions, "keyword", "",
+                             sublime.DRAW_NO_FILL +
+                             sublime.DRAW_NO_OUTLINE +
+                             sublime.DRAW_SQUIGGLY_UNDERLINE)
 
     def set_on_selection_idle_timer(self, ms):
         """Set timer to go off when selection is idle"""
