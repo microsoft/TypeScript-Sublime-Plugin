@@ -30378,7 +30378,6 @@ var ts;
         {
             name: "out",
             type: "string",
-            isFilePath: true,
             description: ts.Diagnostics.Concatenate_and_emit_output_to_single_file,
             paramType: ts.Diagnostics.FILE
         },
@@ -31087,4 +31086,4 @@ var ts;
     }
 })(ts || (ts = {}));
 ts.executeCommandLine(ts.sys.args);
-//# sourceMappingURL=file:///C:/Users/Zhengbo/Documents/GitHub/TypeScript/built/local/tsc.js.map
+//# sourceMappingURL=file:///D:/Github/TypeScript/built/local/tsc.js.map

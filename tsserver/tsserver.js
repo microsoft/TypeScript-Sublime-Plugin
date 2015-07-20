@@ -3708,7 +3708,6 @@ var ts;
         {
             name: "out",
             type: "string",
-            isFilePath: true,
             description: ts.Diagnostics.Concatenate_and_emit_output_to_single_file,
             paramType: ts.Diagnostics.FILE
         },
@@ -37294,6 +37293,13 @@ var ts;
                     // after incremental parsing nameTable might not be up-to-date
                     // drop it so it can be lazily recreated later
                     newSourceFile.nameTable = undefined;
+                    // dispose all resources held by old script snapshot
+                    if (sourceFile !== newSourceFile && sourceFile.scriptSnapshot) {
+                        if (sourceFile.scriptSnapshot.dispose) {
+                            sourceFile.scriptSnapshot.dispose();
+                        }
+                        sourceFile.scriptSnapshot = undefined;
+                    }
                     return newSourceFile;
                 }
             }
@@ -41963,6 +41969,7 @@ var ts;
             CommandNames.Format = "format";
             CommandNames.Formatonkey = "formatonkey";
             CommandNames.Geterr = "geterr";
+            CommandNames.GeterrForProject = "geterrForProject";
             CommandNames.NavBar = "navbar";
             CommandNames.Navto = "navto";
             CommandNames.Occurrences = "occurrences";
@@ -42091,10 +42098,11 @@ var ts;
                     }
                 }, ms);
             };
-            Session.prototype.updateErrorCheck = function (checkList, seq, matchSeq, ms, followMs) {
+            Session.prototype.updateErrorCheck = function (checkList, seq, matchSeq, ms, followMs, requireOpen) {
                 var _this = this;
                 if (ms === void 0) { ms = 1500; }
                 if (followMs === void 0) { followMs = 200; }
+                if (requireOpen === void 0) { requireOpen = true; }
                 if (followMs > ms) {
                     followMs = ms;
                 }
@@ -42109,7 +42117,7 @@ var ts;
                 var checkOne = function () {
                     if (matchSeq(seq)) {
                         var checkSpec = checkList[index++];
-                        if (checkSpec.project.getSourceFileFromName(checkSpec.fileName, true)) {
+                        if (checkSpec.project.getSourceFileFromName(checkSpec.fileName, requireOpen)) {
                             _this.syntacticCheck(checkSpec.fileName, checkSpec.project);
                             _this.immediateId = setImmediate(function () {
                                 _this.semanticCheck(checkSpec.fileName, checkSpec.project);
@@ -42187,17 +42195,6 @@ var ts;
                         isWriteAccess: isWriteAccess
                     };
                 });
-            };
-            Session.prototype.getProjectInfo = function (fileName, needFileNameList) {
-                fileName = ts.normalizePath(fileName);
-                var project = this.projectService.getProjectForFile(fileName);
-                var projectInfo = {
-                    configFileName: project.projectFilename
-                };
-                if (needFileNameList) {
-                    projectInfo.fileNameList = project.getFileNameList();
-                }
-                return projectInfo;
             };
             Session.prototype.getRenameLocations = function (line, offset, fileName, findInComments, findInStrings) {
                 var file = ts.normalizePath(fileName);
@@ -42620,6 +42617,60 @@ var ts;
                     end: compilerService.host.positionToLineOffset(file, span.start + span.length)
                 }); });
             };
+            Session.prototype.getProjectInfo = function (fileName, needFileNameList) {
+                fileName = ts.normalizePath(fileName);
+                var project = this.projectService.getProjectForFile(fileName);
+                var projectInfo = {
+                    configFileName: project.projectFilename
+                };
+                if (needFileNameList) {
+                    projectInfo.fileNameList = project.getFileNameList();
+                }
+                return projectInfo;
+            };
+            Session.prototype.getDiagnosticsForProject = function (delay, fileName) {
+                var _this = this;
+                var _a = this.getProjectInfo(fileName, true), configFileName = _a.configFileName, fileNamesInProject = _a.fileNameList;
+                // No need to analyze lib.d.ts
+                fileNamesInProject = fileNamesInProject.filter(function (value, index, array) { return value.indexOf("lib.d.ts") < 0; });
+                // Sort the file name list to make the recently touched files come first
+                var highPriorityFiles = [];
+                var mediumPriorityFiles = [];
+                var lowPriorityFiles = [];
+                var veryLowPriorityFiles = [];
+                var normalizedFileName = ts.normalizePath(fileName);
+                var project = this.projectService.getProjectForFile(normalizedFileName);
+                for (var _i = 0; _i < fileNamesInProject.length; _i++) {
+                    var fileNameInProject = fileNamesInProject[_i];
+                    if (this.getCanonicalFileName(fileNameInProject) == this.getCanonicalFileName(fileName))
+                        highPriorityFiles.push(fileNameInProject);
+                    else {
+                        var info = this.projectService.getScriptInfo(fileNameInProject);
+                        if (!info.isOpen) {
+                            if (fileNameInProject.indexOf(".d.ts") > 0)
+                                veryLowPriorityFiles.push(fileNameInProject);
+                            else
+                                lowPriorityFiles.push(fileNameInProject);
+                        }
+                        else
+                            mediumPriorityFiles.push(fileNameInProject);
+                    }
+                }
+                fileNamesInProject = highPriorityFiles.concat(mediumPriorityFiles).concat(lowPriorityFiles).concat(veryLowPriorityFiles);
+                if (fileNamesInProject.length > 0) {
+                    var checkList = fileNamesInProject.map(function (fileName) {
+                        var normalizedFileName = ts.normalizePath(fileName);
+                        return { fileName: normalizedFileName, project: project };
+                    });
+                    // Project level error analysis runs on background files too, therefore
+                    // doesn't require the file to be opened
+                    this.updateErrorCheck(checkList, this.changeSeq, function (n) { return n == _this.changeSeq; }, delay, 200, false);
+                }
+            };
+            Session.prototype.getCanonicalFileName = function (fileName) {
+                var name = this.host.useCaseSensitiveFileNames ? fileName : fileName.toLowerCase();
+                return ts.normalizePath(name);
+            };
             Session.prototype.exit = function () {
             };
             Session.prototype.onMessage = function (message) {
@@ -42698,6 +42749,12 @@ var ts;
                         case CommandNames.Geterr: {
                             var geterrArgs = request.arguments;
                             response = this.getDiagnostics(geterrArgs.delay, geterrArgs.files);
+                            responseRequired = false;
+                            break;
+                        }
+                        case CommandNames.GeterrForProject: {
+                            var args = request.arguments;
+                            response = this.getDiagnosticsForProject(args.delay, args.file);
                             responseRequired = false;
                             break;
                         }
@@ -44764,4 +44821,4 @@ var ts;
         ioSession.listen();
     })(server = ts.server || (ts.server = {}));
 })(ts || (ts = {}));
-//# sourceMappingURL=file:///C:/Users/Zhengbo/Documents/GitHub/TypeScript/built/local/tsserver.js.map
+//# sourceMappingURL=file:///D:/Github/TypeScript/built/local/tsserver.js.map
