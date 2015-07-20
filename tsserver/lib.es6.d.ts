@@ -1165,7 +1165,7 @@ interface ArrayConstructor {
     (arrayLength?: number): any[];
     <T>(arrayLength: number): T[];
     <T>(...items: T[]): T[];
-    isArray(arg: any): arg is Array<any>;
+    isArray(arg: any): boolean;
     prototype: Array<any>;
 }
 
@@ -1502,11 +1502,6 @@ interface Array<T> {
     copyWithin(target: number, start: number, end?: number): T[];
 }
 
-interface IArguments {
-    /** Iterator */
-    [Symbol.iterator](): IterableIterator<any>;
-}
-
 interface ArrayConstructor {
     /**
       * Creates an array from an array-like object.
@@ -1690,6 +1685,14 @@ interface GeneratorFunctionConstructor {
     prototype: GeneratorFunction;
 }
 declare var GeneratorFunction: GeneratorFunctionConstructor;
+
+interface Generator<T> extends IterableIterator<T> {
+    next(value?: any): IteratorResult<T>;
+    throw(exception: any): IteratorResult<T>;
+    return(value: T): IteratorResult<T>;
+    [Symbol.iterator](): Generator<T>;
+    [Symbol.toStringTag]: string;
+}
 
 interface Math {
     /**
@@ -4909,11 +4912,6 @@ declare module Intl {
         currency?: string;
         currencyDisplay?: string;
         useGrouping?: boolean;
-        minimumintegerDigits?: number;
-        minimumFractionDigits?: number;
-        maximumFractionDigits?: number;
-        minimumSignificantDigits?: number;
-        maximumSignificantDigits?: number;
     }
 
     interface ResolvedNumberFormatOptions {
@@ -4935,10 +4933,10 @@ declare module Intl {
         resolvedOptions(): ResolvedNumberFormatOptions;
     }
     var NumberFormat: {
-        new (locales?: string[], options?: NumberFormatOptions): NumberFormat;
-        new (locale?: string, options?: NumberFormatOptions): NumberFormat;
-        (locales?: string[], options?: NumberFormatOptions): NumberFormat;
-        (locale?: string, options?: NumberFormatOptions): NumberFormat;
+        new (locales?: string[], options?: NumberFormatOptions): Collator;
+        new (locale?: string, options?: NumberFormatOptions): Collator;
+        (locales?: string[], options?: NumberFormatOptions): Collator;
+        (locale?: string, options?: NumberFormatOptions): Collator;
         supportedLocalesOf(locales: string[], options?: NumberFormatOptions): string[];
         supportedLocalesOf(locale: string, options?: NumberFormatOptions): string[];
     }
@@ -4976,14 +4974,14 @@ declare module Intl {
     }
 
     interface DateTimeFormat {
-        format(date?: Date | number): string;
+        format(date: number): string;
         resolvedOptions(): ResolvedDateTimeFormatOptions;
     }
     var DateTimeFormat: {
-        new (locales?: string[], options?: DateTimeFormatOptions): DateTimeFormat;
-        new (locale?: string, options?: DateTimeFormatOptions): DateTimeFormat;
-        (locales?: string[], options?: DateTimeFormatOptions): DateTimeFormat;
-        (locale?: string, options?: DateTimeFormatOptions): DateTimeFormat;
+        new (locales?: string[], options?: DateTimeFormatOptions): Collator;
+        new (locale?: string, options?: DateTimeFormatOptions): Collator;
+        (locales?: string[], options?: DateTimeFormatOptions): Collator;
+        (locale?: string, options?: DateTimeFormatOptions): Collator;
         supportedLocalesOf(locales: string[], options?: DateTimeFormatOptions): string[];
         supportedLocalesOf(locale: string, options?: DateTimeFormatOptions): string[];
     }
@@ -18020,17 +18018,7 @@ declare function addEventListener(type: "volumechange", listener: (ev: Event) =>
 declare function addEventListener(type: "waiting", listener: (ev: Event) => any, useCapture?: boolean): void;
 declare function addEventListener(type: "wheel", listener: (ev: WheelEvent) => any, useCapture?: boolean): void;
 declare function addEventListener(type: string, listener: EventListenerOrEventListenerObject, useCapture?: boolean): void;
-interface DOMTokenList {
-    [Symbol.iterator](): IterableIterator<string>;
-}
 
-interface NodeList {
-    [Symbol.iterator](): IterableIterator<Node>
-}
-
-interface NodeListOf<TNode extends Node> {
-    [Symbol.iterator](): IterableIterator<TNode>
-}
 /////////////////////////////
 /// WorkerGlobalScope APIs 
 /////////////////////////////

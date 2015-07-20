@@ -1165,7 +1165,7 @@ interface ArrayConstructor {
     (arrayLength?: number): any[];
     <T>(arrayLength: number): T[];
     <T>(...items: T[]): T[];
-    isArray(arg: any): arg is Array<any>;
+    isArray(arg: any): boolean;
     prototype: Array<any>;
 }
 
@@ -3531,11 +3531,6 @@ declare module Intl {
         currency?: string;
         currencyDisplay?: string;
         useGrouping?: boolean;
-        minimumintegerDigits?: number;
-        minimumFractionDigits?: number;
-        maximumFractionDigits?: number;
-        minimumSignificantDigits?: number;
-        maximumSignificantDigits?: number;
     }
 
     interface ResolvedNumberFormatOptions {
@@ -3557,10 +3552,10 @@ declare module Intl {
         resolvedOptions(): ResolvedNumberFormatOptions;
     }
     var NumberFormat: {
-        new (locales?: string[], options?: NumberFormatOptions): NumberFormat;
-        new (locale?: string, options?: NumberFormatOptions): NumberFormat;
-        (locales?: string[], options?: NumberFormatOptions): NumberFormat;
-        (locale?: string, options?: NumberFormatOptions): NumberFormat;
+        new (locales?: string[], options?: NumberFormatOptions): Collator;
+        new (locale?: string, options?: NumberFormatOptions): Collator;
+        (locales?: string[], options?: NumberFormatOptions): Collator;
+        (locale?: string, options?: NumberFormatOptions): Collator;
         supportedLocalesOf(locales: string[], options?: NumberFormatOptions): string[];
         supportedLocalesOf(locale: string, options?: NumberFormatOptions): string[];
     }
@@ -3598,14 +3593,14 @@ declare module Intl {
     }
 
     interface DateTimeFormat {
-        format(date?: Date | number): string;
+        format(date: number): string;
         resolvedOptions(): ResolvedDateTimeFormatOptions;
     }
     var DateTimeFormat: {
-        new (locales?: string[], options?: DateTimeFormatOptions): DateTimeFormat;
-        new (locale?: string, options?: DateTimeFormatOptions): DateTimeFormat;
-        (locales?: string[], options?: DateTimeFormatOptions): DateTimeFormat;
-        (locale?: string, options?: DateTimeFormatOptions): DateTimeFormat;
+        new (locales?: string[], options?: DateTimeFormatOptions): Collator;
+        new (locale?: string, options?: DateTimeFormatOptions): Collator;
+        (locales?: string[], options?: DateTimeFormatOptions): Collator;
+        (locale?: string, options?: DateTimeFormatOptions): Collator;
         supportedLocalesOf(locales: string[], options?: DateTimeFormatOptions): string[];
         supportedLocalesOf(locale: string, options?: DateTimeFormatOptions): string[];
     }
