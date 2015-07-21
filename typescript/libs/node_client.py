@@ -17,150 +17,38 @@ else:
     import queue
 
 
-class CommClient:
-    def serverStarted(self): pass
+class CommClient(object):
 
-    def workerStarted(self): pass
+    def started(self): pass
 
     def getEvent(self): pass
 
-    def getEventFromWorker(self): pass
-
     def postCmd(self, cmd): pass
-
-    def postCmdToWorker(self, cmd): pass
     
     def sendCmd(self, cmd, cb): pass
 
-    def sendCmdToWorker(self, cmd, cb): pass
-
     def sendCmdSync(self, cmd): pass
-
-    def sendCmdToWorkerSync(self, cmd, cb): pass
     
     def sendCmdAsync(self, cmd, cb): pass
-
-    def sendCmdToWorkerAsync(self, cmd, cb): pass
 
 
 class NodeCommClient(CommClient):
     __CONTENT_LENGTH_HEADER = b"Content-Length: "
-    stop_worker = False
 
-    def __init__(self, scriptPath):
-        """
-        Starts a node client (if not already started) and communicate with it. 
-        The script file to run is passed to the constructor.
-        """
-
-        self.asyncReq = {}
-        self.__serverProc = None
-        self.__workerProc = None
-        self.script_path = scriptPath
-
-        # create response and event queues
-        self.__msgq = queue.Queue()
-        self.__eventq = queue.Queue()
-        self.__worker_eventq = queue.Queue()
+    def __init__(self, script_path):
+        self.server_proc = None
+        self.script_path = script_path
 
         # create event handler maps
-        self.__event_handlers = dict()
-        self.__worker_event_handlers = dict()
+        self.event_handlers = dict()
 
-        # start node process
-        pref_settings = sublime.load_settings('Preferences.sublime-settings')
-        node_path = pref_settings.get('node_path')
-        if node_path:
-            node_path = os.path.expandvars(node_path)
-        if not node_path:
-            if os.name == "nt":
-                node_path = "node"
-            else:
-                node_path = NodeCommClient.__which("node")
-        if not node_path:
-            path_list = os.environ["PATH"] + os.pathsep + "/usr/local/bin" + os.pathsep + "$NVM_BIN"
-            print("Unable to find executable file for node on path list: " + path_list)
-            print("To specify the node executable file name, use the 'node_path' setting")
-            self.__serverProc = None
-        else:
-            global_vars._node_path = node_path
-            print("Found node executable at " + node_path)
-            try:
-                if os.name == "nt":
-                    # linux subprocess module does not have STARTUPINFO
-                    # so only use it if on Windows
-                    si = subprocess.STARTUPINFO()
-                    si.dwFlags |= subprocess.SW_HIDE | subprocess.STARTF_USESHOWWINDOW
-                    self.__serverProc = subprocess.Popen([node_path, scriptPath],
-                                                         stdin=subprocess.PIPE, stdout=subprocess.PIPE, startupinfo=si)
-                else:
-                    log.debug("opening " + node_path + " " + scriptPath)
-                    self.__serverProc = subprocess.Popen([node_path, scriptPath],
-                                                         stdin=subprocess.PIPE, stdout=subprocess.PIPE)
-            except:
-                self.__serverProc = None
-        # start reader thread
-        if self.__serverProc and (not self.__serverProc.poll()):
-            log.debug("server proc " + str(self.__serverProc))
-            log.debug("starting reader thread")
-            readerThread = threading.Thread(target=NodeCommClient.__reader, args=(
-                self.__serverProc.stdout, self.__msgq, self.__eventq, self.asyncReq, self.__serverProc, self.__event_handlers))
-            readerThread.daemon = True
-            readerThread.start()
+        # create response and event queues
+        self.msgq = queue.Queue()
+        self.eventq = queue.Queue()
+        self.asyncReq = {}
 
-        self.__debugProc = None
-        self.__breakpoints = []
-
-    def add_event_handler(self, event_name, cb, for_worker=False):
-        event_handlers = self.__worker_event_handlers if for_worker else self.__event_handlers
-        if event_name not in event_handlers:
-            event_handlers[event_name] = []
-        if cb not in event_handlers[event_name]:
-            event_handlers[event_name].append(cb)
-
-    def startWorker(self):
-        NodeCommClient.stop_worker = False
-
-        node_path = global_vars.get_node_path()
-        if os.name == "nt":
-            si = subprocess.STARTUPINFO()
-            si.dwFlags |= subprocess.SW_HIDE | subprocess.STARTF_USESHOWWINDOW
-            self.__workerProc = subprocess.Popen(
-                [node_path, self.script_path], stdin=subprocess.PIPE, stdout=subprocess.PIPE, startupinfo=si
-            )
-        else:
-            self.__workerProc = subprocess.Popen(
-                [node_path, self.script_path], stdin=subprocess.PIPE, stdout=subprocess.PIPE)
-
-        # start reader thread
-        if self.__workerProc and (not self.__workerProc.poll()):
-            log.debug("worker proc " + str(self.__workerProc))
-            log.debug("starting worker thread")
-            workerThread = threading.Thread(target=NodeCommClient.__reader, args=(
-                self.__workerProc.stdout, self.__msgq, self.__worker_eventq, self.asyncReq, self.__workerProc, self.__worker_event_handlers))
-            workerThread.daemon = True
-            workerThread.start()
-
-    def stopWorker(self):
-        NodeCommClient.stop_worker = True
-        self.__workerProc.kill()
-        self.__workerProc = None
-
-    def serverStarted(self):
-        return self.__serverProc is not None
-
-    def workerStarted(self):
-        return self.__workerProc is not None
-
-    # work in progress
-    def addBreakpoint(self, file, line):
-        self.__breakpoints.append((file, line))
-
-    # work in progress
-    def debug(self, file):
-        # TODO: msg if already debugging
-        self.__debugProc = subprocess.Popen(["node", "--debug", file],
-                                            stdin=subprocess.PIPE, stdout=subprocess.PIPE)
+        self.debug_proc = None
+        self.breakpoints = []
 
     def makeTimeoutMsg(self, cmd, seq):
         jsonDict = json_helpers.decode(cmd)
@@ -174,6 +62,26 @@ class NodeCommClient(CommClient):
         }
         return timeoutMsg
 
+    def add_event_handler(self, event_name, cb):
+        event_handlers = self.event_handlers
+        if event_name not in event_handlers:
+            event_handlers[event_name] = []
+        if cb not in event_handlers[event_name]:
+            event_handlers[event_name].append(cb)
+
+    def started(self):
+        return self.server_proc is not None
+
+    # work in progress
+    def addBreakpoint(self, file, line):
+        self.breakpoints.append((file, line))
+
+    # work in progress
+    def debug(self, file):
+        # TODO: msg if already debugging
+        self.debug_proc = subprocess.Popen(["node", "--debug", file],
+                                            stdin=subprocess.PIPE, stdout=subprocess.PIPE)
+
     def sendCmd(self, cmd, cb, seq):
         """
         send single-line command string; no sequence number; wait for response
@@ -183,7 +91,7 @@ class NodeCommClient(CommClient):
             reqSeq = -1
             try:
                 while reqSeq < seq:
-                    data = self.__msgq.get(True, 1)
+                    data = self.msgq.get(True, 1)
                     dict = json_helpers.decode(data)
                     reqSeq = dict['request_seq']
                 if cb:
@@ -203,13 +111,6 @@ class NodeCommClient(CommClient):
         if self.postCmd(cmd):
             self.asyncReq[seq] = cb
 
-    def sendCmdToWorkerAsync(self, cmd, cb, seq):
-        """
-        Sends the command and registers a callback
-        """
-        if self.postCmdToWorker(cmd):
-            self.asyncReq[seq] = cb
-
     def sendCmdSync(self, cmd, seq):
         """
         Sends the command and wait for the result and returns it
@@ -218,25 +119,7 @@ class NodeCommClient(CommClient):
             reqSeq = -1
             try:
                 while reqSeq < seq:
-                    data = self.__msgq.get(True, 1)
-                    dict = json_helpers.decode(data)
-                    reqSeq = dict['request_seq']
-                return dict
-            except queue.Empty:
-                print("queue timeout")
-                return self.makeTimeoutMsg(cmd, seq)
-        else:
-            return self.makeTimeoutMsg(cmd, seq)
-
-    def sendCmdToWorkerSync(self, cmd, seq):
-        """
-        Sends the command and wait for the result and returns it
-        """
-        if self.postCmdToWorker(cmd):
-            reqSeq = -1
-            try:
-                while reqSeq < seq:
-                    data = self.__msgq.get(True, 1)
+                    data = self.msgq.get(True, 1)
                     dict = json_helpers.decode(data)
                     reqSeq = dict['request_seq']
                 return dict
@@ -251,27 +134,13 @@ class NodeCommClient(CommClient):
         Post command to server; no response needed
         """
         log.debug('Posting command: {0}'.format(cmd))
-        if not self.__serverProc:
+        if not self.server_proc:
             log.error("can not send request; node process not running")
             return False
         else:
             cmd = cmd + "\n"
-            self.__serverProc.stdin.write(cmd.encode())
-            self.__serverProc.stdin.flush()
-            return True
-
-    def postCmdToWorker(self, cmd):
-        """
-        Post command to worker process; no response needed
-        """
-        log.debug('Posting command to worker: {0}'.format(cmd))
-        if not self.__workerProc:
-            log.error("can not send request; worker process not running")
-            return False
-        else:
-            cmd += "\n"
-            self.__workerProc.stdin.write(cmd.encode())
-            self.__workerProc.stdin.flush()
+            self.server_proc.stdin.write(cmd.encode())
+            self.server_proc.stdin.flush()
             return True
 
     def getEvent(self):
@@ -279,20 +148,13 @@ class NodeCommClient(CommClient):
         Try to get event from event queue
         """
         try:
-            ev = self.__eventq.get(False)
-        except:
-            return None
-        return ev
-
-    def getEventFromWorker(self):
-        try:
-            ev = self.__worker_eventq.get(False)
+            ev = self.eventq.get(False)
         except:
             return None
         return ev
 
     @staticmethod
-    def __readMsg(stream, msgq, eventq, asyncReq, proc, asyncEventHandlers):
+    def read_msg(stream, msgq, eventq, asyncReq, proc, asyncEventHandlers):
         """
         Reader thread helper
         """
@@ -344,23 +206,7 @@ class NodeCommClient(CommClient):
             return False
 
     @staticmethod
-    def __reader(stream, msgq, eventq, asyncReq, proc, eventHandlers):
-        """ Main function for reader thread """
-        while True:
-            if NodeCommClient.__readMsg(stream, msgq, eventq, asyncReq, proc, eventHandlers):
-                log.debug("server exited")
-                return
-
-    @staticmethod
-    def __worker_reader(stream, msgq, eventq, asyncReq, proc, eventHandlers):
-        """ Main function for worker thread """
-        while True:
-            if NodeCommClient.__readMsg(stream, msgq, eventq, asyncReq, proc, eventHandlers) or NodeCommClient.stop_worker:
-                log.debug("worker exited")
-                return
-
-    @staticmethod
-    def __which(program):
+    def which(program):
         def is_executable(fpath):
             return os.path.isfile(fpath) and os.access(fpath, os.X_OK)
 
@@ -378,3 +224,107 @@ class NodeCommClient(CommClient):
                 if is_executable(programPath):
                     return programPath
         return None
+
+
+class ServerClient(NodeCommClient):
+
+    def __init__(self, script_path):
+        """
+        Starts a node client (if not already started) and communicate with it.
+        The script file to run is passed to the constructor.
+        """
+        super(ServerClient, self).__init__(script_path)
+        print("test")
+        print(self.server_proc)
+
+        # start node process
+        pref_settings = sublime.load_settings('Preferences.sublime-settings')
+        node_path = pref_settings.get('node_path')
+        if node_path:
+            node_path = os.path.expandvars(node_path)
+        if not node_path:
+            if os.name == "nt":
+                node_path = "node"
+            else:
+                node_path = NodeCommClient.which("node")
+        if not node_path:
+            path_list = os.environ["PATH"] + os.pathsep + "/usr/local/bin" + os.pathsep + "$NVM_BIN"
+            print("Unable to find executable file for node on path list: " + path_list)
+            print("To specify the node executable file name, use the 'node_path' setting")
+            self.server_proc = None
+        else:
+            global_vars._node_path = node_path
+            print("Found node executable at " + node_path)
+            try:
+                if os.name == "nt":
+                    # linux subprocess module does not have STARTUPINFO
+                    # so only use it if on Windows
+                    si = subprocess.STARTUPINFO()
+                    si.dwFlags |= subprocess.SW_HIDE | subprocess.STARTF_USESHOWWINDOW
+                    self.server_proc = subprocess.Popen([node_path, script_path],
+                                                         stdin=subprocess.PIPE, stdout=subprocess.PIPE, startupinfo=si)
+                else:
+                    log.debug("opening " + node_path + " " + script_path)
+                    self.server_proc = subprocess.Popen([node_path, script_path],
+                                                         stdin=subprocess.PIPE, stdout=subprocess.PIPE)
+            except:
+                self.server_proc = None
+        # start reader thread
+        if self.server_proc and (not self.server_proc.poll()):
+            log.debug("server proc " + str(self.server_proc))
+            log.debug("starting reader thread")
+            readerThread = threading.Thread(target=ServerClient.__reader, args=(
+                self.server_proc.stdout, self.msgq, self.eventq, self.asyncReq, self.server_proc, self.event_handlers))
+            readerThread.daemon = True
+            readerThread.start()
+
+    @staticmethod
+    def __reader(stream, msgq, eventq, asyncReq, proc, eventHandlers):
+        """ Main function for reader thread """
+        while True:
+            if NodeCommClient.read_msg(stream, msgq, eventq, asyncReq, proc, eventHandlers):
+                log.debug("server exited")
+                return
+
+
+class WorkerClient(NodeCommClient):
+    stop_worker = False
+    
+    def __init__(self, script_path):
+        super(WorkerClient, self).__init__(script_path)
+
+    def start(self):
+        WorkerClient.stop_worker = False
+
+        node_path = global_vars.get_node_path()
+        if os.name == "nt":
+            si = subprocess.STARTUPINFO()
+            si.dwFlags |= subprocess.SW_HIDE | subprocess.STARTF_USESHOWWINDOW
+            self.server_proc = subprocess.Popen(
+                [node_path, self.script_path], stdin=subprocess.PIPE, stdout=subprocess.PIPE, startupinfo=si
+            )
+        else:
+            self.server_proc = subprocess.Popen(
+                [node_path, self.script_path], stdin=subprocess.PIPE, stdout=subprocess.PIPE)
+
+        # start reader thread
+        if self.server_proc and (not self.server_proc.poll()):
+            log.debug("worker proc " + str(self.server_proc))
+            log.debug("starting worker thread")
+            workerThread = threading.Thread(target=WorkerClient.__reader, args=(
+                self.server_proc.stdout, self.msgq, self.eventq, self.asyncReq, self.server_proc, self.event_handlers))
+            workerThread.daemon = True
+            workerThread.start()
+
+    def stop(self):
+        WorkerClient.stop_worker = True
+        self.server_proc.kill()
+        self.server_proc = None
+
+    @staticmethod
+    def __reader(stream, msgq, eventq, asyncReq, proc, eventHandlers):
+        """ Main function for worker thread """
+        while True:
+            if NodeCommClient.read_msg(stream, msgq, eventq, asyncReq, proc, eventHandlers) or WorkerClient.stop_worker:
+                log.debug("worker exited")
+                return

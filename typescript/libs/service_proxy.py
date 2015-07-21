@@ -7,8 +7,9 @@ from .text_helpers import Location
 
 
 class ServiceProxy:
-    def __init__(self, comm=CommClient()):
-        self.__comm = comm
+    def __init__(self, worker_client=CommClient(), server_client=CommClient()):
+        self.__comm = server_client
+        self.__worker_comm = worker_client
         self.seq = 1
 
     def increase_seq(self):
@@ -20,22 +21,22 @@ class ServiceProxy:
         req_dict = self.create_req_dict("exit")
         json_str = json_helpers.encode(req_dict)
         self.__comm.postCmd(json_str)
-        if self.__comm.workerStarted():
-            self.__comm.postCmdToWorker(json_str)
+        if self.__worker_comm.started():
+            self.__worker_comm.postCmd(json_str)
 
     def stop_worker(self):
         req_dict = self.create_req_dict("exit")
         json_str = json_helpers.encode(req_dict)
-        if self.__comm.workerStarted():
-            self.__comm.postCmdToWorker(json_str)
+        if self.__worker_comm.started():
+            self.__worker_comm.postCmd(json_str)
 
     def configure(self, host_info="Sublime Text", file=None, format_options=None):
         args = {"hostInfo": host_info, "formatOptions": format_options, "file": file}
         req_dict = self.create_req_dict("configure", args)
         json_str = json_helpers.encode(req_dict)
         response_dict = self.__comm.postCmd(json_str)
-        if self.__comm.workerStarted():
-            self.__comm.postCmdToWorker(json_str)
+        if self.__worker_comm.started():
+            self.__worker_comm.postCmd(json_str)
 
     def change(self, path, begin_location=Location(1, 1), end_location=Location(1, 1), insertString=""):
         args = {
@@ -49,8 +50,8 @@ class ServiceProxy:
         req_dict = self.create_req_dict("change", args)
         json_str = json_helpers.encode(req_dict)
         self.__comm.postCmd(json_str)
-        if self.__comm.workerStarted():
-            self.__comm.postCmdToWorker(json_str)
+        if self.__worker_comm.started():
+            self.__worker_comm.postCmd(json_str)
 
     def completions(self, path, location=Location(1, 1), prefix="", on_completed=None):
         args = {"file": path, "line": location.line, "offset": location.offset, "prefix": prefix}
@@ -102,8 +103,8 @@ class ServiceProxy:
         req_dict = self.create_req_dict("format", args)
         json_str = json_helpers.encode(req_dict)
         response_dict = self.__comm.sendCmdSync(json_str, req_dict["seq"])
-        if self.__comm.workerStarted():
-            self.__comm.sendCmdToWorkerSync(json_str, req_dict["seq"])
+        if self.__worker_comm.started():
+            self.__worker_comm.sendCmdSync(json_str, req_dict["seq"])
         return response_dict
 
     def format_on_key(self, path, location=Location(1, 1), key=""):
@@ -111,8 +112,8 @@ class ServiceProxy:
         req_dict = self.create_req_dict("formatonkey", args)
         json_str = json_helpers.encode(req_dict)
         response_dict = self.__comm.sendCmdSync(json_str, req_dict["seq"])
-        if self.__comm.workerStarted():
-            self.__comm.sendCmdToWorkerSync(json_str, req_dict["seq"])
+        if self.__worker_comm.started():
+            self.__worker_comm.sendCmdSync(json_str, req_dict["seq"])
         return response_dict
 
     def open(self, path):
@@ -120,23 +121,23 @@ class ServiceProxy:
         req_dict = self.create_req_dict("open", args)
         json_str = json_helpers.encode(req_dict)
         self.__comm.postCmd(json_str)
-        if self.__comm.workerStarted():
-            self.__comm.postCmdToWorker(json_str)
+        if self.__worker_comm.started():
+            self.__worker_comm.postCmd(json_str)
 
     def open_on_worker(self, path):
         args = {"file": path}
         req_dict = self.create_req_dict("open", args)
         json_str = json_helpers.encode(req_dict)
-        if self.__comm.workerStarted():
-            self.__comm.postCmdToWorker(json_str)
+        if self.__worker_comm.started():
+            self.__worker_comm.postCmd(json_str)
 
     def close(self, path):
         args = {"file": path}
         req_dict = self.create_req_dict("close", args)
         json_str = json_helpers.encode(req_dict)
         self.__comm.postCmd(json_str)
-        if self.__comm.workerStarted():
-            self.__comm.postCmdToWorker(json_str)
+        if self.__worker_comm.started():
+            self.__worker_comm.postCmd(json_str)
 
     def references(self, path, location=Location(1, 1)):
         args = {"file": path, "line": location.line, "offset": location.offset}
@@ -150,16 +151,16 @@ class ServiceProxy:
         req_dict = self.create_req_dict("reload", args)
         json_str = json_helpers.encode(req_dict)
         response_dict = self.__comm.sendCmdSync(json_str, req_dict["seq"])
-        if self.__comm.workerStarted():
-            self.__comm.sendCmdToWorkerSync(json_str, req_dict["seq"])
+        if self.__worker_comm.started():
+            self.__worker_comm.sendCmdSync(json_str, req_dict["seq"])
         return response_dict
 
     def reload_on_worker(self, path, alternate_path):
         args = {"file": path, "tmpfile": alternate_path}
         req_dict = self.create_req_dict("reload", args)
         json_str = json_helpers.encode(req_dict)
-        if self.__comm.workerStarted():
-            response_dict = self.__comm.sendCmdToWorkerSync(json_str, req_dict["seq"])
+        if self.__worker_comm.started():
+            response_dict = self.__worker_comm.sendCmdSync(json_str, req_dict["seq"])
             return response_dict
 
     def reload_async(self, path, alternate_path, on_completed):
@@ -167,23 +168,23 @@ class ServiceProxy:
         req_dict = self.create_req_dict("reload", args)
         json_str = json_helpers.encode(req_dict)
         self.__comm.sendCmdAsync(json_str, on_completed, req_dict["seq"])
-        if self.__comm.workerStarted():
-            self.__comm.sendCmdToWorkerAsync(json_str, None, req_dict["seq"])
+        if self.__worker_comm.started():
+            self.__worker_comm.sendCmdAsync(json_str, None, req_dict["seq"])
 
     def reload_async_on_worker(self, path, alternate_path, on_completed):
         args = {"file": path, "tmpfile": alternate_path}
         req_dict = self.create_req_dict("reload", args)
         json_str = json_helpers.encode(req_dict)
-        if self.__comm.workerStarted():
-            self.__comm.sendCmdToWorkerAsync(json_str, None, req_dict["seq"])
+        if self.__worker_comm.started():
+            self.__worker_comm.sendCmdAsync(json_str, None, req_dict["seq"])
 
     def rename(self, path, location=Location(1, 1)):
         args = {"file": path, "line": location.line, "offset": location.offset}
         req_dict = self.create_req_dict("rename", args)
         json_str = json_helpers.encode(req_dict)
         response_dict = self.__comm.sendCmdSync(json_str, req_dict["seq"])
-        if self.__comm.workerStarted():
-            self.__comm.sendCmdSync(json_str, req_dict["seq"])
+        if self.__worker_comm.started():
+            self.__worker_comm.sendCmdSync(json_str, req_dict["seq"])
         return response_dict
 
     def request_get_err(self, delay=0, pathList=[]):
@@ -196,8 +197,8 @@ class ServiceProxy:
         args = {"file": path, "delay": delay}
         req_dict = self.create_req_dict("geterrForProject", args)
         json_str = json_helpers.encode(req_dict)
-        if self.__comm.workerStarted():
-            self.__comm.postCmdToWorker(json_str)
+        if self.__worker_comm.started():
+            self.__worker_comm.postCmd(json_str)
 
     def type(self, path, location=Location(1, 1)):
         args = {"file": path, "line": location.line, "offset": location.offset}
@@ -229,7 +230,7 @@ class ServiceProxy:
         return json_helpers.decode(event_json_str) if event_json_str is not None else None
 
     def get_event_from_worker(self):
-        event_json_str = self.__comm.getEventFromWorker()
+        event_json_str = self.__worker_comm.getEvent()
         return json_helpers.decode(event_json_str) if event_json_str is not None else None
 
     def save_to(self, path, alternatePath):
@@ -255,7 +256,7 @@ class ServiceProxy:
         self.__comm.add_event_handler(event_name, cb)
 
     def add_event_handler_for_worker(self, event_name, cb):
-        self.__comm.add_event_handler(event_name, cb, True)
+        self.__worker_comm.add_event_handler(event_name, cb)
 
     def create_req_dict(self, command_name, args=None):
         req_dict = {

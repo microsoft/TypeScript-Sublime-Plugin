@@ -16,10 +16,10 @@ class TypescriptProjectErrorList(sublime_plugin.WindowCommand):
         panel_manager = get_panel_manager()
         panel_manager.add_panel("errorlist")
         
-        if not cli.node_client.workerStarted():
+        if not cli.worker_client.started():
             panel_manager.show_panel("errorlist", ["Starting worker for project error list..."])
             # start worker process
-            cli.node_client.startWorker() 
+            cli.worker_client.start()
         else:
             # The server is up already, so just show the panel without overwriting the content
             panel_manager.show_panel("errorlist")
