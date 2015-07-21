@@ -1,4 +1,4 @@
-?import codecs
+import codecs
 
 from .global_vars import *
 from .editor_client import cli
