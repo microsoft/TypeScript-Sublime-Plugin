@@ -100,10 +100,12 @@ def plugin_unloaded():
     cli.service.exit()
 
 
-_UPDATE_NPM_MESSAGE = "Warning from TypeScript Plugin: We detect a global \
-npm typescript module and it is outdated. Consider upgrading this module by \
-running \"npm install -g typescipt\". TypeScript Plugin still works \
-regardless."
+_UPDATE_TS_MESSAGE = "Warning from TypeScript Sublime Text plugin:\n\n\
+Detected command-line TypeScript compiler version '{0}'. The TypeScript \
+Sublime Text plugin is using compiler version '{1}'. There may be \
+differences in behavior between releases.\n\n\
+To update your command-line TypeScript compiler to the latest release, run \
+'npm update -g typescript'."
 
 def _check_typescript_version():
     """
@@ -123,8 +125,9 @@ def _check_typescript_version():
 
             npm_tsc_version = _get_npm_tsc_version()
 
-            if npm_tsc_version < plugin_tsc_version:
-                sublime.message_dialog(_UPDATE_NPM_MESSAGE)
+            if npm_tsc_version != plugin_tsc_version:
+                sublime.message_dialog(_UPDATE_TS_MESSAGE.format(
+                    npm_tsc_version, plugin_tsc_version))
 
                 # Update the version in setting file so we don't show this
                 # message twice.
@@ -149,5 +152,5 @@ def _execute_cmd_and_parse_version_from_output(cmd):
     # "1.5.0-beta" from "message TS6029: Version 1.5.0-beta\r\n".
     match_object = re.search("Version\s*([\w.-]+)", output, re.IGNORECASE)
     if match_object is None:
-        raise Exception("Cannot parse version number from ouput: \"{0}\"".format(output))
+        raise Exception("Cannot parse version number from ouput: '{0}'".format(output))
     return match_object.groups()[0]
