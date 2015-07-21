@@ -1,4 +1,4 @@
-﻿import codecs
+?import codecs
 
 from .global_vars import *
 from .editor_client import cli
@@ -69,9 +69,8 @@ def get_info(view):
                     if not info_on_worker:
                         _file_map_on_worker[file_name] = info
                         open_file_on_worker(view)
-                        if view.is_dirty():
-                            if not view.is_loading():
-                                reload_buffer_on_worker(view)
+                        if view.is_dirty() and not view.is_loading():
+                            reload_buffer_on_worker(view)
                 else:
                     _file_map_on_worker.clear()
     return info

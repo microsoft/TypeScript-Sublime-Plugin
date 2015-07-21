@@ -84,7 +84,7 @@ class ProjectErrorListener:
         log.debug("update error list panel")
         output_lines = []
         output_line_map = dict()
-        cur_line_number = 0
+
         for file in self.errors:
             start_line_number = len(output_lines)
             error_count = len(self.errors[file]["syntaxDiag"]) + len(self.errors[file]["semanticDiag"])
