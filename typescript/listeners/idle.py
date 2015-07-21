@@ -1,4 +1,4 @@
-from ..libs.view_helpers import *
+﻿from ..libs.view_helpers import *
 from ..libs.text_helpers import *
 from ..libs import log
 from .event_hub import EventHub
@@ -9,17 +9,12 @@ class IdleListener:
         self.just_changed_focus = False
         self.pending_timeout = 0
         self.pending_selection_timeout = 0
-        self.error_info_requested_not_received = False
         self.modified = False
-        self.wait_count = 0
+        self.event_handler_added = False
 
     def on_activated_with_info(self, view, info):
-        # Ask server for initial error diagnostics
-        self.request_errors(view, info, 200)
-
         # set modified and selection idle timers, so we can read
-        # diagnostics and update
-        # status line
+        # diagnostics and update status line
         self.set_on_idle_timer(IDLE_TIME_LENGTH)
         self.set_on_selection_idle_timer(IDLE_TIME_LENGTH)
         self.just_changed_focus = True
@@ -31,11 +26,9 @@ class IdleListener:
 
     def on_selection_modified_with_info(self, view, info):
         if self.modified:
-            # Todo: explain magic number
             self.set_on_selection_idle_timer(1250)
         else:
-            # Todo: explain magic number
-            self.set_on_selection_idle_timer(50)
+            self.set_on_selection_idle_timer(100)
         self.modified = False
 
     def request_errors(self, view, info, error_delay):
@@ -43,6 +36,11 @@ class IdleListener:
         Ask the server for diagnostic information on all opened ts files in
         most-recently-used order
         """
+        if not self.event_handler_added:
+            cli.service.add_event_handler("syntaxDiag", lambda ev: self.show_errors(ev["body"], syntactic=True))
+            cli.service.add_event_handler("semanticDiag", lambda ev: self.show_errors(ev["body"], syntactic=False))
+            self.event_handler_added = True
+
         # Todo: limit this request to ts files currently visible in views
         if info and (self.just_changed_focus or info.change_count_when_last_err_req_sent < change_count(view)):
             self.just_changed_focus = False
@@ -58,14 +56,12 @@ class IdleListener:
                     check_update_view(group_active_view)
             if len(files) > 0:
                 cli.service.request_get_err(error_delay, files)
-                self.error_info_requested_not_received = True
-            self.wait_count = 0
-            self.set_on_idle_timer(error_delay + 300)
 
     def show_errors(self, diagno_event_body, syntactic):
         """
         Error messages arrived from the server; show them in view
         """
+        log.debug("show_errors")
         filename = diagno_event_body["file"]
         if os.name == 'nt' and filename:
             filename = filename.replace('/', '\\')
@@ -123,13 +119,6 @@ class IdleListener:
                              sublime.DRAW_NO_OUTLINE +
                              sublime.DRAW_SQUIGGLY_UNDERLINE)
 
-    def dispatch_event(self, ev):
-        event_type = ev["event"]
-        if event_type == 'syntaxDiag':
-            self.show_errors(ev["body"], syntactic=True)
-        elif event_type == 'semanticDiag':
-            self.show_errors(ev["body"], syntactic=False)
-
     def set_on_selection_idle_timer(self, ms):
         """Set timer to go off when selection is idle"""
         self.pending_selection_timeout += 1
@@ -145,25 +134,8 @@ class IdleListener:
         If selection is idle (cursor is not moving around)
         update the status line (error message or quick info, if any)
         """
+        log.debug("on_selection_idle")
         view = active_view()
-
-        ev = cli.service.get_event()
-        if ev is not None:
-            self.error_info_requested_not_received = False
-            self.dispatch_event(ev)
-            # reset the timer in case more events are on the queue
-            self.set_on_selection_idle_timer(50)
-        elif self.error_info_requested_not_received:
-            # if the last request takes too long we'll drop it
-            # to prevent an infinite loop
-            self.wait_count += 1
-            if self.wait_count >= 20:
-                self.error_info_requested_not_received = False
-                self.wait_count = 0
-            # reset the timer if we haven't gotten an event
-            # since the last time errors were requested
-            self.set_on_selection_idle_timer(50)
-
         info = get_info(view)
         if info:
             self.update_status(view, info)
@@ -182,28 +154,10 @@ class IdleListener:
     def on_idle(self):
         """Callback after the idle status is confirmed
 
-        If file hasn't been modified for a time check the event
-        queue and dispatch any events.
+        If file hasn't been modified for a time check the need to request errors
         """
+        log.debug("on_idle")
         view = active_view()
-        log.debug("call get_event from on_idle")
-        ev = cli.service.get_event()
-        if ev is not None:
-            self.error_info_requested_not_received = False
-            self.dispatch_event(ev)
-            # reset the timer in case more events are on the queue
-            self.set_on_idle_timer(50)
-        elif self.error_info_requested_not_received:
-            # if the last request takes too long we'll drop it
-            # to prevent an infinite loop
-            self.wait_count += 1
-            if self.wait_count >= 20:
-                self.error_info_requested_not_received = False
-                self.wait_count = 0
-            # reset the timer if we haven't gotten an event
-            # since the last time errors were requested
-            self.set_on_idle_timer(50)
-
         info = get_info(view)
         if info:
             log.debug("asking for errors")
