@@ -26,7 +26,8 @@ class ProjectErrorListener:
     def post_on_modified(self, view):
         if not is_special_view(view) and self.is_error_list_panel_active():
             self.modified = True
-            self.set_request_error_timer(50)
+            self.set_request_error_timer(150)
+            log.debug("error list timer started")
 
     def set_request_error_timer(self, ms):
         """Set timer to go off when file not being modified"""
