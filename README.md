@@ -32,9 +32,11 @@ Note if you are using the portable version of Sublime Text, the location will be
 Platform support
 ----------------
 - OS:
+
 The plugin has identical behavior across Windows, Mac, and Linux;
 
 - Sublime Text version:
+
 The plugin supports both ST2 and ST3. However, some features are only available in ST3:
 	- Tool tips
 	- Error list
@@ -69,11 +71,12 @@ Project System
 The plugin supports two kinds of projects:
 
 - Inferred project
+
 For loose TS files opened in Sublime, the plugin will create an inferred project and include every files that the current file refers to;
 
 - Configured project
-The plugin also supports representing a TypeScript project via a [tsconfig.json](https://github.com/Microsoft/TypeScript/pull/1692) file. If a file of this name is detected in a parent directory, then its settings will be 
-used by the plugin.
+
+The plugin also supports representing a TypeScript project via a [tsconfig.json](https://github.com/Microsoft/TypeScript/pull/1692) file. If a file of this name is detected in a parent directory, then its settings will be used by the plugin.
 
 Reporting Issues
 -------
