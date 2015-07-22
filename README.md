@@ -70,7 +70,7 @@ The plugin supports two kinds of projects:
 
 #### Inferred project
 
-For loose TS files opened in Sublime, the plugin will create an inferred project and include every files that the current file refers to;
+For loose TS files opened in Sublime, the plugin will create an inferred project and include every files that the current file refers to.
 
 #### Configured project
 
