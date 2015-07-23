@@ -31087,4 +31087,4 @@ var ts;
     }
 })(ts || (ts = {}));
 ts.executeCommandLine(ts.sys.args);
-//# sourceMappingURL=file:///C:/Users/Zhengbo/Documents/GitHub/TypeScript/built/local/tsc.js.map
+//# sourceMappingURL=file:///D:/Github/TypeScript/built/local/tsc.js.map

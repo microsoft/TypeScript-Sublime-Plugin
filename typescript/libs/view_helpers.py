@@ -3,6 +3,7 @@ import codecs
 from .global_vars import *
 from .editor_client import cli
 from .text_helpers import *
+from .panel_manager import get_panel_manager
 
 
 class FileInfo:
@@ -32,6 +33,7 @@ class FileInfo:
 
 
 _file_map = dict()
+_file_map_on_worker = dict()
 
 
 def get_info(view):
@@ -57,9 +59,20 @@ def get_info(view):
                         reload_buffer(view, info.client_info)
                     else:
                         info.client_info.pending_changes = True
-                # if info in most_recent_used_file_list:
-                #     most_recent_used_file_list.remove(info)
-                # most_recent_used_file_list.append(info)
+                        
+            # This is for the case when a file is opened on server but not 
+            # on the worker, which could be caused by starting the worker
+            # for the first time
+            if not IS_ST2:
+                if get_panel_manager().is_panel_active("errorlist"):
+                    info_on_worker = _file_map_on_worker.get(file_name)
+                    if not info_on_worker:
+                        _file_map_on_worker[file_name] = info
+                        open_file_on_worker(view)
+                        if view.is_dirty() and not view.is_loading():
+                            reload_buffer_on_worker(view)
+                else:
+                    _file_map_on_worker.clear()
     return info
 
 
@@ -133,6 +146,9 @@ def open_file(view):
     """Open the file on the server"""
     cli.service.open(view.file_name())
 
+def open_file_on_worker(view):
+    """Open the file on the worker process"""
+    cli.service.open_on_worker(view.file_name())
 
 def reconfig_file(view):
     host_info = "Sublime Text version " + str(sublime.version())
@@ -155,11 +171,12 @@ def set_file_prefs(view):
     settings.add_on_change('tab_size', tab_size_changed)
     settings.add_on_change('indent_size', tab_size_changed)
     settings.add_on_change('translate_tabs_to_spaces', tab_size_changed)
-    reconfig_file(view)
 
 
 def tab_size_changed():
     view = active_view()
+    if view is None:
+        return
     reconfig_file(view)
     client_info = cli.get_or_add_file(view.file_name())
     client_info.pending_changes = True
@@ -213,9 +230,27 @@ def reload_buffer(view, client_info=None):
             client_info.change_count = info.modify_count
         client_info.pending_changes = False
 
+def reload_buffer_on_worker(view):
+    """Reload the buffer content on the worker process
+
+    Note: the worker process won't change the client_info object to avoid synchronization issues
+    """
+    if not view.is_loading():
+        tmpfile_name = get_tempfile_name()
+        tmpfile = codecs.open(tmpfile_name, "w", "utf-8")
+        text = view.substr(sublime.Region(0, view.size()))
+        tmpfile.write(text)
+        tmpfile.flush()
+        if not IS_ST2:
+            cli.service.reload_async_on_worker(view.file_name(), tmpfile_name, recv_reload_response)
+        else:
+            reload_response = cli.service.reload_on_worker(view.file_name(), tmpfile_name)
+            recv_reload_response(reload_response)
+
 def reload_required(view):
     client_info = cli.get_or_add_file(view.file_name())
     return client_info.pending_changes or client_info.change_count < change_count(view)
+
 
 def check_update_view(view):
     """Check if the buffer in the view needs to be reloaded
@@ -316,3 +351,23 @@ def change_count(view):
             return info.modify_count
         else:
             return view.change_count()
+
+def last_non_whitespace_position(view):
+    """
+    Returns the position of the last non-whitespace character of <view>.
+    Returns -1 if <view> only contains non-whitespace characters.
+    """
+    pos = view.size() - 1
+    while pos >= 0 and view.substr(pos).isspace():
+        pos -= 1
+    return pos
+
+def last_visible_character_region(view):
+    """Returns a <sublime.Region> for the last non whitespace character"""
+    pos = last_non_whitespace_position(view)
+    return sublime.Region(pos, pos + 1)
+
+def is_view_visible(view):
+    """The only way to tell a view is visible seems to be to test if it has an attached window"""
+    return view.window() is not None
+

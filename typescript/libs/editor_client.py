@@ -1,5 +1,5 @@
-from .reference import RefInfo
-from .node_client import NodeCommClient
+﻿from .reference import RefInfo
+from .node_client import ServerClient, WorkerClient
 from .service_proxy import ServiceProxy
 from .global_vars import *
 
@@ -28,6 +28,7 @@ class EditorClient:
         self.available_tempfile_list = []
         self.tmpseq = 0
         self.node_client = None
+        self.worker_client = None
         self.service = None
         self.initialized = False
 
@@ -54,8 +55,9 @@ class EditorClient:
             proc_file = os.path.join(PLUGIN_DIR, "tsserver", "tsserver.js")
         print("spawning node module: " + proc_file)
 
-        self.node_client = NodeCommClient(proc_file)
-        self.service = ServiceProxy(self.node_client)
+        self.node_client = ServerClient(proc_file)
+        self.worker_client = WorkerClient(proc_file)
+        self.service = ServiceProxy(self.worker_client, self.node_client)
 
         # load formatting settings and set callbacks for setting changes
         for setting_name in [
