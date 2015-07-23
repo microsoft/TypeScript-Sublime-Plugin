@@ -1,0 +1,9 @@
+[
+	{
+        "id": "goto",
+        "children":
+        [
+            { "command": "typescript_nav_to", "caption": "Navigate to TypeScript Symbol..."}
+        ]
+	}
+]
