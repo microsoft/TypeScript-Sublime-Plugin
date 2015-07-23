@@ -234,8 +234,6 @@ class ServerClient(NodeCommClient):
         The script file to run is passed to the constructor.
         """
         super(ServerClient, self).__init__(script_path)
-        print("test")
-        print(self.server_proc)
 
         # start node process
         pref_settings = sublime.load_settings('Preferences.sublime-settings')
