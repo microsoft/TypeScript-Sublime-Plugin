@@ -85,7 +85,7 @@ Screenshots
 - Project error list
 ![](https://raw.githubusercontent.com/Microsoft/TypeScript-Sublime-Plugin/master/screenshots/errorlist.gif)
 
-- Signature popup
+- Signature popup (Requires [Sublime Text 3](http://www.sublimetext.com/3) build >= 3070)
 ![](https://raw.githubusercontent.com/Microsoft/TypeScript-Sublime-Plugin/master/screenshots/signature.gif)
 
 - Navigate to symbol
