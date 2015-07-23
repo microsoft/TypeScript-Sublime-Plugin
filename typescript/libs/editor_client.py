@@ -21,6 +21,16 @@ class ClientFileInfo:
 class EditorClient:
     """A singleton class holding information for the entire application that must be accessible globally"""
 
+    _FORMATTING_SETTINGS = [
+        # (setting_name, default_setting_value, class_property_name)
+        ('tab_size',                    4,      'tab_size'),
+        ('indent_size',                 4,      'indent_size'),
+        ('translate_tabs_to_spaces',    False,  'translate_tabs_to_spaces'),
+        ('typescript_auto_format',      True,   'ts_auto_format_enabled'),
+        ('typescript_auto_indent',      True,   'ts_auto_indent_enabled'),
+        ('auto_match_enabled',          True,   'auto_match_enabled'),
+    ]
+
     def __init__(self):
         self.file_map = {}
         self.ref_info = None
@@ -31,13 +41,6 @@ class EditorClient:
         self.worker_client = None
         self.service = None
         self.initialized = False
-
-        self.tab_size = 4
-        self.indent_size = 4
-        self.translate_tab_to_spaces = False
-        self.ts_auto_format_enabled = True
-        self.ts_auto_indent_enabled = True
-        self.auto_match_enabled = True
 
     def initialize(self):
         """
@@ -60,36 +63,41 @@ class EditorClient:
         self.service = ServiceProxy(self.worker_client, self.node_client)
 
         # load formatting settings and set callbacks for setting changes
-        for setting_name in [
-            'tab_size',
-            'indent_size',
-            'translate_tabs_to_spaces',
-            'typescript_auto_format',
-            'typescript_auto_indent',
-            'auto_match_enabled'
-        ]:
-            settings.add_on_change(setting_name, self.load_format_settings)
-        self.load_format_settings()
+        self._set_formatting_settings_callbacks()
+        self._load_formatting_settings()
 
         self.initialized = True
 
-    def load_format_settings(self):
-        settings = sublime.load_settings('Preferences.sublime-settings')
-        self.tab_size = settings.get('tab_size', 4)
-        self.indent_size = settings.get('indent_size', 4)
-        self.translate_tab_to_spaces = settings.get('translate_tabs_to_spaces', False)
-        self.ts_auto_format_enabled = settings.get("typescript_auto_format")
-        self.ts_auto_indent_enabled = settings.get("typescript_auto_indent")
-        self.auto_match_enabled = settings.get("auto_match_enabled")
-        self.set_features()
+    def _set_formatting_settings_callbacks(self):
+        syntax_settings = sublime.load_settings('TypeScript.sublime-settings')
+        preference_settings = sublime.load_settings('Preferences.sublime-settings')
 
-    def set_features(self):
+        for (setting_name, _, _) in EditorClient._FORMATTING_SETTINGS:
+            syntax_settings.add_on_change(setting_name,
+                                          self._load_formatting_settings)
+            preference_settings.add_on_change(setting_name,
+                                              self._load_formatting_settings)
+
+    def _load_formatting_settings(self):
+        syntax_settings = sublime.load_settings('TypeScript.sublime-settings')
+        preference_settings = sublime.load_settings('Preferences.sublime-settings')
+
+        for (setting_name, default_value, property_name) in EditorClient._FORMATTING_SETTINGS:
+            # Sublime Text prioritizes syntax settings over preference
+            # settings. We follow this order here.
+            value = syntax_settings.get(setting_name,
+                preference_settings.get(setting_name, default_value))
+            setattr(self, property_name, value)
+
+        self._set_features()
+
+    def _set_features(self):
         host_info = "Sublime Text version " + str(sublime.version())
         # Preferences Settings
         format_options = {
             "tabSize": self.tab_size,
             "indentSize": self.indent_size,
-            "convertTabsToSpaces": self.translate_tab_to_spaces
+            "convertTabsToSpaces": self.translate_tabs_to_spaces
         }
         self.service.configure(host_info, None, format_options)
 
@@ -122,7 +130,8 @@ class EditorClient:
 
     def has_errors(self, filename):
         client_info = self.get_or_add_file(filename)
-        return len(client_info.errors['syntacticDiag']) > 0 or len(client_info.errors['semanticDiag']) > 0
+        return (len(client_info.errors['syntacticDiag']) > 0 or
+                len(client_info.errors['semanticDiag']) > 0)
 
 # The globally accessible instance
 cli = EditorClient()

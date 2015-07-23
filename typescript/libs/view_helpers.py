@@ -156,11 +156,11 @@ def reconfig_file(view):
     view_settings = view.settings()
     tab_size = view_settings.get('tab_size', 4)
     indent_size = view_settings.get('indent_size', tab_size)
-    translate_tab_to_spaces = view_settings.get('translate_tabs_to_spaces', True)
+    translate_tabs_to_spaces = view_settings.get('translate_tabs_to_spaces', True)
     format_options = {
         "tabSize": tab_size,
         "indentSize": indent_size,
-        "convertTabsToSpaces": translate_tab_to_spaces
+        "convertTabsToSpaces": translate_tabs_to_spaces
     }
     cli.service.configure(host_info, view.file_name(), format_options)
 
