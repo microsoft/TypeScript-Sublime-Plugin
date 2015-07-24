@@ -1,4 +1,4 @@
-from .event_hub import EventHub
+﻿from .event_hub import EventHub
 from ..libs.view_helpers import *
 from ..libs.logger import log
 from ..libs import cli
@@ -24,7 +24,15 @@ class FormatEventListener:
             info.prev_sel[0].empty()
         ):
             last_command, args, repeat_times = view.command_history(0)
+            redo_command = view.command_history(1)[0]
             log.debug("last_command:{0}, args:{1}".format(last_command, args))
+            log.debug("redo_command:{0}".format(redo_command))
+            if redo_command != "" and redo_command is not None:
+                # in an undo session, avoid running format_on_key. For
+                # a non-undo session in ST3, the redo_command is an empty 
+                # string; in ST2, the redo_command is None
+                return 
+
             if last_command == "insert":
                 pos = info.prev_sel[0].begin()
                 if ";" in args["characters"]:

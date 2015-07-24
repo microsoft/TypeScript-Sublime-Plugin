@@ -1,5 +1,6 @@
 import sys
 import os
+import subprocess
 
 if sys.version_info < (3, 0):
     from typescript.libs import *
@@ -83,6 +84,7 @@ def plugin_loaded():
     else:
         print("ref view not found")
     log.debug("plugin_loaded ended")
+    _check_typescript_version()
 
 
 def plugin_unloaded():
@@ -96,3 +98,59 @@ def plugin_unloaded():
         if ref_info:
             ref_view.settings().set('refinfo', ref_info.as_value())
     cli.service.exit()
+
+
+_UPDATE_TS_MESSAGE = "Warning from TypeScript Sublime Text plugin:\n\n\
+Detected command-line TypeScript compiler version '{0}'. The TypeScript \
+Sublime Text plugin is using compiler version '{1}'. There may be \
+differences in behavior between releases.\n\n\
+To update your command-line TypeScript compiler to the latest release, run \
+'npm update -g typescript'."
+
+def _check_typescript_version():
+    """
+    Notify user to upgrade npm typescript. Do this only once every time the
+    plugin is updated.
+    """
+    settings = sublime.load_settings('Preferences.sublime-settings')
+    cached_plugin_version = settings.get("typescript_plugin_tsc_version")
+
+    try:
+        plugin_tsc_version = _get_plugin_tsc_version()
+
+        if cached_plugin_version != plugin_tsc_version:
+            # The version number getting from the tsc command is different to
+            # the version number stored in the setting file. This means user
+            # has just updated the plugin.
+
+            npm_tsc_version = _get_npm_tsc_version()
+
+            if npm_tsc_version != plugin_tsc_version:
+                sublime.message_dialog(_UPDATE_TS_MESSAGE.format(
+                    npm_tsc_version, plugin_tsc_version))
+
+                # Update the version in setting file so we don't show this
+                # message twice.
+                settings.set("typescript_plugin_tsc_version", plugin_tsc_version)
+                sublime.save_settings("Preferences.sublime-settings")
+
+    except Exception as error:
+        log.error(error)
+
+def _get_plugin_tsc_version():
+    cmd = [get_node_path(), TSC_PATH, "-v"]
+    return _execute_cmd_and_parse_version_from_output(cmd)
+
+def _get_npm_tsc_version():
+    cmd = ["tsc", "-v"]
+    return _execute_cmd_and_parse_version_from_output(cmd)
+
+def _execute_cmd_and_parse_version_from_output(cmd):
+    output = subprocess.check_output(cmd, shell=True).decode('UTF-8')
+
+    # Use regex to parse the verion number from <output> e.g. parse
+    # "1.5.0-beta" from "message TS6029: Version 1.5.0-beta\r\n".
+    match_object = re.search("Version\s*([\w.-]+)", output, re.IGNORECASE)
+    if match_object is None:
+        raise Exception("Cannot parse version number from ouput: '{0}'".format(output))
+    return match_object.groups()[0]

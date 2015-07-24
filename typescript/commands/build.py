@@ -5,6 +5,8 @@ from ..libs import cli
 
 
 class TypescriptBuildCommand(sublime_plugin.WindowCommand):
+    build_parameters = ""
+    
     def run(self):
         if get_node_path() is None:
             print("Cannot find node. Build cancelled.")
@@ -23,7 +25,7 @@ class TypescriptBuildCommand(sublime_plugin.WindowCommand):
             else:
                 sublime.active_window().show_input_panel(
                     "Build parameters: ",
-                    "",  # initial text
+                    TypescriptBuildCommand.build_parameters, # initial text
                     lambda params: self.compile_inferred_project(file_name, params),
                     None,  # on change
                     None   # on cancel
@@ -38,3 +40,4 @@ class TypescriptBuildCommand(sublime_plugin.WindowCommand):
             "cmd": cmd,
             "file_regex": "^(.+?)\\((\\d+),(\\d+)\\): (.+)$"
         })
+        TypescriptBuildCommand.build_parameters = params
