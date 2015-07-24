@@ -1235,17 +1235,17 @@
 				<key>1</key>
 				<dict>
 					<key>name</key>
-					<string>storage.modifier.ts</string>
+					<string>storage.modifier.tsx</string>
 				</dict>
 				<key>2</key>
 				<dict>
 					<key>name</key>
-					<string>storage.type.ts</string>
+					<string>storage.type.tsx</string>
 				</dict>
 				<key>3</key>
 				<dict>
 					<key>name</key>
-					<string>entity.name.class.ts</string>
+					<string>entity.name.class.tsx</string>
 				</dict>
 			</dict>
 			<key>end</key>
@@ -1255,11 +1255,11 @@
 				<key>1</key>
 				<dict>
 					<key>name</key>
-					<string>brace.curly.ts</string>
+					<string>brace.curly.tsx</string>
 				</dict>
 			</dict>
 			<key>name</key>
-			<string>meta.declaration.object.ts</string>
+			<string>meta.declaration.object.tsx</string>
 			<key>patterns</key>
 			<array>
 				<dict>
@@ -1293,7 +1293,7 @@
 				<key>1</key>
 				<dict>
 					<key>name</key>
-					<string>keyword.other.ts</string>
+					<string>keyword.other.tsx</string>
 				</dict>
 			</dict>
 			<key>end</key>
@@ -1303,11 +1303,11 @@
 				<key>1</key>
 				<dict>
 					<key>name</key>
-					<string>brace.curly.ts</string>
+					<string>brace.curly.tsx</string>
 				</dict>
 			</dict>
 			<key>name</key>
-			<string>meta.object.heritage.ts</string>
+			<string>meta.object.heritage.tsx</string>
 			<key>patterns</key>
 			<array>
 				<dict>
@@ -1331,13 +1331,13 @@
 				<key>1</key>
 				<dict>
 					<key>name</key>
-					<string>storage.type.ts</string>
+					<string>storage.type.tsx</string>
 				</dict>
 			</dict>
 			<key>match</key>
 			<string>(?:\s*([a-zA-Z_$][\w$]*))</string>
 			<key>name</key>
-			<string>meta.object.heritage.parent.ts</string>
+			<string>meta.object.heritage.parent.tsx</string>
 		</dict>
 		<key>object-member</key>
 		<dict>
@@ -1362,13 +1362,13 @@
 				<key>0</key>
 				<dict>
 					<key>name</key>
-					<string>entity.name.class.ts</string>
+					<string>entity.name.class.tsx</string>
 				</dict>
 			</dict>
 			<key>match</key>
 			<string>[a-zA-Z_$][\w$]*</string>
 			<key>name</key>
-			<string>meta.object.name.ts</string>
+			<string>meta.object.name.tsx</string>
 		</dict>
 		<key>parameter-name</key>
 		<dict>
