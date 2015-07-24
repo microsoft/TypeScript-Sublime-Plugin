@@ -867,7 +867,7 @@
 		<key>object-declaration</key>
 		<dict>
 			<key>begin</key>
-			<string>\b(?:(export)\s+)?\b(class|interface)\b(?:\s+([a-zA-Z_$][\w$]*))</string>
+			<string>\b(?:(export)\s+)?\b(class|interface)\b</string>
 			<key>beginCaptures</key>
 			<dict>
 				<key>1</key>
@@ -902,7 +902,7 @@
 			<array>
 				<dict>
 					<key>include</key>
-					<string>#type-parameters</string>
+					<string>#comment</string>
 				</dict>
 				<dict>
 					<key>include</key>
@@ -910,18 +910,22 @@
 				</dict>
 				<dict>
 					<key>include</key>
-					<string>#object-body</string>
+					<string>#object-name</string>
 				</dict>
 				<dict>
 					<key>include</key>
-					<string>#comment</string>
+					<string>#type-parameters</string>
+				</dict>
+				<dict>
+					<key>include</key>
+					<string>#object-body</string>
 				</dict>
 			</array>
 		</dict>
 		<key>object-heritage</key>
 		<dict>
 			<key>begin</key>
-			<string>(?:\s*\b(extends|implements))</string>
+			<string>(?:\b(extends|implements))</string>
 			<key>beginCaptures</key>
 			<dict>
 				<key>1</key>
@@ -946,15 +950,15 @@
 			<array>
 				<dict>
 					<key>include</key>
+					<string>#comment</string>
+				</dict>
+				<dict>
+					<key>include</key>
 					<string>#type-parameters</string>
 				</dict>
 				<dict>
 					<key>include</key>
 					<string>#object-heritage-parent</string>
-				</dict>
-				<dict>
-					<key>include</key>
-					<string>#comment</string>
 				</dict>
 			</array>
 		</dict>
@@ -988,6 +992,21 @@
 					<string>#expression</string>
 				</dict>
 			</array>
+		</dict>
+		<key>object-name</key>
+		<dict>
+			<key>captures</key>
+			<dict>
+				<key>0</key>
+				<dict>
+					<key>name</key>
+					<string>entity.name.class.ts</string>
+				</dict>
+			</dict>
+			<key>match</key>
+			<string>[a-zA-Z_$][\w$]*</string>
+			<key>name</key>
+			<string>meta.object.name.ts</string>
 		</dict>
 		<key>parameter-name</key>
 		<dict>
