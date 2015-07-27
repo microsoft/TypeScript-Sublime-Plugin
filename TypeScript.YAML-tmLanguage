@@ -62,7 +62,7 @@ repository:
 
   object-declaration:
     name: meta.declaration.object.ts
-    begin: '\b(?:(export)\s+)?\b(class|interface)\b(?:\s+([a-zA-Z_$][\w$]*))'
+    begin: '\b(?:(export)\s+)?\b(class|interface)\b'
     beginCaptures:
       '1': { name: storage.modifier.ts }
       '2': { name: storage.type.ts }
@@ -71,17 +71,36 @@ repository:
     endCaptures:
       '1': { name: brace.curly.ts }
     patterns:
-    - include: '#type-parameters'
-    - include: '#object-heritage'
-    - include: '#object-body'
     - include: '#comment'
+    - include: '#object-heritage' # Must be before object-name to consume the "extends" keyword.
+    - include: '#object-name'
+    - include: '#type-parameters' # Must be applied after object-name e.g. interface KeyValuePair<K, V>
+    - include: '#object-body'
+
+  object-name:
+    name: meta.object.name.ts
+    match: '[a-zA-Z_$][\w$]*'
+    captures:
+      '0': { name: 'entity.name.class.ts' }
 
   object-heritage:
     name: meta.object.heritage.ts
-    match: (?:\b(extends|implements)\b|,)(?:\s+([a-zA-Z_$][.\w$]*))
+    begin: '(?:\b(extends|implements))'
+    beginCaptures:
+      '1': { name: keyword.other.ts }
+    end: (?=\{)
+    endCaptures:
+      '1': { name: brace.curly.ts }
+    patterns:
+    - include: '#comment'
+    - include: '#type-parameters'
+    - include: '#object-heritage-parent'
+
+  object-heritage-parent:
+    name: meta.object.heritage.parent.ts
+    match: '(?:\s*([a-zA-Z_$][\w$]*))'
     captures:
-       '1': { name: keyword.other.ts }
-       '2': { name: storage.type.ts } 
+      '1': { name: storage.type.ts }
 
   object-body:
     name: meta.object.body.ts
@@ -410,6 +429,7 @@ repository:
     end: '(?=[(;]|$)'
     patterns:
     - include: '#type'
+    - include: '#comment'
 
   object-member:
     name: meta.object.member.ts
