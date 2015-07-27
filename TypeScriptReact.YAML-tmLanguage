@@ -23,6 +23,8 @@ repository:
     end: '(?=$|[;=\}\{])|(?<=\})'
     patterns:
     - include: '#type-annotation'
+    - include: '#string'
+    - include: '#comment'
 
   control-statement:
     name: keyword.control.tsx
@@ -95,6 +97,7 @@ repository:
     endCaptures:
       '0': { name: meta.brace.curly.tsx }
     patterns:
+    - include: "#string"
     - include: '#comment'
     - include: '#field-declaration'
     - include: '#method-declaration'

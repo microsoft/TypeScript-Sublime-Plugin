@@ -824,6 +824,10 @@
 			<array>
 				<dict>
 					<key>include</key>
+					<string>#string</string>
+				</dict>
+				<dict>
+					<key>include</key>
 					<string>#comment</string>
 				</dict>
 				<dict>
@@ -1598,6 +1602,14 @@
 				<dict>
 					<key>include</key>
 					<string>#type-annotation</string>
+				</dict>
+				<dict>
+					<key>include</key>
+					<string>#string</string>
+				</dict>
+				<dict>
+					<key>include</key>
+					<string>#comment</string>
 				</dict>
 			</array>
 		</dict>
