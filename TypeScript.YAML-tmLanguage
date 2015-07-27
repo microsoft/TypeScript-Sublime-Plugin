@@ -241,6 +241,8 @@ repository:
     end: (?=$|[,);\}\]]|//)|(?==[^>])|(?<=[\}>\]\)]|[a-zA-Z_$])\s*(?=\{)
     patterns:
     - include: '#type'
+    - include: '#string'
+    - include: '#comment'
 
   type:
     name: meta.type.ts
