@@ -26,6 +26,7 @@ class IdleListener:
         self.just_changed_focus = False
         self.modified = False  # Flag to check if buffer has just been modified
         self.event_handler_added = False
+        self.occurrences_event_handler_added = False
 
         self.on_idle_timeout_scheduler = TimeoutScheduler(self.on_idle)
         self.on_selection_idle_timeout_scheduler = TimeoutScheduler(self.on_selection_idle)
@@ -74,6 +75,7 @@ class IdleListener:
         info = get_info(view)
         if info:
             self.update_status(view, info)
+            self.request_occurrences(view, info)
 
     def request_errors(self, view, info, error_delay):
         """
@@ -178,6 +180,54 @@ class IdleListener:
         else:
             view.run_command('typescript_quick_info')
 
+    def request_occurrences(self, view, info):
+        """
+        """
+        print("request_occurrences")
+
+        '''if is_typescript(view):
+            location = get_location_from_view(view)
+            cli.service.async_occurrences(view.file_name(), location, self.highlight_occurrences)'''
+
+
+    def highlight_occurrences(self, response):
+        """
+        """
+        print("occurrences received:")
+
+        '''view = active_view()
+        if not view.file_name():
+            return
+
+        region_key = 'occurrences'
+        view.erase_regions(region_key)
+
+        if not response['success']:
+            return
+        
+        occurrence_regions = []
+
+        for occurrence in response['body']:
+            if occurrence['file'] != view.file_name().replace('\\', '/'):
+                continue
+
+            start_line, start_offset = extract_line_offset(occurrence['start'])
+            start_point = view.text_point(start_line, start_offset)
+
+            end_line, end_offset = extract_line_offset(occurrence['end'])
+            end_point = view.text_point(end_line, end_offset)
+
+            occurrence_regions.append(sublime.Region(start_point, end_point))
+        
+        # Highlight error regions in view
+        if IS_ST2:
+            view.add_regions(region_key, occurrence_regions, 'comment', '',
+                             sublime.DRAW_SOLID_UNDERLINE)
+        else:
+            view.add_regions(region_key, occurrence_regions, 'comment', '',
+                             sublime.DRAW_NO_FILL |
+                             sublime.DRAW_NO_OUTLINE |
+                             sublime.DRAW_SOLID_UNDERLINE)'''
 
 listener = IdleListener()
 EventHub.subscribe("on_activated_with_info", listener.on_activated_with_info)

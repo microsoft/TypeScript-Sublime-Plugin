@@ -63,11 +63,14 @@ class NodeCommClient(CommClient):
         return timeoutMsg
 
     def add_event_handler(self, event_name, cb):
+        print ("add cb to event_handler: " + event_name)
         event_handlers = self.event_handlers
         if event_name not in event_handlers:
             event_handlers[event_name] = []
+        print(event_handlers)
         if cb not in event_handlers[event_name]:
             event_handlers[event_name].append(cb)
+        print(event_handlers)
 
     def started(self):
         return self.server_proc is not None
@@ -134,6 +137,7 @@ class NodeCommClient(CommClient):
         Post command to server; no response needed
         """
         log.debug('Posting command: {0}'.format(cmd))
+        print('Posting command: {0}'.format(cmd))
         if not self.server_proc:
             log.error("can not send request; node process not running")
             return False
@@ -179,6 +183,7 @@ class NodeCommClient(CommClient):
             log.debug('Read body of length: {0}'.format(body_length))
             data_json = data.decode("utf-8")
             data_dict = json_helpers.decode(data_json)
+            print('received: {0}'.format(data_dict))
             if data_dict['type'] == "response":
                 request_seq = data_dict['request_seq']
                 log.debug('Body sequence#: {0}'.format(request_seq))
