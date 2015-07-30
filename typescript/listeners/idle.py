@@ -75,7 +75,8 @@ class IdleListener:
         info = get_info(view)
         if info:
             self.update_status(view, info)
-            self.request_occurrences(view, info)
+            if not IS_ST2 and view.settings.get('typescript_highlight_occurrences', 'true'):
+                self.request_occurrences(view, info)
 
     def request_errors(self, view, info, error_delay):
         """
@@ -181,21 +182,13 @@ class IdleListener:
             view.run_command('typescript_quick_info')
 
     def request_occurrences(self, view, info):
-        """
-        """
-        print("request_occurrences")
-
-        '''if is_typescript(view):
+        if is_typescript(view):
             location = get_location_from_view(view)
-            cli.service.async_occurrences(view.file_name(), location, self.highlight_occurrences)'''
+            cli.service.async_occurrences(view.file_name(), location, self.highlight_occurrences)
 
 
     def highlight_occurrences(self, response):
-        """
-        """
-        print("occurrences received:")
-
-        '''view = active_view()
+        view = active_view()
         if not view.file_name():
             return
 
@@ -219,15 +212,10 @@ class IdleListener:
 
             occurrence_regions.append(sublime.Region(start_point, end_point))
         
-        # Highlight error regions in view
-        if IS_ST2:
-            view.add_regions(region_key, occurrence_regions, 'comment', '',
-                             sublime.DRAW_SOLID_UNDERLINE)
-        else:
-            view.add_regions(region_key, occurrence_regions, 'comment', '',
-                             sublime.DRAW_NO_FILL |
-                             sublime.DRAW_NO_OUTLINE |
-                             sublime.DRAW_SOLID_UNDERLINE)'''
+        view.add_regions(region_key, occurrence_regions, 'comment', '',
+                         sublime.DRAW_NO_FILL |
+                         sublime.DRAW_NO_OUTLINE |
+                         sublime.DRAW_SOLID_UNDERLINE)
 
 listener = IdleListener()
 EventHub.subscribe("on_activated_with_info", listener.on_activated_with_info)
