@@ -120,7 +120,7 @@ class IdleListener:
         view = info.view
         if not info.change_count_when_last_err_req_sent == change_count(view):
             log.debug("The error info is outdated")
-            self.set_on_idle_timer(200)
+            self.self.on_idle_timeout_scheduler.reset_timeout(200)
             return
 
         region_key = 'syntacticDiag' if syntactic else 'semanticDiag'
@@ -197,7 +197,7 @@ class IdleListener:
 
         if not response['success']:
             return
-        
+
         occurrence_regions = []
 
         for occurrence in response['body']:
@@ -211,7 +211,7 @@ class IdleListener:
             end_point = view.text_point(end_line, end_offset)
 
             occurrence_regions.append(sublime.Region(start_point, end_point))
-        
+
         view.add_regions(region_key, occurrence_regions, 'comment', '',
                          sublime.DRAW_NO_FILL |
                          sublime.DRAW_NO_OUTLINE |
