@@ -120,7 +120,7 @@ class IdleListener:
         view = info.view
         if not info.change_count_when_last_err_req_sent == change_count(view):
             log.debug("The error info is outdated")
-            self.self.on_idle_timeout_scheduler.reset_timeout(200)
+            self.on_idle_timeout_scheduler.reset_timeout(200)
             return
 
         region_key = 'syntacticDiag' if syntactic else 'semanticDiag'
