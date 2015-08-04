@@ -143,7 +143,7 @@ repository:
     beginCaptures:
       '1': { name: variable.ts }
       '2': { name: keyword.operator.ts }
-    end: '(?=\}|;|,)|(?<=\})'
+    end: '(?=\}|;|,|\n)|(?<=\})'
     patterns:
     - include: '#expression'
 
