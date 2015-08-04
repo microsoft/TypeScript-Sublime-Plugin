@@ -363,7 +363,7 @@
 				</dict>
 			</dict>
 			<key>end</key>
-			<string>(?=\}|;|,|\n)|(?&lt;=\})</string>
+			<string>(?=\}|;|,)|(?&lt;=\})</string>
 			<key>name</key>
 			<string>meta.field.declaration.tsx</string>
 			<key>patterns</key>
