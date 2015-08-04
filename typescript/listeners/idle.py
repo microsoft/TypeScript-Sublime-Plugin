@@ -200,17 +200,21 @@ class IdleListener:
 
         occurrence_regions = []
 
-        for occurrence in response['body']:
-            if occurrence['file'] != view.file_name().replace('\\', '/'):
+        for file_highlight in response['body']:
+            if file_highlight['fileName'] != view.file_name().replace('\\', '/'):
                 continue
 
-            start_line, start_offset = extract_line_offset(occurrence['start'])
-            start_point = view.text_point(start_line, start_offset)
+            for occurrence in file_highlight['highlightSpans']:
+                start_line, start_offset = extract_line_offset(occurrence['start'])
+                start_point = view.text_point(start_line, start_offset)
 
-            end_line, end_offset = extract_line_offset(occurrence['end'])
-            end_point = view.text_point(end_line, end_offset)
+                start_line, start_offset = extract_line_offset(occurrence['start'])
+                start_point = view.text_point(start_line, start_offset)
 
-            occurrence_regions.append(sublime.Region(start_point, end_point))
+                end_line, end_offset = extract_line_offset(occurrence['end'])
+                end_point = view.text_point(end_line, end_offset)
+
+                occurrence_regions.append(sublime.Region(start_point, end_point))
 
         view.add_regions(region_key, occurrence_regions, 'comment', '',
                          sublime.DRAW_NO_FILL |
