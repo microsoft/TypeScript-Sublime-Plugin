@@ -148,7 +148,7 @@ repository:
     beginCaptures:
       '1': { name: variable.tsx }
       '2': { name: keyword.operator.tsx }
-    end: '(?=\}|;|,|\n)|(?<=\})'
+    end: '(?=\}|;|,)|(?<=\})'
     patterns:
     - include: '#expression'
 
