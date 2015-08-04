@@ -201,7 +201,7 @@ class IdleListener:
         occurrence_regions = []
 
         for file_highlight in response['body']:
-            if file_highlight['fileName'] != view.file_name().replace('\\', '/'):
+            if file_highlight['file'] != view.file_name().replace('\\', '/'):
                 continue
 
             for occurrence in file_highlight['highlightSpans']:
