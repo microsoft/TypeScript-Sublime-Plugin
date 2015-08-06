@@ -76,7 +76,7 @@ class IdleListener:
         if info:
             self.update_status(view, info)
             if not IS_ST2 and view.settings().get('typescript_highlight_occurrences', 'true'):
-                self.request_occurrences(view, info)
+                self.request_document_highlights(view, info)
 
     def request_errors(self, view, info, error_delay):
         """
@@ -181,11 +181,10 @@ class IdleListener:
         else:
             view.run_command('typescript_quick_info')
 
-    def request_occurrences(self, view, info):
+    def request_document_highlights(self, view, info):
         if is_typescript(view):
             location = get_location_from_view(view)
-            cli.service.async_occurrences(view.file_name(), location, self.highlight_occurrences)
-
+            cli.service.async_document_highlights(view.file_name(), location, self.highlight_occurrences)
 
     def highlight_occurrences(self, response):
         view = active_view()
