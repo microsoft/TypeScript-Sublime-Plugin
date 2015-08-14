@@ -156,30 +156,37 @@ def reconfig_file(view):
     view_settings = view.settings()
     tab_size = view_settings.get('tab_size', 4)
     indent_size = view_settings.get('indent_size', tab_size)
-    translate_tab_to_spaces = view_settings.get('translate_tabs_to_spaces', True)
-    format_options = {
-        "tabSize": tab_size,
-        "indentSize": indent_size,
-        "convertTabsToSpaces": translate_tab_to_spaces
-    }
-    cli.service.configure(host_info, view.file_name(), format_options)
+    translate_tabs_to_spaces = view_settings.get('translate_tabs_to_spaces', True)
+
+    prev_format_options = view_settings.get('typescript_plugin_format_options')
+    if prev_format_options == None \
+        or prev_format_options['tabSize'] != tab_size \
+        or prev_format_options['indentSize'] != indent_size \
+        or prev_format_options['convertTabsToSpaces'] != translate_tabs_to_spaces:
+        format_options = {
+            "tabSize": tab_size,
+            "indentSize": indent_size,
+            "convertTabsToSpaces": translate_tabs_to_spaces
+        }
+        view_settings.set('typescript_plugin_format_options', format_options)
+        cli.service.configure(host_info, view.file_name(), format_options)
+        return True
+    return False
 
 
 def set_file_prefs(view):
     settings = view.settings()
     settings.set('use_tab_stops', False)
-    settings.add_on_change('tab_size', tab_size_changed)
-    settings.add_on_change('indent_size', tab_size_changed)
-    settings.add_on_change('translate_tabs_to_spaces', tab_size_changed)
+    settings.add_on_change('typescript_plugin_settings_changed', settings_changed)
 
 
-def tab_size_changed():
+def settings_changed():
     view = active_view()
     if view is None:
         return
-    reconfig_file(view)
-    client_info = cli.get_or_add_file(view.file_name())
-    client_info.pending_changes = True
+    if reconfig_file(view):
+        client_info = cli.get_or_add_file(view.file_name())
+        client_info.pending_changes = True
 
 
 def set_caret_pos(view, pos):
