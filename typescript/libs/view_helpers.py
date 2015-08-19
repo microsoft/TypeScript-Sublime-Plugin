@@ -151,6 +151,11 @@ def open_file_on_worker(view):
     cli.service.open_on_worker(view.file_name())
 
 def reconfig_file(view):
+    """Reconfigure indentation settings for the current view
+
+    Returns True if the settings were configured in the TS service
+    Returns False if the settings did not need to be configured
+    """
     host_info = "Sublime Text version " + str(sublime.version())
     # Preferences Settings
     view_settings = view.settings()
