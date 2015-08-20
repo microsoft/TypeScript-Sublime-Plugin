@@ -843,7 +843,7 @@
 		<key>jsx-tag-attributes-illegal</key>
 		<dict>
 			<key>match</key>
-			<string>\S*</string>
+			<string>\S+</string>
 			<key>name</key>
 			<string>invalid.illegal.attribute.tsx</string>
 		</dict>

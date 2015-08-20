@@ -667,7 +667,7 @@ repository:
 
   jsx-tag-attributes-illegal:
     name: invalid.illegal.attribute.tsx
-    match: \S*
+    match: \S+
 
   jsx-tag-without-attributes:
     name: tag.without-attributes.tsx
