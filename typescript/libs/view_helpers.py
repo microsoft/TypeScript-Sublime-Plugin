@@ -13,6 +13,7 @@ class FileInfo:
         self.filename = filename
         # 'pre_change_sent' means the change to this file is already sent to the server
         # used between 'on_text_command' and 'on_modified'
+        self.is_open = False
         self.pre_change_sent = False
         # 'change_sent' has the same function with 'pre_change_sent', only it is
         # used between 'on_modified' and 'on_selection_modified'
@@ -36,7 +37,7 @@ _file_map = dict()
 _file_map_on_worker = dict()
 
 
-def get_info(view):
+def get_info(view, open_if_not_found=True):
     """Find the file info on the server that matches the given view"""
     if not cli.initialized:
         cli.initialize()
@@ -46,33 +47,35 @@ def get_info(view):
         file_name = view.file_name()
         if is_typescript(view):
             info = _file_map.get(file_name)
-            if not info:
-                info = FileInfo(file_name, None)
-                info.view = view
-                info.client_info = cli.get_or_add_file(file_name)
-                set_file_prefs(view)
-                _file_map[file_name] = info
-                # Open the file on the server
-                open_file(view)
-                if view.is_dirty():
-                    if not view.is_loading():
-                        reload_buffer(view, info.client_info)
+            if open_if_not_found:
+                if not info or info.is_open is False:
+                    info = FileInfo(file_name, None)
+                    info.view = view
+                    info.client_info = cli.get_or_add_file(file_name)
+                    set_file_prefs(view)
+                    _file_map[file_name] = info
+                    # Open the file on the server
+                    open_file(view)
+                    info.is_open = True
+                    if view.is_dirty():
+                        if not view.is_loading():
+                            reload_buffer(view, info.client_info)
+                        else:
+                            info.client_info.pending_changes = True
+
+                # This is for the case when a file is opened on server but not
+                # on the worker, which could be caused by starting the worker
+                # for the first time
+                if not IS_ST2:
+                    if get_panel_manager().is_panel_active("errorlist"):
+                        info_on_worker = _file_map_on_worker.get(file_name)
+                        if not info_on_worker:
+                            _file_map_on_worker[file_name] = info
+                            open_file_on_worker(view)
+                            if view.is_dirty() and not view.is_loading():
+                                reload_buffer_on_worker(view)
                     else:
-                        info.client_info.pending_changes = True
-                        
-            # This is for the case when a file is opened on server but not 
-            # on the worker, which could be caused by starting the worker
-            # for the first time
-            if not IS_ST2:
-                if get_panel_manager().is_panel_active("errorlist"):
-                    info_on_worker = _file_map_on_worker.get(file_name)
-                    if not info_on_worker:
-                        _file_map_on_worker[file_name] = info
-                        open_file_on_worker(view)
-                        if view.is_dirty() and not view.is_loading():
-                            reload_buffer_on_worker(view)
-                else:
-                    _file_map_on_worker.clear()
+                        _file_map_on_worker.clear()
     return info
 
 
