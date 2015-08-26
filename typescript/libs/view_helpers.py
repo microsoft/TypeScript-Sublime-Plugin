@@ -11,9 +11,9 @@ class FileInfo:
 
     def __init__(self, filename, cc):
         self.filename = filename
+        self.is_open = False
         # 'pre_change_sent' means the change to this file is already sent to the server
         # used between 'on_text_command' and 'on_modified'
-        self.is_open = False
         self.pre_change_sent = False
         # 'change_sent' has the same function with 'pre_change_sent', only it is
         # used between 'on_modified' and 'on_selection_modified'
@@ -37,7 +37,7 @@ _file_map = dict()
 _file_map_on_worker = dict()
 
 
-def get_info(view, open_if_not_found=True):
+def get_info(view, open_if_not_cached=True):
     """Find the file info on the server that matches the given view"""
     if not cli.initialized:
         cli.initialize()
@@ -47,7 +47,7 @@ def get_info(view, open_if_not_found=True):
         file_name = view.file_name()
         if is_typescript(view):
             info = _file_map.get(file_name)
-            if open_if_not_found:
+            if open_if_not_cached:
                 if not info or info.is_open is False:
                     info = FileInfo(file_name, None)
                     info.view = view

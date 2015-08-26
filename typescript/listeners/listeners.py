@@ -232,7 +232,7 @@ class TypeScriptEventListener(sublime_plugin.EventListener):
     def on_close(self, view):
         log.debug("on_close")
         file_name = view.file_name()
-        info = get_info(view, open_if_not_found=False)
+        info = get_info(view, open_if_not_cached=False)
         if info:
             info.is_open = False
         if view.is_scratch() and view.name() == "Find References":
