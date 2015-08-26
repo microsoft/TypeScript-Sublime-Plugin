@@ -148,7 +148,7 @@ repository:
     beginCaptures:
       '1': { name: variable.tsx }
       '2': { name: keyword.operator.tsx }
-    end: '(?=\}|;|,|\n)|(?<=\})'
+    end: '(?=\}|;|,)|(?<=\})'
     patterns:
     - include: '#expression'
 
@@ -327,7 +327,7 @@ repository:
     begin: '=>'
     beginCaptures:
       '0': { name: keyword.operator.tsx }
-    end: (?=\s*[,\)\{=;]|//|$)
+    end: (?=\s*[,\)\{=;>]|//|$)
     patterns:
     - include: '#type'
 
@@ -667,7 +667,7 @@ repository:
 
   jsx-tag-attributes-illegal:
     name: invalid.illegal.attribute.tsx
-    match: \S*
+    match: \S+
 
   jsx-tag-without-attributes:
     name: tag.without-attributes.tsx

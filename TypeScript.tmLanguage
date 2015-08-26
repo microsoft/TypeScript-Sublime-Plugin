@@ -395,7 +395,7 @@
 				</dict>
 			</dict>
 			<key>end</key>
-			<string>(?=\}|;|,|\n)|(?&lt;=\})</string>
+			<string>(?=\}|;|,)|(?&lt;=\})</string>
 			<key>name</key>
 			<string>meta.field.declaration.ts</string>
 			<key>patterns</key>
@@ -1416,7 +1416,7 @@
 				</dict>
 			</dict>
 			<key>end</key>
-			<string>(?=\s*[,\)\{=;]|//|$)</string>
+			<string>(?=\s*[,\)\{=;&gt;]|//|$)</string>
 			<key>name</key>
 			<string>meta.type.function.return.ts</string>
 			<key>patterns</key>
