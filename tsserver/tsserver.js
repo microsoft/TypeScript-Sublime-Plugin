@@ -4030,7 +4030,6 @@ var ts;
         {
             name: "out",
             type: "string",
-            isFilePath: true,
             description: ts.Diagnostics.Concatenate_and_emit_output_to_single_file,
             paramType: ts.Diagnostics.FILE
         },
@@ -41847,6 +41846,13 @@ var ts;
                     // after incremental parsing nameTable might not be up-to-date
                     // drop it so it can be lazily recreated later
                     newSourceFile.nameTable = undefined;
+                    // dispose all resources held by old script snapshot
+                    if (sourceFile !== newSourceFile && sourceFile.scriptSnapshot) {
+                        if (sourceFile.scriptSnapshot.dispose) {
+                            sourceFile.scriptSnapshot.dispose();
+                        }
+                        sourceFile.scriptSnapshot = undefined;
+                    }
                     return newSourceFile;
                 }
             }
@@ -46822,6 +46828,7 @@ var ts;
             CommandNames.Format = "format";
             CommandNames.Formatonkey = "formatonkey";
             CommandNames.Geterr = "geterr";
+            CommandNames.GeterrForProject = "geterrForProject";
             CommandNames.NavBar = "navbar";
             CommandNames.Navto = "navto";
             CommandNames.Occurrences = "occurrences";
@@ -47055,10 +47062,11 @@ var ts;
                     }
                 }, ms);
             };
-            Session.prototype.updateErrorCheck = function (checkList, seq, matchSeq, ms, followMs) {
+            Session.prototype.updateErrorCheck = function (checkList, seq, matchSeq, ms, followMs, requireOpen) {
                 var _this = this;
                 if (ms === void 0) { ms = 1500; }
                 if (followMs === void 0) { followMs = 200; }
+                if (requireOpen === void 0) { requireOpen = true; }
                 if (followMs > ms) {
                     followMs = ms;
                 }
@@ -47073,7 +47081,7 @@ var ts;
                 var checkOne = function () {
                     if (matchSeq(seq)) {
                         var checkSpec = checkList[index++];
-                        if (checkSpec.project.getSourceFileFromName(checkSpec.fileName, true)) {
+                        if (checkSpec.project.getSourceFileFromName(checkSpec.fileName, requireOpen)) {
                             _this.syntacticCheck(checkSpec.fileName, checkSpec.project);
                             _this.immediateId = setImmediate(function () {
                                 _this.semanticCheck(checkSpec.fileName, checkSpec.project);
@@ -47151,17 +47159,6 @@ var ts;
                         isWriteAccess: isWriteAccess
                     };
                 });
-            };
-            Session.prototype.getProjectInfo = function (fileName, needFileNameList) {
-                fileName = ts.normalizePath(fileName);
-                var project = this.projectService.getProjectForFile(fileName);
-                var projectInfo = {
-                    configFileName: project.projectFilename
-                };
-                if (needFileNameList) {
-                    projectInfo.fileNameList = project.getFileNameList();
-                }
-                return projectInfo;
             };
             Session.prototype.getRenameLocations = function (line, offset, fileName, findInComments, findInStrings) {
                 var file = ts.normalizePath(fileName);
@@ -47584,6 +47581,60 @@ var ts;
                     end: compilerService.host.positionToLineOffset(file, span.start + span.length)
                 }); });
             };
+            Session.prototype.getProjectInfo = function (fileName, needFileNameList) {
+                fileName = ts.normalizePath(fileName);
+                var project = this.projectService.getProjectForFile(fileName);
+                var projectInfo = {
+                    configFileName: project.projectFilename
+                };
+                if (needFileNameList) {
+                    projectInfo.fileNameList = project.getFileNameList();
+                }
+                return projectInfo;
+            };
+            Session.prototype.getDiagnosticsForProject = function (delay, fileName) {
+                var _this = this;
+                var _a = this.getProjectInfo(fileName, true), configFileName = _a.configFileName, fileNamesInProject = _a.fileNameList;
+                // No need to analyze lib.d.ts
+                fileNamesInProject = fileNamesInProject.filter(function (value, index, array) { return value.indexOf("lib.d.ts") < 0; });
+                // Sort the file name list to make the recently touched files come first
+                var highPriorityFiles = [];
+                var mediumPriorityFiles = [];
+                var lowPriorityFiles = [];
+                var veryLowPriorityFiles = [];
+                var normalizedFileName = ts.normalizePath(fileName);
+                var project = this.projectService.getProjectForFile(normalizedFileName);
+                for (var _i = 0; _i < fileNamesInProject.length; _i++) {
+                    var fileNameInProject = fileNamesInProject[_i];
+                    if (this.getCanonicalFileName(fileNameInProject) == this.getCanonicalFileName(fileName))
+                        highPriorityFiles.push(fileNameInProject);
+                    else {
+                        var info = this.projectService.getScriptInfo(fileNameInProject);
+                        if (!info.isOpen) {
+                            if (fileNameInProject.indexOf(".d.ts") > 0)
+                                veryLowPriorityFiles.push(fileNameInProject);
+                            else
+                                lowPriorityFiles.push(fileNameInProject);
+                        }
+                        else
+                            mediumPriorityFiles.push(fileNameInProject);
+                    }
+                }
+                fileNamesInProject = highPriorityFiles.concat(mediumPriorityFiles).concat(lowPriorityFiles).concat(veryLowPriorityFiles);
+                if (fileNamesInProject.length > 0) {
+                    var checkList = fileNamesInProject.map(function (fileName) {
+                        var normalizedFileName = ts.normalizePath(fileName);
+                        return { fileName: normalizedFileName, project: project };
+                    });
+                    // Project level error analysis runs on background files too, therefore
+                    // doesn't require the file to be opened
+                    this.updateErrorCheck(checkList, this.changeSeq, function (n) { return n == _this.changeSeq; }, delay, 200, false);
+                }
+            };
+            Session.prototype.getCanonicalFileName = function (fileName) {
+                var name = this.host.useCaseSensitiveFileNames ? fileName : fileName.toLowerCase();
+                return ts.normalizePath(name);
+            };
             Session.prototype.exit = function () {
             };
             Session.prototype.addProtocolHandler = function (command, handler) {
@@ -47610,7 +47661,146 @@ var ts;
                 }
                 try {
                     var request = JSON.parse(message);
-                    var _a = this.executeCommand(request), response = _a.response, responseRequired = _a.responseRequired;
+                    var response;
+                    var errorMessage;
+                    var responseRequired = true;
+                    switch (request.command) {
+                        case CommandNames.Exit: {
+                            this.exit();
+                            responseRequired = false;
+                            break;
+                        }
+                        case CommandNames.Definition: {
+                            var defArgs = request.arguments;
+                            response = this.getDefinition(defArgs.line, defArgs.offset, defArgs.file);
+                            break;
+                        }
+                        case CommandNames.TypeDefinition: {
+                            var defArgs = request.arguments;
+                            response = this.getTypeDefinition(defArgs.line, defArgs.offset, defArgs.file);
+                            break;
+                        }
+                        case CommandNames.References: {
+                            var refArgs = request.arguments;
+                            response = this.getReferences(refArgs.line, refArgs.offset, refArgs.file);
+                            break;
+                        }
+                        case CommandNames.Rename: {
+                            var renameArgs = request.arguments;
+                            response = this.getRenameLocations(renameArgs.line, renameArgs.offset, renameArgs.file, renameArgs.findInComments, renameArgs.findInStrings);
+                            break;
+                        }
+                        case CommandNames.Open: {
+                            var openArgs = request.arguments;
+                            this.openClientFile(openArgs.file);
+                            responseRequired = false;
+                            break;
+                        }
+                        case CommandNames.Quickinfo: {
+                            var quickinfoArgs = request.arguments;
+                            response = this.getQuickInfo(quickinfoArgs.line, quickinfoArgs.offset, quickinfoArgs.file);
+                            break;
+                        }
+                        case CommandNames.Format: {
+                            var formatArgs = request.arguments;
+                            response = this.getFormattingEditsForRange(formatArgs.line, formatArgs.offset, formatArgs.endLine, formatArgs.endOffset, formatArgs.file);
+                            break;
+                        }
+                        case CommandNames.Formatonkey: {
+                            var formatOnKeyArgs = request.arguments;
+                            response = this.getFormattingEditsAfterKeystroke(formatOnKeyArgs.line, formatOnKeyArgs.offset, formatOnKeyArgs.key, formatOnKeyArgs.file);
+                            break;
+                        }
+                        case CommandNames.Completions: {
+                            var completionsArgs = request.arguments;
+                            response = this.getCompletions(completionsArgs.line, completionsArgs.offset, completionsArgs.prefix, completionsArgs.file);
+                            break;
+                        }
+                        case CommandNames.CompletionDetails: {
+                            var completionDetailsArgs = request.arguments;
+                            response =
+                                this.getCompletionEntryDetails(completionDetailsArgs.line, completionDetailsArgs.offset, completionDetailsArgs.entryNames, completionDetailsArgs.file);
+                            break;
+                        }
+                        case CommandNames.SignatureHelp: {
+                            var signatureHelpArgs = request.arguments;
+                            response = this.getSignatureHelpItems(signatureHelpArgs.line, signatureHelpArgs.offset, signatureHelpArgs.file);
+                            break;
+                        }
+                        case CommandNames.Geterr: {
+                            var geterrArgs = request.arguments;
+                            response = this.getDiagnostics(geterrArgs.delay, geterrArgs.files);
+                            responseRequired = false;
+                            break;
+                        }
+                        case CommandNames.GeterrForProject: {
+                            var args = request.arguments;
+                            response = this.getDiagnosticsForProject(args.delay, args.file);
+                            responseRequired = false;
+                            break;
+                        }
+                        case CommandNames.Change: {
+                            var changeArgs = request.arguments;
+                            this.change(changeArgs.line, changeArgs.offset, changeArgs.endLine, changeArgs.endOffset, changeArgs.insertString, changeArgs.file);
+                            responseRequired = false;
+                            break;
+                        }
+                        case CommandNames.Configure: {
+                            var configureArgs = request.arguments;
+                            this.projectService.setHostConfiguration(configureArgs);
+                            this.output(undefined, CommandNames.Configure, request.seq);
+                            responseRequired = false;
+                            break;
+                        }
+                        case CommandNames.Reload: {
+                            var reloadArgs = request.arguments;
+                            this.reload(reloadArgs.file, reloadArgs.tmpfile, request.seq);
+                            responseRequired = false;
+                            break;
+                        }
+                        case CommandNames.Saveto: {
+                            var savetoArgs = request.arguments;
+                            this.saveToTmp(savetoArgs.file, savetoArgs.tmpfile);
+                            responseRequired = false;
+                            break;
+                        }
+                        case CommandNames.Close: {
+                            var closeArgs = request.arguments;
+                            this.closeClientFile(closeArgs.file);
+                            responseRequired = false;
+                            break;
+                        }
+                        case CommandNames.Navto: {
+                            var navtoArgs = request.arguments;
+                            response = this.getNavigateToItems(navtoArgs.searchValue, navtoArgs.file, navtoArgs.maxResultCount);
+                            break;
+                        }
+                        case CommandNames.Brace: {
+                            var braceArguments = request.arguments;
+                            response = this.getBraceMatching(braceArguments.line, braceArguments.offset, braceArguments.file);
+                            break;
+                        }
+                        case CommandNames.NavBar: {
+                            var navBarArgs = request.arguments;
+                            response = this.getNavigationBarItems(navBarArgs.file);
+                            break;
+                        }
+                        case CommandNames.Occurrences: {
+                            var _a = request.arguments, line = _a.line, offset = _a.offset, fileName = _a.file;
+                            response = this.getOccurrences(line, offset, fileName);
+                            break;
+                        }
+                        case CommandNames.ProjectInfo: {
+                            var _b = request.arguments, file = _b.file, needFileNameList = _b.needFileNameList;
+                            response = this.getProjectInfo(file, needFileNameList);
+                            break;
+                        }
+                        default: {
+                            this.projectService.log("Unrecognized JSON command: " + message);
+                            this.output(undefined, CommandNames.Unknown, request.seq, "Unrecognized JSON command: " + request.command);
+                            break;
+                        }
+                    }
                     if (this.logger.isVerbose()) {
                         var elapsed = this.hrtime(start);
                         var seconds = elapsed[0];
@@ -49619,6 +49809,7 @@ var ts;
         ioSession.listen();
     })(server = ts.server || (ts.server = {}));
 })(ts || (ts = {}));
+<<<<<<< HEAD
 //
 // Copyright (c) Microsoft Corporation.  All rights reserved.
 //
@@ -50323,3 +50514,6 @@ var TypeScript;
 /* @internal */
 var toolsVersion = "1.5";
 //# sourceMappingURL=file:///D:/mygit/TypeScript/built/local/tsserver.js.map
+=======
+//# sourceMappingURL=file:///D:/Github/TypeScript/built/local/tsserver.js.map
+>>>>>>> microsoft/master

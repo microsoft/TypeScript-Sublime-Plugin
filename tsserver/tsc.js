@@ -35565,4 +35565,4 @@ var ts;
     }
 })(ts || (ts = {}));
 ts.executeCommandLine(ts.sys.args);
-//# sourceMappingURL=file:///D:/mygit/TypeScript/built/local/tsc.js.map
+//# sourceMappingURL=file:///D:/Github/TypeScript/built/local/tsc.js.map

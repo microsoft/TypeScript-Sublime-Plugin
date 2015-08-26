@@ -363,7 +363,7 @@
 				</dict>
 			</dict>
 			<key>end</key>
-			<string>(?=\}|;|,|\n)|(?&lt;=\})</string>
+			<string>(?=\}|;|,)|(?&lt;=\})</string>
 			<key>name</key>
 			<string>meta.field.declaration.tsx</string>
 			<key>patterns</key>
@@ -413,7 +413,7 @@
 		<key>function-declaration</key>
 		<dict>
 			<key>begin</key>
-			<string>\b(?:(export)\s+)?(function)(?:\s+([a-zA-Z_$][\w$]*))?\s*</string>
+			<string>\b(?:(export)\s+)?(function\b)(?:\s+([a-zA-Z_$][\w$]*))?\s*</string>
 			<key>beginCaptures</key>
 			<dict>
 				<key>1</key>
@@ -485,7 +485,7 @@
 				</dict>
 			</dict>
 			<key>match</key>
-			<string>\b(?:(export)\s+)?(function)(?:\s+([a-zA-Z_$][\w$]*))?\s*</string>
+			<string>\b(?:(export)\s+)?(function\b)(?:\s+([a-zA-Z_$][\w$]*))?\s*</string>
 			<key>name</key>
 			<string>meta.function.overload.tsx</string>
 		</dict>
@@ -843,7 +843,7 @@
 		<key>jsx-tag-attributes-illegal</key>
 		<dict>
 			<key>match</key>
-			<string>\S*</string>
+			<string>\S+</string>
 			<key>name</key>
 			<string>invalid.illegal.attribute.tsx</string>
 		</dict>
@@ -1190,6 +1190,10 @@
 			<array>
 				<dict>
 					<key>include</key>
+					<string>#string</string>
+				</dict>
+				<dict>
+					<key>include</key>
 					<string>#comment</string>
 				</dict>
 				<dict>
@@ -1229,7 +1233,7 @@
 		<key>object-declaration</key>
 		<dict>
 			<key>begin</key>
-			<string>\b(?:(export)\s+)?\b(class|interface)\b(?:\s+([a-zA-Z_$][\w$]*))</string>
+			<string>\b(?:(export)\s+)?\b(class|interface)\b</string>
 			<key>beginCaptures</key>
 			<dict>
 				<key>1</key>
@@ -1264,7 +1268,7 @@
 			<array>
 				<dict>
 					<key>include</key>
-					<string>#type-parameters</string>
+					<string>#comment</string>
 				</dict>
 				<dict>
 					<key>include</key>
@@ -1272,33 +1276,72 @@
 				</dict>
 				<dict>
 					<key>include</key>
-					<string>#object-body</string>
+					<string>#object-name</string>
 				</dict>
 				<dict>
 					<key>include</key>
-					<string>#comment</string>
+					<string>#type-parameters</string>
+				</dict>
+				<dict>
+					<key>include</key>
+					<string>#object-body</string>
 				</dict>
 			</array>
 		</dict>
 		<key>object-heritage</key>
 		<dict>
-			<key>captures</key>
+			<key>begin</key>
+			<string>(?:\b(extends|implements))</string>
+			<key>beginCaptures</key>
 			<dict>
 				<key>1</key>
 				<dict>
 					<key>name</key>
 					<string>keyword.other.tsx</string>
 				</dict>
-				<key>2</key>
+			</dict>
+			<key>end</key>
+			<string>(?=\{)</string>
+			<key>endCaptures</key>
+			<dict>
+				<key>1</key>
+				<dict>
+					<key>name</key>
+					<string>brace.curly.tsx</string>
+				</dict>
+			</dict>
+			<key>name</key>
+			<string>meta.object.heritage.tsx</string>
+			<key>patterns</key>
+			<array>
+				<dict>
+					<key>include</key>
+					<string>#comment</string>
+				</dict>
+				<dict>
+					<key>include</key>
+					<string>#type-parameters</string>
+				</dict>
+				<dict>
+					<key>include</key>
+					<string>#object-heritage-parent</string>
+				</dict>
+			</array>
+		</dict>
+		<key>object-heritage-parent</key>
+		<dict>
+			<key>captures</key>
+			<dict>
+				<key>1</key>
 				<dict>
 					<key>name</key>
 					<string>storage.type.tsx</string>
 				</dict>
 			</dict>
 			<key>match</key>
-			<string>(?:\b(extends|implements)\b|,)(?:\s+([a-zA-Z_$][.\w$]*))</string>
+			<string>(?:\s*([a-zA-Z_$][\w$]*))</string>
 			<key>name</key>
-			<string>meta.object.heritage.tsx</string>
+			<string>meta.object.heritage.parent.tsx</string>
 		</dict>
 		<key>object-member</key>
 		<dict>
@@ -1315,6 +1358,21 @@
 					<string>#expression</string>
 				</dict>
 			</array>
+		</dict>
+		<key>object-name</key>
+		<dict>
+			<key>captures</key>
+			<dict>
+				<key>0</key>
+				<dict>
+					<key>name</key>
+					<string>entity.name.class.tsx</string>
+				</dict>
+			</dict>
+			<key>match</key>
+			<string>[a-zA-Z_$][\w$]*</string>
+			<key>name</key>
+			<string>meta.object.name.tsx</string>
 		</dict>
 		<key>parameter-name</key>
 		<dict>
@@ -1668,6 +1726,14 @@
 					<key>include</key>
 					<string>#type</string>
 				</dict>
+				<dict>
+					<key>include</key>
+					<string>#string</string>
+				</dict>
+				<dict>
+					<key>include</key>
+					<string>#comment</string>
+				</dict>
 			</array>
 		</dict>
 		<key>type-declaration</key>
@@ -1712,7 +1778,7 @@
 				</dict>
 			</dict>
 			<key>end</key>
-			<string>(?=\s*[,\)\{=;]|//|$)</string>
+			<string>(?=\s*[,\)\{=;&gt;]|//|$)</string>
 			<key>name</key>
 			<string>meta.type.function.return.tsx</string>
 			<key>patterns</key>
@@ -1956,6 +2022,14 @@
 				<dict>
 					<key>include</key>
 					<string>#type-annotation</string>
+				</dict>
+				<dict>
+					<key>include</key>
+					<string>#string</string>
+				</dict>
+				<dict>
+					<key>include</key>
+					<string>#comment</string>
 				</dict>
 			</array>
 		</dict>

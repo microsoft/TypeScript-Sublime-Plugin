@@ -126,3 +126,4 @@ def build_replace_regions(empty_regions_a, empty_regions_b):
     for i in range(len(empty_regions_a)):
         rr.append(sublime.Region(empty_regions_a[i].begin(), empty_regions_b[i].begin()))
     return rr
+    

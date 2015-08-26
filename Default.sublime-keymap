@@ -145,9 +145,9 @@
     },
     {
         "keys": [ "enter" ],
-        "command": "commit_completion",
+        "command": "typescript_go_to_error",
         "context": [
-            { "key": "auto_complete_visible", "operator": "equal", "operand": true }
+            { "key": "selector", "operator": "equal", "operand": "text.error-list" }
         ]
     },
     {
