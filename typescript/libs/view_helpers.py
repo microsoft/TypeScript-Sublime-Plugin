@@ -91,25 +91,17 @@ def active_window():
 
 
 def is_typescript(view):
-    """Test if the outer syntactic scope is 'source.ts' """
+    """Test if the outer syntactic scope is 'source.ts' or 'source.tsx' """
     if not view.file_name():
         return False
+
     try:
         location = view.sel()[0].begin()
     except:
         return False
 
-    return view.match_selector(location, 'source.ts')
-
-
-def is_typescript_scope(view, scope_sel):
-    """Test if the cursor is in a syntactic scope specified by selector scopeSel"""
-    try:
-        location = view.sel()[0].begin()
-    except:
-        return False
-
-    return view.match_selector(location, scope_sel)
+    return (view.match_selector(location, 'source.ts') or
+            view.match_selector(location, 'source.tsx'))
 
 
 def is_special_view(view):
