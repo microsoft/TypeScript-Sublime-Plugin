@@ -49809,7 +49809,6 @@ var ts;
         ioSession.listen();
     })(server = ts.server || (ts.server = {}));
 })(ts || (ts = {}));
-<<<<<<< HEAD
 //
 // Copyright (c) Microsoft Corporation.  All rights reserved.
 //
@@ -50513,7 +50512,4 @@ var TypeScript;
 })(TypeScript || (TypeScript = {}));
 /* @internal */
 var toolsVersion = "1.5";
-//# sourceMappingURL=file:///D:/mygit/TypeScript/built/local/tsserver.js.map
-=======
 //# sourceMappingURL=file:///D:/Github/TypeScript/built/local/tsserver.js.map
->>>>>>> microsoft/master
