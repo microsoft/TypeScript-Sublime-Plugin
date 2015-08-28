@@ -148,7 +148,7 @@ class WorkScheduler():
             if job_running:
                 # Defer 50ms until current job completes.
                 log.debug('Timer elapsed while prior job running.  Deferring')
-                sublime.set_timeout(50, on_scheduled)
+                sublime.set_timeout(on_scheduled, 50)
             else:
                 if job:
                     job()

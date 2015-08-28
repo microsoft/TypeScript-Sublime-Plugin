@@ -10,11 +10,21 @@ from .nav_to import NavToEventListener
 from .rename import RenameEventListener
 from .tooltip import TooltipEventListener
 
-
 class TypeScriptEventListener(sublime_plugin.EventListener):
     """To avoid duplicated behavior among event listeners"""
+
+    # During the "close all" process, handling on_activated events is
+    # undesirable (not required and can be costly due to reloading buffers).
+    # This flag provides a way to know whether the "close all" process is
+    # happening so we can ignore unnecessary on_activated callbacks.
+    about_to_close_all = False
+
     def on_activated(self, view):
         log.debug("on_activated")
+
+        if TypeScriptEventListener.about_to_close_all:
+            return
+
         if is_special_view(view):
             self.on_activated_special_view(view)
         else:
@@ -50,40 +60,53 @@ class TypeScriptEventListener(sublime_plugin.EventListener):
 
     def on_modified_with_info(self, view, info):
         log.debug("on_modified_with_info")
+
         # A series state-updating for the info object to sync the file content on the server
         info.modified = True
+
         # Todo: explain
         if IS_ST2:
             info.modify_count += 1
         info.last_modify_change_count = change_count(view)
         last_command, args, repeat_times = view.command_history(0)
+
         if info.pre_change_sent:
             # change handled in on_text_command
             info.client_info.change_count = change_count(view)
             info.pre_change_sent = False
-        elif last_command == "insert":
-            if (
-                "\n" not in args['characters']  # no new line inserted
-                and info.prev_sel  # it is not a newly opened file
-                and len(info.prev_sel) == 1  # not a multi-cursor session
-                and info.prev_sel[0].empty()  # the last selection is not a highlighted selection
-                and not info.client_info.pending_changes  # no pending changes in the buffer
-            ):
-                info.client_info.change_count = change_count(view)
-                prev_cursor = info.prev_sel[0].begin()
-                cursor = view.sel()[0].begin()
-                key = view.substr(sublime.Region(prev_cursor, cursor))
-                send_replace_changes_for_regions(view, static_regions_to_regions(info.prev_sel), key)
-                # mark change as handled so that on_post_text_command doesn't try to handle it
-                info.change_sent = True
-            else:
-                # request reload because we have strange insert
-                info.client_info.pending_changes = True
+
+        else:
+            if last_command == "insert":
+                if (
+                    "\n" not in args['characters']  # no new line inserted
+                    and info.prev_sel  # it is not a newly opened file
+                    and len(info.prev_sel) == 1  # not a multi-cursor session
+                    and info.prev_sel[0].empty()  # the last selection is not a highlighted selection
+                    and not info.client_info.pending_changes  # no pending changes in the buffer
+                ):
+                    info.client_info.change_count = change_count(view)
+                    prev_cursor = info.prev_sel[0].begin()
+                    cursor = view.sel()[0].begin()
+                    key = view.substr(sublime.Region(prev_cursor, cursor))
+                    send_replace_changes_for_regions(view, static_regions_to_regions(info.prev_sel), key)
+                    # mark change as handled so that on_post_text_command doesn't try to handle it
+                    info.change_sent = True
+                else:
+                    # request reload because we have strange insert
+                    info.client_info.pending_changes = True
+
+            # Reload buffer after insert_snippet.
+            # For Sublime 2 only. In Sublime 3, this logic is implemented in
+            # on_post_text_command callback.
+            # Issue: https://github.com/Microsoft/TypeScript-Sublime-Plugin/issues/277
+            if IS_ST2 and last_command == "insert_snippet":
+                reload_buffer(view);
 
         # Other listeners
         EventHub.run_listeners("on_modified_with_info", view, info)
 
     def post_on_modified(self, view):
+        log.debug("post_on_modified")
         EventHub.run_listeners("post_on_modified", view)
 
     def on_selection_modified(self, view):
@@ -127,11 +150,20 @@ class TypeScriptEventListener(sublime_plugin.EventListener):
 
     def on_window_command(self, window, command_name, args):
         log.debug("on_window_command")
-        if command_name == "exit":
+
+        if command_name == "hide_panel" and cli.worker_client.started():
+            cli.worker_client.stop()
+
+        elif command_name == "exit":
             cli.service.exit()
-        if command_name in ["close_all", "close_window", "close_project"]:
-            # Todo: restart the server?
-            cli.service.exit()
+
+        elif command_name in ["close_all", "close_window", "close_project"]:
+            # Only set <about_to_close_all> flag if there exists at least one
+            # view in the active window. This is important because we need
+            # some view's on_close callback to reset the flag.
+            window = sublime.active_window()
+            if window is not None and window.views():
+                TypeScriptEventListener.about_to_close_all = True
 
     def on_text_command(self, view, command_name, args):
         """
@@ -216,7 +248,7 @@ class TypeScriptEventListener(sublime_plugin.EventListener):
 
     def on_close(self, view):
         log.debug("on_close")
-        file_name = view.file_name()
+
         if view.is_scratch() and view.name() == "Find References":
             cli.dispose_ref_info()
         else:
@@ -225,7 +257,16 @@ class TypeScriptEventListener(sublime_plugin.EventListener):
             #     if info in most_recent_used_file_list:
             #         most_recent_used_file_list.remove(info)
             # notify the server that the file is closed
+            file_name = view.file_name()
             cli.service.close(file_name)
+
+        # If this is the last view that is closed by a close_all command,
+        # reset <about_to_close_all> flag.
+        if TypeScriptEventListener.about_to_close_all:
+            window = sublime.active_window()
+            if window is None or not window.views():
+                TypeScriptEventListener.about_to_close_all = False
+                log.debug("all views have been closed")
 
     def on_pre_save(self, view):
         log.debug("on_pre_save")

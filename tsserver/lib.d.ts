@@ -561,7 +561,7 @@ interface Math {
       */
     atan(x: number): number;
     /**
-      * Returns the angle (in radians) from the X axis to a point (y,x).
+      * Returns the angle (in radians) from the X axis to a point.
       * @param y A numeric expression representing the cartesian y-coordinate.
       * @param x A numeric expression representing the cartesian x-coordinate.
       */
@@ -1165,7 +1165,7 @@ interface ArrayConstructor {
     (arrayLength?: number): any[];
     <T>(arrayLength: number): T[];
     <T>(...items: T[]): T[];
-    isArray(arg: any): boolean;
+    isArray(arg: any): arg is Array<any>;
     prototype: Array<any>;
 }
 
@@ -1184,6 +1184,19 @@ declare type ClassDecorator = <TFunction extends Function>(target: TFunction) =>
 declare type PropertyDecorator = (target: Object, propertyKey: string | symbol) => void;
 declare type MethodDecorator = <T>(target: Object, propertyKey: string | symbol, descriptor: TypedPropertyDescriptor<T>) => TypedPropertyDescriptor<T> | void;
 declare type ParameterDecorator = (target: Object, propertyKey: string | symbol, parameterIndex: number) => void;
+
+declare type PromiseConstructorLike = new <T>(executor: (resolve: (value?: T | PromiseLike<T>) => void, reject: (reason?: any) => void) => void) => PromiseLike<T>;
+
+interface PromiseLike<T> {
+    /**
+    * Attaches callbacks for the resolution and/or rejection of the Promise.
+    * @param onfulfilled The callback to execute when the Promise is resolved.
+    * @param onrejected The callback to execute when the Promise is rejected.
+    * @returns A Promise for the completion of which ever callback is executed.
+    */
+    then<TResult>(onfulfilled?: (value: T) => TResult | PromiseLike<TResult>, onrejected?: (reason: any) => TResult | PromiseLike<TResult>): PromiseLike<TResult>;
+    then<TResult>(onfulfilled?: (value: T) => TResult | PromiseLike<TResult>, onrejected?: (reason: any) => void): PromiseLike<TResult>;
+}
 
 /////////////////////////////
 /// IE10 ECMAScript Extensions
@@ -1230,6 +1243,139 @@ interface ArrayBufferView {
       */
     byteOffset: number;
 }
+
+interface DataView {
+    buffer: ArrayBuffer;
+    byteLength: number;
+    byteOffset: number;
+    /**
+      * Gets the Float32 value at the specified byte offset from the start of the view. There is 
+      * no alignment constraint; multi-byte values may be fetched from any offset. 
+      * @param byteOffset The place in the buffer at which the value should be retrieved.
+      */
+    getFloat32(byteOffset: number, littleEndian: boolean): number;
+
+    /**
+      * Gets the Float64 value at the specified byte offset from the start of the view. There is
+      * no alignment constraint; multi-byte values may be fetched from any offset. 
+      * @param byteOffset The place in the buffer at which the value should be retrieved.
+      */
+    getFloat64(byteOffset: number, littleEndian: boolean): number;
+
+    /**
+      * Gets the Int8 value at the specified byte offset from the start of the view. There is 
+      * no alignment constraint; multi-byte values may be fetched from any offset. 
+      * @param byteOffset The place in the buffer at which the value should be retrieved.
+      */
+    getInt8(byteOffset: number): number;
+
+    /**
+      * Gets the Int16 value at the specified byte offset from the start of the view. There is 
+      * no alignment constraint; multi-byte values may be fetched from any offset. 
+      * @param byteOffset The place in the buffer at which the value should be retrieved.
+      */
+    getInt16(byteOffset: number, littleEndian: boolean): number;
+    /**
+      * Gets the Int32 value at the specified byte offset from the start of the view. There is 
+      * no alignment constraint; multi-byte values may be fetched from any offset. 
+      * @param byteOffset The place in the buffer at which the value should be retrieved.
+      */
+    getInt32(byteOffset: number, littleEndian: boolean): number;
+
+    /**
+      * Gets the Uint8 value at the specified byte offset from the start of the view. There is 
+      * no alignment constraint; multi-byte values may be fetched from any offset. 
+      * @param byteOffset The place in the buffer at which the value should be retrieved.
+      */
+    getUint8(byteOffset: number): number;
+
+    /**
+      * Gets the Uint16 value at the specified byte offset from the start of the view. There is 
+      * no alignment constraint; multi-byte values may be fetched from any offset. 
+      * @param byteOffset The place in the buffer at which the value should be retrieved.
+      */
+    getUint16(byteOffset: number, littleEndian: boolean): number;
+
+    /**
+      * Gets the Uint32 value at the specified byte offset from the start of the view. There is 
+      * no alignment constraint; multi-byte values may be fetched from any offset. 
+      * @param byteOffset The place in the buffer at which the value should be retrieved.
+      */
+    getUint32(byteOffset: number, littleEndian: boolean): number;
+
+    /**
+      * Stores an Float32 value at the specified byte offset from the start of the view. 
+      * @param byteOffset The place in the buffer at which the value should be set.
+      * @param value The value to set.
+      * @param littleEndian If false or undefined, a big-endian value should be written, 
+      * otherwise a little-endian value should be written.
+      */
+    setFloat32(byteOffset: number, value: number, littleEndian: boolean): void;
+
+    /**
+      * Stores an Float64 value at the specified byte offset from the start of the view. 
+      * @param byteOffset The place in the buffer at which the value should be set.
+      * @param value The value to set.
+      * @param littleEndian If false or undefined, a big-endian value should be written, 
+      * otherwise a little-endian value should be written.
+      */
+    setFloat64(byteOffset: number, value: number, littleEndian: boolean): void;
+
+    /**
+      * Stores an Int8 value at the specified byte offset from the start of the view. 
+      * @param byteOffset The place in the buffer at which the value should be set.
+      * @param value The value to set.
+      */
+    setInt8(byteOffset: number, value: number): void;
+
+    /**
+      * Stores an Int16 value at the specified byte offset from the start of the view. 
+      * @param byteOffset The place in the buffer at which the value should be set.
+      * @param value The value to set.
+      * @param littleEndian If false or undefined, a big-endian value should be written, 
+      * otherwise a little-endian value should be written.
+      */
+    setInt16(byteOffset: number, value: number, littleEndian: boolean): void;
+
+    /**
+      * Stores an Int32 value at the specified byte offset from the start of the view. 
+      * @param byteOffset The place in the buffer at which the value should be set.
+      * @param value The value to set.
+      * @param littleEndian If false or undefined, a big-endian value should be written, 
+      * otherwise a little-endian value should be written.
+      */
+    setInt32(byteOffset: number, value: number, littleEndian: boolean): void;
+
+    /**
+      * Stores an Uint8 value at the specified byte offset from the start of the view. 
+      * @param byteOffset The place in the buffer at which the value should be set.
+      * @param value The value to set.
+      */
+    setUint8(byteOffset: number, value: number): void;
+
+    /**
+      * Stores an Uint16 value at the specified byte offset from the start of the view. 
+      * @param byteOffset The place in the buffer at which the value should be set.
+      * @param value The value to set.
+      * @param littleEndian If false or undefined, a big-endian value should be written, 
+      * otherwise a little-endian value should be written.
+      */
+    setUint16(byteOffset: number, value: number, littleEndian: boolean): void;
+
+    /**
+      * Stores an Uint32 value at the specified byte offset from the start of the view. 
+      * @param byteOffset The place in the buffer at which the value should be set.
+      * @param value The value to set.
+      * @param littleEndian If false or undefined, a big-endian value should be written, 
+      * otherwise a little-endian value should be written.
+      */
+    setUint32(byteOffset: number, value: number, littleEndian: boolean): void;
+}
+
+interface DataViewConstructor {
+    new (buffer: ArrayBuffer, byteOffset?: number, byteLength?: number): DataView;
+}
+declare var DataView: DataViewConstructor;
 
 /**
   * A typed array of 8-bit integer values. The contents are initialized to 0. If the requested 
@@ -3398,6 +3544,11 @@ declare module Intl {
         currency?: string;
         currencyDisplay?: string;
         useGrouping?: boolean;
+        minimumintegerDigits?: number;
+        minimumFractionDigits?: number;
+        maximumFractionDigits?: number;
+        minimumSignificantDigits?: number;
+        maximumSignificantDigits?: number;
     }
 
     interface ResolvedNumberFormatOptions {
@@ -3419,10 +3570,10 @@ declare module Intl {
         resolvedOptions(): ResolvedNumberFormatOptions;
     }
     var NumberFormat: {
-        new (locales?: string[], options?: NumberFormatOptions): Collator;
-        new (locale?: string, options?: NumberFormatOptions): Collator;
-        (locales?: string[], options?: NumberFormatOptions): Collator;
-        (locale?: string, options?: NumberFormatOptions): Collator;
+        new (locales?: string[], options?: NumberFormatOptions): NumberFormat;
+        new (locale?: string, options?: NumberFormatOptions): NumberFormat;
+        (locales?: string[], options?: NumberFormatOptions): NumberFormat;
+        (locale?: string, options?: NumberFormatOptions): NumberFormat;
         supportedLocalesOf(locales: string[], options?: NumberFormatOptions): string[];
         supportedLocalesOf(locale: string, options?: NumberFormatOptions): string[];
     }
@@ -3460,14 +3611,14 @@ declare module Intl {
     }
 
     interface DateTimeFormat {
-        format(date: number): string;
+        format(date?: Date | number): string;
         resolvedOptions(): ResolvedDateTimeFormatOptions;
     }
     var DateTimeFormat: {
-        new (locales?: string[], options?: DateTimeFormatOptions): Collator;
-        new (locale?: string, options?: DateTimeFormatOptions): Collator;
-        (locales?: string[], options?: DateTimeFormatOptions): Collator;
-        (locale?: string, options?: DateTimeFormatOptions): Collator;
+        new (locales?: string[], options?: DateTimeFormatOptions): DateTimeFormat;
+        new (locale?: string, options?: DateTimeFormatOptions): DateTimeFormat;
+        (locales?: string[], options?: DateTimeFormatOptions): DateTimeFormat;
+        (locale?: string, options?: DateTimeFormatOptions): DateTimeFormat;
         supportedLocalesOf(locales: string[], options?: DateTimeFormatOptions): string[];
         supportedLocalesOf(locale: string, options?: DateTimeFormatOptions): string[];
     }
@@ -4617,16 +4768,11 @@ interface CanvasRenderingContext2D {
     clearRect(x: number, y: number, w: number, h: number): void;
     clip(fillRule?: string): void;
     closePath(): void;
-    createImageData(imageDataOrSw: number, sh?: number): ImageData;
-    createImageData(imageDataOrSw: ImageData, sh?: number): ImageData;
+    createImageData(imageDataOrSw: number | ImageData, sh?: number): ImageData;
     createLinearGradient(x0: number, y0: number, x1: number, y1: number): CanvasGradient;
-    createPattern(image: HTMLImageElement, repetition: string): CanvasPattern;
-    createPattern(image: HTMLCanvasElement, repetition: string): CanvasPattern;
-    createPattern(image: HTMLVideoElement, repetition: string): CanvasPattern;
+    createPattern(image: HTMLImageElement | HTMLCanvasElement | HTMLVideoElement, repetition: string): CanvasPattern;
     createRadialGradient(x0: number, y0: number, r0: number, x1: number, y1: number, r1: number): CanvasGradient;
-    drawImage(image: HTMLImageElement, offsetX: number, offsetY: number, width?: number, height?: number, canvasOffsetX?: number, canvasOffsetY?: number, canvasImageWidth?: number, canvasImageHeight?: number): void;
-    drawImage(image: HTMLCanvasElement, offsetX: number, offsetY: number, width?: number, height?: number, canvasOffsetX?: number, canvasOffsetY?: number, canvasImageWidth?: number, canvasImageHeight?: number): void;
-    drawImage(image: HTMLVideoElement, offsetX: number, offsetY: number, width?: number, height?: number, canvasOffsetX?: number, canvasOffsetY?: number, canvasImageWidth?: number, canvasImageHeight?: number): void;
+    drawImage(image: HTMLImageElement | HTMLCanvasElement | HTMLVideoElement, offsetX: number, offsetY: number, width?: number, height?: number, canvasOffsetX?: number, canvasOffsetY?: number, canvasImageWidth?: number, canvasImageHeight?: number): void;
     fill(fillRule?: string): void;
     fillRect(x: number, y: number, w: number, h: number): void;
     fillText(text: string, x: number, y: number, maxWidth?: number): void;
@@ -5784,12 +5930,12 @@ interface Document extends Node, GlobalEventHandlers, NodeSelector, DocumentEven
       * @param elementId String that specifies the ID value. Case-insensitive.
       */
     getElementById(elementId: string): HTMLElement;
-    getElementsByClassName(classNames: string): NodeList;
+    getElementsByClassName(classNames: string): NodeListOf<Element>;
     /**
       * Gets a collection of objects based on the value of the NAME or ID attribute.
       * @param elementName Gets a collection of objects based on the value of the NAME or ID attribute.
       */
-    getElementsByName(elementName: string): NodeList;
+    getElementsByName(elementName: string): NodeListOf<Element>;
     /**
       * Retrieves a collection of objects based on the specified element name.
       * @param name Specifies the name of an element.
@@ -5967,8 +6113,8 @@ interface Document extends Node, GlobalEventHandlers, NodeSelector, DocumentEven
     getElementsByTagName(tagname: "wbr"): NodeListOf<HTMLElement>;
     getElementsByTagName(tagname: "x-ms-webview"): NodeListOf<MSHTMLWebViewElement>;
     getElementsByTagName(tagname: "xmp"): NodeListOf<HTMLBlockElement>;
-    getElementsByTagName(tagname: string): NodeList;
-    getElementsByTagNameNS(namespaceURI: string, localName: string): NodeList;
+    getElementsByTagName(tagname: string): NodeListOf<Element>;
+    getElementsByTagNameNS(namespaceURI: string, localName: string): NodeListOf<Element>;
     /**
       * Returns an object representing the current selection of the document that is loaded into the object displaying a webpage.
       */
@@ -6241,6 +6387,8 @@ interface Element extends Node, GlobalEventHandlers, ElementTraversal, NodeSelec
     scrollTop: number;
     scrollWidth: number;
     tagName: string;
+    id: string;
+    className: string;
     getAttribute(name?: string): string;
     getAttributeNS(namespaceURI: string, localName: string): string;
     getAttributeNode(name: string): Attr;
@@ -6420,8 +6568,8 @@ interface Element extends Node, GlobalEventHandlers, ElementTraversal, NodeSelec
     getElementsByTagName(name: "wbr"): NodeListOf<HTMLElement>;
     getElementsByTagName(name: "x-ms-webview"): NodeListOf<MSHTMLWebViewElement>;
     getElementsByTagName(name: "xmp"): NodeListOf<HTMLBlockElement>;
-    getElementsByTagName(name: string): NodeList;
-    getElementsByTagNameNS(namespaceURI: string, localName: string): NodeList;
+    getElementsByTagName(name: string): NodeListOf<Element>;
+    getElementsByTagNameNS(namespaceURI: string, localName: string): NodeListOf<Element>;
     hasAttribute(name: string): boolean;
     hasAttributeNS(namespaceURI: string, localName: string): boolean;
     msGetRegionContent(): MSRangeCollection;
@@ -6602,7 +6750,7 @@ interface FormData {
 
 declare var FormData: {
     prototype: FormData;
-    new(): FormData;
+    new (form?: HTMLFormElement): FormData;
 }
 
 interface GainNode extends AudioNode {
@@ -6895,8 +7043,7 @@ interface HTMLAreasCollection extends HTMLCollection {
     /**
       * Adds an element to the areas, controlRange, or options collection.
       */
-    add(element: HTMLElement, before?: HTMLElement): void;
-    add(element: HTMLElement, before?: number): void;
+    add(element: HTMLElement, before?: HTMLElement | number): void;
     /**
       * Removes an element from the collection.
       */
@@ -7222,6 +7369,8 @@ interface HTMLCanvasElement extends HTMLElement {
       * Returns an object that provides methods and properties for drawing and manipulating images and graphics on a canvas element in a document. A context object includes information about colors, line widths, fonts, and other graphic parameters that can be drawn on a canvas.
       * @param contextId The identifier (ID) of the type of canvas to create. Internet Explorer 9 and Internet Explorer 10 support only a 2-D context using canvas.getContext("2d"); IE11 Preview also supports 3-D or WebGL context using canvas.getContext("experimental-webgl");
       */
+    getContext(contextId: "2d"): CanvasRenderingContext2D;
+    getContext(contextId: "experimental-webgl"): WebGLRenderingContext;
     getContext(contextId: string, ...args: any[]): CanvasRenderingContext2D | WebGLRenderingContext;
     /**
       * Returns a blob object encoded as a Portable Network Graphics (PNG) format from a canvas image or drawing.
@@ -7338,14 +7487,12 @@ declare var HTMLDocument: {
 interface HTMLElement extends Element {
     accessKey: string;
     children: HTMLCollection;
-    className: string;
     contentEditable: string;
     dataset: DOMStringMap;
     dir: string;
     draggable: boolean;
     hidden: boolean;
     hideFocus: boolean;
-    id: string;
     innerHTML: string;
     innerText: string;
     isContentEditable: boolean;
@@ -7432,7 +7579,7 @@ interface HTMLElement extends Element {
     contains(child: HTMLElement): boolean;
     dragDrop(): boolean;
     focus(): void;
-    getElementsByClassName(classNames: string): NodeList;
+    getElementsByClassName(classNames: string): NodeListOf<Element>;
     insertAdjacentElement(position: string, insertedElement: Element): Element;
     insertAdjacentHTML(where: string, html: string): void;
     insertAdjacentText(where: string, text: string): void;
@@ -9642,8 +9789,7 @@ interface HTMLSelectElement extends HTMLElement {
       * @param element Variant of type Number that specifies the index position in the collection where the element is placed. If no value is given, the method places the element at the end of the collection.
       * @param before Variant of type Object that specifies an element to insert before, or null to append the object to the collection. 
       */
-    add(element: HTMLElement, before?: HTMLElement): void;
-    add(element: HTMLElement, before?: number): void;
+    add(element: HTMLElement, before?: HTMLElement | number): void;
     /**
       * Returns whether a form will validate when it is submitted, without having to submit it.
       */
@@ -11200,10 +11346,10 @@ declare var MediaQueryList: {
 interface MediaSource extends EventTarget {
     activeSourceBuffers: SourceBufferList;
     duration: number;
-    readyState: string;
+    readyState: number;
     sourceBuffers: SourceBufferList;
     addSourceBuffer(type: string): SourceBuffer;
-    endOfStream(error?: string): void;
+    endOfStream(error?: number): void;
     removeSourceBuffer(sourceBuffer: SourceBuffer): void;
 }
 
@@ -11932,7 +12078,7 @@ declare var PopStateEvent: {
 
 interface Position {
     coords: Coordinates;
-    timestamp: Date;
+    timestamp: number;
 }
 
 declare var Position: {
@@ -12245,6 +12391,7 @@ declare var SVGDescElement: {
 
 interface SVGElement extends Element {
     id: string;
+    className: any;
     onclick: (ev: MouseEvent) => any;
     ondblclick: (ev: MouseEvent) => any;
     onfocusin: (ev: FocusEvent) => any;
@@ -13804,8 +13951,7 @@ interface Screen extends EventTarget {
     systemXDPI: number;
     systemYDPI: number;
     width: number;
-    msLockOrientation(orientations: string): boolean;
-    msLockOrientation(orientations: string[]): boolean;
+    msLockOrientation(orientations: string | string[]): boolean;
     msUnlockOrientation(): void;
     addEventListener(type: "MSOrientationChange", listener: (ev: Event) => any, useCapture?: boolean): void;
     addEventListener(type: string, listener: EventListenerOrEventListenerObject, useCapture?: boolean): void;
@@ -13877,8 +14023,7 @@ interface SourceBuffer extends EventTarget {
     updating: boolean;
     videoTracks: VideoTrackList;
     abort(): void;
-    appendBuffer(data: ArrayBuffer): void;
-    appendBuffer(data: ArrayBufferView): void;
+    appendBuffer(data: ArrayBuffer | ArrayBufferView): void;
     appendStream(stream: MSStream, maxSize?: number): void;
     remove(start: number, end: number): void;
 }
@@ -13986,33 +14131,18 @@ declare var StyleSheetPageList: {
 }
 
 interface SubtleCrypto {
-    decrypt(algorithm: string, key: CryptoKey, data: ArrayBufferView): any;
-    decrypt(algorithm: Algorithm, key: CryptoKey, data: ArrayBufferView): any;
-    deriveBits(algorithm: string, baseKey: CryptoKey, length: number): any;
-    deriveBits(algorithm: Algorithm, baseKey: CryptoKey, length: number): any;
-    deriveKey(algorithm: string, baseKey: CryptoKey, derivedKeyType: string, extractable: boolean, keyUsages: string[]): any;
-    deriveKey(algorithm: string, baseKey: CryptoKey, derivedKeyType: Algorithm, extractable: boolean, keyUsages: string[]): any;
-    deriveKey(algorithm: Algorithm, baseKey: CryptoKey, derivedKeyType: string, extractable: boolean, keyUsages: string[]): any;
-    deriveKey(algorithm: Algorithm, baseKey: CryptoKey, derivedKeyType: Algorithm, extractable: boolean, keyUsages: string[]): any;
-    digest(algorithm: string, data: ArrayBufferView): any;
-    digest(algorithm: Algorithm, data: ArrayBufferView): any;
-    encrypt(algorithm: string, key: CryptoKey, data: ArrayBufferView): any;
-    encrypt(algorithm: Algorithm, key: CryptoKey, data: ArrayBufferView): any;
+    decrypt(algorithm: string | Algorithm, key: CryptoKey, data: ArrayBufferView): any;
+    deriveBits(algorithm: string | Algorithm, baseKey: CryptoKey, length: number): any;
+    deriveKey(algorithm: string | Algorithm, baseKey: CryptoKey, derivedKeyType: string | Algorithm, extractable: boolean, keyUsages: string[]): any;
+    digest(algorithm: string | Algorithm, data: ArrayBufferView): any;
+    encrypt(algorithm: string | Algorithm, key: CryptoKey, data: ArrayBufferView): any;
     exportKey(format: string, key: CryptoKey): any;
-    generateKey(algorithm: string, extractable: boolean, keyUsages: string[]): any;
-    generateKey(algorithm: Algorithm, extractable: boolean, keyUsages: string[]): any;
-    importKey(format: string, keyData: ArrayBufferView, algorithm: string, extractable: boolean, keyUsages: string[]): any;
-    importKey(format: string, keyData: ArrayBufferView, algorithm: Algorithm, extractable: boolean, keyUsages: string[]): any;
-    sign(algorithm: string, key: CryptoKey, data: ArrayBufferView): any;
-    sign(algorithm: Algorithm, key: CryptoKey, data: ArrayBufferView): any;
-    unwrapKey(format: string, wrappedKey: ArrayBufferView, unwrappingKey: CryptoKey, unwrapAlgorithm: string, unwrappedKeyAlgorithm: string, extractable: boolean, keyUsages: string[]): any;
-    unwrapKey(format: string, wrappedKey: ArrayBufferView, unwrappingKey: CryptoKey, unwrapAlgorithm: string, unwrappedKeyAlgorithm: Algorithm, extractable: boolean, keyUsages: string[]): any;
-    unwrapKey(format: string, wrappedKey: ArrayBufferView, unwrappingKey: CryptoKey, unwrapAlgorithm: Algorithm, unwrappedKeyAlgorithm: string, extractable: boolean, keyUsages: string[]): any;
-    unwrapKey(format: string, wrappedKey: ArrayBufferView, unwrappingKey: CryptoKey, unwrapAlgorithm: Algorithm, unwrappedKeyAlgorithm: Algorithm, extractable: boolean, keyUsages: string[]): any;
-    verify(algorithm: string, key: CryptoKey, signature: ArrayBufferView, data: ArrayBufferView): any;
-    verify(algorithm: Algorithm, key: CryptoKey, signature: ArrayBufferView, data: ArrayBufferView): any;
-    wrapKey(format: string, key: CryptoKey, wrappingKey: CryptoKey, wrapAlgorithm: string): any;
-    wrapKey(format: string, key: CryptoKey, wrappingKey: CryptoKey, wrapAlgorithm: Algorithm): any;
+    generateKey(algorithm: string | Algorithm, extractable: boolean, keyUsages: string[]): any;
+    importKey(format: string, keyData: ArrayBufferView, algorithm: string | Algorithm, extractable: boolean, keyUsages: string[]): any;
+    sign(algorithm: string | Algorithm, key: CryptoKey, data: ArrayBufferView): any;
+    unwrapKey(format: string, wrappedKey: ArrayBufferView, unwrappingKey: CryptoKey, unwrapAlgorithm: string | Algorithm, unwrappedKeyAlgorithm: string | Algorithm, extractable: boolean, keyUsages: string[]): any;
+    verify(algorithm: string | Algorithm, key: CryptoKey, signature: ArrayBufferView, data: ArrayBufferView): any;
+    wrapKey(format: string, key: CryptoKey, wrappingKey: CryptoKey, wrapAlgorithm: string | Algorithm): any;
 }
 
 declare var SubtleCrypto: {
@@ -14521,11 +14651,8 @@ interface WebGLRenderingContext {
     blendEquationSeparate(modeRGB: number, modeAlpha: number): void;
     blendFunc(sfactor: number, dfactor: number): void;
     blendFuncSeparate(srcRGB: number, dstRGB: number, srcAlpha: number, dstAlpha: number): void;
-    bufferData(target: number, size: number, usage: number): void;
-    bufferData(target: number, size: ArrayBufferView, usage: number): void;
-    bufferData(target: number, size: any, usage: number): void;
-    bufferSubData(target: number, offset: number, data: ArrayBufferView): void;
-    bufferSubData(target: number, offset: number, data: any): void;
+    bufferData(target: number, size: number | ArrayBufferView | ArrayBuffer, usage: number): void;
+    bufferSubData(target: number, offset: number, data: ArrayBufferView | ArrayBuffer): void;
     checkFramebufferStatus(target: number): number;
     clear(mask: number): void;
     clearColor(red: number, green: number, blue: number, alpha: number): void;
@@ -14613,9 +14740,17 @@ interface WebGLRenderingContext {
     stencilMaskSeparate(face: number, mask: number): void;
     stencilOp(fail: number, zfail: number, zpass: number): void;
     stencilOpSeparate(face: number, fail: number, zfail: number, zpass: number): void;
+    texImage2D(target: number, level: number, internalformat: number, width: number, height: number, border: number, format: number, type: number, pixels: ArrayBufferView): void;
+    texImage2D(target: number, level: number, internalformat: number, format: number, type: number, image: HTMLImageElement): void;
+    texImage2D(target: number, level: number, internalformat: number, format: number, type: number, canvas: HTMLCanvasElement): void;
+    texImage2D(target: number, level: number, internalformat: number, format: number, type: number, video: HTMLVideoElement): void;
     texImage2D(target: number, level: number, internalformat: number, format: number, type: number, pixels: ImageData): void;
     texParameterf(target: number, pname: number, param: number): void;
     texParameteri(target: number, pname: number, param: number): void;
+    texSubImage2D(target: number, level: number, xoffset: number, yoffset: number, width: number, height: number, format: number, type: number, pixels: ArrayBufferView): void;
+    texSubImage2D(target: number, level: number, xoffset: number, yoffset: number, format: number, type: number, image: HTMLImageElement): void;
+    texSubImage2D(target: number, level: number, xoffset: number, yoffset: number, format: number, type: number, canvas: HTMLCanvasElement): void;
+    texSubImage2D(target: number, level: number, xoffset: number, yoffset: number, format: number, type: number, video: HTMLVideoElement): void;
     texSubImage2D(target: number, level: number, xoffset: number, yoffset: number, format: number, type: number, pixels: ImageData): void;
     uniform1f(location: WebGLUniformLocation, x: number): void;
     uniform1fv(location: WebGLUniformLocation, v: any): void;
@@ -15360,8 +15495,7 @@ interface WebSocket extends EventTarget {
 
 declare var WebSocket: {
     prototype: WebSocket;
-    new(url: string, protocols?: string): WebSocket;
-    new(url: string, protocols?: any): WebSocket;
+    new(url: string, protocols?: string | string[]): WebSocket;
     CLOSED: number;
     CLOSING: number;
     CONNECTING: number;
@@ -15527,6 +15661,7 @@ interface Window extends EventTarget, WindowTimers, WindowSessionStorage, Window
     toolbar: BarProp;
     top: Window;
     window: Window;
+    URL: URL;
     alert(message?: any): void;
     blur(): void;
     cancelAnimationFrame(handle: number): void;
@@ -15703,6 +15838,7 @@ interface XMLHttpRequest extends EventTarget, XMLHttpRequestEventTarget {
     overrideMimeType(mime: string): void;
     send(data?: Document): void;
     send(data?: string): void;
+    send(data?: any): void;
     setRequestHeader(header: string, value: string): void;
     DONE: number;
     HEADERS_RECEIVED: number;
@@ -15854,14 +15990,17 @@ interface DocumentEvent {
     createEvent(eventInterface:"AriaRequestEvent"): AriaRequestEvent;
     createEvent(eventInterface:"AudioProcessingEvent"): AudioProcessingEvent;
     createEvent(eventInterface:"BeforeUnloadEvent"): BeforeUnloadEvent;
+    createEvent(eventInterface:"ClipboardEvent"): ClipboardEvent;
     createEvent(eventInterface:"CloseEvent"): CloseEvent;
     createEvent(eventInterface:"CommandEvent"): CommandEvent;
     createEvent(eventInterface:"CompositionEvent"): CompositionEvent;
+    createEvent(eventInterface:"CustomEvent"): CustomEvent;
     createEvent(eventInterface:"DeviceMotionEvent"): DeviceMotionEvent;
     createEvent(eventInterface:"DeviceOrientationEvent"): DeviceOrientationEvent;
     createEvent(eventInterface:"DragEvent"): DragEvent;
     createEvent(eventInterface:"ErrorEvent"): ErrorEvent;
     createEvent(eventInterface:"Event"): Event;
+    createEvent(eventInterface:"Events"): Event;
     createEvent(eventInterface:"FocusEvent"): FocusEvent;
     createEvent(eventInterface:"GamepadEvent"): GamepadEvent;
     createEvent(eventInterface:"HashChangeEvent"): HashChangeEvent;
@@ -15876,8 +16015,10 @@ interface DocumentEvent {
     createEvent(eventInterface:"MSSiteModeEvent"): MSSiteModeEvent;
     createEvent(eventInterface:"MessageEvent"): MessageEvent;
     createEvent(eventInterface:"MouseEvent"): MouseEvent;
+    createEvent(eventInterface:"MouseEvents"): MouseEvent;
     createEvent(eventInterface:"MouseWheelEvent"): MouseWheelEvent;
     createEvent(eventInterface:"MutationEvent"): MutationEvent;
+    createEvent(eventInterface:"MutationEvents"): MutationEvent;
     createEvent(eventInterface:"NavigationCompletedEvent"): NavigationCompletedEvent;
     createEvent(eventInterface:"NavigationEvent"): NavigationEvent;
     createEvent(eventInterface:"NavigationEventWithReferrer"): NavigationEventWithReferrer;
@@ -15888,6 +16029,7 @@ interface DocumentEvent {
     createEvent(eventInterface:"PopStateEvent"): PopStateEvent;
     createEvent(eventInterface:"ProgressEvent"): ProgressEvent;
     createEvent(eventInterface:"SVGZoomEvent"): SVGZoomEvent;
+    createEvent(eventInterface:"SVGZoomEvents"): SVGZoomEvent;
     createEvent(eventInterface:"ScriptNotifyEvent"): ScriptNotifyEvent;
     createEvent(eventInterface:"StorageEvent"): StorageEvent;
     createEvent(eventInterface:"TextEvent"): TextEvent;
@@ -15895,6 +16037,7 @@ interface DocumentEvent {
     createEvent(eventInterface:"TrackEvent"): TrackEvent;
     createEvent(eventInterface:"TransitionEvent"): TransitionEvent;
     createEvent(eventInterface:"UIEvent"): UIEvent;
+    createEvent(eventInterface:"UIEvents"): UIEvent;
     createEvent(eventInterface:"UnviewableContentIdentifiedEvent"): UnviewableContentIdentifiedEvent;
     createEvent(eventInterface:"WebGLContextEvent"): WebGLContextEvent;
     createEvent(eventInterface:"WheelEvent"): WheelEvent;
@@ -16022,7 +16165,7 @@ interface NavigatorStorageUtils {
 
 interface NodeSelector {
     querySelector(selectors: string): Element;
-    querySelectorAll(selectors: string): NodeList;
+    querySelectorAll(selectors: string): NodeListOf<Element>;
 }
 
 interface RandomSource {
@@ -16070,7 +16213,7 @@ interface SVGLocatable {
 }
 
 interface SVGStylable {
-    className: SVGAnimatedString;
+    className: any;
     style: CSSStyleDeclaration;
 }
 
@@ -16157,8 +16300,7 @@ interface EventListenerObject {
 declare type EventListenerOrEventListenerObject = EventListener | EventListenerObject;
 
 interface ErrorEventHandler {
-    (event: Event, source?: string, fileno?: number, columnNumber?: number): void;
-    (event: string, source?: string, fileno?: number, columnNumber?: number): void;
+    (message: string, filename?: string, lineno?: number, colno?: number, error?:Error): void;
 }
 interface PositionCallback {
     (position: Position): void;
@@ -16334,6 +16476,7 @@ declare var styleMedia: StyleMedia;
 declare var toolbar: BarProp;
 declare var top: Window;
 declare var window: Window;
+declare var URL: URL;
 declare function alert(message?: any): void;
 declare function blur(): void;
 declare function cancelAnimationFrame(handle: number): void;

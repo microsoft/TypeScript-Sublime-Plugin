@@ -1,4 +1,5 @@
-from .error_info import TypescriptErrorInfo
+﻿from .error_info import TypescriptErrorInfo
+from .error_list import TypescriptProjectErrorList, TypescriptGoToError
 from .go_to_definition import TypescriptGoToDefinitionCommand
 from .go_to_type import TypescriptGoToTypeCommand
 from .nav_to import TypescriptNavToCommand
@@ -27,10 +28,13 @@ from .rename import (
     TypescriptFinishRenameCommand,
     TypescriptRenameCommand
 )
+from .build import TypescriptBuildCommand
 
 __all__ = [
     "TypescriptAutoIndentOnEnterBetweenCurlyBrackets",
     "TypescriptErrorInfo",
+    "TypescriptProjectErrorList",
+    "TypescriptGoToError",
     "TypescriptFormatBrackets",
     "TypescriptFormatDocument",
     "TypescriptFormatLine",
@@ -54,5 +58,6 @@ __all__ = [
     "TypescriptSave",
     "TypescriptShowDoc",
     "TypescriptSignaturePanel",
-    "TypescriptSignaturePopup"
+    "TypescriptSignaturePopup",
+    "TypescriptBuildCommand"
 ]

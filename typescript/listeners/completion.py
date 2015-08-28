@@ -1,4 +1,4 @@
-import sublime
+﻿import sublime
 
 from ..libs.view_helpers import *
 from ..libs.text_helpers import *
