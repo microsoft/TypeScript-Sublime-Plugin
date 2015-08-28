@@ -1,10 +1,7 @@
 import sys
 import os
-<<<<<<< HEAD
 import uuid
-=======
 import subprocess
->>>>>>> master
 
 if sys.version_info < (3, 0):
     from typescript.libs import *
