@@ -7,7 +7,7 @@ from .global_vars import *
 from .work_scheduler import work_scheduler
 from .text_helpers import Location
 from .editor_client import cli
-
+from ..libs.view_helpers import reload_buffer
 
 class PopupManager():
     """ PopupManager manages the state and interaction with the popup window
@@ -46,6 +46,23 @@ class PopupManager():
 
         # Define a function to do the request and notify on completion
         def get_signature_data(on_done):
+            # Issue 233: In the middle of an argument list, the popup
+            # disappears after user enters a line-break then immediately types
+            # one (or more) character.
+            # This is because we only send one reload request after the
+            # line-break and never send reload request after the other
+            # character.
+            # We fix this issue by making sure a reload request is always sent
+            # before every signature help request.
+
+            # Check if user has just quickly typed a line-break followed
+            # with one (or more) character. If yes, send a reload request.
+            last_command, args, repeat_times = view.command_history(0)
+            if last_command == "insert":
+                if len(args['characters']) > 1 and '\n' in args['characters']:
+                    reload_buffer(view)
+            
+            # Send a signagure_help request to server
             self.proxy.async_signature_help(filename, point, '', on_done)
 
         # Schedule the request
