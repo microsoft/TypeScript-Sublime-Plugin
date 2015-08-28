@@ -28,14 +28,14 @@ repository:
 
   control-statement:
     name: keyword.control.tsx
-    match: \b(break|catch|continue|debugger|declare|do|else|finally|for|if|return|switch|throw|try|while|with|super)\b
+    match: \b(break|catch|continue|debugger|declare|do|else|finally|for|if|return|switch|throw|try|while|with|super|switch|case)\b
 
   switch-case: 
     name: case.expr.tsx
-    begin: '\b(case|default)\b'
+    begin: '(?<!\.)\b(case|default)\b'
     beginCaptures:
       '1': { name: keyword.control.tsx }
-    end: ':'  
+    end: ':'
     patterns:
     - include: '#expression'
 
@@ -394,8 +394,8 @@ repository:
     - include: '#assignment-operator'
     - include: '#storage-keyword'
     - include: '#function-call'
-    - include: '#control-statement'
     - include: '#switch-case'
+    - include: '#control-statement'
     
   for-in-simple:
     name: forin.expr.tsx
