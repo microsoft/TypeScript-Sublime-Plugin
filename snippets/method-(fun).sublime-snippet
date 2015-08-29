@@ -1,5 +1,5 @@
 <snippet>
-    <content><![CDATA[public ${1:name}(${2:arguments}) : ${3:void} {
+    <content><![CDATA[${1:public} ${2:name}(${3:arguments}) : ${4:void} {
 	${0:// code...}
 }]]></content>
 	<tabTrigger>meth</tabTrigger>
