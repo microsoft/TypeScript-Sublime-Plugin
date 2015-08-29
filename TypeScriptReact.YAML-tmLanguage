@@ -248,7 +248,7 @@ repository:
 
   parameter-name:
     name: parameter.name.tsx
-    match: '(?:\s*\b(public|private)\b\s+)?(\.\.\.)?\s*([a-zA-Z_$][\w$]*)\s*(\??)'
+    match: '(?:\s*\b(public|private|protected)\b\s+)?(\.\.\.)?\s*([a-zA-Z_$][\w$]*)\s*(\??)'
     captures:
       '1': { name: storage.modifier.tsx }
       '2': { name: keyword.operator.tsx }

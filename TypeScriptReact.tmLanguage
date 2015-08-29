@@ -1400,7 +1400,7 @@
 				</dict>
 			</dict>
 			<key>match</key>
-			<string>(?:\s*\b(public|private)\b\s+)?(\.\.\.)?\s*([a-zA-Z_$][\w$]*)\s*(\??)</string>
+			<string>(?:\s*\b(public|private|protected)\b\s+)?(\.\.\.)?\s*([a-zA-Z_$][\w$]*)\s*(\??)</string>
 			<key>name</key>
 			<string>parameter.name.tsx</string>
 		</dict>
