@@ -193,7 +193,7 @@
 		<key>control-statement</key>
 		<dict>
 			<key>match</key>
-			<string>\b(break|catch|continue|debugger|declare|do|else|finally|for|if|return|switch|throw|try|while|with|super|case|default)\b</string>
+			<string>(?&lt;!\.)\b(break|catch|continue|debugger|declare|do|else|finally|for|if|return|switch|throw|try|while|with|super|case|default)\b</string>
 			<key>name</key>
 			<string>keyword.control.ts</string>
 		</dict>

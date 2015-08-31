@@ -28,7 +28,7 @@ repository:
 
   control-statement:
     name: keyword.control.tsx
-    match: \b(break|catch|continue|debugger|declare|do|else|finally|for|if|return|switch|throw|try|while|with|super|switch|case)\b
+    match: (?<!\.)\b(break|catch|continue|debugger|declare|do|else|finally|for|if|return|switch|throw|try|while|with|super|switch|case)\b
 
   switch-case: 
     name: case.expr.tsx

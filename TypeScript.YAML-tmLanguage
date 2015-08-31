@@ -23,7 +23,7 @@ repository:
 
   control-statement:
     name: keyword.control.ts
-    match: \b(break|catch|continue|debugger|declare|do|else|finally|for|if|return|switch|throw|try|while|with|super|case|default)\b
+    match: (?<!\.)\b(break|catch|continue|debugger|declare|do|else|finally|for|if|return|switch|throw|try|while|with|super|case|default)\b
 
   switch-case: 
     name: case.expr.ts
