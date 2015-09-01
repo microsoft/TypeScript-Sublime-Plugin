@@ -161,7 +161,7 @@
 		<key>control-statement</key>
 		<dict>
 			<key>match</key>
-			<string>\b(break|catch|continue|debugger|declare|do|else|finally|for|if|return|switch|throw|try|while|with|super)\b</string>
+			<string>(?&lt;!\.)\b(break|catch|continue|debugger|declare|do|else|finally|for|if|return|switch|throw|try|while|with|super|switch|case)\b</string>
 			<key>name</key>
 			<string>keyword.control.tsx</string>
 		</dict>
@@ -330,11 +330,11 @@
 				</dict>
 				<dict>
 					<key>include</key>
-					<string>#control-statement</string>
+					<string>#switch-case</string>
 				</dict>
 				<dict>
 					<key>include</key>
-					<string>#switch-case</string>
+					<string>#control-statement</string>
 				</dict>
 			</array>
 		</dict>
@@ -1560,7 +1560,7 @@
 		<key>switch-case</key>
 		<dict>
 			<key>begin</key>
-			<string>\b(case|default)\b</string>
+			<string>(?&lt;!\.)\b(case|default)\b</string>
 			<key>beginCaptures</key>
 			<dict>
 				<key>1</key>
