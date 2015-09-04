@@ -1033,30 +1033,35 @@
 		<key>method-declaration</key>
 		<dict>
 			<key>begin</key>
-			<string>\b(?:(public|private|protected)\s+)?(?:(get|set)\s+)?(?:(new)|(?:([a-zA-Z_$][\.\w$]*)\s*(\??)))?\s*(?=\(|\&lt;)</string>
+			<string>\b(?:(abstract)\s+)?\b(?:(public|private|protected)\s+)?(?:(get|set)\s+)?(?:(new)|(?:([a-zA-Z_$][\.\w$]*)\s*(\??)))?\s*(?=\(|\&lt;)</string>
 			<key>beginCaptures</key>
 			<dict>
 				<key>1</key>
 				<dict>
 					<key>name</key>
-					<string>storage.modifier.tsx</string>
+					<string>storage.modifier.tsX</string>
 				</dict>
 				<key>2</key>
 				<dict>
 					<key>name</key>
-					<string>storage.type.property.tsx</string>
+					<string>storage.modifier.tsx</string>
 				</dict>
 				<key>3</key>
 				<dict>
 					<key>name</key>
-					<string>keyword.operator.tsx</string>
+					<string>storage.type.property.tsx</string>
 				</dict>
 				<key>4</key>
 				<dict>
 					<key>name</key>
-					<string>entity.name.function.tsx</string>
+					<string>keyword.operator.tsx</string>
 				</dict>
 				<key>5</key>
+				<dict>
+					<key>name</key>
+					<string>entity.name.function.tsx</string>
+				</dict>
+				<key>6</key>
 				<dict>
 					<key>name</key>
 					<string>keyword.operator.tsx</string>
@@ -1233,7 +1238,7 @@
 		<key>object-declaration</key>
 		<dict>
 			<key>begin</key>
-			<string>\b(?:(export)\s+)?\b(class|interface)\b</string>
+			<string>\b(?:(export)\s+)?\b(?:(abstract)\s+)?\b(class|interface)\b</string>
 			<key>beginCaptures</key>
 			<dict>
 				<key>1</key>
@@ -1244,12 +1249,12 @@
 				<key>2</key>
 				<dict>
 					<key>name</key>
-					<string>storage.type.tsx</string>
+					<string>storage.modifier.tsx</string>
 				</dict>
 				<key>3</key>
 				<dict>
 					<key>name</key>
-					<string>entity.name.class.tsx</string>
+					<string>storage.type.tsx</string>
 				</dict>
 			</dict>
 			<key>end</key>

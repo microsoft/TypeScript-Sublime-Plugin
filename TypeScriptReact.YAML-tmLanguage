@@ -67,11 +67,11 @@ repository:
 
   object-declaration:
     name: meta.declaration.object.tsx
-    begin: '\b(?:(export)\s+)?\b(class|interface)\b'
+    begin: '\b(?:(export)\s+)?\b(?:(abstract)\s+)?\b(class|interface)\b'
     beginCaptures:
       '1': { name: storage.modifier.tsx }
-      '2': { name: storage.type.tsx }
-      '3': { name: entity.name.class.tsx }
+      '2': { name: storage.modifier.tsx }
+      '3': { name: storage.type.tsx }
     end: (?<=\})
     endCaptures:
       '1': { name: brace.curly.tsx }
@@ -154,13 +154,14 @@ repository:
 
   method-declaration:
     name: meta.method.declaration.tsx
-    begin: '\b(?:(public|private|protected)\s+)?(?:(get|set)\s+)?(?:(new)|(?:([a-zA-Z_$][\.\w$]*)\s*(\??)))?\s*(?=\(|\<)'
+    begin: '\b(?:(abstract)\s+)?\b(?:(public|private|protected)\s+)?(?:(get|set)\s+)?(?:(new)|(?:([a-zA-Z_$][\.\w$]*)\s*(\??)))?\s*(?=\(|\<)'
     beginCaptures:
       '1': { name: storage.modifier.tsx }
-      '2': { name: storage.type.property.tsx }
-      '3': { name: keyword.operator.tsx }
-      '4': { name: entity.name.function.tsx }
-      '5': { name: keyword.operator.tsx }
+      '2': { name: storage.modifier.tsx }
+      '3': { name: storage.type.property.tsx }
+      '4': { name: keyword.operator.tsx }
+      '5': { name: entity.name.function.tsx }
+      '6': { name: keyword.operator.tsx }
     end: '(?=\}|;|,)|(?<=\})'
     patterns:
     - include: '#comment'
