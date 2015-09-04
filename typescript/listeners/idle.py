@@ -68,7 +68,7 @@ class IdleListener:
     def on_selection_idle(self):
         """
         If selection is idle (cursor is not moving around), update the status
-        line (error message or quick info, if any).
+        line (error message or quick info, if any) and update document highlights.
         """
         log.debug("on_selection_idle")
         view = active_view()
@@ -204,9 +204,6 @@ class IdleListener:
                 continue
 
             for occurrence in file_highlight['highlightSpans']:
-                start_line, start_offset = extract_line_offset(occurrence['start'])
-                start_point = view.text_point(start_line, start_offset)
-
                 start_line, start_offset = extract_line_offset(occurrence['start'])
                 start_point = view.text_point(start_line, start_offset)
 
