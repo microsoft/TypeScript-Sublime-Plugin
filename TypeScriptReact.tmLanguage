@@ -161,7 +161,7 @@
 		<key>control-statement</key>
 		<dict>
 			<key>match</key>
-			<string>\b(break|catch|continue|debugger|declare|do|else|finally|for|if|return|switch|throw|try|while|with|super)\b</string>
+			<string>(?&lt;!\.)\b(break|catch|continue|debugger|declare|do|else|finally|for|if|return|switch|throw|try|while|with|super|switch|case)\b</string>
 			<key>name</key>
 			<string>keyword.control.tsx</string>
 		</dict>
@@ -330,11 +330,11 @@
 				</dict>
 				<dict>
 					<key>include</key>
-					<string>#control-statement</string>
+					<string>#switch-case</string>
 				</dict>
 				<dict>
 					<key>include</key>
-					<string>#switch-case</string>
+					<string>#control-statement</string>
 				</dict>
 			</array>
 		</dict>
@@ -363,7 +363,7 @@
 				</dict>
 			</dict>
 			<key>end</key>
-			<string>(?=\}|;|,|\n)|(?&lt;=\})</string>
+			<string>(?=\}|;|,)|(?&lt;=\})</string>
 			<key>name</key>
 			<string>meta.field.declaration.tsx</string>
 			<key>patterns</key>
@@ -843,7 +843,7 @@
 		<key>jsx-tag-attributes-illegal</key>
 		<dict>
 			<key>match</key>
-			<string>\S*</string>
+			<string>\S+</string>
 			<key>name</key>
 			<string>invalid.illegal.attribute.tsx</string>
 		</dict>
@@ -1400,7 +1400,7 @@
 				</dict>
 			</dict>
 			<key>match</key>
-			<string>(?:\s*\b(public|private)\b\s+)?(\.\.\.)?\s*([a-zA-Z_$][\w$]*)\s*(\??)</string>
+			<string>(?:\s*\b(public|private|protected)\b\s+)?(\.\.\.)?\s*([a-zA-Z_$][\w$]*)\s*(\??)</string>
 			<key>name</key>
 			<string>parameter.name.tsx</string>
 		</dict>
@@ -1560,7 +1560,7 @@
 		<key>switch-case</key>
 		<dict>
 			<key>begin</key>
-			<string>\b(case|default)\b</string>
+			<string>(?&lt;!\.)\b(case|default)\b</string>
 			<key>beginCaptures</key>
 			<dict>
 				<key>1</key>
@@ -1778,7 +1778,7 @@
 				</dict>
 			</dict>
 			<key>end</key>
-			<string>(?=\s*[,\)\{=;]|//|$)</string>
+			<string>(?=\s*[,\)\{=;&gt;]|//|$)</string>
 			<key>name</key>
 			<string>meta.type.function.return.tsx</string>
 			<key>patterns</key>

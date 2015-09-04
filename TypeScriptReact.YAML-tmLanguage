@@ -28,14 +28,14 @@ repository:
 
   control-statement:
     name: keyword.control.tsx
-    match: \b(break|catch|continue|debugger|declare|do|else|finally|for|if|return|switch|throw|try|while|with|super)\b
+    match: (?<!\.)\b(break|catch|continue|debugger|declare|do|else|finally|for|if|return|switch|throw|try|while|with|super|switch|case)\b
 
   switch-case: 
     name: case.expr.tsx
-    begin: '\b(case|default)\b'
+    begin: '(?<!\.)\b(case|default)\b'
     beginCaptures:
       '1': { name: keyword.control.tsx }
-    end: ':'  
+    end: ':'
     patterns:
     - include: '#expression'
 
@@ -148,7 +148,7 @@ repository:
     beginCaptures:
       '1': { name: variable.tsx }
       '2': { name: keyword.operator.tsx }
-    end: '(?=\}|;|,|\n)|(?<=\})'
+    end: '(?=\}|;|,)|(?<=\})'
     patterns:
     - include: '#expression'
 
@@ -248,7 +248,7 @@ repository:
 
   parameter-name:
     name: parameter.name.tsx
-    match: '(?:\s*\b(public|private)\b\s+)?(\.\.\.)?\s*([a-zA-Z_$][\w$]*)\s*(\??)'
+    match: '(?:\s*\b(public|private|protected)\b\s+)?(\.\.\.)?\s*([a-zA-Z_$][\w$]*)\s*(\??)'
     captures:
       '1': { name: storage.modifier.tsx }
       '2': { name: keyword.operator.tsx }
@@ -327,7 +327,7 @@ repository:
     begin: '=>'
     beginCaptures:
       '0': { name: keyword.operator.tsx }
-    end: (?=\s*[,\)\{=;]|//|$)
+    end: (?=\s*[,\)\{=;>]|//|$)
     patterns:
     - include: '#type'
 
@@ -394,8 +394,8 @@ repository:
     - include: '#assignment-operator'
     - include: '#storage-keyword'
     - include: '#function-call'
-    - include: '#control-statement'
     - include: '#switch-case'
+    - include: '#control-statement'
     
   for-in-simple:
     name: forin.expr.tsx
@@ -667,7 +667,7 @@ repository:
 
   jsx-tag-attributes-illegal:
     name: invalid.illegal.attribute.tsx
-    match: \S*
+    match: \S+
 
   jsx-tag-without-attributes:
     name: tag.without-attributes.tsx

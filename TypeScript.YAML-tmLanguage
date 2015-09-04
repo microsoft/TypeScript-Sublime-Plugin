@@ -23,14 +23,14 @@ repository:
 
   control-statement:
     name: keyword.control.ts
-    match: \b(break|catch|continue|debugger|declare|do|else|finally|for|if|return|switch|throw|try|while|with|super)\b
+    match: (?<!\.)\b(break|catch|continue|debugger|declare|do|else|finally|for|if|return|switch|throw|try|while|with|super|case|default)\b
 
   switch-case: 
     name: case.expr.ts
-    begin: '\b(case|default)\b'
+    begin: '(?<!\.)\b(case|default)\b'
     beginCaptures:
       '1': { name: keyword.control.ts }
-    end: ':'  
+    end: ':'
     patterns:
     - include: '#expression'
 
@@ -143,7 +143,7 @@ repository:
     beginCaptures:
       '1': { name: variable.ts }
       '2': { name: keyword.operator.ts }
-    end: '(?=\}|;|,|\n)|(?<=\})'
+    end: '(?=\}|;|,)|(?<=\})'
     patterns:
     - include: '#expression'
 
@@ -243,7 +243,7 @@ repository:
 
   parameter-name:
     name: parameter.name.ts
-    match: '(?:\s*\b(public|private)\b\s+)?(\.\.\.)?\s*([a-zA-Z_$][\w$]*)\s*(\??)'
+    match: '(?:\s*\b(public|private|protected)\b\s+)?(\.\.\.)?\s*([a-zA-Z_$][\w$]*)\s*(\??)'
     captures:
       '1': { name: storage.modifier.ts }
       '2': { name: keyword.operator.ts }
@@ -322,7 +322,7 @@ repository:
     begin: '=>'
     beginCaptures:
       '0': { name: keyword.operator.ts }
-    end: (?=\s*[,\)\{=;]|//|$)
+    end: (?=\s*[,\)\{=;>]|//|$)
     patterns:
     - include: '#type'
 
@@ -389,8 +389,8 @@ repository:
     - include: '#assignment-operator'
     - include: '#storage-keyword'
     - include: '#function-call'
-    - include: '#control-statement'
     - include: '#switch-case'
+    - include: '#control-statement'
     
   for-in-simple:
     name: forin.expr.ts

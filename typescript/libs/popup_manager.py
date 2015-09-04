@@ -7,7 +7,9 @@ from .global_vars import *
 from .work_scheduler import work_scheduler
 from .text_helpers import Location
 from .editor_client import cli
+from ..libs.view_helpers import reload_buffer
 
+_POPUP_DEFAULT_FONT_SIZE = 12
 
 class PopupManager():
     """ PopupManager manages the state and interaction with the popup window
@@ -23,6 +25,7 @@ class PopupManager():
     """
 
     html_template = ''
+    font_size = _POPUP_DEFAULT_FONT_SIZE
 
     def __init__(self, proxy):
         self.scheduler = work_scheduler()
@@ -46,6 +49,23 @@ class PopupManager():
 
         # Define a function to do the request and notify on completion
         def get_signature_data(on_done):
+            # Issue 233: In the middle of an argument list, the popup
+            # disappears after user enters a line-break then immediately types
+            # one (or more) character.
+            # This is because we only send one reload request after the
+            # line-break and never send reload request after the other
+            # character.
+            # We fix this issue by making sure a reload request is always sent
+            # before every signature help request.
+
+            # Check if user has just quickly typed a line-break followed
+            # with one (or more) character. If yes, send a reload request.
+            last_command, args, repeat_times = view.command_history(0)
+            if last_command == "insert":
+                if len(args['characters']) > 1 and '\n' in args['characters']:
+                    reload_buffer(view)
+            
+            # Send a signagure_help request to server
             self.proxy.async_signature_help(filename, point, '', on_done)
 
         # Schedule the request
@@ -245,7 +265,8 @@ class PopupManager():
                 "activeParam": activeParam,
                 "index": "{0}/{1}".format(self.signature_index + 1,
                                           len(self.signature_help["items"])),
-                "link": "link"}
+                "link": "link",
+                "fontSize": PopupManager.font_size}
 
 _popup_manager = None
 
@@ -276,9 +297,19 @@ def get_popup_manager():
             popup_text = re_remove.sub("", popup_text)
             log.info('Loaded tooltip template from {0}'.format(rel_path))
 
+            _set_up_popup_style()
             PopupManager.html_template = Template(popup_text)
             _popup_manager = PopupManager(cli.service)
     else:
         _popup_manager = None
 
     return _popup_manager
+
+def _set_up_popup_style():
+    settings = sublime.load_settings('Preferences.sublime-settings')
+    settings.add_on_change('typescript_popup_font_size', _reload_popup_style)
+    _reload_popup_style()
+
+def _reload_popup_style():
+    settings = sublime.load_settings('Preferences.sublime-settings')
+    PopupManager.font_size = settings.get('typescript_popup_font_size', _POPUP_DEFAULT_FONT_SIZE)
