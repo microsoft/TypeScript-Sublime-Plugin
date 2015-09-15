@@ -89,6 +89,13 @@ class TypeScriptEventListener(sublime_plugin.EventListener):
                     # request reload because we have strange insert
                     info.client_info.pending_changes = True
 
+                # Raise on_query_completions event if user types a dot. For tsx files only. Sublime
+                # already does that for ts file when we use 'auto_complete_triggers' setting
+                # in TypeScript.sublime-settings.
+                location = view.sel()[0].begin()
+                if view.match_selector(location, 'source.tsx') and args['characters'].endswith('.'):
+                    EventHub.run_listener_with_return("on_query_completions", view, '', [location])
+
             # Reload buffer after insert_snippet.
             # For Sublime 2 only. In Sublime 3, this logic is implemented in
             # on_post_text_command callback.

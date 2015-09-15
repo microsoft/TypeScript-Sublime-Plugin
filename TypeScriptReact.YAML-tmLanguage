@@ -9,8 +9,6 @@ fileTypes: [tsx]
 uuid: 805375ec-d614-41f5-8993-5843fe63ea82
 
 patterns:
-- 
-patterns:
 - include: '#expression'
 
 repository:
