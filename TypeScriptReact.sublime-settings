@@ -1,0 +1,4 @@
+{
+    "auto_complete_triggers" : [ {"selector": "source.tsx", "characters": "."} ],
+    "use_tab_stops": false
+}
