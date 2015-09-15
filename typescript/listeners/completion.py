@@ -140,13 +140,6 @@ class CompletionEventListener:
                 self.completions_ready = True
                 active_view().run_command('hide_auto_complete')
                 self.run_auto_complete()
-            else:
-                view = active_view()
-                location = view.sel()[0].begin()
-                # Sublime 2 automatically runs auto_complete command for ts files while
-                # does not do so for tsx files. So run the command ourselves.
-                if view.match_selector(location, 'source.tsx'):
-                    self.run_auto_complete() 
 
     def run_auto_complete(self):
         active_view().run_command("auto_complete", {
