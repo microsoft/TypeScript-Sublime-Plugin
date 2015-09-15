@@ -242,7 +242,10 @@ class TypeScriptEventListener(sublime_plugin.EventListener):
 
     def on_close(self, view):
         log.debug("on_close")
-
+        file_name = view.file_name()
+        info = get_info(view, open_if_not_cached=False)
+        if info:
+            info.is_open = False
         if view.is_scratch() and view.name() == "Find References":
             cli.dispose_ref_info()
         else:
@@ -251,7 +254,6 @@ class TypeScriptEventListener(sublime_plugin.EventListener):
             #     if info in most_recent_used_file_list:
             #         most_recent_used_file_list.remove(info)
             # notify the server that the file is closed
-            file_name = view.file_name()
             cli.service.close(file_name)
 
         # If this is the last view that is closed by a close_all command,
