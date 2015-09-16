@@ -204,7 +204,7 @@ class PopupManager():
                 return 'name'
             elif name in ['keyword', 'interfaceName']:
                 return 'type'
-            elif name in ['parameterName']:
+            elif name in ['parameterName', 'propertyName']:
                 return 'param'
             return 'text'
 
