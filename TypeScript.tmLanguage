@@ -402,6 +402,10 @@
 			<array>
 				<dict>
 					<key>include</key>
+					<string>#type-annotation</string>
+				</dict>
+				<dict>
+					<key>include</key>
 					<string>#expression</string>
 				</dict>
 			</array>
@@ -434,7 +438,7 @@
 			<array>
 				<dict>
 					<key>include</key>
-					<string>#type-parameters</string>
+					<string>#type-parameters-in-function-call</string>
 				</dict>
 				<dict>
 					<key>include</key>
@@ -1421,7 +1425,7 @@
 				</dict>
 			</dict>
 			<key>end</key>
-			<string>(?=\s*[,\)\{=;&gt;]|//|$)</string>
+			<string>(?=\s*[,\)\{\}=;&gt;]|//|$)</string>
 			<key>name</key>
 			<string>meta.type.function.return.ts</string>
 			<key>patterns</key>
@@ -1505,7 +1509,7 @@
 		<key>type-parameters</key>
 		<dict>
 			<key>begin</key>
-			<string>([a-zA-Z_$][\w$]*)?(&lt;)</string>
+			<string>([a-zA-Z_$][\w$]*)?\s*(&lt;)</string>
 			<key>beginCaptures</key>
 			<dict>
 				<key>1</key>
@@ -1520,10 +1524,10 @@
 				</dict>
 			</dict>
 			<key>end</key>
-			<string>(?=$)|(&gt;)</string>
+			<string>&gt;</string>
 			<key>endCaptures</key>
 			<dict>
-				<key>2</key>
+				<key>0</key>
 				<dict>
 					<key>name</key>
 					<string>meta.brace.angle.ts</string>
@@ -1531,6 +1535,53 @@
 			</dict>
 			<key>name</key>
 			<string>meta.type.parameters.ts</string>
+			<key>patterns</key>
+			<array>
+				<dict>
+					<key>match</key>
+					<string>\b(extends)\b</string>
+					<key>name</key>
+					<string>keyword.other.ts</string>
+				</dict>
+				<dict>
+					<key>include</key>
+					<string>#comment</string>
+				</dict>
+				<dict>
+					<key>include</key>
+					<string>#type</string>
+				</dict>
+			</array>
+		</dict>
+		<key>type-parameters-in-function-call</key>
+		<dict>
+			<key>begin</key>
+			<string>([a-zA-Z_$][\w$]*)?\s*(&lt;)(?=.*&gt;\s*\()</string>
+			<key>beginCaptures</key>
+			<dict>
+				<key>1</key>
+				<dict>
+					<key>name</key>
+					<string>entity.name.type.ts</string>
+				</dict>
+				<key>2</key>
+				<dict>
+					<key>name</key>
+					<string>meta.brace.angle.ts</string>
+				</dict>
+			</dict>
+			<key>end</key>
+			<string>&gt;\s*(?=\()</string>
+			<key>endCaptures</key>
+			<dict>
+				<key>0</key>
+				<dict>
+					<key>name</key>
+					<string>meta.brace.angle.ts</string>
+				</dict>
+			</dict>
+			<key>name</key>
+			<string>meta.type.parameters.in.function.call.ts</string>
 			<key>patterns</key>
 			<array>
 				<dict>

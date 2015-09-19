@@ -145,6 +145,7 @@ repository:
       '2': { name: keyword.operator.ts }
     end: '(?=\}|;|,)|(?<=\})'
     patterns:
+    - include: '#type-annotation'
     - include: '#expression'
 
   method-declaration:
@@ -323,7 +324,7 @@ repository:
     begin: '=>'
     beginCaptures:
       '0': { name: keyword.operator.ts }
-    end: (?=\s*[,\)\{=;>]|//|$)
+    end: (?=\s*[,\)\{\}=;>]|//|$)
     patterns:
     - include: '#type'
 
@@ -345,15 +346,33 @@ repository:
     captures:
       '1': { name: entity.name.type.ts }
 
-  type-parameters:
-    name: meta.type.parameters.ts
-    begin: '([a-zA-Z_$][\w$]*)?(<)'
+  type-parameters-in-function-call:
+    name: meta.type.parameters.in.function.call.ts
+    begin: '([a-zA-Z_$][\w$]*)?\s*(<)(?=.*>\s*\()'
     beginCaptures:
       '1': { name: entity.name.type.ts }
       '2': { name: meta.brace.angle.ts }
-    end: '(?=$)|(>)'  
+    end: '>\s*(?=\()'
     endCaptures:
+      '0': { name: meta.brace.angle.ts }
+    patterns:
+    - name: keyword.other.ts
+      match: '\b(extends)\b'
+    - include: '#comment'
+    - include: '#type'
+
+  # This pattern is used where we are sure no ambiguity would
+  # occur between type parameters and the less than sign. For 
+  # example, when the expression is inside a type annotation
+  type-parameters:
+    name: meta.type.parameters.ts
+    begin: '([a-zA-Z_$][\w$]*)?\s*(<)'
+    beginCaptures:
+      '1': { name: entity.name.type.ts }
       '2': { name: meta.brace.angle.ts }
+    end: '>'
+    endCaptures:
+      '0': { name: meta.brace.angle.ts }
     patterns:
     - name: keyword.other.ts
       match: '\b(extends)\b'
@@ -403,7 +422,7 @@ repository:
   function-call:
     name: functioncall.expr.ts
     patterns:
-    - include: '#type-parameters'
+    - include: '#type-parameters-in-function-call'
     - include: '#paren-expression'
 
   cast:
