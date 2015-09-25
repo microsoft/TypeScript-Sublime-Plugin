@@ -1173,7 +1173,7 @@
 		<key>storage-keyword</key>
 		<dict>
 			<key>match</key>
-			<string>\b(number|boolean|string|var|let|function|const)\b</string>
+			<string>\b(number|boolean|string|any|var|let|function|const)\b</string>
 			<key>name</key>
 			<string>storage.type.ts</string>
 		</dict>
