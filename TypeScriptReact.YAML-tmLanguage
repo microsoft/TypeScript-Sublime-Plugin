@@ -146,7 +146,7 @@ repository:
     beginCaptures:
       '1': { name: variable.tsx }
       '2': { name: keyword.operator.tsx }
-    end: '(?=\}|;|,)|(?<=\})'
+    end: '(?=\}|;|,|(?<!=)\n)|(?<=\})'
     patterns:
     - include: '#expression'
 
@@ -543,7 +543,7 @@ repository:
 
   comment-line:
     name: comment.line.tsx
-    match: (//).*$\n?
+    match: (//).*$
 
   literal:
     name: literal.tsx
