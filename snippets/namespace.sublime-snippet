@@ -1,0 +1,7 @@
+<snippet>
+	<content><![CDATA[namespace ${1:name}{
+	$0
+}]]></content>
+	<tabTrigger>nam</tabTrigger>
+	<scope>source.ts, source.tsx</scope>
+</snippet>

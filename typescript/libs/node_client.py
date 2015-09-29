@@ -119,7 +119,7 @@ class NodeCommClient(CommClient):
             reqSeq = -1
             try:
                 while reqSeq < seq:
-                    data = self.msgq.get(True, 1)
+                    data = self.msgq.get(True, 2)
                     dict = json_helpers.decode(data)
                     reqSeq = dict['request_seq']
                 return dict
@@ -156,7 +156,8 @@ class NodeCommClient(CommClient):
     @staticmethod
     def read_msg(stream, msgq, eventq, asyncReq, proc, asyncEventHandlers):
         """
-        Reader thread helper
+        Reader thread helper.
+        Return True to indicate the wish to stop reading the next message.
         """
         state = "init"
         body_length = 0
@@ -186,7 +187,6 @@ class NodeCommClient(CommClient):
                     callback = asyncReq.pop(request_seq, None)
                     if callback:
                         callback(data_dict)
-                        return False
                 else:
                     # Only put in the queue if wasn't an async request
                     msgq.put(data_json)
@@ -194,16 +194,14 @@ class NodeCommClient(CommClient):
                 event_name = data_dict["event"]
                 if event_name in asyncEventHandlers:
                     for cb in asyncEventHandlers[event_name]:
-                        if global_vars.IS_ST2:
-                            sublime.set_timeout(lambda: cb(data_dict), 0)
-                        else:
-                            cb(data_dict)
-                    return False
+                        # Run <cb> asynchronously to keep read_msg as small as possible
+                        sublime.set_timeout(lambda: cb(data_dict), 0)
                 else:
                     eventq.put(data_json)
         else:
             log.info('Body length of 0 in server stream')
-            return False
+
+        return False
 
     @staticmethod
     def which(program):

@@ -161,7 +161,7 @@
 		<key>control-statement</key>
 		<dict>
 			<key>match</key>
-			<string>\b(break|catch|continue|debugger|declare|do|else|finally|for|if|return|switch|throw|try|while|with|super)\b</string>
+			<string>(?&lt;!\.)\b(break|catch|continue|debugger|declare|do|else|finally|for|if|return|switch|throw|try|while|with|super|switch|case)\b</string>
 			<key>name</key>
 			<string>keyword.control.tsx</string>
 		</dict>
@@ -330,11 +330,11 @@
 				</dict>
 				<dict>
 					<key>include</key>
-					<string>#control-statement</string>
+					<string>#switch-case</string>
 				</dict>
 				<dict>
 					<key>include</key>
-					<string>#switch-case</string>
+					<string>#control-statement</string>
 				</dict>
 			</array>
 		</dict>
@@ -1033,7 +1033,7 @@
 		<key>method-declaration</key>
 		<dict>
 			<key>begin</key>
-			<string>\b(?:(public|private|protected)\s+)?(?:(get|set)\s+)?(?:(new)|(?:([a-zA-Z_$][\.\w$]*)\s*(\??)))?\s*(?=\(|\&lt;)</string>
+			<string>\b(?:(abstract)\s+)?\b(?:(public|private|protected)\s+)?(?:(get|set)\s+)?(?:(new)|(?:([a-zA-Z_$][\.\w$]*)\s*(\??)))?\s*(?=\(|\&lt;)</string>
 			<key>beginCaptures</key>
 			<dict>
 				<key>1</key>
@@ -1044,19 +1044,24 @@
 				<key>2</key>
 				<dict>
 					<key>name</key>
-					<string>storage.type.property.tsx</string>
+					<string>storage.modifier.tsx</string>
 				</dict>
 				<key>3</key>
 				<dict>
 					<key>name</key>
-					<string>keyword.operator.tsx</string>
+					<string>storage.type.property.tsx</string>
 				</dict>
 				<key>4</key>
 				<dict>
 					<key>name</key>
-					<string>entity.name.function.tsx</string>
+					<string>keyword.operator.tsx</string>
 				</dict>
 				<key>5</key>
+				<dict>
+					<key>name</key>
+					<string>entity.name.function.tsx</string>
+				</dict>
+				<key>6</key>
 				<dict>
 					<key>name</key>
 					<string>keyword.operator.tsx</string>
@@ -1233,7 +1238,7 @@
 		<key>object-declaration</key>
 		<dict>
 			<key>begin</key>
-			<string>\b(?:(export)\s+)?\b(class|interface)\b</string>
+			<string>\b(?:(export)\s+)?\b(?:(abstract)\s+)?\b(class|interface)\b</string>
 			<key>beginCaptures</key>
 			<dict>
 				<key>1</key>
@@ -1244,12 +1249,12 @@
 				<key>2</key>
 				<dict>
 					<key>name</key>
-					<string>storage.type.tsx</string>
+					<string>storage.modifier.tsx</string>
 				</dict>
 				<key>3</key>
 				<dict>
 					<key>name</key>
-					<string>entity.name.class.tsx</string>
+					<string>storage.type.tsx</string>
 				</dict>
 			</dict>
 			<key>end</key>
@@ -1400,7 +1405,7 @@
 				</dict>
 			</dict>
 			<key>match</key>
-			<string>(?:\s*\b(public|private)\b\s+)?(\.\.\.)?\s*([a-zA-Z_$][\w$]*)\s*(\??)</string>
+			<string>(?:\s*\b(public|private|protected)\b\s+)?(\.\.\.)?\s*([a-zA-Z_$][\w$]*)\s*(\??)</string>
 			<key>name</key>
 			<string>parameter.name.tsx</string>
 		</dict>
@@ -1560,7 +1565,7 @@
 		<key>switch-case</key>
 		<dict>
 			<key>begin</key>
-			<string>\b(case|default)\b</string>
+			<string>(?&lt;!\.)\b(case|default)\b</string>
 			<key>beginCaptures</key>
 			<dict>
 				<key>1</key>
