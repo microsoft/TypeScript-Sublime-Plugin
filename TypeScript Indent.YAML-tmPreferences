@@ -2,7 +2,7 @@
 ---
 name: TypeScript Indent
 uuid: 77966fa8-af34-4f1e-8535-e556d5063853
-scope: source.ts
+scope: source.ts, source.tsx
 settings:
   bracketIndentNextLinePattern: 
   >

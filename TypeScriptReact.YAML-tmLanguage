@@ -9,8 +9,6 @@ fileTypes: [tsx]
 uuid: 805375ec-d614-41f5-8993-5843fe63ea82
 
 patterns:
-- 
-patterns:
 - include: '#expression'
 
 repository:
@@ -28,14 +26,14 @@ repository:
 
   control-statement:
     name: keyword.control.tsx
-    match: \b(break|catch|continue|debugger|declare|do|else|finally|for|if|return|switch|throw|try|while|with|super)\b
+    match: (?<!\.)\b(break|catch|continue|debugger|declare|do|else|finally|for|if|return|switch|throw|try|while|with|super|switch|case)\b
 
   switch-case: 
     name: case.expr.tsx
-    begin: '\b(case|default)\b'
+    begin: '(?<!\.)\b(case|default)\b'
     beginCaptures:
       '1': { name: keyword.control.tsx }
-    end: ':'  
+    end: ':'
     patterns:
     - include: '#expression'
 
@@ -67,11 +65,11 @@ repository:
 
   object-declaration:
     name: meta.declaration.object.tsx
-    begin: '\b(?:(export)\s+)?\b(class|interface)\b'
+    begin: '\b(?:(export)\s+)?\b(?:(abstract)\s+)?\b(class|interface)\b'
     beginCaptures:
       '1': { name: storage.modifier.tsx }
-      '2': { name: storage.type.tsx }
-      '3': { name: entity.name.class.tsx }
+      '2': { name: storage.modifier.tsx }
+      '3': { name: storage.type.tsx }
     end: (?<=\})
     endCaptures:
       '1': { name: brace.curly.tsx }
@@ -154,13 +152,14 @@ repository:
 
   method-declaration:
     name: meta.method.declaration.tsx
-    begin: '\b(?:(public|private|protected)\s+)?(?:(get|set)\s+)?(?:(new)|(?:([a-zA-Z_$][\.\w$]*)\s*(\??)))?\s*(?=\(|\<)'
+    begin: '\b(?:(abstract)\s+)?\b(?:(public|private|protected)\s+)?(?:(get|set)\s+)?(?:(new)|(?:([a-zA-Z_$][\.\w$]*)\s*(\??)))?\s*(?=\(|\<)'
     beginCaptures:
       '1': { name: storage.modifier.tsx }
-      '2': { name: storage.type.property.tsx }
-      '3': { name: keyword.operator.tsx }
-      '4': { name: entity.name.function.tsx }
-      '5': { name: keyword.operator.tsx }
+      '2': { name: storage.modifier.tsx }
+      '3': { name: storage.type.property.tsx }
+      '4': { name: keyword.operator.tsx }
+      '5': { name: entity.name.function.tsx }
+      '6': { name: keyword.operator.tsx }
     end: '(?=\}|;|,)|(?<=\})'
     patterns:
     - include: '#comment'
@@ -248,7 +247,7 @@ repository:
 
   parameter-name:
     name: parameter.name.tsx
-    match: '(?:\s*\b(public|private)\b\s+)?(\.\.\.)?\s*([a-zA-Z_$][\w$]*)\s*(\??)'
+    match: '(?:\s*\b(public|private|protected)\b\s+)?(\.\.\.)?\s*([a-zA-Z_$][\w$]*)\s*(\??)'
     captures:
       '1': { name: storage.modifier.tsx }
       '2': { name: keyword.operator.tsx }
@@ -394,8 +393,8 @@ repository:
     - include: '#assignment-operator'
     - include: '#storage-keyword'
     - include: '#function-call'
-    - include: '#control-statement'
     - include: '#switch-case'
+    - include: '#control-statement'
     
   for-in-simple:
     name: forin.expr.tsx

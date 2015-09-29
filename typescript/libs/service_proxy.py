@@ -251,7 +251,13 @@ class ServiceProxy:
         req_dict = self.create_req_dict("projectInfo", args)
         json_str = json_helpers.encode(req_dict)
         return self.__comm.sendCmdSync(json_str, req_dict["seq"])
-    
+
+    def async_document_highlights(self, path, location, on_completed=None):
+        args = {"line": location.line, "offset": location.offset, "file": path, "filesToSearch": [path]}
+        req_dict = self.create_req_dict("documentHighlights", args)
+        json_str = json_helpers.encode(req_dict)
+        self.__comm.sendCmdAsync(json_str, on_completed, req_dict["seq"])
+
     def add_event_handler(self, event_name, cb):
         self.__comm.add_event_handler(event_name, cb)
 

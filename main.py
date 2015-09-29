@@ -155,11 +155,19 @@ def _get_plugin_tsc_version():
     cmd = [get_node_path(), TSC_PATH, "-v"]
     return _execute_cmd_and_parse_version_from_output(cmd)
 
+def _is_executable(path):
+    return os.path.isfile(path) and os.access(path, os.X_OK)
+
 def _get_npm_tsc_version():
-    cmd = ["tsc", "-v"]
+    if os.name != 'nt' and _is_executable("/usr/local/bin/tsc"): # Default location on MacOS
+        cmd = [get_node_path(), "/usr/local/bin/tsc", "-v"]
+    else:
+        cmd = ["tsc", "-v"]
     return _execute_cmd_and_parse_version_from_output(cmd)
 
 def _execute_cmd_and_parse_version_from_output(cmd):
+    if os.name != 'nt': # Linux/MacOS
+        cmd = "'" + "' '".join(cmd) + "'"
     output = subprocess.check_output(cmd, shell=True).decode('UTF-8')
 
     # Use regex to parse the verion number from <output> e.g. parse

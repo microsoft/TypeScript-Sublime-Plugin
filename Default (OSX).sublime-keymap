@@ -1,0 +1,10 @@
+[
+    {
+        "keys": [ "super+v" ],
+        "command": "typescript_paste_and_format",
+        "context": [
+            { "key": "setting.typescript_auto_format", "operator": "equal", "operand": true },
+            { "key": "selector", "operator": "equal", "operand": "source.ts, source.tsx" }
+        ]
+    }
+]
