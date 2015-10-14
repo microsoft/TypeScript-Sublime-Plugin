@@ -62,7 +62,7 @@ repository:
 
   object-declaration:
     name: meta.declaration.object.ts
-    begin: '\b(?:(export)\s+)?\b(?:(abstract)\s+)?\b(?<!.)(class|interface)\b'
+    begin: '\b(?:(export)\s+)?\b(?:(abstract)\s+)?\b(?<!\.)(class|interface)\b'
     beginCaptures:
       '1': { name: storage.modifier.ts }
       '2': { name: storage.modifier.ts }
