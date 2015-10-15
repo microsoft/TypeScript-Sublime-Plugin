@@ -311,8 +311,10 @@ repository:
     end: '\)'
     patterns:
     - include: '#comment'
+    - include: '#parameter-name'
+    - include: '#type-annotation'
+    - include: '#variable-initializer'
     - include: '#type'
-    - include: '#function-type-parameters'
     
   type-operator:
     name: keyword.operator.type.ts
@@ -377,6 +379,7 @@ repository:
     - include: '#template'
     - include: '#comment'
     - include: '#literal'
+    - include: '#function-type-parameters'
     - include: '#paren-expression'
     - include: '#var-expr'
     - include: '#declaration'
@@ -449,11 +452,11 @@ repository:
 
   relational-operator:
     name: keyword.operator.comparison.ts
-    match: ===|==|=|!=|!==|<=|>=|<>|<|>
+    match: ===|==|!=|!==|<=|>=|<>|<|>
 
   assignment-operator:
     name: keyword.operator.assignment.ts
-    match: <<=|>>=|>>>=|\*=|(?<!\()/=|%=|\+=|\-=|&=|\^=
+    match: =|<<=|>>=|>>>=|\*=|(?<!\()/=|%=|\+=|\-=|&=|\^=
 
   logic-operator:
     name: keyword.operator.arithmetic.ts

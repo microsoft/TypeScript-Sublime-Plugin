@@ -66,7 +66,7 @@
 		<key>assignment-operator</key>
 		<dict>
 			<key>match</key>
-			<string>&lt;&lt;=|&gt;&gt;=|&gt;&gt;&gt;=|\*=|(?&lt;!\()/=|%=|\+=|\-=|&amp;=|\^=</string>
+			<string>=|&lt;&lt;=|&gt;&gt;=|&gt;&gt;&gt;=|\*=|(?&lt;!\()/=|%=|\+=|\-=|&amp;=|\^=</string>
 			<key>name</key>
 			<string>keyword.operator.assignment.ts</string>
 		</dict>
@@ -307,6 +307,10 @@
 				<dict>
 					<key>include</key>
 					<string>#literal</string>
+				</dict>
+				<dict>
+					<key>include</key>
+					<string>#function-type-parameters</string>
 				</dict>
 				<dict>
 					<key>include</key>
@@ -1143,7 +1147,7 @@
 		<key>relational-operator</key>
 		<dict>
 			<key>match</key>
-			<string>===|==|=|!=|!==|&lt;=|&gt;=|&lt;&gt;|&lt;|&gt;</string>
+			<string>===|==|!=|!==|&lt;=|&gt;=|&lt;&gt;|&lt;|&gt;</string>
 			<key>name</key>
 			<string>keyword.operator.comparison.ts</string>
 		</dict>
@@ -1573,11 +1577,19 @@
 				</dict>
 				<dict>
 					<key>include</key>
-					<string>#type</string>
+					<string>#parameter-name</string>
 				</dict>
 				<dict>
 					<key>include</key>
-					<string>#function-type-parameters</string>
+					<string>#type-annotation</string>
+				</dict>
+				<dict>
+					<key>include</key>
+					<string>#variable-initializer</string>
+				</dict>
+				<dict>
+					<key>include</key>
+					<string>#type</string>
 				</dict>
 			</array>
 		</dict>
