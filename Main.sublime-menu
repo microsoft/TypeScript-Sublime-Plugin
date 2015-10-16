@@ -1,9 +1,74 @@
 [
-	{
-        "id": "goto",
-        "children":
-        [
-            { "command": "typescript_nav_to", "caption": "Navigate to TypeScript Symbol..."}
+  {
+    "id": "goto",
+    "children": [
+      {
+        "command": "typescript_nav_to",
+        "caption": "Navigate to TypeScript Symbol..."
+      }
+    ]
+  },
+  {
+    "id": "preferences",
+    "children": [
+      {
+        "id": "package-settings",
+        "children": [
+          {
+            "caption": "TypeScript",
+            "children": [
+              {
+                "command": "open_file",
+                "args": {
+                  "file": "${packages}/TypeScript/Preferences.sublime-settings"
+                },
+                "caption": "Plugin Settings – Default"
+              },
+              {
+                "command": "open_file",
+                "args": {
+                  "file": "${packages}/User/Preferences.sublime-settings"
+                },
+                "caption": "Plugin Settings – User"
+              },
+              {
+                "caption": "-"
+              },
+              {
+                "command": "open_file",
+                "args": {
+                  "file": "${packages}/TypeScript/TypeScript.sublime-settings"
+                },
+                "caption": "TypeScript Settings – Default"
+              },
+              {
+                "command": "open_file",
+                "args": {
+                  "file": "${packages}/User/TypeScript.sublime-settings"
+                },
+                "caption": "TypeScript Settings – User"
+              },
+              {
+                "caption": "-"
+              },
+              {
+                "command": "open_file",
+                "args": {
+                  "file": "${packages}/TypeScript/TypeScriptReact.sublime-settings"
+                },
+                "caption": "TypeScriptReact Settings – Default"
+              },
+              {
+                "command": "open_file",
+                "args": {
+                  "file": "${packages}/User/TypeScriptReact.sublime-settings"
+                },
+                "caption": "TypeScriptReact Settings – User"
+              }
+            ]
+          }
         ]
-	}
+      }
+    ]
+  }
 ]
