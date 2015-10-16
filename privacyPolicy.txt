@@ -17,4 +17,4 @@ Collected Data:
 - TypeScript commands run
 - Which .d.ts files from DefinitelyTyped were used (if any)
 
-Go to www.typescriptlang.org/telemetry to see recent results of the data that is collected.
+Go to www.typescriptlang.org/analyze to see recent results of the data that is collected.
