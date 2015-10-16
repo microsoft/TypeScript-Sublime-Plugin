@@ -178,12 +178,10 @@ def _execute_cmd_and_parse_version_from_output(cmd):
     return match_object.groups()[0]
 
 def _init_telemetry(settings):
-    # TODO: get real privacy file text
     this_file = os.path.abspath(__file__)
     privacy_file = this_file[0:this_file.rfind(os.path.sep)] + os.path.sep + "privacyPolicy.txt"
     sublime.active_window().open_file(privacy_file)
-    # TODO: get real prompt text
-    diagText = "The TypeScript plugin collects your usage data and sends it to Microsoft to help improve the product. We never use this information to identify you or contact you.\n\nIf you do not want your usage data to be sent to Microsoft click Decline, otherwise click Accept. You can also change these settings later. \n\nPlease go to www.typescriptlang.org/telemetry for more information."
+    diagText = "The TypeScript plugin collects your usage data and sends it to Microsoft to help improve the product. We never use this information to identify you or contact you.\n\nIf you do not want your usage data to be sent to Microsoft click Decline, otherwise click Accept. You can also change these settings later. \n\nPlease go to www.typescriptlang.org/analyze for more information."
     res = sublime.yes_no_cancel_dialog(diagText, "Accept", "Decline")
     acceptance_result = 'true' if res == sublime.DIALOG_YES else 'false'
     
@@ -194,7 +192,6 @@ def _init_telemetry(settings):
     if acceptance_result == "true" and current_telemetry_user_id == "None":
         current_telemetry_user_id = str(uuid.uuid4())
 
-    # TODO: this causes bools to be set as strings, need to use json for real?
     telemetry_settings_value = { "version": privacy_policy_version, "accepted": acceptance_result, "userID": current_telemetry_user_id } 
 
     settings.set(telemetry_setting_name, telemetry_settings_value) 
