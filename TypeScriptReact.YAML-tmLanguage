@@ -448,7 +448,7 @@ repository:
 
   storage-keyword:
     name: storage.type.tsx
-    match: \b(number|boolean|string|var|let|function|const)\b
+    match: \b(number|boolean|string|any|var|let|function|const)\b
 
   paren-expression:
     begin: \(
