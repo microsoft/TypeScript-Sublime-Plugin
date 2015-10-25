@@ -748,10 +748,9 @@ var ts;
     })(Debug = ts.Debug || (ts.Debug = {}));
     function copyListRemovingItem(item, list) {
         var copiedList = [];
-        for (var _i = 0; _i < list.length; _i++) {
-            var e = list[_i];
-            if (e !== item) {
-                copiedList.push(e);
+        for (var i = 0, len = list.length; i < len; i++) {
+            if (list[i] !== item) {
+                copiedList.push(list[i]);
             }
         }
         return copiedList;
@@ -1054,7 +1053,7 @@ var ts;
                     };
                 },
                 watchDirectory: function (path, callback, recursive) {
-                    return _fs.watch(path, { persistent: true, recursive: !!recursive }, function (eventName, relativeFileName) {
+                    return _fs.watch(path, { persisten: true, recursive: !!recursive }, function (eventName, relativeFileName) {
                         if (eventName === "rename") {
                             callback(!relativeFileName ? relativeFileName : ts.normalizePath(ts.combinePaths(path, relativeFileName)));
                         }
@@ -3859,15 +3858,15 @@ var ts;
         return node.end - node.pos;
     }
     ts.getFullWidth = getFullWidth;
-    function arrayIsEqualTo(array1, array2, equaler) {
-        if (!array1 || !array2) {
-            return array1 === array2;
+    function arrayIsEqualTo(arr1, arr2, comparer) {
+        if (!arr1 || !arr2) {
+            return arr1 === arr2;
         }
-        if (array1.length !== array2.length) {
+        if (arr1.length !== arr2.length) {
             return false;
         }
-        for (var i = 0; i < array1.length; ++i) {
-            var equals = equaler ? equaler(array1[i], array2[i]) : array1[i] === array2[i];
+        for (var i = 0; i < arr1.length; ++i) {
+            var equals = comparer ? comparer(arr1[i], arr2[i]) : arr1[i] === arr2[i];
             if (!equals) {
                 return false;
             }
@@ -5776,6 +5775,16 @@ var ts;
         }
     }
     ts.getTypeParameterOwner = getTypeParameterOwner;
+    function arrayStructurallyIsEqualTo(array1, array2) {
+        if (!array1 || !array2) {
+            return false;
+        }
+        if (array1.length !== array2.length) {
+            return false;
+        }
+        return ts.arrayIsEqualTo(array1.sort(), array2.sort());
+    }
+    ts.arrayStructurallyIsEqualTo = arrayStructurallyIsEqualTo;
 })(ts || (ts = {}));
 var ts;
 (function (ts) {
@@ -12622,22 +12631,27 @@ var ts;
             }
             return type.resolvedBaseConstructorType;
         }
+        function hasClassBaseType(type) {
+            return !!ts.forEach(getBaseTypes(type), function (t) { return !!(t.symbol.flags & 32); });
+        }
         function getBaseTypes(type) {
+            var isClass = type.symbol.flags & 32;
+            var isInterface = type.symbol.flags & 64;
             if (!type.resolvedBaseTypes) {
-                if (type.symbol.flags & 32) {
+                if (!isClass && !isInterface) {
+                    ts.Debug.fail("type must be class or interface");
+                }
+                if (isClass) {
                     resolveBaseTypesOfClass(type);
                 }
-                else if (type.symbol.flags & 64) {
+                if (isInterface) {
                     resolveBaseTypesOfInterface(type);
-                }
-                else {
-                    ts.Debug.fail("type must be class or interface");
                 }
             }
             return type.resolvedBaseTypes;
         }
         function resolveBaseTypesOfClass(type) {
-            type.resolvedBaseTypes = emptyArray;
+            type.resolvedBaseTypes = type.resolvedBaseTypes || emptyArray;
             var baseContructorType = getBaseConstructorTypeOfClass(type);
             if (!(baseContructorType.flags & 80896)) {
                 return;
@@ -12666,10 +12680,15 @@ var ts;
                 error(type.symbol.valueDeclaration, ts.Diagnostics.Type_0_recursively_references_itself_as_a_base_type, typeToString(type, undefined, 1));
                 return;
             }
-            type.resolvedBaseTypes = [baseType];
+            if (type.resolvedBaseTypes === emptyArray) {
+                type.resolvedBaseTypes = [baseType];
+            }
+            else {
+                type.resolvedBaseTypes.push(baseType);
+            }
         }
         function resolveBaseTypesOfInterface(type) {
-            type.resolvedBaseTypes = [];
+            type.resolvedBaseTypes = type.resolvedBaseTypes || emptyArray;
             for (var _i = 0, _a = type.symbol.declarations; _i < _a.length; _i++) {
                 var declaration = _a[_i];
                 if (declaration.kind === 215 && ts.getInterfaceBaseTypeNodes(declaration)) {
@@ -12679,7 +12698,12 @@ var ts;
                         if (baseType !== unknownType) {
                             if (getTargetType(baseType).flags & (1024 | 2048)) {
                                 if (type !== baseType && !hasBaseType(baseType, type)) {
-                                    type.resolvedBaseTypes.push(baseType);
+                                    if (type.resolvedBaseTypes === emptyArray) {
+                                        type.resolvedBaseTypes = [baseType];
+                                    }
+                                    else {
+                                        type.resolvedBaseTypes.push(baseType);
+                                    }
                                 }
                                 else {
                                     error(declaration, ts.Diagnostics.Type_0_recursively_references_itself_as_a_base_type, typeToString(type, undefined, 1));
@@ -12977,7 +13001,7 @@ var ts;
             return createSignature(sig.declaration, sig.typeParameters, sig.parameters, sig.resolvedReturnType, sig.typePredicate, sig.minArgumentCount, sig.hasRestParameter, sig.hasStringLiterals);
         }
         function getDefaultConstructSignatures(classType) {
-            if (!getBaseTypes(classType).length) {
+            if (!hasClassBaseType(classType)) {
                 return [createSignature(undefined, classType.localTypeParameters, emptyArray, classType, undefined, 0, false, false)];
             }
             var baseConstructorType = getBaseConstructorTypeOfClass(classType);
@@ -14958,11 +14982,10 @@ var ts;
             }
             source = getErasedSignature(source);
             target = getErasedSignature(target);
-            var sourceLen = source.parameters.length;
             var targetLen = target.parameters.length;
             for (var i = 0; i < targetLen; i++) {
-                var s = source.hasRestParameter && i === sourceLen - 1 ? getRestTypeOfSignature(source) : getTypeOfSymbol(source.parameters[i]);
-                var t = target.hasRestParameter && i === targetLen - 1 ? getRestTypeOfSignature(target) : getTypeOfSymbol(target.parameters[i]);
+                var s = isRestParameterIndex(source, i) ? getRestTypeOfSignature(source) : getTypeOfSymbol(source.parameters[i]);
+                var t = isRestParameterIndex(target, i) ? getRestTypeOfSignature(target) : getTypeOfSymbol(target.parameters[i]);
                 var related = compareTypes(s, t);
                 if (!related) {
                     return 0;
@@ -14973,6 +14996,9 @@ var ts;
                 result &= compareTypes(getReturnTypeOfSignature(source), getReturnTypeOfSignature(target));
             }
             return result;
+        }
+        function isRestParameterIndex(signature, parameterIndex) {
+            return signature.hasRestParameter && parameterIndex >= signature.parameters.length - 1;
         }
         function isSupertypeOfEach(candidate, types) {
             for (var _i = 0; _i < types.length; _i++) {
@@ -15912,8 +15938,9 @@ var ts;
                         if (indexOfParameter < len) {
                             return getTypeAtPosition(contextualSignature, indexOfParameter);
                         }
-                        if (indexOfParameter === (func.parameters.length - 1) &&
-                            funcHasRestParameters && contextualSignature.hasRestParameter && func.parameters.length >= contextualSignature.parameters.length) {
+                        if (funcHasRestParameters &&
+                            indexOfParameter === (func.parameters.length - 1) &&
+                            isRestParameterIndex(contextualSignature, func.parameters.length - 1)) {
                             return getTypeOfSymbol(ts.lastOrUndefined(contextualSignature.parameters));
                         }
                     }
@@ -17033,7 +17060,7 @@ var ts;
                 return false;
             }
             if (spreadArgIndex >= 0) {
-                return signature.hasRestParameter && spreadArgIndex >= signature.parameters.length - 1;
+                return isRestParameterIndex(signature, spreadArgIndex);
             }
             if (!signature.hasRestParameter && adjustedArgCount > signature.parameters.length) {
                 return false;
@@ -17631,7 +17658,7 @@ var ts;
                 var contextualParameterType = getTypeAtPosition(context, i);
                 assignTypeToParameterAndFixTypeParameters(parameter, contextualParameterType, mapper);
             }
-            if (signature.hasRestParameter && context.hasRestParameter && signature.parameters.length >= context.parameters.length) {
+            if (signature.hasRestParameter && isRestParameterIndex(context, signature.parameters.length - 1)) {
                 var parameter = ts.lastOrUndefined(signature.parameters);
                 var contextualParameterType = getTypeOfSymbol(ts.lastOrUndefined(context.parameters));
                 assignTypeToParameterAndFixTypeParameters(parameter, contextualParameterType, mapper);
@@ -25359,32 +25386,36 @@ var ts;
                         write(".");
                     }
                 }
-                else if (modulekind !== 5) {
-                    var declaration = resolver.getReferencedImportDeclaration(node);
-                    if (declaration) {
-                        if (declaration.kind === 223) {
-                            write(getGeneratedNameForNode(declaration.parent));
-                            write(languageVersion === 0 ? "[\"default\"]" : ".default");
-                            return;
-                        }
-                        else if (declaration.kind === 226) {
-                            write(getGeneratedNameForNode(declaration.parent.parent.parent));
-                            var name_23 = declaration.propertyName || declaration.name;
-                            var identifier = ts.getSourceTextOfNodeFromSourceFile(currentSourceFile, name_23);
-                            if (languageVersion === 0 && identifier === "default") {
-                                write("[\"default\"]");
+                else {
+                    if (modulekind !== 5) {
+                        var declaration = resolver.getReferencedImportDeclaration(node);
+                        if (declaration) {
+                            if (declaration.kind === 223) {
+                                write(getGeneratedNameForNode(declaration.parent));
+                                write(languageVersion === 0 ? "[\"default\"]" : ".default");
+                                return;
                             }
-                            else {
-                                write(".");
-                                write(identifier);
+                            else if (declaration.kind === 226) {
+                                write(getGeneratedNameForNode(declaration.parent.parent.parent));
+                                var name_23 = declaration.propertyName || declaration.name;
+                                var identifier = ts.getSourceTextOfNodeFromSourceFile(currentSourceFile, name_23);
+                                if (languageVersion === 0 && identifier === "default") {
+                                    write("[\"default\"]");
+                                }
+                                else {
+                                    write(".");
+                                    write(identifier);
+                                }
+                                return;
                             }
-                            return;
                         }
                     }
-                    declaration = resolver.getReferencedNestedRedeclaration(node);
-                    if (declaration) {
-                        write(getGeneratedNameForNode(declaration.name));
-                        return;
+                    if (languageVersion !== 2) {
+                        var declaration = resolver.getReferencedNestedRedeclaration(node);
+                        if (declaration) {
+                            write(getGeneratedNameForNode(declaration.name));
+                            return;
+                        }
                     }
                 }
                 if (ts.nodeIsSynthesized(node)) {
@@ -31404,7 +31435,7 @@ var ts;
             var parsedCommandLine = parseConfigFile();
             var newFileNames = ts.map(parsedCommandLine.fileNames, compilerHost.getCanonicalFileName);
             var canonicalRootFileNames = ts.map(rootFileNames, compilerHost.getCanonicalFileName);
-            if (!ts.arrayIsEqualTo(newFileNames && newFileNames.sort(), canonicalRootFileNames && canonicalRootFileNames.sort())) {
+            if (!ts.arrayStructurallyIsEqualTo(newFileNames, canonicalRootFileNames)) {
                 setCachedProgram(undefined);
                 startTimerForRecompilation();
             }
