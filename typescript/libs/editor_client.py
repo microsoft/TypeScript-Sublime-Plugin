@@ -3,6 +3,8 @@ from .node_client import ServerClient, WorkerClient
 from .service_proxy import ServiceProxy
 from .global_vars import *
 
+from .logger import *
+from .telemetry import *
 
 class ClientFileInfo:
     """per-file, globally-accessible information"""
@@ -35,9 +37,15 @@ class EditorClient:
         self.tab_size = 4
         self.indent_size = 4
         self.translate_tab_to_spaces = False
+
         self.ts_auto_format_enabled = True
         self.ts_auto_indent_enabled = True
         self.auto_match_enabled = True
+        
+        self.send_metrics = False
+        self.telemetry_user_id = None
+        # default is true but only actually on by default once telemetry accepted
+        self.check_for_dts_updates = True
 
     def initialize(self):
         """
@@ -60,7 +68,7 @@ class EditorClient:
         self.service = ServiceProxy(self.worker_client, self.node_client)
 
         # load formatting settings and set callbacks for setting changes
-        for setting_name in [
+        for format_setting_name in [
             'tab_size',
             'indent_size',
             'translate_tabs_to_spaces',
@@ -68,10 +76,27 @@ class EditorClient:
             'typescript_auto_indent',
             'auto_match_enabled'
         ]:
-            settings.add_on_change(setting_name, self.load_format_settings)
+            settings.add_on_change(format_setting_name, self.load_format_settings)
         self.load_format_settings()
 
+        # load telemetry settings and set callbacks for setting changes
+        for other_setting_name in [
+            telemetry_setting_name,
+            'check_for_dts_updates'
+        ]:
+            settings.add_on_change(other_setting_name, self.load_other_settings)
+        self.load_other_settings()
+
         self.initialized = True
+
+    def load_other_settings(self):
+        settings = sublime.load_settings('Preferences.sublime-settings')
+        telemetry_acceptance = settings.get(telemetry_setting_name, False)
+        self.send_metrics = False if not telemetry_acceptance else telemetry_acceptance['accepted']
+        self.telemetry_user_id = None if not telemetry_acceptance else telemetry_acceptance['userID']
+        check_dts_setting = settings.get('check_for_dts_updates', True)
+        self.check_for_dts_updates = False if not telemetry_acceptance else check_dts_setting
+        self.set_features()
 
     def load_format_settings(self):
         settings = sublime.load_settings('Preferences.sublime-settings')
@@ -86,12 +111,16 @@ class EditorClient:
     def set_features(self):
         host_info = "Sublime Text version " + str(sublime.version())
         # Preferences Settings
-        format_options = {
+        editor_options = {
             "tabSize": self.tab_size,
             "indentSize": self.indent_size,
-            "convertTabsToSpaces": self.translate_tab_to_spaces
+            "convertTabsToSpaces": self.translate_tab_to_spaces,
+            "sendMetrics": self.send_metrics,
+            "telemetryUserID": self.telemetry_user_id,
+            "checkForDtsUpdates": self.check_for_dts_updates
         }
-        self.service.configure(host_info, None, format_options)
+
+        self.service.configure(host_info, None, editor_options)
 
     # ref info is for Find References view
     # TODO: generalize this so that there can be multiple

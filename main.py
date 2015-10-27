@@ -1,6 +1,9 @@
 import sys
 import os
+import uuid
 import subprocess
+from time import gmtime, strftime
+import json
 
 if sys.version_info < (3, 0):
     from typescript.libs import *
@@ -8,12 +11,17 @@ if sys.version_info < (3, 0):
     from typescript.libs.view_helpers import *
     from typescript.listeners import *
     from typescript.commands import *
+    from typescript.libs.telemetry import *
+    import urllib2
 else:
     from .typescript.libs import *
     from .typescript.libs.reference import *
     from .typescript.libs.view_helpers import *
+    from .typescript.libs.telemetry import *
     from .typescript.listeners import *
     from .typescript.commands import *
+    from urllib.request import *
+    import urllib.request
 
 # Enable Python Tools for visual studio remote debugging
 try:
@@ -60,7 +68,13 @@ def plugin_loaded():
     from on_activated or on_close if necessary.
     """
     log.debug("plugin_loaded started")
+
+    settings = sublime.load_settings('Preferences.sublime-settings')
+    if not settings.has(telemetry_setting_name):
+        _init_telemetry(settings)
+
     cli.initialize()
+
     ref_view = get_ref_view(False)
     if ref_view:
         settings = ref_view.settings()
@@ -162,3 +176,62 @@ def _execute_cmd_and_parse_version_from_output(cmd):
     if match_object is None:
         raise Exception("Cannot parse version number from ouput: '{0}'".format(output))
     return match_object.groups()[0]
+
+def _init_telemetry(settings):
+    this_file = os.path.abspath(__file__)
+    privacy_file = this_file[0:this_file.rfind(os.path.sep)] + os.path.sep + "privacyPolicy.txt"
+    sublime.active_window().open_file(privacy_file)
+    diagText = "The TypeScript plugin collects your usage data and sends it to Microsoft to help improve the product. We never use this information to identify you or contact you.\n\nIf you do not want your usage data to be sent to Microsoft click Decline, otherwise click Accept. You can also change these settings later. \n\nPlease go to www.typescriptlang.org/sublimetelemetry for more information."
+    res = sublime.yes_no_cancel_dialog(diagText, "Accept", "Decline")
+    acceptance_result = 'true' if res == sublime.DIALOG_YES else 'false'
+    
+    # If the user has an existing telemetry ID, re-use it
+    # If they have none and accept telemetry generate a random GUID for an ID
+    existing_telemetry_setting = settings.get(telemetry_setting_name, None) 
+    current_telemetry_user_id =  "None" if not existing_telemetry_setting else existing_telemetry_setting["userID"]
+    if acceptance_result == "true" and current_telemetry_user_id == "None":
+        current_telemetry_user_id = str(uuid.uuid4())
+
+    telemetry_settings_value = { "version": privacy_policy_version, "accepted": acceptance_result, "userID": current_telemetry_user_id } 
+
+    settings.set(telemetry_setting_name, telemetry_settings_value) 
+    sublime.save_settings("Preferences.sublime-settings")
+    _send_telemetry_acceptance_result(acceptance_result)
+
+def _send_telemetry_acceptance_result(acceptance_result):
+    appInsightsURL = "https://dc.services.visualstudio.com/v2/track"
+    values = {
+                'iKey': '78e2d1f3-b56d-47d8-9b9a-fa4c056a0f21',
+                'name': 'Microsoft.ApplicationInsights.Event',
+                'time': strftime("%Y-%m-%d %H:%M:%S", gmtime()),
+                'data': {
+                    'baseType': 'EventData',
+                    'baseData': {
+                        'ver': 2,
+                        'name': 'TypeScriptTelemetryAcceptanceEvent',
+                        'measurements': {},
+                        'properties': { 'optedIn': acceptance_result }
+                    }
+                }
+            }
+
+    if sys.version_info < (3, 0):
+        # TODO: test this
+        headers = {'Content-Type': 'application/json; charset=utf-8'}
+        jsondata = json.dumps(values)
+        request = urllib2.Request(appInsightsURL, data = values, headers = headers)
+        try:
+            response = urllib2.urlopen(request)
+        except urllib.error.HTTPError as e:
+            logger.log.error(e.code);
+            logger.log.error(e.read()); 
+    else:
+        jsondata = json.dumps(values)
+        binary_data = jsondata.encode('utf-8')
+        headers = {'Content-Type': 'application/json; charset=utf-8', 'Content-Length': len(binary_data) }
+        request = urllib.request.Request(appInsightsURL, data = binary_data, headers = headers)
+        try:
+            response = urllib.request.urlopen(request)
+        except urllib.error.HTTPError as e:
+            logger.log.error(e.code);
+            logger.log.error(e.read());
