@@ -181,7 +181,7 @@ def _init_telemetry(settings):
     this_file = os.path.abspath(__file__)
     privacy_file = this_file[0:this_file.rfind(os.path.sep)] + os.path.sep + "privacyPolicy.txt"
     sublime.active_window().open_file(privacy_file)
-    diagText = "The TypeScript plugin collects your usage data and sends it to Microsoft to help improve the product. We never use this information to identify you or contact you.\n\nIf you do not want your usage data to be sent to Microsoft click Decline, otherwise click Accept. You can also change these settings later. \n\nPlease go to www.typescriptlang.org/analyze for more information."
+    diagText = "The TypeScript plugin collects your usage data and sends it to Microsoft to help improve the product. We never use this information to identify you or contact you.\n\nIf you do not want your usage data to be sent to Microsoft click Decline, otherwise click Accept. You can also change these settings later. \n\nPlease go to www.typescriptlang.org/sublimetelemetry for more information."
     res = sublime.yes_no_cancel_dialog(diagText, "Accept", "Decline")
     acceptance_result = 'true' if res == sublime.DIALOG_YES else 'false'
     
