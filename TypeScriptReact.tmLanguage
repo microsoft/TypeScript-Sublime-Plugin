@@ -1238,7 +1238,7 @@
 		<key>object-declaration</key>
 		<dict>
 			<key>begin</key>
-			<string>\b(?:(export)\s+)?\b(?:(abstract)\s+)?\b(class|interface)\b</string>
+			<string>\b(?:(export)\s+)?\b(?:(abstract)\s+)?\b(?&lt;!\.)(class|interface)\b</string>
 			<key>beginCaptures</key>
 			<dict>
 				<key>1</key>
@@ -1535,7 +1535,7 @@
 		<key>storage-keyword</key>
 		<dict>
 			<key>match</key>
-			<string>\b(number|boolean|string|var|let|function|const)\b</string>
+			<string>\b(number|boolean|string|any|var|let|function|const)\b</string>
 			<key>name</key>
 			<string>storage.type.tsx</string>
 		</dict>

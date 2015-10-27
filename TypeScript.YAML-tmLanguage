@@ -62,7 +62,7 @@ repository:
 
   object-declaration:
     name: meta.declaration.object.ts
-    begin: '\b(?:(export)\s+)?\b(?:(abstract)\s+)?\b(class|interface)\b'
+    begin: '\b(?:(export)\s+)?\b(?:(abstract)\s+)?\b(?<!\.)(class|interface)\b'
     beginCaptures:
       '1': { name: storage.modifier.ts }
       '2': { name: storage.modifier.ts }
@@ -461,7 +461,7 @@ repository:
 
   storage-keyword:
     name: storage.type.ts
-    match: \b(number|boolean|string|var|let|function|const)\b
+    match: \b(number|boolean|string|any|var|let|function|const)\b
 
   paren-expression:
     begin: \(
