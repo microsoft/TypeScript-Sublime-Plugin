@@ -1534,7 +1534,6 @@ var ts;
         Merged_declaration_0_cannot_include_a_default_export_declaration_Consider_adding_a_separate_export_default_0_declaration_instead: { code: 2652, category: ts.DiagnosticCategory.Error, key: "Merged declaration '{0}' cannot include a default export declaration. Consider adding a separate 'export default {0}' declaration instead." },
         Non_abstract_class_expression_does_not_implement_inherited_abstract_member_0_from_class_1: { code: 2653, category: ts.DiagnosticCategory.Error, key: "Non-abstract class expression does not implement inherited abstract member '{0}' from class '{1}'." },
         Exported_external_package_typings_file_cannot_contain_tripleslash_references_Please_contact_the_package_author_to_update_the_package_definition: { code: 2654, category: ts.DiagnosticCategory.Error, key: "Exported external package typings file cannot contain tripleslash references. Please contact the package author to update the package definition." },
-        Exported_external_package_typings_can_only_be_in_d_ts_files_Please_contact_the_package_author_to_update_the_package_definition: { code: 2655, category: ts.DiagnosticCategory.Error, key: "Exported external package typings can only be in '.d.ts' files. Please contact the package author to update the package definition." },
         Exported_external_package_typings_file_0_is_not_a_module_Please_contact_the_package_author_to_update_the_package_definition: { code: 2656, category: ts.DiagnosticCategory.Error, key: "Exported external package typings file '{0}' is not a module. Please contact the package author to update the package definition." },
         Import_declaration_0_is_using_private_name_1: { code: 4000, category: ts.DiagnosticCategory.Error, key: "Import declaration '{0}' is using private name '{1}'." },
         Type_parameter_0_of_exported_class_has_or_is_using_private_name_1: { code: 4002, category: ts.DiagnosticCategory.Error, key: "Type parameter '{0}' of exported class has or is using private name '{1}'." },
@@ -4769,6 +4768,15 @@ var ts;
         return !!node && (node.kind === 162 || node.kind === 161);
     }
     ts.isBindingPattern = isBindingPattern;
+    function isNodeDescendentOf(node, ancestor) {
+        while (node) {
+            if (node === ancestor)
+                return true;
+            node = node.parent;
+        }
+        return false;
+    }
+    ts.isNodeDescendentOf = isNodeDescendentOf;
     function isInAmbientContext(node) {
         while (node) {
             if (node.flags & (2 | 8192)) {
@@ -13967,7 +13975,8 @@ var ts;
             var container = ts.getThisContainer(node, false);
             var parent = container && container.parent;
             if (parent && (ts.isClassLike(parent) || parent.kind === 215)) {
-                if (!(container.flags & 128)) {
+                if (!(container.flags & 128) &&
+                    (container.kind !== 144 || ts.isNodeDescendentOf(node, container.body))) {
                     return getDeclaredTypeOfClassOrInterface(getSymbolOfNode(parent)).thisType;
                 }
             }
@@ -17669,7 +17678,9 @@ var ts;
                 for (var _i = 0, _a = node.name.elements; _i < _a.length; _i++) {
                     var element = _a[_i];
                     if (element.kind !== 187) {
-                        getSymbolLinks(getSymbolOfNode(element)).type = getTypeForBindingElement(element);
+                        if (element.name.kind === 69) {
+                            getSymbolLinks(getSymbolOfNode(element)).type = getTypeForBindingElement(element);
+                        }
                         assignBindingElementTypes(element);
                     }
                 }
@@ -19262,9 +19273,12 @@ var ts;
             if (promiseType === unknownType && compilerOptions.isolatedModules) {
                 return unknownType;
             }
-            var promiseConstructor = getMergedSymbol(promiseType.symbol);
+            var promiseConstructor = getNodeLinks(node.type).resolvedSymbol;
             if (!promiseConstructor || !symbolIsValue(promiseConstructor)) {
-                error(node, ts.Diagnostics.Type_0_is_not_a_valid_async_function_return_type, typeToString(promiseType));
+                var typeName = promiseConstructor
+                    ? symbolToString(promiseConstructor)
+                    : typeToString(promiseType);
+                error(node, ts.Diagnostics.Type_0_is_not_a_valid_async_function_return_type, typeName);
                 return unknownType;
             }
             var promiseConstructorType = getTypeOfSymbol(promiseConstructor);
@@ -24347,16 +24361,8 @@ var ts;
             diagnostics: diagnostics,
             sourceMaps: sourceMapDataList
         };
-        function isNodeDescendentOf(node, ancestor) {
-            while (node) {
-                if (node === ancestor)
-                    return true;
-                node = node.parent;
-            }
-            return false;
-        }
         function isUniqueLocalName(name, container) {
-            for (var node = container; isNodeDescendentOf(node, container); node = node.nextContainer) {
+            for (var node = container; ts.isNodeDescendentOf(node, container); node = node.nextContainer) {
                 if (node.locals && ts.hasProperty(node.locals, name)) {
                     if (node.locals[name].flags & (107455 | 1048576 | 8388608)) {
                         return false;
@@ -30523,10 +30529,6 @@ var ts;
                             if (!ts.isExternalModule(importedFile)) {
                                 var start_2 = ts.getTokenPosOfNode(file.imports[i], file);
                                 fileProcessingDiagnostics.add(ts.createFileDiagnostic(file, start_2, file.imports[i].end - start_2, ts.Diagnostics.Exported_external_package_typings_file_0_is_not_a_module_Please_contact_the_package_author_to_update_the_package_definition, importedFile.fileName));
-                            }
-                            else if (!ts.fileExtensionIs(importedFile.fileName, ".d.ts")) {
-                                var start_3 = ts.getTokenPosOfNode(file.imports[i], file);
-                                fileProcessingDiagnostics.add(ts.createFileDiagnostic(file, start_3, file.imports[i].end - start_3, ts.Diagnostics.Exported_external_package_typings_can_only_be_in_d_ts_files_Please_contact_the_package_author_to_update_the_package_definition));
                             }
                             else if (importedFile.referencedFiles.length) {
                                 var firstRef = importedFile.referencedFiles[0];
