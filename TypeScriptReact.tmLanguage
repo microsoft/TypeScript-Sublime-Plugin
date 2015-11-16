@@ -154,7 +154,7 @@
 		<key>comment-line</key>
 		<dict>
 			<key>match</key>
-			<string>(//).*$\n?</string>
+			<string>(//).*$</string>
 			<key>name</key>
 			<string>comment.line.tsx</string>
 		</dict>
@@ -363,7 +363,7 @@
 				</dict>
 			</dict>
 			<key>end</key>
-			<string>(?=\}|;|,)|(?&lt;=\})</string>
+			<string>(?=\}|;|,|(?&lt;!=)\n)|(?&lt;=\})</string>
 			<key>name</key>
 			<string>meta.field.declaration.tsx</string>
 			<key>patterns</key>
