@@ -53,7 +53,7 @@ class EditorClient:
         if not proc_file:
             # otherwise, get tsserver.js from package directory
             proc_file = os.path.join(PLUGIN_DIR, "tsserver", "tsserver.js")
-        print("spawning node module: " + proc_file)
+        print("Path of tsserver.js: " + proc_file)
 
         self.node_client = ServerClient(proc_file)
         self.worker_client = WorkerClient(proc_file)
