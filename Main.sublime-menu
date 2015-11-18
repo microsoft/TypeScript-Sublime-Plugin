@@ -18,10 +18,7 @@
             "caption": "TypeScript",
             "children": [
               {
-                "command": "open_file",
-                "args": {
-                  "file": "${packages}/TypeScript/Preferences.sublime-settings"
-                },
+                "command": "typescript_open_plugin_default_setting_file",
                 "caption": "Plugin Settings – Default"
               },
               {
@@ -35,10 +32,7 @@
                 "caption": "-"
               },
               {
-                "command": "open_file",
-                "args": {
-                  "file": "${packages}/TypeScript/TypeScript.sublime-settings"
-                },
+                "command":"typescript_open_ts_default_setting_file",
                 "caption": "TypeScript Settings – Default"
               },
               {
@@ -52,10 +46,7 @@
                 "caption": "-"
               },
               {
-                "command": "open_file",
-                "args": {
-                  "file": "${packages}/TypeScript/TypeScriptReact.sublime-settings"
-                },
+                "command":"typescript_open_tsreact_default_setting_file",
                 "caption": "TypeScriptReact Settings – Default"
               },
               {

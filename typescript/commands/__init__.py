@@ -29,6 +29,11 @@ from .rename import (
     TypescriptRenameCommand
 )
 from .build import TypescriptBuildCommand
+from .settings import (
+    TypescriptOpenPluginDefaultSettingFile,
+    TypescriptOpenTsDefaultSettingFile,
+    TypescriptOpenTsreactDefaultSettingFile
+)
 
 __all__ = [
     "TypescriptAutoIndentOnEnterBetweenCurlyBrackets",
@@ -59,5 +64,8 @@ __all__ = [
     "TypescriptShowDoc",
     "TypescriptSignaturePanel",
     "TypescriptSignaturePopup",
-    "TypescriptBuildCommand"
+    "TypescriptBuildCommand",
+    "TypescriptOpenPluginDefaultSettingFile",
+    "TypescriptOpenTsDefaultSettingFile",
+    "TypescriptOpenTsreactDefaultSettingFile"
 ]
