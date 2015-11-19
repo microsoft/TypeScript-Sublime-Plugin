@@ -7,8 +7,8 @@ The plugin uses an IO wrapper around the TypeScript language services to provide
 
 Note about `.tmLanguage` related issues
 --------------
-As the TypeScript and TypeScriptReact `.tmLanguage` definition files are shared across multiple editors including Sublime Text, Atom-TypeScript and Visual Studio Code, we decided to create a dedicated repo for these files to combine the efforts for improvement. 
-The new repo is at https://github.com/Microsoft/TypeScript-TmLanguage, all future tmLanguage-related issues will be tracked there and ported back to this repo.
+As the TypeScript and TypeScriptReact `.tmLanguage` definition files are shared across multiple editors including Sublime Text, Atom-TypeScript, and Visual Studio Code, we decided to create a dedicated repo for these files to combine the efforts for improvement. 
+The new repo is at https://github.com/Microsoft/TypeScript-TmLanguage, and all future tmLanguage-related issues will be tracked there and ported back to this repo.
 
 Requirements
 --------------
