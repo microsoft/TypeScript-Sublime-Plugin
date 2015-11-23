@@ -5,11 +5,6 @@ TypeScript Plugin for Sublime Text
 
 The plugin uses an IO wrapper around the TypeScript language services to provide an enhanced Sublime Text experience when working with TypeScript code.
 
-Note about `.tmLanguage` related issues
---------------
-As the TypeScript and TypeScriptReact `.tmLanguage` definition files are shared across multiple editors including Sublime Text, Atom-TypeScript, and Visual Studio Code, we decided to create a dedicated repo for these files to combine the efforts for improvement. 
-The new repo is at https://github.com/Microsoft/TypeScript-TmLanguage, and all future tmLanguage-related issues will be tracked there and ported back to this repo.
-
 Requirements
 --------------
 
@@ -81,10 +76,6 @@ For loose TS files opened in Sublime, the plugin will create an inferred project
 
 The plugin also supports representing a TypeScript project via a [tsconfig.json](https://github.com/Microsoft/TypeScript/pull/1692) file. If a file of this name is detected in a parent directory, then its settings will be used by the plugin.
 
-Reporting Issues
--------
-Issues are being tracked via the [GitHub Issues](https://github.com/Microsoft/TypeScript-Sublime-Plugin/issues) page for the project, and tagged with the appropriate issue type. Please do log issues for any bugs you find or enhancements you would like to see (after searching to see if such as issue already exists).  We are excited to get your feedback and work with the community to make this plugin as awesome as possible.
-
 Screenshots
 ------
 - Project error list
@@ -113,6 +104,15 @@ Screenshots
 
 - Build loose file
 ![](https://raw.githubusercontent.com/Microsoft/TypeScript-Sublime-Plugin/master/screenshots/build_loose_file.gif)
+
+Reporting Issues
+-------
+Issues are being tracked via the [GitHub Issues](https://github.com/Microsoft/TypeScript-Sublime-Plugin/issues) page for the project, and tagged with the appropriate issue type. Please do log issues for any bugs you find or enhancements you would like to see (after searching to see if such as issue already exists).  We are excited to get your feedback and work with the community to make this plugin as awesome as possible.
+
+Note about `.tmLanguage` related issues
+--------------
+As the TypeScript and TypeScriptReact `.tmLanguage` definition files are shared across multiple editors including Sublime Text, Atom-TypeScript, and Visual Studio Code, we decided to create a dedicated repo for these files to combine the efforts for improvement. 
+The new repo is at https://github.com/Microsoft/TypeScript-TmLanguage, and all future tmLanguage-related issues will be tracked there and ported back to this repo.
 
 Tips and Known Issues
 ----
