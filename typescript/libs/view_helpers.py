@@ -39,6 +39,9 @@ _file_map_on_worker = dict()
 
 def get_info(view, open_if_not_cached=True):
     """Find the file info on the server that matches the given view"""
+    if not get_language_service_enabled():
+        return
+    
     if not cli.initialized:
         cli.initialize()
 

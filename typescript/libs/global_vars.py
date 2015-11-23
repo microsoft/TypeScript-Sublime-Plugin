@@ -51,3 +51,7 @@ VALID_COMPLETION_ID_PATTERN = re.compile("[a-zA-Z_$\.][\w$\.]*\Z")
 
 # idle time length in millisecond
 IDLE_TIME_LENGTH = 200
+
+_language_service_enabled = True
+def get_language_service_enabled():
+        return _language_service_enabled

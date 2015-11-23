@@ -10,7 +10,7 @@ from .base_command import TypeScriptBaseWindowCommand
 class TypescriptProjectErrorList(sublime_plugin.WindowCommand):
 
     def is_enabled(self):
-        return is_typescript(active_view()) and not global_vars.IS_ST2
+        return is_typescript(active_view()) and not global_vars.IS_ST2 and global_vars.get_language_service_enabled()
 
     def run(self):
         panel_manager = get_panel_manager()
@@ -36,7 +36,7 @@ class TypescriptProjectErrorList(sublime_plugin.WindowCommand):
 class TypescriptGoToError(sublime_plugin.TextCommand):
 
     def is_enabled(self):
-        return not global_vars.IS_ST2
+        return not global_vars.IS_ST2 and global_vars.get_language_service_enabled()
 
     def run(self, text):
         print("TypeScriptGoToError")

@@ -6,6 +6,7 @@ from .popup_manager import get_popup_manager
 from .logger import log
 from .panel_manager import get_panel_manager
 from . import logger
+from . import global_vars
 __all__ = [
     'cli',
     'EditorClient',
@@ -19,5 +20,6 @@ __all__ = [
     'PopupManager',
     'ServiceProxy',
     'work_scheduler',
+    'global_vars',
     'get_panel_manager'
 ]
