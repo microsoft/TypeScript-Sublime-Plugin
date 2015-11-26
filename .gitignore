@@ -18,3 +18,4 @@ sublime.py
 sublime_plugin.py
 .idea/*
 .settings/*
+tsserver/node_modules/*
