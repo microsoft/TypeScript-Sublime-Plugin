@@ -64,6 +64,10 @@ The below features are available via the keyboard shortcuts shown, or via the Co
 |Build		   | (Win)`^B` or `F7`, (OSX) `⌘B` or `F7`   |
 |Error list        | (via Command Palette) |
 
+The "format on key" feature is on by default, which formats the current line after typing `;`, `}` or `enter`.
+To disable it, go to Preference -> Package Settings -> TypeScript -> Plugin Setting - User, and add 
+`"typescript_auto_format": true` to the json file.
+
 Project System
 ------
 The plugin supports two kinds of projects:
