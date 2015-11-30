@@ -257,7 +257,7 @@ class ServerClient(NodeCommClient):
             self.server_proc = None
         else:
             global_vars._node_path = node_path
-            print("Try spawning node executable from: " + node_path)
+            print("Trying to spawn node executable from: " + node_path)
             try:
                 if os.name == "nt":
                     # linux subprocess module does not have STARTUPINFO
