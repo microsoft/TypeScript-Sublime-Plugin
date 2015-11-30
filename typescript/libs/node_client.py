@@ -204,13 +204,14 @@ class NodeCommClient(CommClient):
         return False
 
     @staticmethod
-    def which(program):
-        def is_executable(fpath):
-            return os.path.isfile(fpath) and os.access(fpath, os.X_OK)
+    def is_executable(fpath):
+        return os.path.isfile(fpath) and os.access(fpath, os.X_OK)
 
+    @staticmethod
+    def which(program):
         fpath, fname = os.path.split(program)
         if fpath:
-            if is_executable(program):
+            if NodeCommClient.is_executable(program):
                 return program
         else:
             # /usr/local/bin is not on mac default path
@@ -219,7 +220,7 @@ class NodeCommClient(CommClient):
             for path in path_list.split(os.pathsep):
                 path = path.strip('"')
                 programPath = os.path.join(path, program)
-                if is_executable(programPath):
+                if NodeCommClient.is_executable(programPath):
                     return programPath
         return None
 
@@ -232,14 +233,18 @@ class ServerClient(NodeCommClient):
         The script file to run is passed to the constructor.
         """
         super(ServerClient, self).__init__(script_path)
-        print("test")
-        print(self.server_proc)
 
         # start node process
         pref_settings = sublime.load_settings('Preferences.sublime-settings')
         node_path = pref_settings.get('node_path')
         if node_path:
-            node_path = os.path.expandvars(node_path)
+            print("Path of node executable is configured as: " + node_path)
+            configured_node_path = os.path.expandvars(node_path)
+            if NodeCommClient.is_executable(configured_node_path):
+                node_path = configured_node_path
+            else:
+                node_path = None
+                print("Configured node path is not a valid executable.")
         if not node_path:
             if os.name == "nt":
                 node_path = "node"
@@ -252,7 +257,7 @@ class ServerClient(NodeCommClient):
             self.server_proc = None
         else:
             global_vars._node_path = node_path
-            print("Found node executable at " + node_path)
+            print("Trying to spawn node executable from: " + node_path)
             try:
                 if os.name == "nt":
                     # linux subprocess module does not have STARTUPINFO
