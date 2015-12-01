@@ -66,7 +66,7 @@ The below features are available via the keyboard shortcuts shown, or via the Co
 
 The "format on key" feature is on by default, which formats the current line after typing `;`, `}` or `enter`.
 To disable it, go to `Preferences` -> `Package Settings` -> `TypeScript` -> `Plugin Settings - User`, and add 
-`"typescript_auto_format": true` to the json file.
+`"typescript_auto_format": false` to the json file.
 
 Project System
 ------
