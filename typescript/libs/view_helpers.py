@@ -294,7 +294,7 @@ def apply_edit(text, view, start_line, start_offset, end_line, end_offset, new_t
     if region.size() > 0:
         view.erase(text, region)
     if len(new_text) > 0:
-        view.insert(text, begin, new_text)
+        view.insert(text, begin, new_text.replace('\r\n', '\n'))
 
 
 def apply_formatting_changes(text, view, code_edits):
