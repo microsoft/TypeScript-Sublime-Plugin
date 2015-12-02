@@ -116,7 +116,7 @@
 		<key>cast</key>
 		<dict>
 			<key>begin</key>
-			<string>(?:(?&lt;=return|throw|yield|[=(,:&gt;]))\s*(&lt;)(?!&lt;?\=)</string>
+			<string>(?:(?&lt;=return|throw|yield|await|[=(,:&gt;]))\s*(&lt;)(?!&lt;?\=)</string>
 			<key>beginCaptures</key>
 			<dict>
 				<key>1</key>
@@ -186,7 +186,7 @@
 		<key>comment-line</key>
 		<dict>
 			<key>match</key>
-			<string>(//).*$</string>
+			<string>(//).*$\n?</string>
 			<key>name</key>
 			<string>comment.line.ts</string>
 		</dict>
@@ -395,7 +395,7 @@
 				</dict>
 			</dict>
 			<key>end</key>
-			<string>(?=\}|;|,|(?&lt;!=)\n)|(?&lt;=\})</string>
+			<string>(?=\}|;|,)|(?&lt;=\})</string>
 			<key>name</key>
 			<string>meta.field.declaration.ts</string>
 			<key>patterns</key>
@@ -434,6 +434,10 @@
 			<array>
 				<dict>
 					<key>include</key>
+					<string>#await-modifier</string>
+				</dict>
+				<dict>
+					<key>include</key>
 					<string>#type-parameters</string>
 				</dict>
 				<dict>
@@ -445,7 +449,7 @@
 		<key>function-declaration</key>
 		<dict>
 			<key>begin</key>
-			<string>\b(?:(export)\s+)?(function\b)(?:\s+([a-zA-Z_$][\w$]*))?\s*</string>
+			<string>\b(?:(export)\s+)?(?:(async)\s+)?(function\b)(?:\s+([a-zA-Z_$][\w$]*))?\s*</string>
 			<key>beginCaptures</key>
 			<dict>
 				<key>1</key>
@@ -456,9 +460,14 @@
 				<key>2</key>
 				<dict>
 					<key>name</key>
-					<string>storage.type.function.ts</string>
+					<string>storage.modifier.ts</string>
 				</dict>
 				<key>3</key>
+				<dict>
+					<key>name</key>
+					<string>storage.type.function.ts</string>
+				</dict>
+				<key>4</key>
 				<dict>
 					<key>name</key>
 					<string>entity.name.function.ts</string>
@@ -667,7 +676,7 @@
 		<key>method-declaration</key>
 		<dict>
 			<key>begin</key>
-			<string>\b(?:(abstract)\s+)?\b(?:(public|private|protected)\s+)?(?:(get|set)\s+)?(?:(new)|(?:([a-zA-Z_$][\.\w$]*)\s*(\??)))?\s*(?=\(|\&lt;)</string>
+			<string>\b(?:(abstract)\s+)?\b(?:(public|private|protected)\s+)?\b(?:(async)\s+)?(?:(get|set)\s+)?(?:(new)|(?:([a-zA-Z_$][\.\w$]*)\s*(\??)))?\s*(?=\(|\&lt;)</string>
 			<key>beginCaptures</key>
 			<dict>
 				<key>1</key>
@@ -683,19 +692,24 @@
 				<key>3</key>
 				<dict>
 					<key>name</key>
-					<string>storage.type.property.ts</string>
+					<string>storage.modifier.ts</string>
 				</dict>
 				<key>4</key>
 				<dict>
 					<key>name</key>
-					<string>keyword.operator.ts</string>
+					<string>storage.type.property.ts</string>
 				</dict>
 				<key>5</key>
 				<dict>
 					<key>name</key>
-					<string>entity.name.function.ts</string>
+					<string>keyword.operator.ts</string>
 				</dict>
 				<key>6</key>
+				<dict>
+					<key>name</key>
+					<string>entity.name.function.ts</string>
+				</dict>
+				<key>7</key>
 				<dict>
 					<key>name</key>
 					<string>keyword.operator.ts</string>
@@ -1494,6 +1508,13 @@
 					<string>#type-annotation</string>
 				</dict>
 			</array>
+		</dict>
+		<key>await-modifier</key>
+		<dict>
+			<key>match</key>
+			<string>await</string>
+			<key>name</key>
+			<string>storage.modifier.ts</string>
 		</dict>
 		<key>type-operator</key>
 		<dict>
