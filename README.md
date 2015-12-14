@@ -83,30 +83,39 @@ The plugin also supports representing a TypeScript project via a [tsconfig.json]
 Screenshots
 ------
 - Project error list
+
 ![](https://raw.githubusercontent.com/Microsoft/TypeScript-Sublime-Plugin/master/screenshots/errorlist.gif)
 
 - Signature popup (Requires [Sublime Text 3](http://www.sublimetext.com/3) build >= 3070)
+ 
 ![](https://raw.githubusercontent.com/Microsoft/TypeScript-Sublime-Plugin/master/screenshots/signature.gif)
 
 - Navigate to symbol
+
 ![](https://raw.githubusercontent.com/Microsoft/TypeScript-Sublime-Plugin/master/screenshots/navigateToSymbol.gif)
 
 - Format
+
 ![](https://raw.githubusercontent.com/Microsoft/TypeScript-Sublime-Plugin/master/screenshots/format.gif)
 
 - Rename
+
 ![](https://raw.githubusercontent.com/Microsoft/TypeScript-Sublime-Plugin/master/screenshots/build_tsconfig.gif)
 
 - Find all references
+
 ![](https://raw.githubusercontent.com/Microsoft/TypeScript-Sublime-Plugin/master/screenshots/find_ref.gif)
 
 - Quick info
+
 ![](https://raw.githubusercontent.com/Microsoft/TypeScript-Sublime-Plugin/master/screenshots/quickinfo.gif)
 
 - Build configured project
+
 ![](https://raw.githubusercontent.com/Microsoft/TypeScript-Sublime-Plugin/master/screenshots/build_tsconfig.gif)
 
 - Build loose file
+
 ![](https://raw.githubusercontent.com/Microsoft/TypeScript-Sublime-Plugin/master/screenshots/build_loose_file.gif)
 
 Reporting Issues
