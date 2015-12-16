@@ -59,6 +59,8 @@ The below features are available via the keyboard shortcuts shown, or via the Co
 |Format braces     | `^ Shift ]`     |
 |Navigate to symbol| `^ Alt R`       |
 |Go to definition  | `^T^D` or `F12` |
+|Auto-Complete     | `^Space`        |
+|Signature pop-up  | (Win)`Alt+,`    |
 |Paste and format  | `^V` or <code>&#8984;V</code> |
 |Quick info        | `^T` `^Q`       |
 |Build		   | (Win)`^B` or `F7`, (OSX) `⌘B` or `F7`   |
