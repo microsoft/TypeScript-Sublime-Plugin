@@ -216,7 +216,7 @@ class NodeCommClient(CommClient):
         else:
             # /usr/local/bin is not on mac default path
             # but is where node is typically installed on mac
-            path_list = os.environ["PATH"] + os.pathsep + "/usr/local/bin" + os.pathsep + "$NVM_BIN"
+            path_list = os.path.expandvars(os.environ["PATH"]) + os.pathsep + "/usr/local/bin" + os.pathsep + os.path.expandvars("$NVM_BIN")
             for path in path_list.split(os.pathsep):
                 path = path.strip('"')
                 programPath = os.path.join(path, program)
