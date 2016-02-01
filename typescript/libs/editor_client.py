@@ -49,8 +49,10 @@ class EditorClient:
         # retrieve the path to tsserver.js
         # first see if user set the path to the file
         settings = sublime.load_settings('Preferences.sublime-settings')
-        proc_file = settings.get('typescript_proc_file')
-        if not proc_file:
+        tsdk_location = settings.get('typescript_tsdk')
+        if tsdk_location:
+            proc_file = os.path.join(tsdk_location, "tsserver.js")
+        else:
             # otherwise, get tsserver.js from package directory
             proc_file = os.path.join(PLUGIN_DIR, "tsserver", "tsserver.js")
         print("Path of tsserver.js: " + proc_file)
