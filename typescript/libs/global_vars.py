@@ -34,6 +34,7 @@ _node_path = None
 def get_node_path():
     return _node_path
 
+# The tsc.js path will be initialized in the editor_client.py module
 _tsc_path = None
 def get_tsc_path():
     return _tsc_path
