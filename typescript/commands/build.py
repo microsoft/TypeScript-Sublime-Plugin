@@ -18,7 +18,7 @@ class TypescriptBuildCommand(sublime_plugin.WindowCommand):
             if "configFileName" in project_info["body"]:
                 tsconfig_dir = dirname(project_info["body"]["configFileName"])
                 self.window.run_command("exec", {
-                    "cmd": [get_node_path(), TSC_PATH, "-p", tsconfig_dir],
+                    "cmd": [get_node_path(), get_tsc_path(), "-p", tsconfig_dir],
                     # regex to capture build result for displaying in the output panel
                     "file_regex": "^(.+?)\\((\\d+),(\\d+)\\): (.+)$"
                 })
@@ -32,7 +32,7 @@ class TypescriptBuildCommand(sublime_plugin.WindowCommand):
                 )
 
     def compile_inferred_project(self, file_name, params=""):
-        cmd = [get_node_path(), TSC_PATH, file_name]
+        cmd = [get_node_path(), get_tsc_path(), file_name]
         print(cmd)
         if params != "":
             cmd.extend(params.split(' '))

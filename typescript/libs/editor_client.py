@@ -2,6 +2,7 @@
 from .node_client import ServerClient, WorkerClient
 from .service_proxy import ServiceProxy
 from .global_vars import *
+from . import global_vars
 
 
 class ClientFileInfo:
@@ -52,10 +53,13 @@ class EditorClient:
         tsdk_location = settings.get('typescript_tsdk')
         if tsdk_location:
             proc_file = os.path.join(tsdk_location, "tsserver.js")
+            global_vars._tsc_path = os.path.join(tsdk_location, "tsc.js")
         else:
             # otherwise, get tsserver.js from package directory
             proc_file = os.path.join(PLUGIN_DIR, "tsserver", "tsserver.js")
+            global_vars._tsc_path = os.path.join(PLUGIN_DIR, "tsserver", "tsc.js")
         print("Path of tsserver.js: " + proc_file)
+        print("Path of tsc.js: " + get_tsc_path())
 
         self.node_client = ServerClient(proc_file)
         self.worker_client = WorkerClient(proc_file)
