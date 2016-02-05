@@ -34,7 +34,10 @@ _node_path = None
 def get_node_path():
     return _node_path
 
-TSC_PATH = os.path.join(PLUGIN_DIR, "tsserver", "tsc.js")
+# The tsc.js path will be initialized in the editor_client.py module
+_tsc_path = None
+def get_tsc_path():
+    return _tsc_path
 
 # only Sublime Text 3 build after 3072 support tooltip
 TOOLTIP_SUPPORT = int(sublime.version()) >= 3072
