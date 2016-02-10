@@ -220,7 +220,7 @@ class TypeScriptEventListener(sublime_plugin.EventListener):
         log.debug("on_post_text_command_with_info")
         if command_name not in \
             ["commit_completion",
-             "insert_best_completion"
+             "insert_best_completion",
              "typescript_format_on_key",
              "typescript_format_document",
              "typescript_format_selection",
