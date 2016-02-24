@@ -60,7 +60,7 @@ class TypescriptSignaturePanel(TypeScriptBaseTextCommand):
 
 class TypescriptSignaturePopup(sublime_plugin.TextCommand):
     def is_enabled(self):
-        return TOOLTIP_SUPPORT and is_typescript(self.view)
+        return TOOLTIP_SUPPORT and is_typescript(self.view) and get_language_service_enabled()
 
     def run(self, edit, move=None):
         log.debug('In run for signature popup with move: {0}'.format(move if move else 'None'))

@@ -25,6 +25,9 @@ class TypescriptGoToRefCommand(sublime_plugin.TextCommand):
     """
     If cursor is on reference line, go to (filename, line, offset) referenced by that line
     """
+    def is_enabled(self):
+        return global_vars.get_language_service_enabled()
+
     def run(self, text):
         pos = self.view.sel()[0].begin()
         cursor = self.view.rowcol(pos)
@@ -41,6 +44,9 @@ class TypescriptGoToRefCommand(sublime_plugin.TextCommand):
 
 # TODO: generalize this to work for all types of references
 class TypescriptNextRefCommand(sublime_plugin.TextCommand):
+    def is_enabled(self):
+        return global_vars.get_language_service_enabled()
+
     def run(self, text):
         ref_view = get_ref_view()
         if ref_view:
@@ -54,6 +60,9 @@ class TypescriptNextRefCommand(sublime_plugin.TextCommand):
 # TODO: generalize this to work for all types of references
 class TypescriptPrevRefCommand(sublime_plugin.TextCommand):
     """Go to previous reference in active references file"""
+    def is_enabled(self):
+        return global_vars.get_language_service_enabled()
+
     def run(self, text):
         ref_view = get_ref_view()
         if ref_view:
@@ -70,6 +79,9 @@ class TypescriptPopulateRefs(sublime_plugin.TextCommand):
     Helper command called by TypescriptFindReferences; put the references in the
     references buffer (such as build errors)
     """
+    def is_enabled(self):
+        return global_vars.get_language_service_enabled()
+
     def run(self, text, argsJson):
         args = json_helpers.decode(argsJson)
         file_name = args["filename"]
