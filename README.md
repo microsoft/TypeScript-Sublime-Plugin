@@ -61,6 +61,8 @@ The below features are available via the keyboard shortcuts shown, or via the Co
 |Go to definition       | `^T^D` or `F12` |
 |Trigger completion     | `^Space`        |
 |Trigger signature help | (Win)`Alt+,`    |
+|See last signature in the tooltip | `Alt + up`   |
+|See next signature in the tooltip | `Alt + down` |
 |Paste and format       | `^V` or <code>&#8984;V</code> |
 |Quick info             | `^T` `^Q`       |
 |Build		        | (Win)`^B` or `F7`, (OSX) `⌘B` or `F7`   |
@@ -69,6 +71,12 @@ The below features are available via the keyboard shortcuts shown, or via the Co
 The "format on key" feature is on by default, which formats the current line after typing `;`, `}` or `enter`.
 To disable it, go to `Preferences` -> `Package Settings` -> `TypeScript` -> `Plugin Settings - User`, and add 
 `"typescript_auto_format": false` to the json file.
+
+For further information about the keyboard shortcuts, please refer to the [`Default.sublime-keymap`](https://github.com/Microsoft/TypeScript-Sublime-Plugin/blob/master/Default.sublime-keymap) file for common shortcuts and 
+[`Default (OSX).sublime-keymap`](https://github.com/Microsoft/TypeScript-Sublime-Plugin/blob/master/Default%20(OSX).sublime-keymap), 
+[`Default (Windows).sublime-keymap`](https://github.com/Microsoft/TypeScript-Sublime-Plugin/blob/master/Default%20(Windows).sublime-keymap), 
+[`Default (Linux).sublime-keymap`](https://github.com/Microsoft/TypeScript-Sublime-Plugin/blob/master/Default%20(Linux).sublime-keymap)
+for OS-specific shortcuts.
 
 Project System
 ------
