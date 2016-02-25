@@ -34,7 +34,7 @@ class EditorClient:
         self.initialized = False
 
         self.tab_size = 4
-        self.indent_size = 4
+        self.indent_size = self.tab_size
         self.translate_tab_to_spaces = False
         self.ts_auto_format_enabled = True
         self.ts_auto_indent_enabled = True
@@ -82,7 +82,7 @@ class EditorClient:
     def load_format_settings(self):
         settings = sublime.load_settings('Preferences.sublime-settings')
         self.tab_size = settings.get('tab_size', 4)
-        self.indent_size = settings.get('indent_size', 4)
+        self.indent_size = settings.get('indent_size', self.tab_size)
         self.translate_tab_to_spaces = settings.get('translate_tabs_to_spaces', False)
         self.ts_auto_format_enabled = settings.get("typescript_auto_format")
         self.ts_auto_indent_enabled = settings.get("typescript_auto_indent")
