@@ -61,7 +61,7 @@ The below features are available via the keyboard shortcuts shown, or via the Co
 |Go to definition       | `^T^D` or `F12` |
 |Trigger completion     | `^Space`        |
 |Trigger signature help | (Win)`Alt+,`    |
-|See last signature in the tooltip | `Alt + up`   |
+|See previous signature in the tooltip | `Alt + up`   |
 |See next signature in the tooltip | `Alt + down` |
 |Paste and format       | `^V` or <code>&#8984;V</code> |
 |Quick info             | `^T` `^Q`       |
