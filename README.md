@@ -60,7 +60,7 @@ The below features are available via the keyboard shortcuts shown, or via the Co
 |Navigate to symbol     | `^ Alt R`       |
 |Go to definition       | `^T^D` or `F12` |
 |Trigger completion     | `^Space`        |
-|Trigger signature help | (Win)`Alt+,`    |
+|Trigger signature help | `Alt+,`         |
 |See previous signature in the tooltip | `Alt + up`   |
 |See next signature in the tooltip | `Alt + down` |
 |Paste and format       | `^V` or <code>&#8984;V</code> |
