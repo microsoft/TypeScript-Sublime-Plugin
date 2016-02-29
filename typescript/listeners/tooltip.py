@@ -10,8 +10,8 @@ class TooltipEventListener:
         self.was_paren_pressed = False
 
     def on_selection_modified(self, view):
-        popup_manager = get_popup_manager()
         if TOOLTIP_SUPPORT:
+            popup_manager = get_popup_manager()
             # Always reset this flag
             _paren_pressed = self.was_paren_pressed
             self.was_paren_pressed = False
@@ -31,8 +31,8 @@ class TooltipEventListener:
             active_window().run_command("hide_panel", {"cancel": True})
 
     def on_text_command(self, view, command_name, args):
-        popup_manager = get_popup_manager()
         if command_name == 'hide_popup':
+            popup_manager = get_popup_manager()
             popup_manager.on_close_popup()
 
     def on_query_context(self, view, key, operator, operand, match_all):
