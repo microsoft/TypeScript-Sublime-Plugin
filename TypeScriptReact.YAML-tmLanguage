@@ -1,6 +1,5 @@
 # Similar to TypeScript.YAML-tmLanguage except:
-#   - Remove type assertion (cast.expr.ts)
-#   - Add the "as" keyword.
+#   - Remove type assertion (cast.expr.tsx)
 #   - Add JSX expression (HTML-like expression).
 ---
 name: TypeScriptReact
@@ -14,28 +13,29 @@ patterns:
 repository:
   var-expr:
     name: meta.var.expr.tsx
-    begin: (?<!\()\s*\b(var|let|const(?!\s+enum))\s+([a-zA-Z_$][\w$]*) 
+    begin: (?<!\()\s*\b(var|let|const(?!\s+enum)\b)
     beginCaptures:
       '1': { name: storage.type.tsx }
-      '2': { name: variable.tsx }
-    end: '(?=$|[;=\}\{])|(?<=\})'
+    end: (?=$|;)
+    patterns:
+    - include: '#var-single-variable'
+    - include: '#comment'
+
+  var-single-variable:
+    name: meta.var-single-variable.expr.tsx
+    begin: \b([a-zA-Z_$][\w$]*)\s*(=?)
+    beginCaptures:
+      '1': { name: variable.tsx }
+    end: (?=$|[;,])
     patterns:
     - include: '#type-annotation'
     - include: '#string'
     - include: '#comment'
+    - include: '#expression'
 
   control-statement:
     name: keyword.control.tsx
-    match: (?<!\.)\b(break|catch|continue|debugger|declare|do|else|finally|for|if|return|switch|throw|try|while|with|super|switch|case)\b
-
-  switch-case: 
-    name: case.expr.tsx
-    begin: '(?<!\.)\b(case|default)\b'
-    beginCaptures:
-      '1': { name: keyword.control.tsx }
-    end: ':'
-    patterns:
-    - include: '#expression'
+    match: (?<!\.)\b(break|catch|continue|debugger|declare|do|else|finally|for|if|return|switch|throw|try|while|with|super|case|default)\b
 
   declaration:
     name: meta.declaration.tsx
@@ -47,13 +47,16 @@ repository:
 
   type-declaration:
     name: meta.type.declaration.tsx
-    begin: \b(type)\b\s+([a-zA-Z_$][\w$]*)\s*=\s*
+    begin: \b(type)\b\s+([a-zA-Z_$][\w$]*)\s*
     beginCaptures:
       '1': { name: keyword.other.tsx }
       '2': { name: storage.type.tsx }
-    end: (?=[,);>]|var|type|function|class|interface)
+    end: (?=$|[,);>]|var|type|function|class|interface)
     patterns:
+      - include: '#type-parameters'
       - include: '#type'
+      - name: keyword.operator.tsx
+        match: '=\s*'
 
   enum-declaration:
     name: meta.enum.declaration.tsx
@@ -88,7 +91,7 @@ repository:
 
   object-heritage:
     name: meta.object.heritage.tsx
-    begin: '(?:\b(extends|implements))'
+    begin: '(?:\b(extends|implements)\b)'
     beginCaptures:
       '1': { name: keyword.other.tsx }
     end: (?=\{)
@@ -96,12 +99,13 @@ repository:
       '1': { name: brace.curly.tsx }
     patterns:
     - include: '#comment'
+    - include: '#object-heritage'
     - include: '#type-parameters'
-    - include: '#object-heritage-parent'
+    - include: '#object-heritage-type'
 
-  object-heritage-parent:
+  object-heritage-type:
     name: meta.object.heritage.parent.tsx
-    match: '(?:\s*([a-zA-Z_$][\w$]*))'
+    match: '(?:\s*([a-zA-Z_$][\w$]*)\b)'
     captures:
       '1': { name: storage.type.tsx }
 
@@ -142,24 +146,25 @@ repository:
 
   field-declaration:
     name: meta.field.declaration.tsx
-    begin: '(?<!\()\s*\b([a-zA-Z_$][\w$]*)\s*(\?\s*)?(?=(=|:))'
+    begin: (?<!\()\s*((?:\b[a-zA-Z_$][\w$]*)|(?:\'[^']*\')|(?:\"[^"]*\"))\s*(\?\s*)?(?=(=|:))
     beginCaptures:
       '1': { name: variable.tsx }
       '2': { name: keyword.operator.tsx }
-    end: '(?=\}|;|,|(?<!=)\n)|(?<=\})'
+    end: '(?=\}|;|,|$)|(?<=\})'
     patterns:
     - include: '#expression'
 
   method-declaration:
     name: meta.method.declaration.tsx
-    begin: '\b(?:(abstract)\s+)?\b(?:(public|private|protected)\s+)?(?:(get|set)\s+)?(?:(new)|(?:([a-zA-Z_$][\.\w$]*)\s*(\??)))?\s*(?=\(|\<)'
+    begin: '\b(?:(abstract)\s+)?\b(?:(public|private|protected)\s+)?\b(?:(async)\s+)?(?:(get|set)\s+)?(?:(new)|(?:([a-zA-Z_$][\.\w$]*)\s*(\??)))?\s*(?=\(|\<)'
     beginCaptures:
       '1': { name: storage.modifier.tsx }
       '2': { name: storage.modifier.tsx }
-      '3': { name: storage.type.property.tsx }
-      '4': { name: keyword.operator.tsx }
-      '5': { name: entity.name.function.tsx }
-      '6': { name: keyword.operator.tsx }
+      '3': { name: storage.modifier.tsx }
+      '4': { name: storage.type.property.tsx }
+      '5': { name: keyword.operator.tsx }
+      '6': { name: entity.name.function.tsx }
+      '7': { name: keyword.operator.tsx }
     end: '(?=\}|;|,)|(?<=\})'
     patterns:
     - include: '#comment'
@@ -171,12 +176,15 @@ repository:
 
   method-overload-declaration:
     name: meta.method.overload.declaration.tsx
-    match: '\b(?:(public|private|protected)\s+)?(?:(new)|(?:([a-zA-Z_$][\.\w$]*)\s*(\??)))?\s*(?=\(|\<)'
+    match: '\b(?:(abstract)\s+)?\b(?:(public|private|protected)\s+)?\b(?:(async)\s+)?(?:(get|set)\s+)?(?:(new)|(?:([a-zA-Z_$][\.\w$]*)\s*(\??)))?\s*(?=\(|\<)'
     captures:
       '1': { name: storage.modifier.tsx }
-      '2': { name: keyword.operator.tsx }
-      '3': { name: entity.name.function.tsx }
-      '4': { name: keyword.operator.tsx }
+      '2': { name: storage.modifier.tsx }
+      '3': { name: storage.modifier.tsx }
+      '4': { name: storage.type.property.tsx }
+      '5': { name: keyword.operator.tsx }
+      '6': { name: entity.name.function.tsx }
+      '7': { name: keyword.operator.tsx }
 
   indexer-declaration:
     name: meta.indexer.declaration.tsx
@@ -197,14 +205,15 @@ repository:
     match: ([a-zA-Z_$][\w$]*)(?=\:)
     captures:
       '1': { name: variable.parameter.tsx}
-      
+
   function-declaration:
     name: meta.function.tsx
-    begin: \b(?:(export)\s+)?(function\b)(?:\s+([a-zA-Z_$][\w$]*))?\s*
+    begin: \b(?:(export)\s+)?(?:(async)\s+)?(function\b)(?:\s+([a-zA-Z_$][\w$]*))?\s*
     beginCaptures:
       '1': { name: storage.modifier.tsx }
-      '2': { name: storage.type.function.tsx }
-      '3': { name: entity.name.function.tsx }
+      '2': { name: storage.modifier.tsx }
+      '3': { name: storage.type.function.tsx }
+      '4': { name: entity.name.function.tsx }
     end: (?=;|\})|(?<=\})
     patterns:
     - include: '#comment'
@@ -231,8 +240,8 @@ repository:
     endCaptures:
       '0': { name: meta.brace.curly.tsx }
     patterns:
-    - include: '#expression'
     - include: '#object-member'
+    - include: '#expression'
 
   decl-block:
     name: meta.decl.block.tsx
@@ -316,7 +325,11 @@ repository:
     - include: '#comment'
     - include: '#type'
     - include: '#function-type-parameters'
-    
+
+  await-modifier:
+    name: storage.modifier.tsx
+    match: '\bawait\b'
+
   type-operator:
     name: keyword.operator.type.tsx
     match: '[.|]'
@@ -354,7 +367,7 @@ repository:
     beginCaptures:
       '1': { name: entity.name.type.tsx }
       '2': { name: meta.brace.angle.tsx }
-    end: '(?=$)|(>)'  
+    end: '(?=$)|(>)'
     endCaptures:
       '2': { name: meta.brace.angle.tsx }
     patterns:
@@ -369,7 +382,7 @@ repository:
       '1': { name: keyword.operator.tsx }
     end: (?=$|[,);=])
     patterns:
-      - include: '#expression'  
+      - include: '#expression'
 
   expression:
     name: meta.expression.tsx
@@ -385,6 +398,7 @@ repository:
     - include: '#var-expr'
     - include: '#declaration'
     - include: '#new-expr'
+    - include: '#switch-statement'
     - include: '#block'
     - include: '#expression-operator'
     - include: '#relational-operator'
@@ -393,9 +407,43 @@ repository:
     - include: '#assignment-operator'
     - include: '#storage-keyword'
     - include: '#function-call'
-    - include: '#switch-case'
+    - include: '#case-clause'
     - include: '#control-statement'
-    
+
+  switch-expression:
+    name: switch-expression.expr.tsx
+    begin: \b(switch)\b\s*\(
+    beginCaptures:
+      '1': { name: keyword.operator.tsx }
+    end: \)
+    patterns:
+    - include: '#expression'
+
+  switch-block:
+    name: switch-block.expr.tsx
+    begin: '{'
+    end: (?=\})
+    patterns:
+    - include: '#expression'
+
+  case-clause:
+    name: case-clause.expr.tsx
+    begin: '(?<!\.)\b(case|default)\b'
+    beginCaptures:
+      '1': { name: keyword.control.tsx }
+    end: ':'
+    patterns:
+    - include: '#expression'
+
+  switch-statement:
+    name: switch-statement.expr.tsx
+    begin: (?=\bswitch\b\s*\()
+    end: '}'
+    patterns:
+    - include: '#switch-expression'
+    - include: '#switch-block'
+
+
   for-in-simple:
     name: forin.expr.tsx
     match: (?<=\()\s*\b(var|let|const)\s+([a-zA-Z_$][\w$]*)\s+(in|of)\b
@@ -406,6 +454,7 @@ repository:
   function-call:
     name: functioncall.expr.tsx
     patterns:
+    - include: '#await-modifier'
     - include: '#type-parameters'
     - include: '#paren-expression'
 
@@ -418,6 +467,7 @@ repository:
     end: '(?=[(;]|$)'
     patterns:
     - include: '#type'
+    - include: '#comment'
 
   object-member:
     name: meta.object.member.tsx
@@ -428,7 +478,7 @@ repository:
 
   expression-operator:
     name: keyword.operator.tsx
-    match: =>|\b(delete|export|import|in|instanceof|module|namespace|new|typeof|void|as)\b
+    match: =>|\b(delete|export|import|from|in|instanceof|new|typeof|void|as)\b
 
   arithmetic-operator:
     name: keyword.operator.arithmetic.tsx
@@ -444,11 +494,11 @@ repository:
 
   logic-operator:
     name: keyword.operator.arithmetic.tsx
-    match: \!|&|~|\||&&|\|\|
+    match: \!|&|~|\^|\||&&|\|\|
 
   storage-keyword:
     name: storage.type.tsx
-    match: \b(number|boolean|string|any|var|let|function|const)\b
+    match: \b(number|boolean|string|any|var|let|function|const|module|namespace)\b
 
   paren-expression:
     begin: \(
@@ -463,14 +513,14 @@ repository:
   qstring-double:
     name: string.double.tsx
     begin: '"'
-    end: '"|(?=$)'
+    end: '"|(?:[^\\\n]$)'
     patterns:
     - include: '#string-character-escape'
 
   qstring-single:
     name: string.single.tsx
     begin: "'"
-    end: "'|(?=$)"
+    end: \'|(?:[^\\\n]$)
     patterns:
     - include: '#string-character-escape'
 
@@ -543,7 +593,7 @@ repository:
 
   comment-line:
     name: comment.line.tsx
-    match: (//).*$
+    match: (//).*$\n?
 
   literal:
     name: literal.tsx
@@ -567,7 +617,7 @@ repository:
     - include: '#expression'
 
   numeric-literal:
-    name: constant.numeric.tsx 
+    name: constant.numeric.tsx
     match: \b(?<=[^$])((0(x|X)[0-9a-fA-F]+)|([0-9]+(\.[0-9]+)?))\b
 
   boolean-literal:
@@ -577,11 +627,11 @@ repository:
   null-literal:
     name: constant.language.null.tsx
     match: \b(null)\b
-  
+
   this-literal:
     name: constant.language.this.tsx
     match: \b(this)\b
-      
+
   undefined-literal:
     name: constant.language.tsx
     match: \b(undefined)\b
@@ -589,7 +639,7 @@ repository:
   access-modifier:
     name: storage.modifier.tsx
     match: \b(public|protected|private)\b
-    
+
   static-modifier:
     name: keyword.other.tsx
     match: \b(static)\b
