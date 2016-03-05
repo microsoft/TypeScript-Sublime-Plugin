@@ -1,4 +1,4 @@
 {
-    "typescript_auto_format": true,
+    "typescript_auto_format": false,
     "enable_typescript_language_service": true
 }
