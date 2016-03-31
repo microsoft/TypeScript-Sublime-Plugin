@@ -88,7 +88,7 @@ For loose TS files opened in Sublime, the plugin will create an inferred project
 
 #### Configured project
 
-The plugin also supports representing a TypeScript project via a [tsconfig.json](https://github.com/Microsoft/TypeScript/pull/1692) file. If a file of this name is detected in a parent directory, then its settings will be used by the plugin.
+The plugin also supports representing a TypeScript project via a [tsconfig.json](http://www.typescriptlang.org/docs/handbook/tsconfig.json.html) file. If a file of this name is detected in a parent directory, then its settings will be used by the plugin.
 
 Screenshots
 ------
