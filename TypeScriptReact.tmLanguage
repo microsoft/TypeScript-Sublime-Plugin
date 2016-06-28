@@ -66,7 +66,7 @@
 		<key>assignment-operator</key>
 		<dict>
 			<key>match</key>
-			<string>&lt;&lt;=|&gt;&gt;=|&gt;&gt;&gt;=|\*=|(?&lt;!\()/=|%=|\+=|\-=|&amp;=|\^=</string>
+			<string>&lt;&lt;=|&gt;&gt;&gt;=|&gt;&gt;=|\*=|(?&lt;!\()/=|%=|\+=|\-=|&amp;=|\^=</string>
 			<key>name</key>
 			<string>keyword.operator.assignment.tsx</string>
 		</dict>
@@ -192,7 +192,7 @@
 		<key>control-statement</key>
 		<dict>
 			<key>match</key>
-			<string>(?&lt;!\.)\b(break|catch|continue|debugger|declare|do|else|finally|for|if|return|switch|throw|try|while|with|super|case|default)\b</string>
+			<string>(?&lt;!\.)\b(break|catch|continue|debugger|declare|do|else|finally|for|if|return|switch|throw|try|while|with|super|case|default|yield)\b</string>
 			<key>name</key>
 			<string>keyword.control.tsx</string>
 		</dict>
@@ -337,7 +337,15 @@
 				</dict>
 				<dict>
 					<key>include</key>
+					<string>#import-operator</string>
+				</dict>
+				<dict>
+					<key>include</key>
 					<string>#expression-operator</string>
+				</dict>
+				<dict>
+					<key>include</key>
+					<string>#imply-operator</string>
 				</dict>
 				<dict>
 					<key>include</key>
@@ -361,6 +369,10 @@
 				</dict>
 				<dict>
 					<key>include</key>
+					<string>#type-primitive</string>
+				</dict>
+				<dict>
+					<key>include</key>
 					<string>#function-call</string>
 				</dict>
 				<dict>
@@ -376,9 +388,9 @@
 		<key>expression-operator</key>
 		<dict>
 			<key>match</key>
-			<string>=&gt;|\b(delete|export|import|from|in|instanceof|new|typeof|void|as)\b</string>
+			<string>\b(delete|in|instanceof|new|typeof|as|is|of)\b</string>
 			<key>name</key>
-			<string>keyword.operator.tsx</string>
+			<string>keyword.others.tsx</string>
 		</dict>
 		<key>field-declaration</key>
 		<dict>
@@ -394,7 +406,7 @@
 				<key>2</key>
 				<dict>
 					<key>name</key>
-					<string>keyword.operator.tsx</string>
+					<string>keyword.others.tsx</string>
 				</dict>
 			</dict>
 			<key>end</key>
@@ -421,7 +433,7 @@
 				<key>3</key>
 				<dict>
 					<key>name</key>
-					<string>keyword.operator.tsx</string>
+					<string>keyword.others.tsx</string>
 				</dict>
 			</dict>
 			<key>match</key>
@@ -458,7 +470,7 @@
 				<key>1</key>
 				<dict>
 					<key>name</key>
-					<string>storage.modifier.tsx</string>
+					<string>storage.type.tsx</string>
 				</dict>
 				<key>2</key>
 				<dict>
@@ -515,7 +527,7 @@
 				<key>1</key>
 				<dict>
 					<key>name</key>
-					<string>storage.modifier.tsx</string>
+					<string>storage.type.tsx</string>
 				</dict>
 				<key>2</key>
 				<dict>
@@ -577,6 +589,20 @@
 				</dict>
 			</array>
 		</dict>
+		<key>imply-operator</key>
+		<dict>
+			<key>match</key>
+			<string>=&gt;</string>
+			<key>name</key>
+			<string>keyword.operator.tsx</string>
+		</dict>
+		<key>import-operator</key>
+		<dict>
+			<key>match</key>
+			<string>\b(import|from)\b</string>
+			<key>name</key>
+			<string>keyword.control.import.include.tsx</string>
+		</dict>
 		<key>indexer-declaration</key>
 		<dict>
 			<key>begin</key>
@@ -601,7 +627,7 @@
 				<key>2</key>
 				<dict>
 					<key>name</key>
-					<string>keyword.operator.tsx</string>
+					<string>keyword.others.tsx</string>
 				</dict>
 			</dict>
 			<key>name</key>
@@ -1070,14 +1096,14 @@
 		<key>logic-operator</key>
 		<dict>
 			<key>match</key>
-			<string>\!|&amp;|~|\^|\||&amp;&amp;|\|\|</string>
+			<string>\!|&amp;&amp;|&amp;|~|\^|\|\||\|</string>
 			<key>name</key>
 			<string>keyword.operator.arithmetic.tsx</string>
 		</dict>
 		<key>method-declaration</key>
 		<dict>
 			<key>begin</key>
-			<string>\b(?:(abstract)\s+)?\b(?:(public|private|protected)\s+)?\b(?:(async)\s+)?(?:(get|set)\s+)?(?:(new)|(?:([a-zA-Z_$][\.\w$]*)\s*(\??)))?\s*(?=\(|\&lt;)</string>
+			<string>\b(?:(abstract)\s+)?\b(?:(public|private|protected)\s+)?\b(?:(async)\s+)?(?:(get|set)\s+)?(?:(new)|(?:\b(constructor)\b)|(?:([a-zA-Z_$][\.\w$]*)\s*(\??)))?\s*(?=\(|\&lt;)</string>
 			<key>beginCaptures</key>
 			<dict>
 				<key>1</key>
@@ -1108,9 +1134,14 @@
 				<key>6</key>
 				<dict>
 					<key>name</key>
-					<string>entity.name.function.tsx</string>
+					<string>storage.type.tsx</string>
 				</dict>
 				<key>7</key>
+				<dict>
+					<key>name</key>
+					<string>entity.name.function.tsx</string>
+				</dict>
+				<key>8</key>
 				<dict>
 					<key>name</key>
 					<string>keyword.operator.tsx</string>
@@ -1180,16 +1211,21 @@
 				<key>6</key>
 				<dict>
 					<key>name</key>
-					<string>entity.name.function.tsx</string>
+					<string>storage.type.tsx</string>
 				</dict>
 				<key>7</key>
+				<dict>
+					<key>name</key>
+					<string>entity.name.function.tsx</string>
+				</dict>
+				<key>8</key>
 				<dict>
 					<key>name</key>
 					<string>keyword.operator.tsx</string>
 				</dict>
 			</dict>
 			<key>match</key>
-			<string>\b(?:(abstract)\s+)?\b(?:(public|private|protected)\s+)?\b(?:(async)\s+)?(?:(get|set)\s+)?(?:(new)|(?:([a-zA-Z_$][\.\w$]*)\s*(\??)))?\s*(?=\(|\&lt;)</string>
+			<string>\b(?:(abstract)\s+)?\b(?:(public|private|protected)\s+)?\b(?:(async)\s+)?(?:(get|set)\s+)?(?:(new)|(?:\b(constructor)\b)|(?:([a-zA-Z_$][\.\w$]*)\s*(\??)))?\s*(?=\(|\&lt;)</string>
 			<key>name</key>
 			<string>meta.method.overload.declaration.tsx</string>
 		</dict>
@@ -1202,7 +1238,7 @@
 				<key>1</key>
 				<dict>
 					<key>name</key>
-					<string>keyword.operator.tsx</string>
+					<string>keyword.others.tsx</string>
 				</dict>
 			</dict>
 			<key>end</key>
@@ -1231,7 +1267,7 @@
 		<key>numeric-literal</key>
 		<dict>
 			<key>match</key>
-			<string>\b(?&lt;=[^$])((0(x|X)[0-9a-fA-F]+)|([0-9]+(\.[0-9]+)?))\b</string>
+			<string>\b(?&lt;=[^$])((0(x|X)[0-9a-fA-F]+)|(0(o|O)[0-7]+)|(0(b|B)(0|1)+)|(([0-9]+(\.[0-9]+)?))([eE]([+-]?)[0-9]+(\.[0-9]+)?)?)\b</string>
 			<key>name</key>
 			<string>constant.numeric.tsx</string>
 		</dict>
@@ -1312,7 +1348,7 @@
 				<key>1</key>
 				<dict>
 					<key>name</key>
-					<string>storage.modifier.tsx</string>
+					<string>storage.type.tsx</string>
 				</dict>
 				<key>2</key>
 				<dict>
@@ -1412,11 +1448,11 @@
 				<key>1</key>
 				<dict>
 					<key>name</key>
-					<string>storage.type.tsx</string>
+					<string>support.type.tsx</string>
 				</dict>
 			</dict>
 			<key>match</key>
-			<string>(?:\s*([a-zA-Z_$][\w$]*)\b)</string>
+			<string>(?:\b([a-zA-Z_$][\w$]*)\b)</string>
 			<key>name</key>
 			<string>meta.object.heritage.parent.tsx</string>
 		</dict>
@@ -1463,7 +1499,7 @@
 				<key>2</key>
 				<dict>
 					<key>name</key>
-					<string>keyword.operator.tsx</string>
+					<string>keyword.others.tsx</string>
 				</dict>
 				<key>3</key>
 				<dict>
@@ -1473,7 +1509,7 @@
 				<key>4</key>
 				<dict>
 					<key>name</key>
-					<string>keyword.operator.tsx</string>
+					<string>keyword.others.tsx</string>
 				</dict>
 			</dict>
 			<key>match</key>
@@ -1577,7 +1613,7 @@
 		<key>relational-operator</key>
 		<dict>
 			<key>match</key>
-			<string>===|==|=|!=|!==|&lt;=|&gt;=|&lt;&gt;|&lt;|&gt;</string>
+			<string>===|!==|==|!=|&lt;=|&gt;=|&lt;&gt;|=|&lt;|&gt;</string>
 			<key>name</key>
 			<string>keyword.operator.comparison.tsx</string>
 		</dict>
@@ -1607,7 +1643,7 @@
 		<key>storage-keyword</key>
 		<dict>
 			<key>match</key>
-			<string>\b(number|boolean|string|any|var|let|function|const|module|namespace)\b</string>
+			<string>\b(var|let|function|const|module|namespace|void|export)\b</string>
 			<key>name</key>
 			<string>storage.type.tsx</string>
 		</dict>
@@ -1659,7 +1695,7 @@
 				<key>1</key>
 				<dict>
 					<key>name</key>
-					<string>keyword.operator.tsx</string>
+					<string>keyword.control.tsx</string>
 				</dict>
 			</dict>
 			<key>end</key>
@@ -1755,7 +1791,7 @@
 				<key>0</key>
 				<dict>
 					<key>name</key>
-					<string>keyword.operator.tsx</string>
+					<string>keyword.others.tsx</string>
 				</dict>
 			</dict>
 			<key>end</key>
@@ -1765,7 +1801,7 @@
 				<key>0</key>
 				<dict>
 					<key>name</key>
-					<string>keyword.operator.tsx</string>
+					<string>keyword.others.tsx</string>
 				</dict>
 			</dict>
 			<key>name</key>
@@ -1775,6 +1811,110 @@
 				<dict>
 					<key>include</key>
 					<string>#expression</string>
+				</dict>
+			</array>
+		</dict>
+		<key>ternary-expression</key>
+		<dict>
+			<key>begin</key>
+			<string>(?=\?)</string>
+			<key>end</key>
+			<string>(?=$|[;,])</string>
+			<key>patterns</key>
+			<array>
+				<dict>
+					<key>include</key>
+					<string>#ternary-operator</string>
+				</dict>
+				<dict>
+					<key>include</key>
+					<string>#ternary-expression-type</string>
+				</dict>
+			</array>
+		</dict>
+		<key>ternary-expression-type</key>
+		<dict>
+			<key>name</key>
+			<string>meta.expression.tsx</string>
+			<key>patterns</key>
+			<array>
+				<dict>
+					<key>include</key>
+					<string>#string</string>
+				</dict>
+				<dict>
+					<key>include</key>
+					<string>#regex</string>
+				</dict>
+				<dict>
+					<key>include</key>
+					<string>#template</string>
+				</dict>
+				<dict>
+					<key>include</key>
+					<string>#comment</string>
+				</dict>
+				<dict>
+					<key>include</key>
+					<string>#literal</string>
+				</dict>
+				<dict>
+					<key>include</key>
+					<string>#paren-expression</string>
+				</dict>
+				<dict>
+					<key>include</key>
+					<string>#ternary-expression</string>
+				</dict>
+				<dict>
+					<key>include</key>
+					<string>#import-operator</string>
+				</dict>
+				<dict>
+					<key>include</key>
+					<string>#expression-operator</string>
+				</dict>
+				<dict>
+					<key>include</key>
+					<string>#imply-operator</string>
+				</dict>
+				<dict>
+					<key>include</key>
+					<string>#relational-operator</string>
+				</dict>
+				<dict>
+					<key>include</key>
+					<string>#arithmetic-operator</string>
+				</dict>
+				<dict>
+					<key>include</key>
+					<string>#logic-operator</string>
+				</dict>
+				<dict>
+					<key>include</key>
+					<string>#assignment-operator</string>
+				</dict>
+				<dict>
+					<key>include</key>
+					<string>#type-primitive</string>
+				</dict>
+				<dict>
+					<key>include</key>
+					<string>#function-call</string>
+				</dict>
+			</array>
+		</dict>
+		<key>ternary-operator</key>
+		<dict>
+			<key>begin</key>
+			<string>(\?)</string>
+			<key>end</key>
+			<string>(:)</string>
+			<key>patterns</key>
+			<array>
+				<dict>
+					<key>include</key>
+					<string>#ternary-expression-type</string>
 				</dict>
 			</array>
 		</dict>
@@ -1837,6 +1977,10 @@
 			<array>
 				<dict>
 					<key>include</key>
+					<string>#expression-operator</string>
+				</dict>
+				<dict>
+					<key>include</key>
 					<string>#type</string>
 				</dict>
 				<dict>
@@ -1863,7 +2007,7 @@
 				<key>2</key>
 				<dict>
 					<key>name</key>
-					<string>storage.type.tsx</string>
+					<string>entity.name.class.tsx</string>
 				</dict>
 			</dict>
 			<key>end</key>
@@ -1884,7 +2028,7 @@
 					<key>match</key>
 					<string>=\s*</string>
 					<key>name</key>
-					<string>keyword.operator.tsx</string>
+					<string>keyword.operator.comparison.tsx</string>
 				</dict>
 			</array>
 		</dict>
@@ -2068,7 +2212,7 @@
 				<key>1</key>
 				<dict>
 					<key>name</key>
-					<string>storage.type.tsx</string>
+					<string>support.type.tsx</string>
 				</dict>
 			</dict>
 			<key>match</key>
@@ -2122,7 +2266,7 @@
 		<key>var-expr</key>
 		<dict>
 			<key>begin</key>
-			<string>(?&lt;!\()\s*\b(var|let|const(?!\s+enum)\b)</string>
+			<string>(?&lt;!\()\s*\b(var|let|const(?!\s+enum))\b</string>
 			<key>beginCaptures</key>
 			<dict>
 				<key>1</key>
@@ -2167,6 +2311,10 @@
 			<array>
 				<dict>
 					<key>include</key>
+					<string>#ternary-expression</string>
+				</dict>
+				<dict>
+					<key>include</key>
 					<string>#type-annotation</string>
 				</dict>
 				<dict>
@@ -2192,7 +2340,7 @@
 				<key>1</key>
 				<dict>
 					<key>name</key>
-					<string>keyword.operator.tsx</string>
+					<string>keyword.operator.comparison.tsx</string>
 				</dict>
 			</dict>
 			<key>end</key>
