@@ -5,6 +5,7 @@
 	<key>fileTypes</key>
 	<array>
 		<string>ts</string>
+		<string>tsx</string>
 	</array>
 	<key>name</key>
 	<string>TypeScript</string>
