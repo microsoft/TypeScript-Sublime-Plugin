@@ -137,12 +137,13 @@ Note about `.tmLanguage` related issues
 As the TypeScript and TypeScriptReact `.tmLanguage` definition files are shared across multiple editors including Sublime Text, Atom-TypeScript, and Visual Studio Code, we decided to create a dedicated repo for these files to combine the efforts for improvement.
 The new repo is at https://github.com/Microsoft/TypeScript-TmLanguage, and all future tmLanguage-related issues will be tracked there and ported back to this repo.
 
-Using nightly TypeScript builds
+Using different versions of TypeScript
 --------------
-The plugin can be configured to load a different TypeScript version other than the one bundled along.
+This plugin can be configured to load an alternate version of TypeScript.
+This is typically useful for trying out nightly builds, or prototyping with custom builds.
 To do that, update the `Settings - User` file with the following:
 
-```JSON
+```json
 "typescript_tsdk": "<path to your folder>/node_modules/typescript/lib"
 ```
 
