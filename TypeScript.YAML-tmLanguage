@@ -37,15 +37,15 @@ repository:
     end: (?=$|[;,])
     patterns:
     - include: '#ternary-operator'
-    - include: '#ternary-expression-type' 
+    - include: '#expression-type' 
 
   ternary-operator:
     begin: (\?)
     end: (:)
     patterns:
-    - include: '#ternary-expression-type' 
+    - include: '#expression-type' 
 
-  ternary-expression-type:
+  expression-type:
     name: meta.expression.ts
     patterns:
     - include: '#string'
@@ -466,12 +466,12 @@ repository:
 
   case-clause:
     name: case-clause.expr.ts
-    begin: '(?<!\.)\b(case|default)\b'
+    begin: '(?<!\.)\b(case|default(?=:))\b'
     beginCaptures:
       '1': { name: keyword.control.ts }
     end: ':'
     patterns:
-    - include: '#expression'
+    - include: '#expression-type'
 
   switch-statement:
     name: switch-statement.expr.ts
