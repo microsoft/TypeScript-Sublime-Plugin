@@ -1850,7 +1850,7 @@
 				</dict>
 			</dict>
 			<key>match</key>
-			<string>\b(string|number|boolean|symbol|any|void)\b</string>
+			<string>\b(string|number|boolean|symbol|any|void|null|true|false)\b</string>
 			<key>name</key>
 			<string>meta.type.primitive.ts</string>
 		</dict>
