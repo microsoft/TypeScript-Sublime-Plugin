@@ -2,10 +2,8 @@
     {
         "button": "button1",
         "count": 2,
+        "modifiers": ["ctrl"],
         "command": "typescript_go_to_ref",
-        "press_command": "drag_select",
-        "context": [
-            { "key": "selector", "operator": "equal", "operand": "text.find-refs" }
-        ]
+        "press_command": "drag_select"
     }
 ]
