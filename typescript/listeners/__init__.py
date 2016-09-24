@@ -5,3 +5,4 @@ from .idle import IdleListener
 from .nav_to import NavToEventListener
 from .rename import RenameEventListener
 from .tooltip import TooltipEventListener
+from .quick_info_tool_tip import QuickInfoToolTipEventListener
