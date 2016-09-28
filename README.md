@@ -10,6 +10,16 @@ Requirements
 
 The plug-in uses **Node.js** to run the TypeScript server.  The plug-in looks for node in the PATH environment variable (which is inherited from Sublime).  If the 'node\_path' setting is present, this will override the PATH environment variable and the plug-in will use the value of the 'node\_path' setting as the node executable to run.  See more information in the tips.
 
+Note: Using different versions of TypeScript
+--------------
+This plugin can be configured to load an alternate version of TypeScript.
+This is typically useful for trying out nightly builds, or prototyping with custom builds.
+To do that, update the `Settings - User` file with the following:
+
+```json
+"typescript_tsdk": "<path to your folder>/node_modules/typescript/lib"
+```
+
 Installation
 ------------
 If using [Package Control](https://packagecontrol.io/) for Sublime Text, simply install the `TypeScript` package.
@@ -136,16 +146,6 @@ Note about `.tmLanguage` related issues
 --------------
 As the TypeScript and TypeScriptReact `.tmLanguage` definition files are shared across multiple editors including Sublime Text, Atom-TypeScript, and Visual Studio Code, we decided to create a dedicated repo for these files to combine the efforts for improvement.
 The new repo is at https://github.com/Microsoft/TypeScript-TmLanguage, and all future tmLanguage-related issues will be tracked there and ported back to this repo.
-
-Using different versions of TypeScript
---------------
-This plugin can be configured to load an alternate version of TypeScript.
-This is typically useful for trying out nightly builds, or prototyping with custom builds.
-To do that, update the `Settings - User` file with the following:
-
-```json
-"typescript_tsdk": "<path to your folder>/node_modules/typescript/lib"
-```
 
 Tips and Known Issues
 ----
