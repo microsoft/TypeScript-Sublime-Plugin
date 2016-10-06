@@ -20,7 +20,7 @@
 		<key>access-modifier</key>
 		<dict>
 			<key>match</key>
-			<string>\b(public|protected|private)\b</string>
+			<string>\b(public|protected|private|readonly)\b</string>
 			<key>name</key>
 			<string>storage.modifier.ts</string>
 		</dict>
@@ -809,7 +809,7 @@
 		<key>method-declaration</key>
 		<dict>
 			<key>begin</key>
-			<string>\b(?:(abstract)\s+)?\b(?:(public|private|protected)\s+)?\b(?:(async)\s+)?(?:(get|set)\s+)?(?:(new)|(?:\b(constructor)\b)|(?:([a-zA-Z_$][\.\w$]*)\s*(\??)))?\s*(?=\(|\&lt;)</string>
+			<string>\b(?:(abstract)\s+)?\b(?:(public|private|protected|readonly)\s+)?\b(?:(async)\s+)?(?:(get|set)\s+)?(?:(new)|(?:\b(constructor)\b)|(?:([a-zA-Z_$][\.\w$]*)\s*(\??)))?\s*(?=\(|\&lt;)</string>
 			<key>beginCaptures</key>
 			<dict>
 				<key>1</key>
@@ -931,7 +931,7 @@
 				</dict>
 			</dict>
 			<key>match</key>
-			<string>\b(?:(abstract)\s+)?\b(?:(public|private|protected)\s+)?\b(?:(async)\s+)?(?:(get|set)\s+)?(?:(new)|(?:\b(constructor)\b)|(?:([a-zA-Z_$][\.\w$]*)\s*(\??)))?\s*(?=\(|\&lt;)</string>
+			<string>\b(?:(abstract)\s+)?\b(?:(public|private|protected|readonly)\s+)?\b(?:(async)\s+)?(?:(get|set)\s+)?(?:(new)|(?:\b(constructor)\b)|(?:([a-zA-Z_$][\.\w$]*)\s*(\??)))?\s*(?=\(|\&lt;)</string>
 			<key>name</key>
 			<string>meta.method.overload.declaration.ts</string>
 		</dict>
@@ -1219,7 +1219,7 @@
 				</dict>
 			</dict>
 			<key>match</key>
-			<string>(?:\s*\b(public|private|protected)\b\s+)?(\.\.\.)?\s*([a-zA-Z_$][\w$]*)\s*(\??)</string>
+			<string>(?:\s*\b(public|private|protected|readonly)\b\s+)?(\.\.\.)?\s*([a-zA-Z_$][\w$]*)\s*(\??)</string>
 			<key>name</key>
 			<string>parameter.name.ts</string>
 		</dict>
