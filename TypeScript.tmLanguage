@@ -338,16 +338,16 @@
             </array>
           </dict>
           <dict>
-            <key>name</key>
-            <string>variable.other.readwrite.ts</string>
-            <key>match</key>
-            <string>([_$[:alpha:]][_$[:alnum:]]*)</string>
+            <key>include</key>
+            <string>#object-binding-pattern</string>
           </dict>
           <dict>
-            <key>name</key>
-            <string>meta.delimiter.object.comma.ts</string>
-            <key>match</key>
-            <string>,</string>
+            <key>include</key>
+            <string>#destructuring-variable-rest</string>
+          </dict>
+          <dict>
+            <key>include</key>
+            <string>#punctuation-comma</string>
           </dict>
         </array>
       </dict>
@@ -368,26 +368,45 @@
             <string>#array-binding-pattern</string>
           </dict>
           <dict>
-            <key>name</key>
-            <string>variable.other.readwrite.ts</string>
-            <key>match</key>
-            <string>([_$[:alpha:]][_$[:alnum:]]*)</string>
+            <key>include</key>
+            <string>#destructuring-variable-rest</string>
           </dict>
           <dict>
-            <key>name</key>
-            <string>meta.delimiter.object.comma.ts</string>
-            <key>match</key>
-            <string>,</string>
+            <key>include</key>
+            <string>#punctuation-comma</string>
           </dict>
         </array>
+      </dict>
+      <key>destructuring-variable-rest</key>
+      <dict>
+        <key>match</key>
+        <string>(?:(\.\.\.)\s*)?([_$[:alpha:]][_$[:alnum:]]*)</string>
+        <key>captures</key>
+        <dict>
+          <key>1</key>
+          <dict>
+            <key>name</key>
+            <string>keyword.operator.rest.ts</string>
+          </dict>
+          <key>2</key>
+          <dict>
+            <key>name</key>
+            <string>variable.other.readwrite.ts</string>
+          </dict>
+        </dict>
       </dict>
       <key>object-binding-pattern</key>
       <dict>
         <key>begin</key>
-        <string>\{</string>
+        <string>(?:(\.\.\.)\s*)?(\{)</string>
         <key>beginCaptures</key>
         <dict>
-          <key>0</key>
+          <key>1</key>
+          <dict>
+            <key>name</key>
+            <string>keyword.operator.rest.ts</string>
+          </dict>
+          <key>2</key>
           <dict>
             <key>name</key>
             <string>punctuation.definition.binding-pattern.object.ts</string>
@@ -414,10 +433,15 @@
       <key>array-binding-pattern</key>
       <dict>
         <key>begin</key>
-        <string>\[</string>
+        <string>(?:(\.\.\.)\s*)?(\[)</string>
         <key>beginCaptures</key>
         <dict>
-          <key>0</key>
+          <key>1</key>
+          <dict>
+            <key>name</key>
+            <string>keyword.operator.rest.ts</string>
+          </dict>
+          <key>2</key>
           <dict>
             <key>name</key>
             <string>punctuation.definition.binding-pattern.array.ts</string>
@@ -545,11 +569,7 @@
           </dict>
           <dict>
             <key>include</key>
-            <string>#expression-operator</string>
-          </dict>
-          <dict>
-            <key>include</key>
-            <string>#operators</string>
+            <string>#expression-operators</string>
           </dict>
           <dict>
             <key>include</key>
@@ -1202,10 +1222,8 @@
             </dict>
           </dict>
           <dict>
-            <key>name</key>
-            <string>meta.delimiter.object.comma.ts</string>
-            <key>match</key>
-            <string>,</string>
+            <key>include</key>
+            <string>#punctuation-comma</string>
           </dict>
           <dict>
             <key>name</key>
@@ -1504,6 +1522,27 @@
             <string>#type-annotation</string>
           </dict>
           <dict>
+            <key>begin</key>
+            <string>\.\.\.</string>
+            <key>beginCaptures</key>
+            <dict>
+              <key>0</key>
+              <dict>
+                <key>name</key>
+                <string>keyword.operator.spread.ts</string>
+              </dict>
+            </dict>
+            <key>end</key>
+            <string>(?=\}|;|,|$)|(?&lt;=\})</string>
+            <key>patterns</key>
+            <array>
+              <dict>
+                <key>include</key>
+                <string>#type</string>
+              </dict>
+            </array>
+          </dict>
+          <dict>
             <key>include</key>
             <string>#punctuation-comma</string>
           </dict>
@@ -1573,7 +1612,7 @@
         <key>name</key>
         <string>meta.method.declaration.ts</string>
         <key>begin</key>
-        <string>(?&lt;!\.|\$)(?:\b(abstract)\s+)?(?:\b(public|private|protected)\s+)?(?:\b(async)\s+)?(?:\b(get|set)\s+)?(?:(?:\b(?:(new)|(constructor))\b(?!\$))|(?:(\*)\s*)?(?=((([_$[:alpha:]][_$[:alnum:]]*)|(\'[^']*\')|(\"[^"]*\")|(\[[^\]]*\]))\s*(\??))?\s*[\(\&lt;]))</string>
+        <string>(?&lt;!\.|\$)(?:\b(abstract)\s+)?(?:\b(public|private|protected)\s+)?(?:\b(async)\s+)?(?:\b(get|set)\s+)?(?:(?:\b(?:(new)|(constructor))\b(?!\$|:))|(?:(\*)\s*)?(?=((([_$[:alpha:]][_$[:alnum:]]*)|(\'[^']*\')|(\"[^"]*\")|(\[[^\]]*\]))\s*(\??))?\s*[\(\&lt;]))</string>
         <key>beginCaptures</key>
         <dict>
           <key>1</key>
@@ -1651,7 +1690,7 @@
         <key>name</key>
         <string>meta.method.overload.declaration.ts</string>
         <key>begin</key>
-        <string>(?&lt;!\.|\$)(?:\b(abstract)\s+)?(?:\b(public|private|protected)\s+)?(?:\b(async)\s+)?(?:\b(get|set)\s+)?(?:(?:\b(?:(new)|(constructor))\b(?!\$))|(?:(\*)\s*)?(?=((([_$[:alpha:]][_$[:alnum:]]*)|(\'[^']*\')|(\"[^"]*\")|(\[[^\]]*\]))\s*(\??))?\s*[\(\&lt;]))</string>
+        <string>(?&lt;!\.|\$)(?:\b(abstract)\s+)?(?:\b(public|private|protected)\s+)?(?:\b(async)\s+)?(?:\b(get|set)\s+)?(?:(?:\b(?:(new)|(constructor))\b(?!\$|:))|(?:(\*)\s*)?(?=((([_$[:alpha:]][_$[:alnum:]]*)|(\'[^']*\')|(\"[^"]*\")|(\[[^\]]*\]))\s*(\??))?\s*[\(\&lt;]))</string>
         <key>beginCaptures</key>
         <dict>
           <key>1</key>
@@ -1959,7 +1998,7 @@
         <key>name</key>
         <string>meta.object-literal.ts</string>
         <key>begin</key>
-        <string>(?&lt;=[=(:,\[?+!]|await|return|yield|throw|in|of|typeof|&amp;&amp;|\|\||\*)\s*(\{)</string>
+        <string>(?&lt;=[=(,\[?+!]|await|return|yield|throw|in|of|typeof|&amp;&amp;|\|\||\*)\s*(\{)</string>
         <key>beginCaptures</key>
         <dict>
           <key>1</key>
@@ -2000,7 +2039,7 @@
           <key>2</key>
           <dict>
             <key>name</key>
-            <string>keyword.operator.spread.ts</string>
+            <string>keyword.operator.rest.ts</string>
           </dict>
           <key>3</key>
           <dict>
@@ -2127,16 +2166,16 @@
             </array>
           </dict>
           <dict>
-            <key>name</key>
-            <string>variable.parameter.ts</string>
-            <key>match</key>
-            <string>([_$[:alpha:]][_$[:alnum:]]*)</string>
+            <key>include</key>
+            <string>#parameter-object-binding-pattern</string>
           </dict>
           <dict>
-            <key>name</key>
-            <string>meta.delimiter.object.comma.ts</string>
-            <key>match</key>
-            <string>,</string>
+            <key>include</key>
+            <string>#destructuring-parameter-rest</string>
+          </dict>
+          <dict>
+            <key>include</key>
+            <string>#punctuation-comma</string>
           </dict>
         </array>
       </dict>
@@ -2157,26 +2196,45 @@
             <string>#parameter-array-binding-pattern</string>
           </dict>
           <dict>
-            <key>name</key>
-            <string>variable.parameter.ts</string>
-            <key>match</key>
-            <string>([_$[:alpha:]][_$[:alnum:]]*)</string>
+            <key>include</key>
+            <string>#destructuring-parameter-rest</string>
           </dict>
           <dict>
-            <key>name</key>
-            <string>meta.delimiter.object.comma.ts</string>
-            <key>match</key>
-            <string>,</string>
+            <key>include</key>
+            <string>#punctuation-comma</string>
           </dict>
         </array>
+      </dict>
+      <key>destructuring-parameter-rest</key>
+      <dict>
+        <key>match</key>
+        <string>(?:(\.\.\.)\s*)?([_$[:alpha:]][_$[:alnum:]]*)</string>
+        <key>captures</key>
+        <dict>
+          <key>1</key>
+          <dict>
+            <key>name</key>
+            <string>keyword.operator.rest.ts</string>
+          </dict>
+          <key>2</key>
+          <dict>
+            <key>name</key>
+            <string>variable.parameter.ts</string>
+          </dict>
+        </dict>
       </dict>
       <key>parameter-object-binding-pattern</key>
       <dict>
         <key>begin</key>
-        <string>\{</string>
+        <string>(?:(\.\.\.)\s*)?(\{)</string>
         <key>beginCaptures</key>
         <dict>
-          <key>0</key>
+          <key>1</key>
+          <dict>
+            <key>name</key>
+            <string>keyword.operator.rest.ts</string>
+          </dict>
+          <key>2</key>
           <dict>
             <key>name</key>
             <string>punctuation.definition.binding-pattern.object.ts</string>
@@ -2203,10 +2261,15 @@
       <key>parameter-array-binding-pattern</key>
       <dict>
         <key>begin</key>
-        <string>\[</string>
+        <string>(?:(\.\.\.)\s*)?(\[)</string>
         <key>beginCaptures</key>
         <dict>
-          <key>0</key>
+          <key>1</key>
+          <dict>
+            <key>name</key>
+            <string>keyword.operator.rest.ts</string>
+          </dict>
+          <key>2</key>
           <dict>
             <key>name</key>
             <string>punctuation.definition.binding-pattern.array.ts</string>
@@ -2356,10 +2419,6 @@
           </dict>
           <dict>
             <key>include</key>
-            <string>#typeof-operator</string>
-          </dict>
-          <dict>
-            <key>include</key>
             <string>#type-parameters</string>
           </dict>
           <dict>
@@ -2372,7 +2431,7 @@
           </dict>
           <dict>
             <key>include</key>
-            <string>#type-operator</string>
+            <string>#type-operators</string>
           </dict>
           <dict>
             <key>include</key>
@@ -2573,12 +2632,21 @@
           </dict>
         </array>
       </dict>
-      <key>type-operator</key>
+      <key>type-operators</key>
       <dict>
-        <key>name</key>
-        <string>keyword.operator.type.ts</string>
-        <key>match</key>
-        <string>[&amp;|]</string>
+        <key>patterns</key>
+        <array>
+          <dict>
+            <key>include</key>
+            <string>#typeof-operator</string>
+          </dict>
+          <dict>
+            <key>name</key>
+            <string>keyword.operator.type.ts</string>
+            <key>match</key>
+            <string>[&amp;|]</string>
+          </dict>
+        </array>
       </dict>
       <key>type-function-return-type</key>
       <dict>
@@ -2900,6 +2968,14 @@
         </dict>
         <key>end</key>
         <string>:</string>
+        <key>endCaptures</key>
+        <dict>
+          <key>0</key>
+          <dict>
+            <key>name</key>
+            <string>punctuation.definition.section.case-statement.ts</string>
+          </dict>
+        </dict>
         <key>patterns</key>
         <array>
           <dict>
@@ -3735,8 +3811,31 @@
           <dict>
             <key>name</key>
             <string>meta.object.member.ts</string>
+            <key>begin</key>
+            <string>\.\.\.</string>
+            <key>beginCaptures</key>
+            <dict>
+              <key>0</key>
+              <dict>
+                <key>name</key>
+                <string>keyword.operator.spread.ts</string>
+              </dict>
+            </dict>
+            <key>end</key>
+            <string>(?=,|\})</string>
+            <key>patterns</key>
+            <array>
+              <dict>
+                <key>include</key>
+                <string>#expression</string>
+              </dict>
+            </array>
+          </dict>
+          <dict>
+            <key>name</key>
+            <string>meta.object.member.ts</string>
             <key>match</key>
-            <string>([_$[:alpha:]][_$[:alnum:]]*)\s*(?=,|\})</string>
+            <string>([_$[:alpha:]][_$[:alnum:]]*)\s*(?=,|\}|$)</string>
             <key>captures</key>
             <dict>
               <key>1</key>
@@ -3752,7 +3851,7 @@
           </dict>
         </array>
       </dict>
-      <key>expression-operator</key>
+      <key>expression-operators</key>
       <dict>
         <key>patterns</key>
         <array>
@@ -3823,19 +3922,12 @@
               </dict>
             </array>
           </dict>
-        </array>
-      </dict>
-      <key>typeof-operator</key>
-      <dict>
-        <key>name</key>
-        <string>keyword.operator.typeof.ts</string>
-        <key>match</key>
-        <string>(?&lt;!\.|\$)\btypeof\b(?!\$)</string>
-      </dict>
-      <key>operators</key>
-      <dict>
-        <key>patterns</key>
-        <array>
+          <dict>
+            <key>name</key>
+            <string>keyword.operator.spread.ts</string>
+            <key>match</key>
+            <string>\.\.\.</string>
+          </dict>
           <dict>
             <key>name</key>
             <string>keyword.operator.assignment.compound.ts</string>
@@ -3897,6 +3989,13 @@
             <string>%|\*|/|-|\+</string>
           </dict>
         </array>
+      </dict>
+      <key>typeof-operator</key>
+      <dict>
+        <key>name</key>
+        <string>keyword.operator.typeof.ts</string>
+        <key>match</key>
+        <string>(?&lt;!\.|\$)\btypeof\b(?!\$)</string>
       </dict>
       <key>arrow-function</key>
       <dict>
