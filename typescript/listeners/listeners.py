@@ -267,3 +267,7 @@ class TypeScriptEventListener(sublime_plugin.EventListener):
     def on_pre_save(self, view):
         log.debug("on_pre_save")
         check_update_view(view)
+
+    def on_hover(self, view, point, hover_zone):
+        log.debug("on_hover")
+        EventHub.run_listeners("on_hover", view, point, hover_zone)
