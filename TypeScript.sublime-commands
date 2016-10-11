@@ -12,5 +12,6 @@
  { "caption" : "TypeScript: Format Line", "command": "typescript_format_line" },
  { "caption" : "TypeScript: Format Block", "command": "typescript_format_brackets" },
  { "caption" : "TypeScript: Signature Info", "command": "typescript_signature_popup" },
- { "caption" : "TypeScript: Show Error List", "command": "typescript_project_error_list" }
+ { "caption" : "TypeScript: Show Error List", "command": "typescript_project_error_list" },
+ { "caption" : "TypeScript: Update Syntax Definition Files", "command": "typescript_update_syntax_definition" }
 ]

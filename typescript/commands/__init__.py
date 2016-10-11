@@ -35,6 +35,8 @@ from .settings import (
     TypescriptOpenTsreactDefaultSettingFile
 )
 
+from .update_syntax_definition import TypescriptUpdateSyntaxDefinitionCommand
+
 __all__ = [
     "TypescriptAutoIndentOnEnterBetweenCurlyBrackets",
     "TypescriptErrorInfo",
@@ -67,5 +69,6 @@ __all__ = [
     "TypescriptBuildCommand",
     "TypescriptOpenPluginDefaultSettingFile",
     "TypescriptOpenTsDefaultSettingFile",
-    "TypescriptOpenTsreactDefaultSettingFile"
+    "TypescriptOpenTsreactDefaultSettingFile",
+    "TypescriptUpdateSyntaxDefinitionCommand"
 ]
