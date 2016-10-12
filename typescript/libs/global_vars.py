@@ -42,6 +42,8 @@ def get_tsc_path():
 # only Sublime Text 3 build after 3072 support tooltip
 TOOLTIP_SUPPORT = int(sublime.version()) >= 3072
 
+PHANTOM_SUPPORT = int(sublime.version()) >= 3118
+
 # detect if quick info is available for symbol
 SUBLIME_WORD_MASK = 515
 

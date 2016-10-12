@@ -21,7 +21,11 @@ class TypescriptErrorInfo(TypeScriptBaseTextCommand):
             if region.contains(pt):
                 error_text = text
                 break
+
         if len(error_text) > 0:
-            self.view.set_status("typescript_error", error_text)
-        else:
-            self.view.erase_status("typescript_error")
+            if PHANTOM_SUPPORT:
+                template = '<body><style>div.error {{ background-color: brown; padding: 5px; }}</style><div class="error">{0}</div></body>'
+                display_text = template.format(error_text)
+                self.view.add_phantom("typescript_error", self.view.sel()[0], display_text, sublime.LAYOUT_BLOCK)
+            else:
+                self.view.set_status("typescript_error", error_text)
