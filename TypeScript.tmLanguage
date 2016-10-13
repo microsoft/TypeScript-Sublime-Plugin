@@ -333,6 +333,10 @@
 				</dict>
 				<dict>
 					<key>include</key>
+					<string>#template-html</string>
+				</dict>
+				<dict>
+					<key>include</key>
 					<string>#comment</string>
 				</dict>
 				<dict>
@@ -1469,6 +1473,38 @@
 				<dict>
 					<key>include</key>
 					<string>#template-string-contents</string>
+				</dict>
+			</array>
+		</dict>
+		<key>template-html</key>
+		<dict>
+			<key>begin</key>
+			<string>template\s*:\s*(\`)</string>
+			<key>beginCaptures</key>
+			<dict>
+				<key>1</key>
+				<dict>
+					<key>name</key>
+					<string>string.template.ts</string>
+				</dict>
+			</dict>
+			<key>contentName</key>
+			<string>meta.template.ts</string>
+			<key>end</key>
+			<string>\`</string>
+			<key>endCaptures</key>
+			<dict>
+				<key>0</key>
+				<dict>
+					<key>name</key>
+					<string>string.template.ts</string>
+				</dict>
+			</dict>
+			<key>patterns</key>
+			<array>
+				<dict>
+					<key>include</key>
+					<string>text.html.handlebars</string>
 				</dict>
 			</array>
 		</dict>
