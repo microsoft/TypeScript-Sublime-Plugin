@@ -171,8 +171,7 @@ class IdleListener:
         # Error info
         if PHANTOM_SUPPORT:
             view.erase_phantoms("typescript_error")
-        else:
-            view.erase_status("typescript_error")
+        view.erase_status("typescript_error")
 
         if info.has_errors:
             view.run_command('typescript_error_info')
