@@ -15,7 +15,8 @@ class TypescriptBuildCommand(sublime_plugin.WindowCommand):
         file_name = self.window.active_view().file_name()
         project_info = cli.service.project_info(file_name)
         if project_info["success"]:
-            if "configFileName" in project_info["body"]:
+            body = project_info["body"]
+            if ("configFileName" in body) and body["configFileName"].endswith(".json"):
                 tsconfig_dir = dirname(project_info["body"]["configFileName"])
                 self.window.run_command("exec", {
                     "cmd": [get_node_path(), get_tsc_path(), "-p", tsconfig_dir],
