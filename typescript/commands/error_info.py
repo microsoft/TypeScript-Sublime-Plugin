@@ -23,7 +23,7 @@ class TypescriptErrorInfo(TypeScriptBaseTextCommand):
                 break
 
         if len(error_text) > 0:
-            if PHANTOM_SUPPORT:
+            if is_inline_error_tips_enabled():
                 template = '<body><style>div.error {{ background-color: brown; padding: 5px; color: white }}</style><div class="error">{0}</div></body>'
                 display_text = template.format(error_text)
                 self.view.add_phantom("typescript_error", self.view.sel()[0], display_text, sublime.LAYOUT_BLOCK)

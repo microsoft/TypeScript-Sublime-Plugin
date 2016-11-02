@@ -44,6 +44,10 @@ TOOLTIP_SUPPORT = int(sublime.version()) >= 3072
 
 PHANTOM_SUPPORT = int(sublime.version()) >= 3118
 
+_enable_inline_error_tips = False
+def is_inline_error_tips_enabled():
+    return PHANTOM_SUPPORT and _enable_inline_error_tips
+
 # detect if quick info is available for symbol
 SUBLIME_WORD_MASK = 515
 
