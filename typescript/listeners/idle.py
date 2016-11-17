@@ -169,7 +169,7 @@ class IdleListener:
     def update_status(self, view, info):
         """Update the status line with error info and quick info if no error info"""
         # Error info
-        if is_inline_error_tips_enabled():
+        if PHANTOM_SUPPORT:
             view.erase_phantoms("typescript_error")
         view.erase_status("typescript_error")
 
