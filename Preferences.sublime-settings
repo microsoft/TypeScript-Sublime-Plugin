@@ -1,4 +1,5 @@
 {
     "typescript_auto_format": false,
-    "enable_typescript_language_service": true
+    "enable_typescript_language_service": true,
+    "enable_inline_error_tips": false
 }
