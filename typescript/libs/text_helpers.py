@@ -92,7 +92,7 @@ def escape_html(raw_string):
 
     Note: only use for short strings
     """
-    return raw_string.replace('&', '&amp;').replace('<', '&lt;').replace('>', "&gt;")
+    return raw_string.replace('&', '&amp;').replace('<', '&lt;').replace('>', '&gt;').replace('\n', '<br>').replace(' ', '&nbsp;')
 
 
 def left_expand_empty_region(regions, number=1):
