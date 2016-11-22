@@ -5,6 +5,7 @@ import time
 import json
 import sublime
 import sublime_plugin
+import time
 
 from .logger import log
 from . import json_helpers
@@ -24,11 +25,11 @@ class CommClient(object):
     def getEvent(self): pass
 
     def postCmd(self, cmd): pass
-    
+
     def sendCmd(self, cmd, cb): pass
 
     def sendCmdSync(self, cmd): pass
-    
+
     def sendCmdAsync(self, cmd, cb): pass
 
 
@@ -45,10 +46,15 @@ class NodeCommClient(CommClient):
         # create response and event queues
         self.msgq = queue.Queue()
         self.eventq = queue.Queue()
+        self.postq = queue.Queue()
         self.asyncReq = {}
 
         self.debug_proc = None
         self.breakpoints = []
+
+        post_thread = threading.Thread(target=NodeCommClient.monitorPostQueue, args=(self,))
+        post_thread.daemon = True
+        post_thread.start()
 
     def makeTimeoutMsg(self, cmd, seq):
         jsonDict = json_helpers.decode(cmd)
@@ -129,6 +135,20 @@ class NodeCommClient(CommClient):
         else:
             return self.makeTimeoutMsg(cmd, seq)
 
+    def monitorPostQueue(self):
+        """
+        Monitor queue and post commands asynchronously
+        """
+        while True:
+            cmd = self.postq.get(True) + "\n"
+            if not self.server_proc:
+                log.error("can not send request; node process not running")
+            else:
+                st = time.time()
+                self.server_proc.stdin.write(cmd.encode())
+                self.server_proc.stdin.flush()
+                log.debug("command posted, elapsed %.3f sec" % (time.time() - st))
+
     def postCmd(self, cmd):
         """
         Post command to server; no response needed
@@ -137,11 +157,8 @@ class NodeCommClient(CommClient):
         if not self.server_proc:
             log.error("can not send request; node process not running")
             return False
-        else:
-            cmd = cmd + "\n"
-            self.server_proc.stdin.write(cmd.encode())
-            self.server_proc.stdin.flush()
-            return True
+        self.postq.put_nowait(cmd)
+        return True
 
     def getEvent(self):
         """
@@ -265,11 +282,11 @@ class ServerClient(NodeCommClient):
                     si = subprocess.STARTUPINFO()
                     si.dwFlags |= subprocess.SW_HIDE | subprocess.STARTF_USESHOWWINDOW
                     self.server_proc = subprocess.Popen([node_path, script_path],
-                                                         stdin=subprocess.PIPE, stdout=subprocess.PIPE, startupinfo=si)
+                                                         stdin=subprocess.PIPE, stdout=subprocess.PIPE, startupinfo=si, bufsize=-1)
                 else:
                     log.debug("opening " + node_path + " " + script_path)
                     self.server_proc = subprocess.Popen([node_path, script_path],
-                                                         stdin=subprocess.PIPE, stdout=subprocess.PIPE)
+                                                         stdin=subprocess.PIPE, stdout=subprocess.PIPE, bufsize=-1)
             except:
                 self.server_proc = None
         # start reader thread
@@ -292,7 +309,7 @@ class ServerClient(NodeCommClient):
 
 class WorkerClient(NodeCommClient):
     stop_worker = False
-    
+
     def __init__(self, script_path):
         super(WorkerClient, self).__init__(script_path)
 
