@@ -106,8 +106,9 @@ def is_typescript(view):
     except:
         return False
 
-    return (view.match_selector(location, 'source.ts') or
-            view.match_selector(location, 'source.tsx'))
+    is_ts_file = view.match_selector(location, 'source.ts') or view.match_selector(location, 'source.tsx')
+    is_js_file = view.match_selector(location, 'source.jsx') and cli.enable_language_service_for_js
+    return is_ts_file or is_js_file
 
 
 def is_special_view(view):
