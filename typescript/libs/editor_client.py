@@ -77,13 +77,7 @@ class EditorClient:
             settings.add_on_change(setting_name, self.load_format_settings)
         self.load_format_settings()
 
-        settings.add_on_change("enable_inline_error_tips", self.load_inline_error_tips_setting)
-
         self.initialized = True
-
-    def load_inline_error_tips_setting(self):
-        settings = sublime.load_settings('Preferences.sublime-settings')
-        global_vars._enable_inline_error_tips = settings.get("enable_inline_error_tips")
 
     def load_format_settings(self):
         settings = sublime.load_settings('Preferences.sublime-settings')
