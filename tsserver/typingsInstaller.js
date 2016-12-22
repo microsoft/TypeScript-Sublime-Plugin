@@ -818,15 +818,6 @@ var ts;
         return result;
     }
     ts.reduceProperties = reduceProperties;
-    function reduceOwnProperties(map, callback, initial) {
-        var result = initial;
-        for (var key in map)
-            if (hasOwnProperty.call(map, key)) {
-                result = callback(result, map[key], String(key));
-            }
-        return result;
-    }
-    ts.reduceOwnProperties = reduceOwnProperties;
     function equalOwnProperties(left, right, equalityComparer) {
         if (left === right)
             return true;
@@ -1673,8 +1664,19 @@ var ts;
     ts.supportedTypescriptExtensionsForExtractExtension = [".d.ts", ".ts", ".tsx"];
     ts.supportedJavascriptExtensions = [".js", ".jsx"];
     var allSupportedExtensions = ts.supportedTypeScriptExtensions.concat(ts.supportedJavascriptExtensions);
-    function getSupportedExtensions(options) {
-        return options && options.allowJs ? allSupportedExtensions : ts.supportedTypeScriptExtensions;
+    function getSupportedExtensions(options, extraFileExtensions) {
+        var needAllExtensions = options && options.allowJs;
+        if (!extraFileExtensions || extraFileExtensions.length === 0) {
+            return needAllExtensions ? allSupportedExtensions : ts.supportedTypeScriptExtensions;
+        }
+        var extensions = (needAllExtensions ? allSupportedExtensions : ts.supportedTypeScriptExtensions).slice(0);
+        for (var _i = 0, extraFileExtensions_1 = extraFileExtensions; _i < extraFileExtensions_1.length; _i++) {
+            var extInfo = extraFileExtensions_1[_i];
+            if (needAllExtensions || extInfo.scriptKind === 3) {
+                extensions.push(extInfo.extension);
+            }
+        }
+        return extensions;
     }
     ts.getSupportedExtensions = getSupportedExtensions;
     function hasJavaScriptFileExtension(fileName) {
@@ -1685,11 +1687,11 @@ var ts;
         return forEach(ts.supportedTypeScriptExtensions, function (extension) { return fileExtensionIs(fileName, extension); });
     }
     ts.hasTypeScriptFileExtension = hasTypeScriptFileExtension;
-    function isSupportedSourceFileName(fileName, compilerOptions) {
+    function isSupportedSourceFileName(fileName, compilerOptions, extraFileExtensions) {
         if (!fileName) {
             return false;
         }
-        for (var _i = 0, _a = getSupportedExtensions(compilerOptions); _i < _a.length; _i++) {
+        for (var _i = 0, _a = getSupportedExtensions(compilerOptions, extraFileExtensions); _i < _a.length; _i++) {
             var extension = _a[_i];
             if (fileExtensionIs(fileName, extension)) {
                 return true;
@@ -2473,7 +2475,7 @@ var ts;
         _0_modifier_cannot_appear_on_an_index_signature: { code: 1071, category: ts.DiagnosticCategory.Error, key: "_0_modifier_cannot_appear_on_an_index_signature_1071", message: "'{0}' modifier cannot appear on an index signature." },
         A_0_modifier_cannot_be_used_with_an_import_declaration: { code: 1079, category: ts.DiagnosticCategory.Error, key: "A_0_modifier_cannot_be_used_with_an_import_declaration_1079", message: "A '{0}' modifier cannot be used with an import declaration." },
         Invalid_reference_directive_syntax: { code: 1084, category: ts.DiagnosticCategory.Error, key: "Invalid_reference_directive_syntax_1084", message: "Invalid 'reference' directive syntax." },
-        Octal_literals_are_not_available_when_targeting_ECMAScript_5_and_higher: { code: 1085, category: ts.DiagnosticCategory.Error, key: "Octal_literals_are_not_available_when_targeting_ECMAScript_5_and_higher_1085", message: "Octal literals are not available when targeting ECMAScript 5 and higher." },
+        Octal_literals_are_not_available_when_targeting_ECMAScript_5_and_higher_Use_the_syntax_0: { code: 1085, category: ts.DiagnosticCategory.Error, key: "Octal_literals_are_not_available_when_targeting_ECMAScript_5_and_higher_Use_the_syntax_0_1085", message: "Octal literals are not available when targeting ECMAScript 5 and higher. Use the syntax '{0}'." },
         An_accessor_cannot_be_declared_in_an_ambient_context: { code: 1086, category: ts.DiagnosticCategory.Error, key: "An_accessor_cannot_be_declared_in_an_ambient_context_1086", message: "An accessor cannot be declared in an ambient context." },
         _0_modifier_cannot_appear_on_a_constructor_declaration: { code: 1089, category: ts.DiagnosticCategory.Error, key: "_0_modifier_cannot_appear_on_a_constructor_declaration_1089", message: "'{0}' modifier cannot appear on a constructor declaration." },
         _0_modifier_cannot_appear_on_a_parameter: { code: 1090, category: ts.DiagnosticCategory.Error, key: "_0_modifier_cannot_appear_on_a_parameter_1090", message: "'{0}' modifier cannot appear on a parameter." },
@@ -3087,6 +3089,7 @@ var ts;
         Disallow_inconsistently_cased_references_to_the_same_file: { code: 6078, category: ts.DiagnosticCategory.Message, key: "Disallow_inconsistently_cased_references_to_the_same_file_6078", message: "Disallow inconsistently-cased references to the same file." },
         Specify_library_files_to_be_included_in_the_compilation_Colon: { code: 6079, category: ts.DiagnosticCategory.Message, key: "Specify_library_files_to_be_included_in_the_compilation_Colon_6079", message: "Specify library files to be included in the compilation: " },
         Specify_JSX_code_generation_Colon_preserve_or_react: { code: 6080, category: ts.DiagnosticCategory.Message, key: "Specify_JSX_code_generation_Colon_preserve_or_react_6080", message: "Specify JSX code generation: 'preserve' or 'react'" },
+        File_0_has_an_unsupported_extension_so_skipping_it: { code: 6081, category: ts.DiagnosticCategory.Message, key: "File_0_has_an_unsupported_extension_so_skipping_it_6081", message: "File '{0}' has an unsupported extension, so skipping it." },
         Only_amd_and_system_modules_are_supported_alongside_0: { code: 6082, category: ts.DiagnosticCategory.Error, key: "Only_amd_and_system_modules_are_supported_alongside_0_6082", message: "Only 'amd' and 'system' modules are supported alongside --{0}." },
         Base_directory_to_resolve_non_absolute_module_names: { code: 6083, category: ts.DiagnosticCategory.Message, key: "Base_directory_to_resolve_non_absolute_module_names_6083", message: "Base directory to resolve non-absolute module names." },
         Specify_the_object_invoked_for_createElement_and_spread_when_targeting_react_JSX_emit: { code: 6084, category: ts.DiagnosticCategory.Message, key: "Specify_the_object_invoked_for_createElement_and_spread_when_targeting_react_JSX_emit_6084", message: "Specify the object invoked for createElement and __spread when targeting 'react' JSX emit" },
@@ -3152,6 +3155,7 @@ var ts;
         Module_0_was_resolved_as_locally_declared_ambient_module_in_file_1: { code: 6144, category: ts.DiagnosticCategory.Message, key: "Module_0_was_resolved_as_locally_declared_ambient_module_in_file_1_6144", message: "Module '{0}' was resolved as locally declared ambient module in file '{1}'." },
         Module_0_was_resolved_as_ambient_module_declared_in_1_since_this_file_was_not_modified: { code: 6145, category: ts.DiagnosticCategory.Message, key: "Module_0_was_resolved_as_ambient_module_declared_in_1_since_this_file_was_not_modified_6145", message: "Module '{0}' was resolved as ambient module declared in '{1}' since this file was not modified." },
         Specify_the_JSX_factory_function_to_use_when_targeting_react_JSX_emit_e_g_React_createElement_or_h: { code: 6146, category: ts.DiagnosticCategory.Message, key: "Specify_the_JSX_factory_function_to_use_when_targeting_react_JSX_emit_e_g_React_createElement_or_h_6146", message: "Specify the JSX factory function to use when targeting 'react' JSX emit, e.g. 'React.createElement' or 'h'." },
+        Resolution_for_module_0_was_found_in_cache: { code: 6147, category: ts.DiagnosticCategory.Message, key: "Resolution_for_module_0_was_found_in_cache_6147", message: "Resolution for module '{0}' was found in cache" },
         Variable_0_implicitly_has_an_1_type: { code: 7005, category: ts.DiagnosticCategory.Error, key: "Variable_0_implicitly_has_an_1_type_7005", message: "Variable '{0}' implicitly has an '{1}' type." },
         Parameter_0_implicitly_has_an_1_type: { code: 7006, category: ts.DiagnosticCategory.Error, key: "Parameter_0_implicitly_has_an_1_type_7006", message: "Parameter '{0}' implicitly has an '{1}' type." },
         Member_0_implicitly_has_an_1_type: { code: 7008, category: ts.DiagnosticCategory.Error, key: "Member_0_implicitly_has_an_1_type_7008", message: "Member '{0}' implicitly has an '{1}' type." },
@@ -3207,6 +3211,7 @@ var ts;
         JSX_element_0_has_no_corresponding_closing_tag: { code: 17008, category: ts.DiagnosticCategory.Error, key: "JSX_element_0_has_no_corresponding_closing_tag_17008", message: "JSX element '{0}' has no corresponding closing tag." },
         super_must_be_called_before_accessing_this_in_the_constructor_of_a_derived_class: { code: 17009, category: ts.DiagnosticCategory.Error, key: "super_must_be_called_before_accessing_this_in_the_constructor_of_a_derived_class_17009", message: "'super' must be called before accessing 'this' in the constructor of a derived class." },
         Unknown_type_acquisition_option_0: { code: 17010, category: ts.DiagnosticCategory.Error, key: "Unknown_type_acquisition_option_0_17010", message: "Unknown type acquisition option '{0}'." },
+        super_must_be_called_before_accessing_a_property_of_super_in_the_constructor_of_a_derived_class: { code: 17011, category: ts.DiagnosticCategory.Error, key: "super_must_be_called_before_accessing_a_property_of_super_in_the_constructor_of_a_derived_class_17011", message: "'super' must be called before accessing a property of 'super' in the constructor of a derived class." },
         Circularity_detected_while_resolving_configuration_Colon_0: { code: 18000, category: ts.DiagnosticCategory.Error, key: "Circularity_detected_while_resolving_configuration_Colon_0_18000", message: "Circularity detected while resolving configuration: {0}" },
         A_path_in_an_extends_option_must_be_relative_or_rooted_but_0_is_not: { code: 18001, category: ts.DiagnosticCategory.Error, key: "A_path_in_an_extends_option_must_be_relative_or_rooted_but_0_is_not_18001", message: "A path in an 'extends' option must be relative or rooted, but '{0}' is not." },
         The_files_list_in_config_file_0_is_empty: { code: 18002, category: ts.DiagnosticCategory.Error, key: "The_files_list_in_config_file_0_is_empty_18002", message: "The 'files' list in config file '{0}' is empty." },
@@ -3223,6 +3228,7 @@ var ts;
         Import_0_from_1: { code: 90013, category: ts.DiagnosticCategory.Message, key: "Import_0_from_1_90013", message: "Import {0} from {1}" },
         Change_0_to_1: { code: 90014, category: ts.DiagnosticCategory.Message, key: "Change_0_to_1_90014", message: "Change {0} to {1}" },
         Add_0_to_existing_import_declaration_from_1: { code: 90015, category: ts.DiagnosticCategory.Message, key: "Add_0_to_existing_import_declaration_from_1_90015", message: "Add {0} to existing import declaration from {1}" },
+        Octal_literal_types_must_use_ES2015_syntax_Use_the_syntax_0: { code: 8017, category: ts.DiagnosticCategory.Error, key: "Octal_literal_types_must_use_ES2015_syntax_Use_the_syntax_0_8017", message: "Octal literal types must use ES2015 syntax. Use the syntax '{0}'." },
     };
 })(ts || (ts = {}));
 var ts;
@@ -5291,14 +5297,7 @@ var ts;
     }
     ts.createCompilerDiagnosticForInvalidCustomType = createCompilerDiagnosticForInvalidCustomType;
     function parseCustomTypeOption(opt, value, errors) {
-        var key = trimString((value || "")).toLowerCase();
-        var map = opt.type;
-        if (key in map) {
-            return map[key];
-        }
-        else {
-            errors.push(createCompilerDiagnosticForInvalidCustomType(opt));
-        }
+        return convertJsonOptionOfCustomType(opt, trimString(value || ""), errors);
     }
     ts.parseCustomTypeOption = parseCustomTypeOption;
     function parseListTypeOption(opt, value, errors) {
@@ -5538,9 +5537,10 @@ var ts;
         }
         return output;
     }
-    function parseJsonConfigFileContent(json, host, basePath, existingOptions, configFileName, resolutionStack) {
+    function parseJsonConfigFileContent(json, host, basePath, existingOptions, configFileName, resolutionStack, extraFileExtensions) {
         if (existingOptions === void 0) { existingOptions = {}; }
         if (resolutionStack === void 0) { resolutionStack = []; }
+        if (extraFileExtensions === void 0) { extraFileExtensions = []; }
         var errors = [];
         var getCanonicalFileName = ts.createGetCanonicalFileName(host.useCaseSensitiveFileNames);
         var resolvedPath = ts.toPath(configFileName || "", basePath, getCanonicalFileName);
@@ -5663,7 +5663,7 @@ var ts;
             if (fileNames === undefined && includeSpecs === undefined) {
                 includeSpecs = ["**/*"];
             }
-            var result = matchFileNames(fileNames, includeSpecs, excludeSpecs, basePath, options, host, errors);
+            var result = matchFileNames(fileNames, includeSpecs, excludeSpecs, basePath, options, host, errors, extraFileExtensions);
             if (result.fileNames.length === 0 && !ts.hasProperty(json, "files") && resolutionStack.length === 0) {
                 errors.push(ts.createCompilerDiagnostic(ts.Diagnostics.No_inputs_were_found_in_config_file_0_Specified_include_paths_were_1_and_exclude_paths_were_2, configFileName || "tsconfig.json", JSON.stringify(includeSpecs || []), JSON.stringify(excludeSpecs || [])));
             }
@@ -5767,7 +5767,7 @@ var ts;
     var invalidDotDotAfterRecursiveWildcardPattern = /(^|\/)\*\*\/(.*\/)?\.\.($|\/)/;
     var watchRecursivePattern = /\/[^/]*?[*?][^/]*\//;
     var wildcardDirectoryPattern = /^[^*?]*(?=\/[^/]*[*?])/;
-    function matchFileNames(fileNames, include, exclude, basePath, options, host, errors) {
+    function matchFileNames(fileNames, include, exclude, basePath, options, host, errors, extraFileExtensions) {
         basePath = ts.normalizePath(basePath);
         var keyMapper = host.useCaseSensitiveFileNames ? caseSensitiveKeyMapper : caseInsensitiveKeyMapper;
         var literalFileMap = ts.createMap();
@@ -5779,7 +5779,7 @@ var ts;
             exclude = validateSpecs(exclude, errors, true);
         }
         var wildcardDirectories = getWildcardDirectories(include, exclude, basePath, host.useCaseSensitiveFileNames);
-        var supportedExtensions = ts.getSupportedExtensions(options);
+        var supportedExtensions = ts.getSupportedExtensions(options, extraFileExtensions);
         if (fileNames) {
             for (var _i = 0, fileNames_1 = fileNames; _i < fileNames_1.length; _i++) {
                 var fileName = fileNames_1[_i];
@@ -6112,9 +6112,6 @@ var ts;
         ts.Debug.assert(ts.extensionIsTypeScript(resolved.extension));
         return resolved.path;
     }
-    function resolvedFromAnyFile(path) {
-        return { path: path, extension: ts.extensionFromPath(path) };
-    }
     function resolvedModuleFromResolved(_a, isExternalLibraryImport) {
         var path = _a.path, extension = _a.extension;
         return { resolvedFileName: path, extension: extension, isExternalLibraryImport: isExternalLibraryImport };
@@ -6126,7 +6123,7 @@ var ts;
         return !(ts.isRootedDiskPath(moduleName) || ts.isExternalModuleNameRelative(moduleName));
     }
     ts.moduleHasNonRelativeName = moduleHasNonRelativeName;
-    function tryReadTypesSection(extensions, packageJsonPath, baseDirectory, state) {
+    function tryReadPackageJsonMainOrTypes(extensions, packageJsonPath, baseDirectory, state) {
         var jsonContent = readJson(packageJsonPath, state.host);
         switch (extensions) {
             case 2:
@@ -6194,6 +6191,7 @@ var ts;
             if (host.directoryExists(atTypes)) {
                 (typeRoots || (typeRoots = [])).push(atTypes);
             }
+            return undefined;
         });
         return typeRoots;
     }
@@ -6264,7 +6262,8 @@ var ts;
                 if (traceEnabled) {
                     trace(host, ts.Diagnostics.Looking_up_in_node_modules_folder_initial_location_0, initialLocationForSecondaryLookup);
                 }
-                resolvedFile = resolvedTypeScriptOnly(loadModuleFromNodeModules(2, typeReferenceDirectiveName, initialLocationForSecondaryLookup, failedLookupLocations, moduleResolutionState));
+                var result = loadModuleFromNodeModules(2, typeReferenceDirectiveName, initialLocationForSecondaryLookup, failedLookupLocations, moduleResolutionState, undefined);
+                resolvedFile = resolvedTypeScriptOnly(result && result.value);
                 if (!resolvedFile && traceEnabled) {
                     trace(host, ts.Diagnostics.Type_reference_directive_0_was_not_resolved, typeReferenceDirectiveName);
                 }
@@ -6305,31 +6304,115 @@ var ts;
         return result;
     }
     ts.getAutomaticTypeDirectiveNames = getAutomaticTypeDirectiveNames;
-    function resolveModuleName(moduleName, containingFile, compilerOptions, host) {
+    function createModuleResolutionCache(currentDirectory, getCanonicalFileName) {
+        var directoryToModuleNameMap = ts.createFileMap();
+        var moduleNameToDirectoryMap = ts.createMap();
+        return { getOrCreateCacheForDirectory: getOrCreateCacheForDirectory, getOrCreateCacheForModuleName: getOrCreateCacheForModuleName };
+        function getOrCreateCacheForDirectory(directoryName) {
+            var path = ts.toPath(directoryName, currentDirectory, getCanonicalFileName);
+            var perFolderCache = directoryToModuleNameMap.get(path);
+            if (!perFolderCache) {
+                perFolderCache = ts.createMap();
+                directoryToModuleNameMap.set(path, perFolderCache);
+            }
+            return perFolderCache;
+        }
+        function getOrCreateCacheForModuleName(nonRelativeModuleName) {
+            if (!moduleHasNonRelativeName(nonRelativeModuleName)) {
+                return undefined;
+            }
+            var perModuleNameCache = moduleNameToDirectoryMap[nonRelativeModuleName];
+            if (!perModuleNameCache) {
+                moduleNameToDirectoryMap[nonRelativeModuleName] = perModuleNameCache = createPerModuleNameCache();
+            }
+            return perModuleNameCache;
+        }
+        function createPerModuleNameCache() {
+            var directoryPathMap = ts.createFileMap();
+            return { get: get, set: set };
+            function get(directory) {
+                return directoryPathMap.get(ts.toPath(directory, currentDirectory, getCanonicalFileName));
+            }
+            function set(directory, result) {
+                var path = ts.toPath(directory, currentDirectory, getCanonicalFileName);
+                if (directoryPathMap.contains(path)) {
+                    return;
+                }
+                directoryPathMap.set(path, result);
+                var resolvedFileName = result.resolvedModule && result.resolvedModule.resolvedFileName;
+                var commonPrefix = getCommonPrefix(path, resolvedFileName);
+                var current = path;
+                while (true) {
+                    var parent_1 = ts.getDirectoryPath(current);
+                    if (parent_1 === current || directoryPathMap.contains(parent_1)) {
+                        break;
+                    }
+                    directoryPathMap.set(parent_1, result);
+                    current = parent_1;
+                    if (current == commonPrefix) {
+                        break;
+                    }
+                }
+            }
+            function getCommonPrefix(directory, resolution) {
+                if (resolution === undefined) {
+                    return undefined;
+                }
+                var resolutionDirectory = ts.toPath(ts.getDirectoryPath(resolution), currentDirectory, getCanonicalFileName);
+                var i = 0;
+                while (i < Math.min(directory.length, resolutionDirectory.length) && directory.charCodeAt(i) === resolutionDirectory.charCodeAt(i)) {
+                    i++;
+                }
+                var sep = directory.lastIndexOf(ts.directorySeparator, i);
+                if (sep < 0) {
+                    return undefined;
+                }
+                return directory.substr(0, sep);
+            }
+        }
+    }
+    ts.createModuleResolutionCache = createModuleResolutionCache;
+    function resolveModuleName(moduleName, containingFile, compilerOptions, host, cache) {
         var traceEnabled = isTraceEnabled(compilerOptions, host);
         if (traceEnabled) {
             trace(host, ts.Diagnostics.Resolving_module_0_from_1, moduleName, containingFile);
         }
-        var moduleResolution = compilerOptions.moduleResolution;
-        if (moduleResolution === undefined) {
-            moduleResolution = ts.getEmitModuleKind(compilerOptions) === ts.ModuleKind.CommonJS ? ts.ModuleResolutionKind.NodeJs : ts.ModuleResolutionKind.Classic;
+        var containingDirectory = ts.getDirectoryPath(containingFile);
+        var perFolderCache = cache && cache.getOrCreateCacheForDirectory(containingDirectory);
+        var result = perFolderCache && perFolderCache[moduleName];
+        if (result) {
             if (traceEnabled) {
-                trace(host, ts.Diagnostics.Module_resolution_kind_is_not_specified_using_0, ts.ModuleResolutionKind[moduleResolution]);
+                trace(host, ts.Diagnostics.Resolution_for_module_0_was_found_in_cache, moduleName);
             }
         }
         else {
-            if (traceEnabled) {
-                trace(host, ts.Diagnostics.Explicitly_specified_module_resolution_kind_Colon_0, ts.ModuleResolutionKind[moduleResolution]);
+            var moduleResolution = compilerOptions.moduleResolution;
+            if (moduleResolution === undefined) {
+                moduleResolution = ts.getEmitModuleKind(compilerOptions) === ts.ModuleKind.CommonJS ? ts.ModuleResolutionKind.NodeJs : ts.ModuleResolutionKind.Classic;
+                if (traceEnabled) {
+                    trace(host, ts.Diagnostics.Module_resolution_kind_is_not_specified_using_0, ts.ModuleResolutionKind[moduleResolution]);
+                }
             }
-        }
-        var result;
-        switch (moduleResolution) {
-            case ts.ModuleResolutionKind.NodeJs:
-                result = nodeModuleNameResolver(moduleName, containingFile, compilerOptions, host);
-                break;
-            case ts.ModuleResolutionKind.Classic:
-                result = classicNameResolver(moduleName, containingFile, compilerOptions, host);
-                break;
+            else {
+                if (traceEnabled) {
+                    trace(host, ts.Diagnostics.Explicitly_specified_module_resolution_kind_Colon_0, ts.ModuleResolutionKind[moduleResolution]);
+                }
+            }
+            switch (moduleResolution) {
+                case ts.ModuleResolutionKind.NodeJs:
+                    result = nodeModuleNameResolver(moduleName, containingFile, compilerOptions, host, cache);
+                    break;
+                case ts.ModuleResolutionKind.Classic:
+                    result = classicNameResolver(moduleName, containingFile, compilerOptions, host, cache);
+                    break;
+            }
+            if (perFolderCache) {
+                perFolderCache[moduleName] = result;
+                var perModuleNameCache = cache.getOrCreateCacheForModuleName(moduleName);
+                if (perModuleNameCache) {
+                    perModuleNameCache.set(containingDirectory, result);
+                }
+            }
         }
         if (traceEnabled) {
             if (result.resolvedModule) {
@@ -6454,33 +6537,33 @@ var ts;
             return loader(extensions, candidate, failedLookupLocations, !directoryProbablyExists(ts.getDirectoryPath(candidate), state.host), state);
         }
     }
-    function nodeModuleNameResolver(moduleName, containingFile, compilerOptions, host) {
+    function nodeModuleNameResolver(moduleName, containingFile, compilerOptions, host, cache) {
         var containingDirectory = ts.getDirectoryPath(containingFile);
         var traceEnabled = isTraceEnabled(compilerOptions, host);
         var failedLookupLocations = [];
         var state = { compilerOptions: compilerOptions, host: host, traceEnabled: traceEnabled };
         var result = tryResolve(0) || tryResolve(1);
-        if (result) {
-            var resolved = result.resolved, isExternalLibraryImport = result.isExternalLibraryImport;
+        if (result && result.value) {
+            var _a = result.value, resolved = _a.resolved, isExternalLibraryImport = _a.isExternalLibraryImport;
             return createResolvedModuleWithFailedLookupLocations(resolved, isExternalLibraryImport, failedLookupLocations);
         }
         return { resolvedModule: undefined, failedLookupLocations: failedLookupLocations };
         function tryResolve(extensions) {
             var resolved = tryLoadModuleUsingOptionalResolutionSettings(extensions, moduleName, containingDirectory, nodeLoadModuleByRelativeName, failedLookupLocations, state);
             if (resolved) {
-                return { resolved: resolved, isExternalLibraryImport: false };
+                return toSearchResult({ resolved: resolved, isExternalLibraryImport: false });
             }
             if (moduleHasNonRelativeName(moduleName)) {
                 if (traceEnabled) {
                     trace(host, ts.Diagnostics.Loading_module_0_from_node_modules_folder, moduleName);
                 }
-                var resolved_1 = loadModuleFromNodeModules(extensions, moduleName, containingDirectory, failedLookupLocations, state);
-                return resolved_1 && { resolved: { path: realpath(resolved_1.path, host, traceEnabled), extension: resolved_1.extension }, isExternalLibraryImport: true };
+                var resolved_1 = loadModuleFromNodeModules(extensions, moduleName, containingDirectory, failedLookupLocations, state, cache);
+                return resolved_1 && { value: resolved_1.value && { resolved: { path: realpath(resolved_1.value.path, host, traceEnabled), extension: resolved_1.value.extension }, isExternalLibraryImport: true } };
             }
             else {
                 var candidate = ts.normalizePath(ts.combinePaths(containingDirectory, moduleName));
                 var resolved_2 = nodeLoadModuleByRelativeName(extensions, candidate, failedLookupLocations, false, state);
-                return resolved_2 && { resolved: resolved_2, isExternalLibraryImport: false };
+                return resolved_2 && toSearchResult({ resolved: resolved_2, isExternalLibraryImport: false });
             }
         }
     }
@@ -6562,16 +6645,20 @@ var ts;
             if (state.traceEnabled) {
                 trace(state.host, ts.Diagnostics.Found_package_json_at_0, packageJsonPath);
             }
-            var typesFile = tryReadTypesSection(extensions, packageJsonPath, candidate, state);
-            if (typesFile) {
-                var onlyRecordFailures_1 = !directoryProbablyExists(ts.getDirectoryPath(typesFile), state.host);
-                var fromFile = tryFile(typesFile, failedLookupLocations, onlyRecordFailures_1, state);
-                if (fromFile) {
-                    return resolvedFromAnyFile(fromFile);
+            var mainOrTypesFile = tryReadPackageJsonMainOrTypes(extensions, packageJsonPath, candidate, state);
+            if (mainOrTypesFile) {
+                var onlyRecordFailures_1 = !directoryProbablyExists(ts.getDirectoryPath(mainOrTypesFile), state.host);
+                var fromExactFile = tryFile(mainOrTypesFile, failedLookupLocations, onlyRecordFailures_1, state);
+                if (fromExactFile) {
+                    var resolved_3 = fromExactFile && resolvedIfExtensionMatches(extensions, fromExactFile);
+                    if (resolved_3) {
+                        return resolved_3;
+                    }
+                    trace(state.host, ts.Diagnostics.File_0_has_an_unsupported_extension_so_skipping_it, fromExactFile);
                 }
-                var x = tryAddingExtensions(typesFile, 0, failedLookupLocations, onlyRecordFailures_1, state);
-                if (x) {
-                    return x;
+                var resolved = tryAddingExtensions(mainOrTypesFile, 0, failedLookupLocations, onlyRecordFailures_1, state);
+                if (resolved) {
+                    return resolved;
                 }
             }
             else {
@@ -6588,6 +6675,20 @@ var ts;
         }
         return loadModuleFromFile(extensions, ts.combinePaths(candidate, "index"), failedLookupLocations, !directoryExists, state);
     }
+    function resolvedIfExtensionMatches(extensions, path) {
+        var extension = ts.tryGetExtensionFromPath(path);
+        return extension !== undefined && extensionIsOk(extensions, extension) ? { path: path, extension: extension } : undefined;
+    }
+    function extensionIsOk(extensions, extension) {
+        switch (extensions) {
+            case 1:
+                return extension === ts.Extension.Js || extension === ts.Extension.Jsx;
+            case 0:
+                return extension === ts.Extension.Ts || extension === ts.Extension.Tsx || extension === ts.Extension.Dts;
+            case 2:
+                return extension === ts.Extension.Dts;
+        }
+    }
     function pathToPackageJson(directory) {
         return ts.combinePaths(directory, "package.json");
     }
@@ -6598,16 +6699,21 @@ var ts;
         return loadModuleFromFile(extensions, candidate, failedLookupLocations, !nodeModulesFolderExists, state) ||
             loadNodeModuleFromDirectory(extensions, candidate, failedLookupLocations, !nodeModulesFolderExists, state);
     }
-    function loadModuleFromNodeModules(extensions, moduleName, directory, failedLookupLocations, state) {
-        return loadModuleFromNodeModulesWorker(extensions, moduleName, directory, failedLookupLocations, state, false);
+    function loadModuleFromNodeModules(extensions, moduleName, directory, failedLookupLocations, state, cache) {
+        return loadModuleFromNodeModulesWorker(extensions, moduleName, directory, failedLookupLocations, state, false, cache);
     }
     function loadModuleFromNodeModulesAtTypes(moduleName, directory, failedLookupLocations, state) {
-        return loadModuleFromNodeModulesWorker(2, moduleName, directory, failedLookupLocations, state, true);
+        return loadModuleFromNodeModulesWorker(2, moduleName, directory, failedLookupLocations, state, true, undefined);
     }
-    function loadModuleFromNodeModulesWorker(extensions, moduleName, directory, failedLookupLocations, state, typesOnly) {
+    function loadModuleFromNodeModulesWorker(extensions, moduleName, directory, failedLookupLocations, state, typesOnly, cache) {
+        var perModuleNameCache = cache && cache.getOrCreateCacheForModuleName(moduleName);
         return forEachAncestorDirectory(ts.normalizeSlashes(directory), function (ancestorDirectory) {
             if (ts.getBaseFileName(ancestorDirectory) !== "node_modules") {
-                return loadModuleFromNodeModulesOneLevel(extensions, moduleName, ancestorDirectory, failedLookupLocations, state, typesOnly);
+                var resolutionFromCache = tryFindNonRelativeModuleNameInCache(perModuleNameCache, moduleName, ancestorDirectory, state.traceEnabled, state.host);
+                if (resolutionFromCache) {
+                    return resolutionFromCache;
+                }
+                return toSearchResult(loadModuleFromNodeModulesOneLevel(extensions, moduleName, ancestorDirectory, failedLookupLocations, state, typesOnly));
             }
         });
     }
@@ -6621,25 +6727,39 @@ var ts;
             return loadModuleFromNodeModulesFolder(2, ts.combinePaths("@types", moduleName), directory, failedLookupLocations, state);
         }
     }
-    function classicNameResolver(moduleName, containingFile, compilerOptions, host) {
+    function tryFindNonRelativeModuleNameInCache(cache, moduleName, containingDirectory, traceEnabled, host) {
+        var result = cache && cache.get(containingDirectory);
+        if (result) {
+            if (traceEnabled) {
+                trace(host, ts.Diagnostics.Resolution_for_module_0_was_found_in_cache, moduleName);
+            }
+            return { value: result.resolvedModule && { path: result.resolvedModule.resolvedFileName, extension: result.resolvedModule.extension } };
+        }
+    }
+    function classicNameResolver(moduleName, containingFile, compilerOptions, host, cache) {
         var traceEnabled = isTraceEnabled(compilerOptions, host);
         var state = { compilerOptions: compilerOptions, host: host, traceEnabled: traceEnabled };
         var failedLookupLocations = [];
         var containingDirectory = ts.getDirectoryPath(containingFile);
         var resolved = tryResolve(0) || tryResolve(1);
-        return createResolvedModuleWithFailedLookupLocations(resolved, false, failedLookupLocations);
+        return createResolvedModuleWithFailedLookupLocations(resolved && resolved.value, false, failedLookupLocations);
         function tryResolve(extensions) {
             var resolvedUsingSettings = tryLoadModuleUsingOptionalResolutionSettings(extensions, moduleName, containingDirectory, loadModuleFromFile, failedLookupLocations, state);
             if (resolvedUsingSettings) {
-                return resolvedUsingSettings;
+                return { value: resolvedUsingSettings };
             }
+            var perModuleNameCache = cache && cache.getOrCreateCacheForModuleName(moduleName);
             if (moduleHasNonRelativeName(moduleName)) {
-                var resolved_3 = forEachAncestorDirectory(containingDirectory, function (directory) {
+                var resolved_4 = forEachAncestorDirectory(containingDirectory, function (directory) {
+                    var resolutionFromCache = tryFindNonRelativeModuleNameInCache(perModuleNameCache, moduleName, directory, traceEnabled, host);
+                    if (resolutionFromCache) {
+                        return resolutionFromCache;
+                    }
                     var searchName = ts.normalizePath(ts.combinePaths(directory, moduleName));
-                    return loadModuleFromFile(extensions, searchName, failedLookupLocations, false, state);
+                    return toSearchResult(loadModuleFromFile(extensions, searchName, failedLookupLocations, false, state));
                 });
-                if (resolved_3) {
-                    return resolved_3;
+                if (resolved_4) {
+                    return resolved_4;
                 }
                 if (extensions === 0) {
                     return loadModuleFromNodeModulesAtTypes(moduleName, containingDirectory, failedLookupLocations, state);
@@ -6647,7 +6767,7 @@ var ts;
             }
             else {
                 var candidate = ts.normalizePath(ts.combinePaths(containingDirectory, moduleName));
-                return loadModuleFromFile(extensions, candidate, failedLookupLocations, false, state);
+                return toSearchResult(loadModuleFromFile(extensions, candidate, failedLookupLocations, false, state));
             }
         }
     }
@@ -6663,6 +6783,9 @@ var ts;
         return createResolvedModuleWithFailedLookupLocations(resolved, true, failedLookupLocations);
     }
     ts.loadModuleFromGlobalCache = loadModuleFromGlobalCache;
+    function toSearchResult(value) {
+        return value !== undefined ? { value: value } : undefined;
+    }
     function forEachAncestorDirectory(directory, callback) {
         while (true) {
             var result = callback(directory);
