@@ -16,7 +16,25 @@
     <array>
       <dict>
         <key>include</key>
+        <string>#directives</string>
+      </dict>
+      <dict>
+        <key>include</key>
         <string>#statements</string>
+      </dict>
+      <dict>
+        <key>name</key>
+        <string>comment.line.shebang.ts</string>
+        <key>match</key>
+        <string>\A(#!).*(?=$)</string>
+        <key>captures</key>
+        <dict>
+          <key>1</key>
+          <dict>
+            <key>name</key>
+            <string>punctuation.definition.comment.ts</string>
+          </dict>
+        </dict>
       </dict>
     </array>
     <key>repository</key>
@@ -28,10 +46,6 @@
           <dict>
             <key>include</key>
             <string>#string</string>
-          </dict>
-          <dict>
-            <key>include</key>
-            <string>#regex</string>
           </dict>
           <dict>
             <key>include</key>
@@ -126,33 +140,104 @@
       </dict>
       <key>var-single-variable</key>
       <dict>
-        <key>name</key>
-        <string>meta.var-single-variable.expr.tsx</string>
-        <key>begin</key>
-        <string>([_$[:alpha:]][_$[:alnum:]]*)</string>
-        <key>beginCaptures</key>
-        <dict>
-          <key>1</key>
-          <dict>
-            <key>name</key>
-            <string>meta.definition.variable.tsx variable.other.readwrite.tsx</string>
-          </dict>
-        </dict>
-        <key>end</key>
-        <string>(?=$|[;,=}]|(\s+(of|in)\s+))</string>
         <key>patterns</key>
         <array>
           <dict>
-            <key>include</key>
-            <string>#type-annotation</string>
+            <key>name</key>
+            <string>meta.var-single-variable.expr.tsx</string>
+            <key>begin</key>
+            <string>(?x)([_$[:alpha:]][_$[:alnum:]]*)(?=\s*
+  (=\s*(
+    (async\s+) |
+    (function\s*[(&lt;]) |
+    (function\s+) |
+    ([_$[:alpha:]][_$[:alnum:]]*\s*=&gt;) |
+    ((&lt;([^&lt;&gt;]|\&lt;[^&lt;&gt;]+\&gt;)+&gt;\s*)?\(([^()]|\([^()]*\))*\)(\s*:\s*(.)*)?\s*=&gt;))
+  ) |
+  (:\s*(
+    (&lt;) |
+    ([(]\s*(
+      ([)]) |
+      (\.\.\.) |
+      ([_$[:alnum:]]+\s*(
+        ([:,?=])|
+        ([)]\s*=&gt;)
+      ))
+    )))
+  )
+)</string>
+            <key>beginCaptures</key>
+            <dict>
+              <key>1</key>
+              <dict>
+                <key>name</key>
+                <string>meta.definition.variable.tsx entity.name.function.tsx</string>
+              </dict>
+            </dict>
+            <key>end</key>
+            <string>(?=$|[;,=}]|(\s+(of|in)\s+))</string>
+            <key>patterns</key>
+            <array>
+              <dict>
+                <key>include</key>
+                <string>#type-annotation</string>
+              </dict>
+              <dict>
+                <key>include</key>
+                <string>#string</string>
+              </dict>
+              <dict>
+                <key>include</key>
+                <string>#comment</string>
+              </dict>
+            </array>
           </dict>
           <dict>
-            <key>include</key>
-            <string>#string</string>
+            <key>name</key>
+            <string>meta.var-single-variable.expr.tsx</string>
+            <key>begin</key>
+            <string>([[:upper:]][_$[:digit:][:upper:]]*)(?![_$[:alnum:]])</string>
+            <key>beginCaptures</key>
+            <dict>
+              <key>1</key>
+              <dict>
+                <key>name</key>
+                <string>meta.definition.variable.tsx variable.other.constant.tsx</string>
+              </dict>
+            </dict>
+            <key>end</key>
+            <string>(?=$|[;,=}]|(\s+(of|in)\s+))</string>
           </dict>
           <dict>
-            <key>include</key>
-            <string>#comment</string>
+            <key>name</key>
+            <string>meta.var-single-variable.expr.tsx</string>
+            <key>begin</key>
+            <string>([_$[:alpha:]][_$[:alnum:]]*)</string>
+            <key>beginCaptures</key>
+            <dict>
+              <key>1</key>
+              <dict>
+                <key>name</key>
+                <string>meta.definition.variable.tsx variable.other.readwrite.tsx</string>
+              </dict>
+            </dict>
+            <key>end</key>
+            <string>(?=$|[;,=}]|(\s+(of|in)\s+))</string>
+            <key>patterns</key>
+            <array>
+              <dict>
+                <key>include</key>
+                <string>#type-annotation</string>
+              </dict>
+              <dict>
+                <key>include</key>
+                <string>#string</string>
+              </dict>
+              <dict>
+                <key>include</key>
+                <string>#comment</string>
+              </dict>
+            </array>
           </dict>
         </array>
       </dict>
@@ -218,41 +303,18 @@
           </dict>
           <dict>
             <key>begin</key>
-            <string>([_$[:alpha:]][_$[:alnum:]]*)\s*(:)</string>
-            <key>beginCaptures</key>
-            <dict>
-              <key>1</key>
-              <dict>
-                <key>name</key>
-                <string>variable.object.property.tsx</string>
-              </dict>
-              <key>2</key>
-              <dict>
-                <key>name</key>
-                <string>punctuation.destructuring.tsx</string>
-              </dict>
-            </dict>
+            <string>(?=(([_$[:alpha:]][_$[:alnum:]]*)|(\'[^']*\')|(\"[^"]*\")|(\[([^\[\]]|\[[^\[\]]*\])+\]))\s*(:))</string>
             <key>end</key>
             <string>(?=,|\})</string>
             <key>patterns</key>
             <array>
               <dict>
                 <key>include</key>
-                <string>#object-binding-pattern</string>
+                <string>#object-binding-element-propertyName</string>
               </dict>
               <dict>
                 <key>include</key>
-                <string>#array-binding-pattern</string>
-              </dict>
-              <dict>
-                <key>name</key>
-                <string>meta.definition.variable.tsx variable.other.readwrite.tsx</string>
-                <key>match</key>
-                <string>([_$[:alpha:]][_$[:alnum:]]*)</string>
-              </dict>
-              <dict>
-                <key>include</key>
-                <string>#variable-initializer</string>
+                <string>#binding-element</string>
               </dict>
             </array>
           </dict>
@@ -274,7 +336,39 @@
           </dict>
         </array>
       </dict>
-      <key>array-binding-element</key>
+      <key>object-binding-element-propertyName</key>
+      <dict>
+        <key>begin</key>
+        <string>(?=(([_$[:alpha:]][_$[:alnum:]]*)|(\'[^']*\')|(\"[^"]*\")|(\[([^\[\]]|\[[^\[\]]*\])+\]))\s*(:))</string>
+        <key>end</key>
+        <string>(:)</string>
+        <key>endCaptures</key>
+        <dict>
+          <key>0</key>
+          <dict>
+            <key>name</key>
+            <string>punctuation.destructuring.tsx</string>
+          </dict>
+        </dict>
+        <key>patterns</key>
+        <array>
+          <dict>
+            <key>include</key>
+            <string>#string</string>
+          </dict>
+          <dict>
+            <key>include</key>
+            <string>#array-literal</string>
+          </dict>
+          <dict>
+            <key>name</key>
+            <string>variable.object.property.tsx</string>
+            <key>match</key>
+            <string>([_$[:alpha:]][_$[:alnum:]]*)</string>
+          </dict>
+        </array>
+      </dict>
+      <key>binding-element</key>
       <dict>
         <key>patterns</key>
         <array>
@@ -297,10 +391,6 @@
           <dict>
             <key>include</key>
             <string>#variable-initializer</string>
-          </dict>
-          <dict>
-            <key>include</key>
-            <string>#punctuation-comma</string>
           </dict>
         </array>
       </dict>
@@ -388,29 +478,15 @@
         <array>
           <dict>
             <key>include</key>
-            <string>#array-binding-element</string>
+            <string>#binding-element</string>
+          </dict>
+          <dict>
+            <key>include</key>
+            <string>#punctuation-comma</string>
           </dict>
         </array>
       </dict>
       <key>ternary-expression</key>
-      <dict>
-        <key>begin</key>
-        <string>(?=\?)</string>
-        <key>end</key>
-        <string>(?=$|[;,})\]])</string>
-        <key>patterns</key>
-        <array>
-          <dict>
-            <key>include</key>
-            <string>#ternary-operator</string>
-          </dict>
-          <dict>
-            <key>include</key>
-            <string>#expression</string>
-          </dict>
-        </array>
-      </dict>
-      <key>ternary-operator</key>
       <dict>
         <key>begin</key>
         <string>(\?)</string>
@@ -504,11 +580,11 @@
           </dict>
           <dict>
             <key>include</key>
-            <string>#support-objects</string>
+            <string>#function-call</string>
           </dict>
           <dict>
             <key>include</key>
-            <string>#function-call</string>
+            <string>#support-objects</string>
           </dict>
           <dict>
             <key>include</key>
@@ -816,7 +892,7 @@
               </dict>
               <dict>
                 <key>begin</key>
-                <string>(?=(?:(?:\'[^']*\')|(?:\"[^"]*\")))</string>
+                <string>(?=((\'[^']*\')|(\"[^"]*\")|(\[([^\[\]]|\[[^\[\]]*\])+\])))</string>
                 <key>end</key>
                 <string>(?=,|\}|$)</string>
                 <key>patterns</key>
@@ -824,6 +900,10 @@
                   <dict>
                     <key>include</key>
                     <string>#string</string>
+                  </dict>
+                  <dict>
+                    <key>include</key>
+                    <string>#array-literal</string>
                   </dict>
                   <dict>
                     <key>include</key>
@@ -881,10 +961,8 @@
             <string>([_$[:alpha:]][_$[:alnum:]]*)</string>
           </dict>
           <dict>
-            <key>name</key>
-            <string>punctuation.accessor.tsx</string>
-            <key>match</key>
-            <string>\.</string>
+            <key>include</key>
+            <string>#punctuation-accessor</string>
           </dict>
         </array>
       </dict>
@@ -1205,7 +1283,8 @@
             <key>comment</key>
             <string>(default|*|name) as alias</string>
             <key>match</key>
-            <string>(?x) (?: \b(default)\b | (\*) | ([_$[:alpha:]][_$[:alnum:]]*)) \s+  (as) \s+ (?: (\b default \b | \*) | ([_$[:alpha:]][_$[:alnum:]]*))</string>
+            <string>(?x) (?: \b(default)\b | (\*) | ([_$[:alpha:]][_$[:alnum:]]*)) \s+ 
+  (as) \s+ (?: (\b default \b | \*) | ([_$[:alpha:]][_$[:alnum:]]*))</string>
             <key>captures</key>
             <dict>
               <key>1</key>
@@ -1373,7 +1452,7 @@
           </dict>
           <dict>
             <key>match</key>
-            <string>([_$[:alpha:]][_$[:alnum:]]*)\s*(\.)</string>
+            <string>([_$[:alpha:]][_$[:alnum:]]*)\s*(\.)(?=\s*[_$[:alpha:]][_$[:alnum:]]*(\s*\.\s*[_$[:alpha:]][_$[:alnum:]]*)*\s*([,&lt;{]|extends|implements|//|/\*))</string>
             <key>captures</key>
             <dict>
               <key>1</key>
@@ -1390,7 +1469,7 @@
           </dict>
           <dict>
             <key>match</key>
-            <string>([_$[:alpha:]][_$[:alnum:]]*)</string>
+            <string>([_$[:alpha:]][_$[:alnum:]]*)(?=\s*([,&lt;{]|extends|implements|//|/\*))</string>
             <key>captures</key>
             <dict>
               <key>1</key>
@@ -1399,6 +1478,10 @@
                 <string>entity.other.inherited-class.tsx</string>
               </dict>
             </dict>
+          </dict>
+          <dict>
+            <key>include</key>
+            <string>#expression</string>
           </dict>
         </array>
       </dict>
@@ -1530,6 +1613,10 @@
           </dict>
           <dict>
             <key>include</key>
+            <string>#indexer-mapped-type-declaration</string>
+          </dict>
+          <dict>
+            <key>include</key>
             <string>#field-declaration</string>
           </dict>
           <dict>
@@ -1565,6 +1652,10 @@
             <key>include</key>
             <string>#punctuation-semicolon</string>
           </dict>
+          <dict>
+            <key>include</key>
+            <string>#type</string>
+          </dict>
         </array>
       </dict>
       <key>field-declaration</key>
@@ -1572,7 +1663,7 @@
         <key>name</key>
         <string>meta.field.declaration.tsx</string>
         <key>begin</key>
-        <string>(?&lt;!\()(?:(?&lt;!\.|\$)\b(readonly)\s+)?(?=(([_$[:alpha:]][_$[:alnum:]]*)|(\'[^']*\')|(\"[^"]*\")|(\[[^\]]*\]))\s*(\?\s*)?(=|:))</string>
+        <string>(?&lt;!\()(?:(?&lt;!\.|\$)\b(readonly)\s+)?(?=(([_$[:alpha:]][_$[:alnum:]]*)|(\'[^']*\')|(\"[^"]*\")|(\[([^\[\]]|\[[^\[\]]*\])+\]))\s*(\?\s*)?(=|:))</string>
         <key>beginCaptures</key>
         <dict>
           <key>1</key>
@@ -1591,7 +1682,7 @@
           </dict>
           <dict>
             <key>begin</key>
-            <string>(?=((?:[_$[:alpha:]][_$[:alnum:]]*)|(?:\'[^']*\')|(?:\"[^"]*\")|(\[[^\]]*\]))\s*(\?\s*)?(=|:))</string>
+            <string>(?=((?:[_$[:alpha:]][_$[:alnum:]]*)|(?:\'[^']*\')|(?:\"[^"]*\")|(\[([^\[\]]|\[[^\[\]]*\])+\]))\s*(\?\s*)?(=|:))</string>
             <key>end</key>
             <string>(?=[};,=]|$)|(?&lt;=\})</string>
             <key>patterns</key>
@@ -1614,6 +1705,31 @@
               </dict>
               <dict>
                 <key>name</key>
+                <string>meta.definition.property.tsx entity.name.function.tsx</string>
+                <key>match</key>
+                <string>(?x)([_$[:alpha:]][_$[:alnum:]]*)(?=(\?\s*)?\s*
+  (=\s*(
+    (async\s+) |
+    (function\s*[(&lt;]) |
+    (function\s+) |
+    ([_$[:alpha:]][_$[:alnum:]]*\s*=&gt;) |
+    ((&lt;([^&lt;&gt;]|\&lt;[^&lt;&gt;]+\&gt;)+&gt;\s*)?\(([^()]|\([^()]*\))*\)(\s*:\s*(.)*)?\s*=&gt;))
+  ) |
+  (:\s*(
+    (&lt;) |
+    ([(]\s*(
+      ([)]) |
+      (\.\.\.) |
+      ([_$[:alnum:]]+\s*(
+        ([:,?=])|
+        ([)]\s*=&gt;)
+      ))
+    )))
+  )
+)</string>
+              </dict>
+              <dict>
+                <key>name</key>
                 <string>meta.definition.property.tsx variable.object.property.tsx</string>
                 <key>match</key>
                 <string>[_$[:alpha:]][_$[:alnum:]]*</string>
@@ -1633,7 +1749,7 @@
         <key>name</key>
         <string>meta.method.declaration.tsx</string>
         <key>begin</key>
-        <string>(?&lt;!\.|\$)(?:\b(public|private|protected)\s+)?(?:\b(abstract)\s+)?(?:\b(async)\s+)?(?:\b(get|set)\s+)?(?:(?:\b(?:(new)|(constructor))\b(?!\$|:))|(?:(\*)\s*)?(?=((([_$[:alpha:]][_$[:alnum:]]*)|(\'[^']*\')|(\"[^"]*\")|(\[[^\]]*\]))\s*(\??))?\s*[\(\&lt;]))</string>
+        <string>(?&lt;!\.|\$)(?:\b(public|private|protected)\s+)?(?:\b(abstract)\s+)?(?:\b(async)\s+)?(?:\b(get|set)\s+)?(?:(?:\b(?:(new)|(constructor))\b(?!\$|:))|(?:(\*)\s*)?(?=((([_$[:alpha:]][_$[:alnum:]]*)|(\'[^']*\')|(\"[^"]*\")|(\[([^\[\]]|\[[^\[\]]*\])+\]))\s*(\??))?\s*[\(\&lt;]))</string>
         <key>beginCaptures</key>
         <dict>
           <key>1</key>
@@ -1709,7 +1825,7 @@
       <key>method-overload-declaration</key>
       <dict>
         <key>begin</key>
-        <string>(?&lt;!\.|\$)(?:\b(public|private|protected)\s+)?(?:\b(abstract)\s+)?(?:\b(async)\s+)?(?:\b(get|set)\s+)?(?:(?:\b(?:(new)|(constructor))\b(?!\$|:))|(?:(\*)\s*)?(?=((([_$[:alpha:]][_$[:alnum:]]*)|(\'[^']*\')|(\"[^"]*\")|(\[[^\]]*\]))\s*(\??))?\s*[\(\&lt;]))</string>
+        <string>(?&lt;!\.|\$)(?:\b(public|private|protected)\s+)?(?:\b(abstract)\s+)?(?:\b(async)\s+)?(?:\b(get|set)\s+)?(?:(?:\b(?:(new)|(constructor))\b(?!\$|:))|(?:(\*)\s*)?(?=((([_$[:alpha:]][_$[:alnum:]]*)|(\'[^']*\')|(\"[^"]*\")|(\[([^\[\]]|\[[^\[\]]*\])+\]))\s*(\??))?\s*[\(\&lt;]))</string>
         <key>beginCaptures</key>
         <dict>
           <key>1</key>
@@ -1761,7 +1877,7 @@
       <key>method-declaration-name</key>
       <dict>
         <key>begin</key>
-        <string>(?=(([_$[:alpha:]][_$[:alnum:]]*)|(\'[^']*\')|(\"[^"]*\")|(\[[^\]]*\]))\s*(\??)\s*[\(\&lt;])</string>
+        <string>(?=(([_$[:alpha:]][_$[:alnum:]]*)|(\'[^']*\')|(\"[^"]*\")|(\[([^\[\]]|\[[^\[\]]*\])+\]))\s*(\??)\s*[\(\&lt;])</string>
         <key>end</key>
         <string>(?=\(|\&lt;)</string>
         <key>patterns</key>
@@ -1785,6 +1901,96 @@
             <string>keyword.operator.optional.tsx</string>
             <key>match</key>
             <string>\?</string>
+          </dict>
+        </array>
+      </dict>
+      <key>object-literal-method-declaration</key>
+      <dict>
+        <key>name</key>
+        <string>meta.method.declaration.tsx</string>
+        <key>begin</key>
+        <string>(?&lt;!\.|\$)(?:\b(async)\s+)?(?:\b(get|set)\s+)?(?:(\*)\s*)?(?=((([_$[:alpha:]][_$[:alnum:]]*)|(\'[^']*\')|(\"[^"]*\")|(\[([^\[\]]|\[[^\[\]]*\])+\]))\s*(\??))?\s*[\(\&lt;])</string>
+        <key>beginCaptures</key>
+        <dict>
+          <key>1</key>
+          <dict>
+            <key>name</key>
+            <string>storage.modifier.async.tsx</string>
+          </dict>
+          <key>2</key>
+          <dict>
+            <key>name</key>
+            <string>storage.type.property.tsx</string>
+          </dict>
+          <key>3</key>
+          <dict>
+            <key>name</key>
+            <string>keyword.generator.asterisk.tsx</string>
+          </dict>
+        </dict>
+        <key>end</key>
+        <string>(?=\}|;|,)|(?&lt;=\})</string>
+        <key>patterns</key>
+        <array>
+          <dict>
+            <key>include</key>
+            <string>#method-declaration-name</string>
+          </dict>
+          <dict>
+            <key>include</key>
+            <string>#comment</string>
+          </dict>
+          <dict>
+            <key>include</key>
+            <string>#type-parameters</string>
+          </dict>
+          <dict>
+            <key>include</key>
+            <string>#function-parameters</string>
+          </dict>
+          <dict>
+            <key>include</key>
+            <string>#return-type</string>
+          </dict>
+          <dict>
+            <key>include</key>
+            <string>#method-overload-declaration</string>
+          </dict>
+          <dict>
+            <key>include</key>
+            <string>#decl-block</string>
+          </dict>
+        </array>
+      </dict>
+      <key>object-literal-method-overload-declaration</key>
+      <dict>
+        <key>begin</key>
+        <string>(?&lt;!\.|\$)(?:\b(async)\s+)?(?:\b(get|set)\s+)?(?:(\*)\s*)?(?=((([_$[:alpha:]][_$[:alnum:]]*)|(\'[^']*\')|(\"[^"]*\")|(\[([^\[\]]|\[[^\[\]]*\])+\]))\s*(\??))?\s*[\(\&lt;])</string>
+        <key>beginCaptures</key>
+        <dict>
+          <key>1</key>
+          <dict>
+            <key>name</key>
+            <string>storage.modifier.async.tsx</string>
+          </dict>
+          <key>2</key>
+          <dict>
+            <key>name</key>
+            <string>storage.type.property.tsx</string>
+          </dict>
+          <key>3</key>
+          <dict>
+            <key>name</key>
+            <string>keyword.generator.asterisk.tsx</string>
+          </dict>
+        </dict>
+        <key>end</key>
+        <string>(?=\(|\&lt;)</string>
+        <key>patterns</key>
+        <array>
+          <dict>
+            <key>include</key>
+            <string>#method-declaration-name</string>
           </dict>
         </array>
       </dict>
@@ -1832,6 +2038,58 @@
           <dict>
             <key>include</key>
             <string>#type-annotation</string>
+          </dict>
+        </array>
+      </dict>
+      <key>indexer-mapped-type-declaration</key>
+      <dict>
+        <key>name</key>
+        <string>meta.indexer.mappedtype.declaration.tsx</string>
+        <key>begin</key>
+        <string>(?:(?&lt;!\.|\$)\b(readonly)\s*)?(\[)\s*([_$[:alpha:]][_$[:alnum:]]*)\s+(in)\s+</string>
+        <key>beginCaptures</key>
+        <dict>
+          <key>1</key>
+          <dict>
+            <key>name</key>
+            <string>storage.modifier.tsx</string>
+          </dict>
+          <key>2</key>
+          <dict>
+            <key>name</key>
+            <string>meta.brace.square.tsx</string>
+          </dict>
+          <key>3</key>
+          <dict>
+            <key>name</key>
+            <string>entity.name.type.tsx</string>
+          </dict>
+          <key>4</key>
+          <dict>
+            <key>name</key>
+            <string>keyword.operator.expression.in.tsx</string>
+          </dict>
+        </dict>
+        <key>end</key>
+        <string>(\])\s*(\?\s*)?|$</string>
+        <key>endCaptures</key>
+        <dict>
+          <key>1</key>
+          <dict>
+            <key>name</key>
+            <string>meta.brace.square.tsx</string>
+          </dict>
+          <key>2</key>
+          <dict>
+            <key>name</key>
+            <string>keyword.operator.optional.tsx</string>
+          </dict>
+        </dict>
+        <key>patterns</key>
+        <array>
+          <dict>
+            <key>include</key>
+            <string>#type</string>
           </dict>
         </array>
       </dict>
@@ -2032,36 +2290,94 @@
       </dict>
       <key>parameter-name</key>
       <dict>
-        <key>match</key>
-        <string>(?:\s*\b(readonly)\s+)?(?:\s*\b(public|private|protected)\s+)?(\.\.\.)?\s*(?&lt;!=|:)([_$[:alpha:]][_$[:alnum:]]*)\s*(\??)</string>
-        <key>captures</key>
-        <dict>
-          <key>1</key>
+        <key>patterns</key>
+        <array>
           <dict>
-            <key>name</key>
-            <string>storage.modifier.tsx</string>
+            <key>match</key>
+            <string>\s*\b(public|protected|private|readonly)(?=\s+(public|protected|private|readonly)\s+)</string>
+            <key>captures</key>
+            <dict>
+              <key>1</key>
+              <dict>
+                <key>name</key>
+                <string>storage.modifier.tsx</string>
+              </dict>
+            </dict>
           </dict>
-          <key>2</key>
           <dict>
-            <key>name</key>
-            <string>storage.modifier.tsx</string>
+            <key>match</key>
+            <string>(?x)(?:\s*\b(public|private|protected|readonly)\s+)?(\.\.\.)?\s*(?&lt;!=|:)([_$[:alpha:]][_$[:alnum:]]*)\s*(\??)(?=\s*
+  (=\s*(
+    (async\s+) |
+    (function\s*[(&lt;]) |
+    (function\s+) |
+    ([_$[:alpha:]][_$[:alnum:]]*\s*=&gt;) |
+    ((&lt;([^&lt;&gt;]|\&lt;[^&lt;&gt;]+\&gt;)+&gt;\s*)?\(([^()]|\([^()]*\))*\)(\s*:\s*(.)*)?\s*=&gt;))
+  ) |
+  (:\s*(
+    (&lt;) |
+    ([(]\s*(
+      ([)]) |
+      (\.\.\.) |
+      ([_$[:alnum:]]+\s*(
+        ([:,?=])|
+        ([)]\s*=&gt;)
+      ))
+    )))
+  )
+)</string>
+            <key>captures</key>
+            <dict>
+              <key>1</key>
+              <dict>
+                <key>name</key>
+                <string>storage.modifier.tsx</string>
+              </dict>
+              <key>2</key>
+              <dict>
+                <key>name</key>
+                <string>keyword.operator.rest.tsx</string>
+              </dict>
+              <key>3</key>
+              <dict>
+                <key>name</key>
+                <string>entity.name.function.tsx</string>
+              </dict>
+              <key>4</key>
+              <dict>
+                <key>name</key>
+                <string>keyword.operator.optional.tsx</string>
+              </dict>
+            </dict>
           </dict>
-          <key>3</key>
           <dict>
-            <key>name</key>
-            <string>keyword.operator.rest.tsx</string>
+            <key>match</key>
+            <string>(?:\s*\b(public|private|protected|readonly)\s+)?(\.\.\.)?\s*(?&lt;!=|:)([_$[:alpha:]][_$[:alnum:]]*)\s*(\??)</string>
+            <key>captures</key>
+            <dict>
+              <key>1</key>
+              <dict>
+                <key>name</key>
+                <string>storage.modifier.tsx</string>
+              </dict>
+              <key>2</key>
+              <dict>
+                <key>name</key>
+                <string>keyword.operator.rest.tsx</string>
+              </dict>
+              <key>3</key>
+              <dict>
+                <key>name</key>
+                <string>variable.parameter.tsx</string>
+              </dict>
+              <key>4</key>
+              <dict>
+                <key>name</key>
+                <string>keyword.operator.optional.tsx</string>
+              </dict>
+            </dict>
           </dict>
-          <key>4</key>
-          <dict>
-            <key>name</key>
-            <string>variable.parameter.tsx</string>
-          </dict>
-          <key>5</key>
-          <dict>
-            <key>name</key>
-            <string>keyword.operator.optional.tsx</string>
-          </dict>
-        </dict>
+        </array>
       </dict>
       <key>destructuring-parameter</key>
       <dict>
@@ -2125,7 +2441,11 @@
             <array>
               <dict>
                 <key>include</key>
-                <string>#parameter-array-binding-element</string>
+                <string>#parameter-binding-element</string>
+              </dict>
+              <dict>
+                <key>include</key>
+                <string>#punctuation-comma</string>
               </dict>
             </array>
           </dict>
@@ -2141,41 +2461,18 @@
           </dict>
           <dict>
             <key>begin</key>
-            <string>([_$[:alpha:]][_$[:alnum:]]*)\s*(:)</string>
-            <key>beginCaptures</key>
-            <dict>
-              <key>1</key>
-              <dict>
-                <key>name</key>
-                <string>variable.object.property.tsx</string>
-              </dict>
-              <key>2</key>
-              <dict>
-                <key>name</key>
-                <string>punctuation.destructuring.tsx</string>
-              </dict>
-            </dict>
+            <string>(?=(([_$[:alpha:]][_$[:alnum:]]*)|(\'[^']*\')|(\"[^"]*\")|(\[([^\[\]]|\[[^\[\]]*\])+\]))\s*(:))</string>
             <key>end</key>
             <string>(?=,|\})</string>
             <key>patterns</key>
             <array>
               <dict>
                 <key>include</key>
-                <string>#parameter-object-binding-pattern</string>
+                <string>#object-binding-element-propertyName</string>
               </dict>
               <dict>
                 <key>include</key>
-                <string>#parameter-array-binding-pattern</string>
-              </dict>
-              <dict>
-                <key>name</key>
-                <string>variable.parameter.tsx</string>
-                <key>match</key>
-                <string>([_$[:alpha:]][_$[:alnum:]]*)</string>
-              </dict>
-              <dict>
-                <key>include</key>
-                <string>#variable-initializer</string>
+                <string>#parameter-binding-element</string>
               </dict>
             </array>
           </dict>
@@ -2197,7 +2494,7 @@
           </dict>
         </array>
       </dict>
-      <key>parameter-array-binding-element</key>
+      <key>parameter-binding-element</key>
       <dict>
         <key>patterns</key>
         <array>
@@ -2220,10 +2517,6 @@
           <dict>
             <key>include</key>
             <string>#variable-initializer</string>
-          </dict>
-          <dict>
-            <key>include</key>
-            <string>#punctuation-comma</string>
           </dict>
         </array>
       </dict>
@@ -2311,7 +2604,11 @@
         <array>
           <dict>
             <key>include</key>
-            <string>#parameter-array-binding-element</string>
+            <string>#parameter-binding-element</string>
+          </dict>
+          <dict>
+            <key>include</key>
+            <string>#punctuation-comma</string>
           </dict>
         </array>
       </dict>
@@ -2550,10 +2847,10 @@
         <key>name</key>
         <string>meta.type.paren.cover.tsx</string>
         <key>begin</key>
-        <string>\s*(\()</string>
+        <string>\(</string>
         <key>beginCaptures</key>
         <dict>
-          <key>1</key>
+          <key>0</key>
           <dict>
             <key>name</key>
             <string>meta.brace.round.tsx</string>
@@ -2641,7 +2938,18 @@
             <key>name</key>
             <string>meta.type.function.tsx</string>
             <key>begin</key>
-            <string>(?x)( \s* (?= [(]\s*( ([)]) |  (\.\.\.) | ([_$[:alnum:]]+\s*( ([:,?=])| ([)]\s*=&gt;) )) ) ) )</string>
+            <string>(?x)(
+  (?=
+    [(]\s*(
+      ([)]) | 
+      (\.\.\.) |
+      ([_$[:alnum:]]+\s*(
+        ([:,?=])|
+        ([)]\s*=&gt;)
+      ))
+    )
+  )
+)</string>
             <key>end</key>
             <string>(?&lt;=\))</string>
             <key>patterns</key>
@@ -2667,6 +2975,12 @@
             <string>keyword.operator.type.tsx</string>
             <key>match</key>
             <string>[&amp;|]</string>
+          </dict>
+          <dict>
+            <key>name</key>
+            <string>keyword.operator.expression.keyof.tsx</string>
+            <key>match</key>
+            <string>(?&lt;!\.|\$)\bkeyof\b(?!\$)</string>
           </dict>
         </array>
       </dict>
@@ -2869,7 +3183,7 @@
       <key>for-loop</key>
       <dict>
         <key>begin</key>
-        <string>(?&lt;!\.|\$)\b(for)\s*(\()</string>
+        <string>(?&lt;!\.|\$)\b(for)(?:\s+(await))?\s*(\()</string>
         <key>beginCaptures</key>
         <dict>
           <key>1</key>
@@ -2878,6 +3192,11 @@
             <string>keyword.control.loop.tsx</string>
           </dict>
           <key>2</key>
+          <dict>
+            <key>name</key>
+            <string>keyword.control.loop.tsx</string>
+          </dict>
+          <key>3</key>
           <dict>
             <key>name</key>
             <string>meta.brace.round.tsx</string>
@@ -2951,7 +3270,7 @@
         <key>name</key>
         <string>switch-block.expr.tsx</string>
         <key>begin</key>
-        <string>{</string>
+        <string>\{</string>
         <key>beginCaptures</key>
         <dict>
           <key>0</key>
@@ -3013,7 +3332,7 @@
         <key>begin</key>
         <string>(?&lt;!\.|\$)(?=\bswitch\s*\()</string>
         <key>end</key>
-        <string>}</string>
+        <string>\}</string>
         <key>endCaptures</key>
         <dict>
           <key>0</key>
@@ -3048,7 +3367,10 @@
             <key>name</key>
             <string>support.class.builtin.tsx</string>
             <key>match</key>
-            <string>(?x)(?&lt;!\.|\$)\b(Array|ArrayBuffer|Atomics|Boolean|DataView|Date|Float32Array|Float64Array|Function|Generator |GeneratorFunction|Int8Array|Int16Array|Int32Array|Intl|Map|Number|Object|Promise|Proxy |Reflect|RegExp|Set|SharedArrayBuffer|SIMD|String|Symbol|TypedArray |Uint8Array|Uint16Array|Uint32Array|Uint8ClampedArray|WeakMap|WeakSet)\b(?!\$)</string>
+            <string>(?x)(?&lt;!\.|\$)\b(Array|ArrayBuffer|Atomics|Boolean|DataView|Date|Float32Array|Float64Array|Function|Generator
+  |GeneratorFunction|Int8Array|Int16Array|Int32Array|Intl|Map|Number|Object|Promise|Proxy
+  |Reflect|RegExp|Set|SharedArrayBuffer|SIMD|String|Symbol|TypedArray
+  |Uint8Array|Uint16Array|Uint32Array|Uint8ClampedArray|WeakMap|WeakSet)\b(?!\$)</string>
           </dict>
           <dict>
             <key>name</key>
@@ -3060,7 +3382,8 @@
             <key>name</key>
             <string>support.function.tsx</string>
             <key>match</key>
-            <string>(?x)(?&lt;!\.|\$)\b(clear(Interval|Timeout)|decodeURI|decodeURIComponent|encodeURI|encodeURIComponent|escape|eval| isFinite|isNaN|parseFloat|parseInt|require|set(Interval|Timeout)|super|unescape|uneval)(?=\s*\()</string>
+            <string>(?x)(?&lt;!\.|\$)\b(clear(Interval|Timeout)|decodeURI|decodeURIComponent|encodeURI|encodeURIComponent|escape|eval|
+  isFinite|isNaN|parseFloat|parseInt|require|set(Interval|Timeout)|super|unescape|uneval)(?=\s*\() </string>
           </dict>
           <dict>
             <key>match</key>
@@ -3480,24 +3803,25 @@
       <key>function-call</key>
       <dict>
         <key>begin</key>
-        <string>(?:(\.)\s*)?([_$[:alpha:]][_$[:alnum:]]*)\s*(?=(&lt;([^&lt;&gt;]|\&lt;[^&lt;&gt;]+\&gt;)+&gt;\s*)?\()</string>
-        <key>beginCaptures</key>
-        <dict>
-          <key>1</key>
+        <string>(?=(\.\s*)?([_$[:alpha:]][_$[:alnum:]]*)\s*(&lt;([^&lt;&gt;]|\&lt;[^&lt;&gt;]+\&gt;)+&gt;\s*)?\()</string>
+        <key>end</key>
+        <string>(?&lt;=\))(?!(\.\s*)?([_$[:alpha:]][_$[:alnum:]]*)\s*(&lt;([^&lt;&gt;]|\&lt;[^&lt;&gt;]+\&gt;)+&gt;\s*)?\()</string>
+        <key>patterns</key>
+        <array>
           <dict>
-            <key>name</key>
-            <string>punctuation.accessor.tsx</string>
+            <key>include</key>
+            <string>#support-objects</string>
           </dict>
-          <key>2</key>
+          <dict>
+            <key>include</key>
+            <string>#punctuation-accessor</string>
+          </dict>
           <dict>
             <key>name</key>
             <string>entity.name.function.tsx</string>
+            <key>match</key>
+            <string>([_$[:alpha:]][_$[:alnum:]]*)</string>
           </dict>
-        </dict>
-        <key>end</key>
-        <string>(?&lt;=\))</string>
-        <key>patterns</key>
-        <array>
           <dict>
             <key>include</key>
             <string>#comment</string>
@@ -3569,7 +3893,7 @@
               <key>2</key>
               <dict>
                 <key>name</key>
-                <string>constant.other.object.property.tsx</string>
+                <string>variable.other.constant.object.property.tsx</string>
               </dict>
               <key>3</key>
               <dict>
@@ -3580,7 +3904,10 @@
           </dict>
           <dict>
             <key>match</key>
-            <string>(?x)(?:(\.)\s*)?([_$[:alpha:]][_$[:alnum:]]*)(?=\s*=\s*( (async\s+)|(function\s+)| ([_$[:alpha:]][_$[:alnum:]]*\s*=&gt;)| ((&lt;([^&lt;&gt;]|\&lt;[^&lt;&gt;]+\&gt;)+&gt;\s*)?\(([^()]|\([^()]*\))*\)(\s*:\s*(.)*)?\s*=&gt;)))</string>
+            <string>(?x)(?:(\.)\s*)?([_$[:alpha:]][_$[:alnum:]]*)(?=\s*=\s*(
+  (async\s+)|(function\s*[(&lt;])|(function\s+)|
+  ([_$[:alpha:]][_$[:alnum:]]*\s*=&gt;)|
+  ((&lt;([^&lt;&gt;]|\&lt;[^&lt;&gt;]+\&gt;)+&gt;\s*)?\(([^()]|\([^()]*\))*\)(\s*:\s*(.)*)?\s*=&gt;)))</string>
             <key>captures</key>
             <dict>
               <key>1</key>
@@ -3608,7 +3935,7 @@
               <key>2</key>
               <dict>
                 <key>name</key>
-                <string>constant.other.property.tsx</string>
+                <string>variable.other.constant.property.tsx</string>
               </dict>
             </dict>
           </dict>
@@ -3640,7 +3967,7 @@
               <key>1</key>
               <dict>
                 <key>name</key>
-                <string>constant.other.object.tsx</string>
+                <string>variable.other.constant.object.tsx</string>
               </dict>
               <key>2</key>
               <dict>
@@ -3651,7 +3978,7 @@
           </dict>
           <dict>
             <key>name</key>
-            <string>constant.other.tsx</string>
+            <string>variable.other.constant.tsx</string>
             <key>match</key>
             <string>([[:upper:]][_$[:digit:][:upper:]]*)(?![_$[:alnum:]])</string>
           </dict>
@@ -3697,6 +4024,10 @@
           </dict>
           <dict>
             <key>include</key>
+            <string>#class-or-interface-declaration</string>
+          </dict>
+          <dict>
+            <key>include</key>
             <string>#type</string>
           </dict>
         </array>
@@ -3711,13 +4042,13 @@
           </dict>
           <dict>
             <key>include</key>
-            <string>#method-declaration</string>
+            <string>#object-literal-method-declaration</string>
           </dict>
           <dict>
             <key>name</key>
             <string>meta.object.member.tsx</string>
             <key>begin</key>
-            <string>(?=(?:(?:\'[^']*\')|(?:\"[^"]*\")|(?:\[[^\]]*\]))\s*:)</string>
+            <string>(?=(?:(?:\'[^']*\')|(?:\"[^"]*\")|(?:\[([^\[\]]|\[[^\[\]]*\])+\]))\s*:)</string>
             <key>end</key>
             <string>(?=,|\})</string>
             <key>patterns</key>
@@ -3726,7 +4057,7 @@
                 <key>name</key>
                 <string>meta.object-literal.key.tsx</string>
                 <key>begin</key>
-                <string>(?=(?:(?:\'[^']*\')|(?:\"[^"]*\")|(?:\[[^\]]*\]))\s*:)</string>
+                <string>(?=(?:(?:\'[^']*\')|(?:\"[^"]*\")|(?:\[([^\[\]]|\[[^\[\]]*\])+\]))\s*:)</string>
                 <key>end</key>
                 <string>:</string>
                 <key>endCaptures</key>
@@ -3759,7 +4090,10 @@
             <key>name</key>
             <string>meta.object.member.tsx</string>
             <key>begin</key>
-            <string>(?x)(?:([_$[:alpha:]][_$[:alnum:]]*)\s*(:)(?=\s*( (async\s+)|(function\s+)| ([_$[:alpha:]][_$[:alnum:]]*\s*=&gt;)| ((&lt;([^&lt;&gt;]|\&lt;[^&lt;&gt;]+\&gt;)+&gt;\s*)?\(([^()]|\([^()]*\))*\)(\s*:\s*(.)*)?\s*=&gt;))))</string>
+            <string>(?x)(?:([_$[:alpha:]][_$[:alnum:]]*)\s*(:)(?=\s*(
+  (async\s+)|(function\s*[(&lt;])|(function\s+)|
+  ([_$[:alpha:]][_$[:alnum:]]*\s*=&gt;)|
+  ((&lt;([^&lt;&gt;]|\&lt;[^&lt;&gt;]+\&gt;)+&gt;\s*)?\(([^()]|\([^()]*\))*\)(\s*:\s*(.)*)?\s*=&gt;))))</string>
             <key>beginCaptures</key>
             <dict>
               <key>0</key>
@@ -4001,6 +4335,18 @@
             <string>keyword.operator.arithmetic.tsx</string>
             <key>match</key>
             <string>%|\*|/|-|\+</string>
+          </dict>
+          <dict>
+            <key>match</key>
+            <string>(?&lt;=[_$[:alnum:])])\s*(/)(?![/*])</string>
+            <key>captures</key>
+            <dict>
+              <key>1</key>
+              <dict>
+                <key>name</key>
+                <string>keyword.operator.arithmetic.tsx</string>
+              </dict>
+            </dict>
           </dict>
         </array>
       </dict>
@@ -4269,7 +4615,7 @@
             <key>name</key>
             <string>string.regex.tsx</string>
             <key>begin</key>
-            <string>(?&lt;=[=(:,\[?+!]|return|case|=&gt;|&amp;&amp;|\|\||\*\/)\s*(/)(?![/*+?])(?=.*/)</string>
+            <string>(?&lt;=[=(:,\[?+!]|return|case|=&gt;|&amp;&amp;|\|\||\*\/)\s*(/)(?![/*])(?=(?:[^/\\\[]|\\.|\[([^\]\\]|\\.)+\])+/(?![/*])[gimy]*(?!\s*[a-zA-Z0-9_$]))</string>
             <key>beginCaptures</key>
             <dict>
               <key>1</key>
@@ -4305,7 +4651,7 @@
             <key>name</key>
             <string>string.regex.tsx</string>
             <key>begin</key>
-            <string>/(?![/*])(?=(?:[^/\\\[]|\\.|\[([^\]\\]|\\.)+\])+/(?![/*])[gimy]*(?!\s*[a-zA-Z0-9_$]))</string>
+            <string>(?&lt;![_$[:alnum:]])/(?![/*])(?=(?:[^/\\\[]|\\.|\[([^\]\\]|\\.)+\])+/(?![/*])[gimy]*(?!\s*[a-zA-Z0-9_$]))</string>
             <key>beginCaptures</key>
             <dict>
               <key>0</key>
@@ -4562,8 +4908,6 @@
       </dict>
       <key>string</key>
       <dict>
-        <key>name</key>
-        <string>string.tsx</string>
         <key>patterns</key>
         <array>
           <dict>
@@ -4895,9 +5239,17 @@
             <string>comment.block.documentation.tsx</string>
             <key>begin</key>
             <string>/\*\*(?!/)</string>
+            <key>beginCaptures</key>
+            <dict>
+              <key>0</key>
+              <dict>
+                <key>name</key>
+                <string>punctuation.definition.comment.tsx</string>
+              </dict>
+            </dict>
             <key>end</key>
             <string>\*/</string>
-            <key>captures</key>
+            <key>endCaptures</key>
             <dict>
               <key>0</key>
               <dict>
@@ -4918,9 +5270,17 @@
             <string>comment.block.tsx</string>
             <key>begin</key>
             <string>/\*</string>
+            <key>beginCaptures</key>
+            <dict>
+              <key>0</key>
+              <dict>
+                <key>name</key>
+                <string>punctuation.definition.comment.tsx</string>
+              </dict>
+            </dict>
             <key>end</key>
             <string>\*/</string>
-            <key>captures</key>
+            <key>endCaptures</key>
             <dict>
               <key>0</key>
               <dict>
@@ -4964,6 +5324,74 @@
           </dict>
         </array>
       </dict>
+      <key>directives</key>
+      <dict>
+        <key>name</key>
+        <string>comment.line.triple-slash.directive.tsx</string>
+        <key>begin</key>
+        <string>^(///)\s*(?=&lt;(reference|amd-dependency|amd-module)(\s+(path|types|no-default-lib|name)\s*=\s*((\'[^']*\')|(\"[^"]*\")))+\s*/&gt;\s*$)</string>
+        <key>beginCaptures</key>
+        <dict>
+          <key>1</key>
+          <dict>
+            <key>name</key>
+            <string>punctuation.definition.comment.tsx</string>
+          </dict>
+        </dict>
+        <key>end</key>
+        <string>(?=$)</string>
+        <key>patterns</key>
+        <array>
+          <dict>
+            <key>name</key>
+            <string>meta.tag.tsx</string>
+            <key>begin</key>
+            <string>(&lt;)(reference|amd-dependency|amd-module)</string>
+            <key>beginCaptures</key>
+            <dict>
+              <key>1</key>
+              <dict>
+                <key>name</key>
+                <string>punctuation.definition.tag.directive.tsx</string>
+              </dict>
+              <key>2</key>
+              <dict>
+                <key>name</key>
+                <string>entity.name.tag.directive.tsx</string>
+              </dict>
+            </dict>
+            <key>end</key>
+            <string>/&gt;</string>
+            <key>endCaptures</key>
+            <dict>
+              <key>0</key>
+              <dict>
+                <key>name</key>
+                <string>punctuation.definition.tag.directive.tsx</string>
+              </dict>
+            </dict>
+            <key>patterns</key>
+            <array>
+              <dict>
+                <key>name</key>
+                <string>entity.other.attribute-name.directive.tsx</string>
+                <key>match</key>
+                <string>path|types|no-default-lib|name</string>
+              </dict>
+              <dict>
+                <key>name</key>
+                <string>keyword.operator.assignment.tsx</string>
+                <key>match</key>
+                <string>=</string>
+              </dict>
+              <dict>
+                <key>include</key>
+                <string>#string</string>
+              </dict>
+            </array>
+          </dict>
+        </array>
+      </dict>
       <key>docblock</key>
       <dict>
         <key>patterns</key>
@@ -4972,78 +5400,183 @@
             <key>name</key>
             <string>storage.type.class.jsdoc</string>
             <key>match</key>
-            <string>(?&lt;!\w)@(abstract|access|alias|arg|argument|async|attribute|augments|author|beta|borrows|bubbes|callback|chainable|class|classdesc|code|config|const|constant|constructor|constructs|copyright|default|defaultvalue|define|deprecated|desc|description|dict|emits|enum|event|example|exports?|extends|extension|extension_for|extensionfor|external|file|fileoverview|final|fires|for|function|global|host|ignore|implements|inherit[Dd]oc|inner|instance|interface|kind|lends|license|listens|main|member|memberof|method|mixex|mixins?|module|name|namespace|nocollapse|nosideeffects|override|overview|package|param|preserve|private|prop|property|protected|public|read[Oo]nly|record|require[ds]|returns?|see|since|static|struct|submodule|summary|template|this|throws|todo|tutorial|type|typedef|unrestricted|uses|var|variation|version|virtual|writeOnce)\b</string>
+            <string>(?x)(?&lt;!\w)@(
+  abstract|access|alias|arg|argument|async|attribute|augments|author|beta|borrows|bubbes|callback|chainable|class
+  |classdesc|code|config|const|constant|constructor|constructs|copyright|default|defaultvalue|define|deprecated|desc
+  |description|dict|emits|enum|event|example|exports?|extends|extension|extension_for|extensionfor|external|file
+  |fileoverview|final|fires|for|function|global|host|ignore|implements|implicitCast|inherit[Dd]oc|inner|instance
+  |interface|kind|lends|license|listens|main|member|memberof|method|mixex|mixins?|modifies|module|name|namespace
+  |noalias|nocollapse|nocompile|nosideeffects|override|overview|package|param|preserve|private|prop|property
+  |protected|public|read[Oo]nly|record|require[ds]|returns?|see|since|static|struct|submodule|summary|suppress
+  |template|this|throws|todo|type|typedef|unrestricted|uses|var|variation|version|virtual|writeOnce)\b</string>
+          </dict>
+          <dict>
+            <key>name</key>
+            <string>other.meta.jsdoc</string>
+            <key>match</key>
+            <string>(?x)
+(
+  \[
+    [^\]]+            # Optional [link text] preceding {@link syntax}
+  \]
+
+  (?!                  # Check to avoid highlighting two sets of link text
+    {
+      @\w+            # Tagname
+      \s+
+      [^\s|}]+        # Namepath/URL
+      [\s|]           # Whitespace or bar delimiting description
+      [^}]*
+    }
+  )
+)?
+
+(?:
+  {
+    (
+      @
+      (?: link         # Name of tag
+        | linkcode
+        | linkplain
+        | tutorial
+      )
+    )
+
+    \s+
+
+    ([^\s|}]+)        # Namepath or URL
+
+    (?:                # Optional link text following link target
+      [\s|]           # Bar or space separating target and text
+      [^}]*            # Actual text
+    )?
+  }
+)</string>
+            <key>captures</key>
+            <dict>
+              <key>0</key>
+              <dict>
+                <key>name</key>
+                <string>entity.name.type.instance.jsdoc</string>
+              </dict>
+              <key>1</key>
+              <dict>
+                <key>name</key>
+                <string>constant.other.description.jsdoc</string>
+              </dict>
+              <key>2</key>
+              <dict>
+                <key>name</key>
+                <string>storage.type.class.jsdoc</string>
+              </dict>
+              <key>3</key>
+              <dict>
+                <key>name</key>
+                <string>variable.other.description.jsdoc</string>
+              </dict>
+            </dict>
           </dict>
           <dict>
             <key>match</key>
             <string>(?x)
-(?:(?&lt;=@param)|(?&lt;=@arg)|(?&lt;=@argument)|(?&lt;=@type))
+
+(?:(?&lt;=@param)|(?&lt;=@arg)|(?&lt;=@argument)|(?&lt;=@type)|(?&lt;=@property)|(?&lt;=@prop))
+
 \s+
+
 ({(?:
-  \* |                                        # {*} any type
-  \? |                                        # {?} unknown type
-  (?:                                         # Check for a prefix
-    \? |                                      # {?string} nullable type
-    !   |                                     # {!string} non-nullable type
-    \.{3}                                     # {...string} variable number of parameters
-  )?
+  \* |                                       # {*} any type
+  \? |                                       # {?} unknown type
+
   (?:
-    \(                                        # Opening bracket of multiple types with parenthesis {(string|number)}
-      [a-zA-Z_$]+
+    (?:                                       # Check for a prefix
+      \? |                                   # {?string} nullable type
+      !   |                                   # {!string} non-nullable type
+      \.{3}                                  # {...string} variable number of parameters
+    )?
+
+    (?:
       (?:
+        function                              # {function(string, number)} function type
+        \s*
+        \(
+        \s*
         (?:
-          [\w$]*
-          (?:\[\])?                           # {(string[]|number)} type application, an array of strings or a number
-        ) |
-        \.?&lt;[\w$]+(?:,\s+[\w$]+)*&gt;            # {Array&lt;string&gt;} or {Object&lt;string, number&gt;} type application (optional .)
-      )
+          [a-zA-Z_$][\w$]*
+          (?:
+            \s*,\s*
+            [a-zA-Z_$][\w$]*
+          )*
+        )?
+        \s*
+        \)
+        (?:                                   # {function(): string} function return type
+          \s*:\s*
+          [a-zA-Z_$][\w$]*
+        )?
+      )?
+      |
       (?:
-        [\.|~]                                # {Foo.bar} namespaced, {string|number} multiple, {Foo~bar} class-specific callback
+        \(                                   # Opening bracket of multiple types with parenthesis {(string|number)}
+          [a-zA-Z_$]+
+          (?:
+            (?:
+              [\w$]*
+              (?:\[\])?                     # {(string[]|number)} type application, an array of strings or a number
+            ) |
+            \.?&lt;[\w$]+(?:,\s+[\w$]+)*&gt;    # {Array&lt;string&gt;} or {Object&lt;string, number&gt;} type application (optional .)
+          )
+          (?:
+            [\.|~]                           # {Foo.bar} namespaced, {string|number} multiple, {Foo~bar} class-specific callback
+            [a-zA-Z_$]+
+            (?:
+              (?:
+                [\w$]*
+                (?:\[\])?                   # {(string|number[])} type application, a string or an array of numbers
+              ) |
+              \.?&lt;[\w$]+(?:,\s+[\w$]+)*&gt;  # {Array&lt;string&gt;} or {Object&lt;string, number&gt;} type application (optional .)
+            )
+          )*
+        \) |
         [a-zA-Z_$]+
         (?:
           (?:
             [\w$]*
-            (?:\[\])?                        # {(string|number[])} type application, a string or an array of numbers
+            (?:\[\])?                       # {(string|number[])} type application, a string or an array of numbers
           ) |
-          \.?&lt;[\w$]+(?:,\s+[\w$]+)*&gt;         # {Array&lt;string&gt;} or {Object&lt;string, number&gt;} type application (optional .)
+          \.?&lt;[\w$]+(?:,\s+[\w$]+)*&gt;      # {Array&lt;string&gt;} or {Object&lt;string, number&gt;} type application (optional .)
         )
-      )*
-    \) |
-    [a-zA-Z_$]+
-    (?:
-      (?:
-        [\w$]*
-        (?:\[\])?                            # {string[]|number} type application, an array of strings or a number
-      ) |
-      \.?&lt;[\w$]+(?:,\s+[\w$]+)*&gt;             # {Array&lt;string&gt;} or {Object&lt;string, number&gt;} type application (optional .)
-    )
-    (?:
-      [\.|~]                                 # {Foo.bar} namespaced, {string|number} multiple, {Foo~bar} class-specific callback
-      [a-zA-Z_$]+
-      (?:
-        [\w$]* |
-        \.?&lt;[\w$]+(?:,\s+[\w$]+)*&gt;           # {Array&lt;string&gt;} or {Object&lt;string, number&gt;} type application (optional .)
+        (?:
+          [\.|~]                             # {Foo.bar} namespaced, {string|number} multiple, {Foo~bar} class-specific callback
+          [a-zA-Z_$]+
+          (?:
+            [\w$]* |
+            \.?&lt;[\w$]+(?:,\s+[\w$]+)*&gt;    # {Array&lt;string&gt;} or {Object&lt;string, number&gt;} type application (optional .)
+          )
+        )*
       )
-    )*
+    )
+                                              # Check for suffix
+    (?:\[\])?                               # {string[]} type application, an array of strings
+    =?                                        # {string=} optional parameter
   )
-                                             # Check for suffix
-  (?:\[\])?                                  # {string[]} type application, an array of strings
-  =?                                         # {string=} optional parameter
 )})
+
 \s+
+
 (
   \[                                         # [foo] optional parameter
     \s*
     (?:
       [a-zA-Z_$][\w$]*
       (?:
-        (?:\[\])?                            # Foo[].bar properties within an array
+        (?:\[\])?                           # Foo[].bar properties within an array
         \.                                   # Foo.Bar namespaced parameter
         [a-zA-Z_$][\w$]*
       )*
       (?:
         \s*
-        =                                    # [foo=bar] Default parameter value
+        =                                     # [foo=bar] Default parameter value
         \s*
         [\w$\s]*
       )?
@@ -5053,14 +5586,17 @@
   (?:
     [a-zA-Z_$][\w$]*
     (?:
-      (?:\[\])?                              # Foo[].bar properties within an array
+      (?:\[\])?                             # Foo[].bar properties within an array
       \.                                     # Foo.Bar namespaced parameter
       [a-zA-Z_$][\w$]*
     )*
   )?
 )
+
 \s+
-(?:-\s+)?                                    # optional hyphen before the description
+
+(?:-\s+)?                                     # optional hyphen before the description
+
 ((?:(?!\*\/).)*)                             # The type description</string>
             <key>captures</key>
             <dict>
@@ -5089,53 +5625,81 @@
           <dict>
             <key>match</key>
             <string>(?x)
+
 ({(?:
   \* |                                       # {*} any type
   \? |                                       # {?} unknown type
 
-  (?:                                        # Check for a prefix
-    \? |                                     # {?string} nullable type
-    !   |                                    # {!string} non-nullable type
-    \.{3}                                    # {...string} variable number of parameters
-  )?
-
   (?:
-    \(                                       # Opening bracket of multiple types with parenthesis {(string|number)}
-      [a-zA-Z_$]+
+    (?:                                       # Check for a prefix
+      \? |                                   # {?string} nullable type
+      !   |                                   # {!string} non-nullable type
+      \.{3}                                  # {...string} variable number of parameters
+    )?
+
+    (?:
       (?:
-        [\w$]* |
-        \.?&lt;[\w$]+(?:,\s+[\w$]+)*&gt;           # {Array&lt;string&gt;} or {Object&lt;string, number&gt;} type application (optional .)
-      )
+        function                              # {function(string, number)} function type
+        \s*
+        \(
+        \s*
+        (?:
+          [a-zA-Z_$][\w$]*
+          (?:
+            \s*,\s*
+            [a-zA-Z_$][\w$]*
+          )*
+        )?
+        \s*
+        \)
+        (?:                                   # {function(): string} function return type
+          \s*:\s*
+          [a-zA-Z_$][\w$]*
+        )?
+      )?
+      |
       (?:
-        [\.|~]                               # {Foo.bar} namespaced, {string|number} multiple, {Foo~bar} class-specific callback
+        \(                                   # Opening bracket of multiple types with parenthesis {(string|number)}
+          [a-zA-Z_$]+
+          (?:
+            [\w$]* |
+            \.?&lt;[\w$]+(?:,\s+[\w$]+)*&gt;    # {Array&lt;string&gt;} or {Object&lt;string, number&gt;} type application (optional .)
+          )
+          (?:
+            [\.|~]                           # {Foo.bar} namespaced, {string|number} multiple, {Foo~bar} class-specific callback
+            [a-zA-Z_$]+
+            (?:
+              [\w$]* |
+              \.?&lt;[\w$]+(?:,\s+[\w$]+)*&gt;  # {Array&lt;string&gt;} or {Object&lt;string, number&gt;} type application (optional .)
+            )
+          )*
+        \) |
         [a-zA-Z_$]+
         (?:
           [\w$]* |
-          \.?&lt;[\w$]+(?:,\s+[\w$]+)*&gt;         # {Array&lt;string&gt;} or {Object&lt;string, number&gt;} type application (optional .)
+          \.?&lt;[\w$]+(?:,\s+[\w$]+)*&gt;      # {Array&lt;string&gt;} or {Object&lt;string, number&gt;} type application (optional .)
         )
-      )*
-    \) |
-    [a-zA-Z_$]+
-    (?:
-      [\w$]* |
-      \.?&lt;[\w$]+(?:,\s+[\w$]+)*&gt;             # {Array&lt;string&gt;} or {Object&lt;string, number&gt;} type application (optional .)
-    )
-    (?:
-      [\.|~]                                 # {Foo.bar} namespaced, {string|number} multiple, {Foo~bar} class-specific callback
-      [a-zA-Z_$]+
-      (?:
-        [\w$]* |
-        \.?&lt;[\w$]+(?:,\s+[\w$]+)*&gt;           # {Array&lt;string&gt;} or {Object&lt;string, number&gt;} type application (optional .)
+        (?:
+          [\.|~]                             # {Foo.bar} namespaced, {string|number} multiple, {Foo~bar} class-specific callback
+          [a-zA-Z_$]+
+          (?:
+            [\w$]* |
+            \.?&lt;[\w$]+(?:,\s+[\w$]+)*&gt;    # {Array&lt;string&gt;} or {Object&lt;string, number&gt;} type application (optional .)
+          )
+        )*
       )
-    )*
+    )
+                                              # Check for suffix
+    (?:\[\])?                               # {string[]} type application, an array of strings
+    =?                                        # {string=} optional parameter
   )
-                                             # Check for suffix
-  (?:\[\])?                                  # {string[]} type application, an array of strings
-  =?                                         # {string=} optional parameter
 )})
+
 \s+
+
 (?:-\s+)?                                    # optional hyphen before the description
-((?:(?!\*\/).)*)                             # The type description</string>
+
+((?:(?!\*\/).)*)                            # The type description</string>
             <key>captures</key>
             <dict>
               <key>0</key>
@@ -5185,8 +5749,6 @@
       </dict>
       <key>jsx-tag-attribute-name</key>
       <dict>
-        <key>name</key>
-        <string>meta.tag.attribute-name.tsx</string>
         <key>match</key>
         <string>(?x)
   \s*
@@ -5211,7 +5773,7 @@
       <key>jsx-string-double-quoted</key>
       <dict>
         <key>name</key>
-        <string>string.jsxAttributeValue.quoted.double.tsx</string>
+        <string>string.quoted.double.tsx</string>
         <key>begin</key>
         <string>"</string>
         <key>end</key>
@@ -5221,7 +5783,7 @@
           <key>0</key>
           <dict>
             <key>name</key>
-            <string>punctuation.definition.string.jsxAttributeValue.begin.tsx</string>
+            <string>punctuation.definition.string.begin.tsx</string>
           </dict>
         </dict>
         <key>endCaptures</key>
@@ -5229,21 +5791,21 @@
           <key>0</key>
           <dict>
             <key>name</key>
-            <string>punctuation.definition.string.jsxAttributeValue.end.tsx</string>
+            <string>punctuation.definition.string.end.tsx</string>
           </dict>
         </dict>
         <key>patterns</key>
         <array>
           <dict>
             <key>include</key>
-            <string>#jsx-attributeValue-entities</string>
+            <string>#jsx-entities</string>
           </dict>
         </array>
       </dict>
       <key>jsx-string-single-quoted</key>
       <dict>
         <key>name</key>
-        <string>string.jsxAttributeValue.quoted.single.tsx</string>
+        <string>string.quoted.single.tsx</string>
         <key>begin</key>
         <string>'</string>
         <key>end</key>
@@ -5253,7 +5815,7 @@
           <key>0</key>
           <dict>
             <key>name</key>
-            <string>punctuation.definition.string.jsxAttributeValue.begin.tsx</string>
+            <string>punctuation.definition.string.begin.tsx</string>
           </dict>
         </dict>
         <key>endCaptures</key>
@@ -5261,14 +5823,14 @@
           <key>0</key>
           <dict>
             <key>name</key>
-            <string>punctuation.definition.string.jsxAttributeValue.end.tsx</string>
+            <string>punctuation.definition.string.end.tsx</string>
           </dict>
         </dict>
         <key>patterns</key>
         <array>
           <dict>
             <key>include</key>
-            <string>#jsx-attributeValue-entities</string>
+            <string>#jsx-entities</string>
           </dict>
         </array>
       </dict>
@@ -5303,45 +5865,14 @@
           </dict>
         </array>
       </dict>
-      <key>jsx-attributeValue-entities</key>
-      <dict>
-        <key>patterns</key>
-        <array>
-          <dict>
-            <key>name</key>
-            <string>constant.character.entity.jsxAttributeValue.tsx</string>
-            <key>match</key>
-            <string>(&amp;)([a-zA-Z0-9]+|#[0-9]+|#x[0-9a-fA-F]+)(;)</string>
-            <key>captures</key>
-            <dict>
-              <key>1</key>
-              <dict>
-                <key>name</key>
-                <string>punctuation.definition.entity.jsxAttributeValue.tsx</string>
-              </dict>
-              <key>3</key>
-              <dict>
-                <key>name</key>
-                <string>punctuation.definition.entity.jsxAttributeValue.tsx</string>
-              </dict>
-            </dict>
-          </dict>
-          <dict>
-            <key>name</key>
-            <string>invalid.illegal.bad-ampersand.jsxAttributeValue.tsx</string>
-            <key>match</key>
-            <string>&amp;</string>
-          </dict>
-        </array>
-      </dict>
       <key>jsx-evaluated-code</key>
       <dict>
         <key>name</key>
         <string>meta.embedded.expression.tsx</string>
         <key>begin</key>
-        <string>{</string>
+        <string>\{</string>
         <key>end</key>
-        <string>}</string>
+        <string>\}</string>
         <key>beginCaptures</key>
         <dict>
           <key>0</key>
@@ -5431,7 +5962,7 @@
       <dict>
         <key>begin</key>
         <string>(?x)
-  (?&lt;=[({\[,?=&gt;]|&amp;&amp;|\|\||\?|\Wreturn|^return|\Wdefault|^)\s*
+  (?&lt;=[({\[,?=&gt;:*]|&amp;&amp;|\|\||\?|\Wreturn|^return|\Wdefault|^)\s*
   (?!(&lt;)\s*([_$a-zA-Z][-$\w.]*(?&lt;!\.|-))\s*(&gt;)) #look ahead is not start of tag without attributes
   (?!&lt;\s*[_$[:alpha:]][_$[:alnum:]]*((\s+extends\s+[^=&gt;])|,)) # look ahead is not type parameter of arrow
   (?=(&lt;)\s*
