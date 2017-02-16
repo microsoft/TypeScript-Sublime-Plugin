@@ -120,7 +120,7 @@ Screenshots
 
 - Rename
 
-![](https://raw.githubusercontent.com/Microsoft/TypeScript-Sublime-Plugin/master/screenshots/build_tsconfig.gif)
+![](https://raw.githubusercontent.com/Microsoft/TypeScript-Sublime-Plugin/master/screenshots/rename.gif)
 
 - Find all references
 
