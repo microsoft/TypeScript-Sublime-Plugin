@@ -22,8 +22,6 @@ class CommClient(object):
 
     def started(self): pass
 
-    def getEvent(self): pass
-
     def postCmd(self, cmd): pass
 
     def sendCmd(self, cmd, cb): pass
@@ -32,9 +30,12 @@ class CommClient(object):
 
     def sendCmdAsync(self, cmd, cb): pass
 
+    def startServer(self): pass
+
 
 class NodeCommClient(CommClient):
     __CONTENT_LENGTH_HEADER = b"Content-Length: "
+    restart_server_trial_count = 0
 
     def __init__(self, script_path):
         self.server_proc = None
@@ -45,7 +46,6 @@ class NodeCommClient(CommClient):
 
         # create response and event queues
         self.msgq = queue.Queue()
-        self.eventq = queue.Queue()
         self.postq = queue.Queue()
         self.asyncReq = {}
 
@@ -154,30 +154,38 @@ class NodeCommClient(CommClient):
         Post command to server; no response needed
         """
         log.debug('Posting command: {0}'.format(cmd))
-        if not self.server_proc:
-            log.error("can not send request; node process not running")
-            return False
+        if (not self.server_proc) or (self.server_proc.poll()):
+            if self.startServer is None:
+                log.error("Failed to start the server.")
+                return False
+
+            while self.restart_server_trial_count < 5 and self.server_proc.poll():
+                self.restart_server_trial_count += 1
+                log.error("node process not running; try restarting server trial " + str(self.restart_server_trial_count))
+                self.startServer()
+
+            if self.server_proc.poll():
+                log.error("Failed to start the server after 5 tries.")
+                return False
+
+            self.restart_server_trial_count = 0
+
+        log.error(cmd)
         self.postq.put_nowait(cmd)
         return True
 
-    def getEvent(self):
-        """
-        Try to get event from event queue
-        """
-        try:
-            ev = self.eventq.get(False)
-        except:
-            return None
-        return ev
-
     @staticmethod
-    def read_msg(stream, msgq, eventq, asyncReq, proc, asyncEventHandlers):
+    def read_msg(stream, msgq, asyncReq, proc, asyncEventHandlers):
         """
         Reader thread helper.
         Return True to indicate the wish to stop reading the next message.
         """
         state = "init"
         body_length = 0
+        # Check if the process was terminated
+        if proc.poll():
+            return True
+
         while state != "body":
             header = stream.readline().strip()
             if len(header) == 0:
@@ -197,6 +205,7 @@ class NodeCommClient(CommClient):
             log.debug('Read body of length: {0}'.format(body_length))
             data_json = data.decode("utf-8")
             data_dict = json_helpers.decode(data_json)
+            log.error("response: " + str(data_dict))
             if data_dict['type'] == "response":
                 request_seq = data_dict['request_seq']
                 log.debug('Body sequence#: {0}'.format(request_seq))
@@ -213,8 +222,6 @@ class NodeCommClient(CommClient):
                     for cb in asyncEventHandlers[event_name]:
                         # Run <cb> asynchronously to keep read_msg as small as possible
                         sublime.set_timeout(lambda: cb(data_dict), 0)
-                else:
-                    eventq.put(data_json)
         else:
             log.info('Body length of 0 in server stream')
 
@@ -250,7 +257,10 @@ class ServerClient(NodeCommClient):
         The script file to run is passed to the constructor.
         """
         super(ServerClient, self).__init__(script_path)
+        self.script_path = script_path
+        self.startServer()
 
+    def startServer(self):
         # start node process
         pref_settings = sublime.load_settings('Preferences.sublime-settings')
         node_path = pref_settings.get('node_path')
@@ -281,29 +291,30 @@ class ServerClient(NodeCommClient):
                     # so only use it if on Windows
                     si = subprocess.STARTUPINFO()
                     si.dwFlags |= subprocess.SW_HIDE | subprocess.STARTF_USESHOWWINDOW
-                    self.server_proc = subprocess.Popen([node_path, script_path],
+                    self.server_proc = subprocess.Popen([node_path, self.script_path],
                                                          stdin=subprocess.PIPE, stdout=subprocess.PIPE, startupinfo=si, bufsize=-1)
                 else:
-                    log.debug("opening " + node_path + " " + script_path)
-                    self.server_proc = subprocess.Popen([node_path, script_path],
+                    log.debug("opening " + node_path + " " + self.script_path)
+                    self.server_proc = subprocess.Popen([node_path, self.script_path],
                                                          stdin=subprocess.PIPE, stdout=subprocess.PIPE, bufsize=-1)
             except:
                 self.server_proc = None
+
         # start reader thread
         if self.server_proc and (not self.server_proc.poll()):
             log.debug("server proc " + str(self.server_proc))
-            log.debug("starting reader thread")
+            log.error("starting reader thread")
             readerThread = threading.Thread(target=ServerClient.__reader, args=(
-                self.server_proc.stdout, self.msgq, self.eventq, self.asyncReq, self.server_proc, self.event_handlers))
+                self.server_proc.stdout, self.msgq, self.asyncReq, self.server_proc, self.event_handlers))
             readerThread.daemon = True
             readerThread.start()
 
     @staticmethod
-    def __reader(stream, msgq, eventq, asyncReq, proc, eventHandlers):
+    def __reader(stream, msgq, asyncReq, proc, eventHandlers):
         """ Main function for reader thread """
         while True:
-            if NodeCommClient.read_msg(stream, msgq, eventq, asyncReq, proc, eventHandlers):
-                log.debug("server exited")
+            if NodeCommClient.read_msg(stream, msgq, asyncReq, proc, eventHandlers):
+                log.error("server exited")
                 return
 
 
@@ -332,7 +343,7 @@ class WorkerClient(NodeCommClient):
             log.debug("worker proc " + str(self.server_proc))
             log.debug("starting worker thread")
             workerThread = threading.Thread(target=WorkerClient.__reader, args=(
-                self.server_proc.stdout, self.msgq, self.eventq, self.asyncReq, self.server_proc, self.event_handlers))
+                self.server_proc.stdout, self.msgq, self.asyncReq, self.server_proc, self.event_handlers))
             workerThread.daemon = True
             workerThread.start()
 
@@ -342,9 +353,9 @@ class WorkerClient(NodeCommClient):
         self.server_proc = None
 
     @staticmethod
-    def __reader(stream, msgq, eventq, asyncReq, proc, eventHandlers):
+    def __reader(stream, msgq, asyncReq, proc, eventHandlers):
         """ Main function for worker thread """
         while True:
-            if NodeCommClient.read_msg(stream, msgq, eventq, asyncReq, proc, eventHandlers) or WorkerClient.stop_worker:
+            if NodeCommClient.read_msg(stream, msgq, asyncReq, proc, eventHandlers) or WorkerClient.stop_worker:
                 log.debug("worker exited")
                 return
