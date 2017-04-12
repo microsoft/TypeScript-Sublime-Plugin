@@ -225,14 +225,6 @@ class ServiceProxy:
                 req_dict["seq"]
             )
 
-    def get_event(self):
-        event_json_str = self.__comm.getEvent()
-        return json_helpers.decode(event_json_str) if event_json_str is not None else None
-
-    def get_event_from_worker(self):
-        event_json_str = self.__worker_comm.getEvent()
-        return json_helpers.decode(event_json_str) if event_json_str is not None else None
-
     def save_to(self, path, alternatePath):
         args = {"file": path, "tmpfile": alternatePath}
         req_dict = self.create_req_dict("saveto", args)
