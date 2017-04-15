@@ -75,8 +75,6 @@ class IdleListener:
         info = get_info(view)
         if info:
             self.update_status(view, info)
-            if not IS_ST2 and view.settings().get('typescript_highlight_occurrences', 'true'):
-                self.request_document_highlights(view, info)
 
     def request_errors(self, view, info, error_delay):
         """
