@@ -4883,7 +4883,7 @@
                 <key>name</key>
                 <string>constant.other.character-class.range.regexp</string>
                 <key>match</key>
-                <string>(?:.|(\\(?:[0-7]{3}|x\h\h|u\h\h\h\h))|(\\c[A-Z])|(\\.))\-(?:[^\]\\]|(\\(?:[0-7]{3}|x\h\h|u\h\h\h\h))|(\\c[A-Z])|(\\.))</string>
+                <string>(?:.|(\\(?:[0-7]{3}|x[0-9A-Fa-f]{2}|u[0-9A-Fa-f]{4}))|(\\c[A-Z])|(\\.))\-(?:[^\]\\]|(\\(?:[0-7]{3}|x[0-9A-Fa-f]{2}|u[0-9A-Fa-f]{4}))|(\\c[A-Z])|(\\.))</string>
                 <key>captures</key>
                 <dict>
                   <key>1</key>
@@ -4944,7 +4944,7 @@
             <key>name</key>
             <string>constant.character.numeric.regexp</string>
             <key>match</key>
-            <string>\\([0-7]{3}|x\h\h|u\h\h\h\h)</string>
+            <string>\\([0-7]{3}|x[0-9A-Fa-f]{2}|u[0-9A-Fa-f]{4})</string>
           </dict>
           <dict>
             <key>name</key>
@@ -5020,7 +5020,7 @@
         <key>name</key>
         <string>constant.character.escape.tsx</string>
         <key>match</key>
-        <string>\\(x\h{2}|[0-2][0-7]{0,2}|3[0-6][0-7]?|37[0-7]?|[4-7][0-7]?|.|$)</string>
+        <string>\\(x[0-9A-Fa-f]{2}|[0-2][0-7]{0,2}|3[0-6][0-7]?|37[0-7]?|[4-7][0-7]?|.|$)</string>
       </dict>
       <key>template-substitution-element</key>
       <dict>
