@@ -1,4 +1,5 @@
-﻿from .reference import RefInfo
+import subprocess
+from .reference import RefInfo
 from .node_client import ServerClient, WorkerClient
 from .service_proxy import ServiceProxy
 from .global_vars import *
@@ -51,13 +52,25 @@ class EditorClient:
         # first see if user set the path to the file
         settings = sublime.load_settings("Preferences.sublime-settings")
         tsdk_location = settings.get("typescript_tsdk")
-        if tsdk_location:
-            proc_file = os.path.join(tsdk_location, "tsserver.js")
-            global_vars._tsc_path = os.path.join(tsdk_location, "tsc.js")
-        else:
-            # otherwise, get tsserver.js from package directory
-            proc_file = os.path.join(PLUGIN_DIR, "tsserver", "tsserver.js")
-            global_vars._tsc_path = os.path.join(PLUGIN_DIR, "tsserver", "tsc.js")
+        global_tsdk = False
+        if tsdk_location == "global":
+            try:
+                output = subprocess.check_output("npm config get prefix", shell=True)
+                npm_path = output.decode().rstrip()
+                tsdk_location = os.path.join(npm_path, "node_modules", "typescript", "lib")
+                proc_file = os.path.join(tsdk_location, "tsserver.js")
+                global_vars._tsc_path = os.path.join(tsdk_location, "tsc.js")
+                global_tsdk = True
+            except subprocess.CalledProcessError:
+                pass
+        if global_tsdk == False:
+            if tsdk_location:
+                proc_file = os.path.join(tsdk_location, "tsserver.js")
+                global_vars._tsc_path = os.path.join(tsdk_location, "tsc.js")
+            else:
+                # otherwise, get tsserver.js from package directory
+                proc_file = os.path.join(PLUGIN_DIR, "tsserver", "tsserver.js")
+                global_vars._tsc_path = os.path.join(PLUGIN_DIR, "tsserver", "tsc.js")
         print("Path of tsserver.js: " + proc_file)
         print("Path of tsc.js: " + get_tsc_path())
 
