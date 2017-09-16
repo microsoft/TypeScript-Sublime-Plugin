@@ -4,7 +4,7 @@
         "command": "typescript_paste_and_format",
         "context": [
             { "key": "setting.typescript_auto_format", "operator": "equal", "operand": true },
-            { "key": "selector", "operator": "equal", "operand": "source.ts, source.tsx" },
+            { "key": "selector", "operator": "equal", "operand": "source.ts, source.tsx, source.js, source.jsx" },
             { "key": "setting.enable_typescript_language_service", "operator": "equal", "operand": true }
         ]
     }
