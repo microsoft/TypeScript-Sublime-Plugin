@@ -39,6 +39,7 @@ class EditorClient:
         self.ts_auto_format_enabled = True
         self.ts_auto_indent_enabled = True
         self.auto_match_enabled = True
+        self.enable_language_service_for_js = True
 
     def initialize(self):
         """
@@ -65,6 +66,9 @@ class EditorClient:
         self.worker_client = WorkerClient(proc_file)
         self.service = ServiceProxy(self.worker_client, self.node_client)
 
+        settings.add_on_change("enable_language_service_for_javascript", self.load_language_service_setting_for_js)
+        self.load_language_service_setting_for_js()
+
         # load formatting settings and set callbacks for setting changes
         for setting_name in [
             'tab_size',
@@ -78,6 +82,10 @@ class EditorClient:
         self.load_format_settings()
 
         self.initialized = True
+
+    def load_language_service_setting_for_js(self):
+        settings = sublime.load_settings('Preferences.sublime-settings')
+        self.enable_language_service_for_js = settings.get("enable_language_service_for_javascript", True)
 
     def load_format_settings(self):
         settings = sublime.load_settings('Preferences.sublime-settings')
