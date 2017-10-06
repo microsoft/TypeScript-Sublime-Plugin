@@ -18,11 +18,10 @@ and limitations under the License.
 /// <reference no-default-lib="true"/>
 
 
-
 interface PromiseConstructor {
     /**
-      * A reference to the prototype.
-      */
+     * A reference to the prototype.
+     */
     readonly prototype: Promise<any>;
 
     /**
@@ -208,10 +207,10 @@ interface PromiseConstructor {
     reject<T>(reason: any): Promise<T>;
 
     /**
-      * Creates a new resolved promise for the provided value.
-      * @param value A promise.
-      * @returns A promise whose internal state matches the provided promise.
-      */
+     * Creates a new resolved promise for the provided value.
+     * @param value A promise.
+     * @returns A promise whose internal state matches the provided promise.
+     */
     resolve<T>(value: T | PromiseLike<T>): Promise<T>;
 
     /**
