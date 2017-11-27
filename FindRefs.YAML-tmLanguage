@@ -9,7 +9,7 @@ patterns:
   - include: '#footer'
   - include: '#reference'
   - include: '#line-with-match'
-  
+
 repository:
   filename:
     match: ^([^ ].*:)$
@@ -39,7 +39,7 @@ repository:
   # is for single-line referenes into TypeScript files)
   var-expr:
     name: meta.var.expr.ts
-    begin: (?<!\()\s*\b(var|let|const(?!\s+enum))\s+([a-zA-Z_$][\w$]*) 
+    begin: (?<!\()\s*\b(var|let|const(?!\s+enum))\s+([a-zA-Z_$][\w$]*)
     beginCaptures:
       '1': { name: storage.type.ts }
       '2': { name: variable.ts }
@@ -51,12 +51,12 @@ repository:
     name: keyword.control.ts
     match: \b(break|catch|continue|declare|do|else|finally|for|if|return|switch|throw|try|while)\b
 
-  switch-case: 
+  switch-case:
     name: case.expr.ts
     begin: '\b(case|default)\b'
     beginCaptures:
       '1': { name: keyword.control.ts }
-    end: ':'  
+    end: ':'
     patterns:
     - include: '#expression'
 
@@ -107,7 +107,7 @@ repository:
     match: (?:\b(extends|implements)\b|,)(?:\s+([a-zA-Z_$][.\w$]*))
     captures:
        '1': { name: storage.modifier.ts }
-       '2': { name: storage.type.ts } 
+       '2': { name: storage.type.ts }
 
   object-body:
     name: meta.object.body.ts
@@ -186,7 +186,7 @@ repository:
     match: ([a-zA-Z_$][\w$]*)(?=\:)
     captures:
       '1': { name: variable.parameter.ts}
-      
+
   function-declaration:
     name: meta.function.ts
     begin: \b(function)\b(?:\s+([a-zA-Z_$][\w$]*))?\s*
@@ -295,7 +295,7 @@ repository:
   type-parameters:
     name: meta.type.parameters.ts
     begin: '<'
-    end: '$|(?=var|type|function|class|interface)|>'  
+    end: '$|(?=var|type|function|class|interface)|>'
     patterns:
     - name: keyword.other.ts
       match: '\b(extends)\b'
@@ -308,7 +308,7 @@ repository:
       '1': { name: keyword.operator.ts }
     end: $|(?=[,);=])
     patterns:
-      - include: '#expression'  
+      - include: '#expression'
 
   expression:
     name: meta.expression.ts
@@ -347,14 +347,14 @@ repository:
     captures:
        '1': { name: storage.type.ts }
        '2': { name: storage.type.ts }
-  
+
   new-expr:
     name: new.expr.ts
     match: '\b(new)\b\s*([a-zA-Z_$][.\w$]*)'
     captures:
        '1': { name: keyword.operator.ts }
        '2': { name: storage.type.ts }
-     
+
   # TODO: object members with quoted or numric lhs
   object-member:
     name: meta.object.member.ts
@@ -373,15 +373,15 @@ repository:
 
   relational-operator:
     name: keyword.operator.ts
-    match: ===|==|=|!=|!==|<=|>=|<>|<|>
+    match: ===|!==|==|!=|<=|>=|<>|=|<|>
 
   assignment-operator:
     name: keyword.operator.ts
-    match: <<=|>>=|>>>=|\*=|(?<!\()/=|%=|\+=|\-=|&=|\^=
+    match: <<=|>>>=|>>=|\*=|(?<!\()/=|%=|\+=|\-=|&=|\^=
 
   logic-operator:
     name: keyword.operator.ts
-    match: \!|&|~|\||&&|\|\|
+    match: \!|&&|&|~|\|\||\|
 
   storage-keyword:
     name: storage.type.ts
@@ -503,7 +503,7 @@ repository:
     - include: '#expression'
 
   numeric-literal:
-    name: constant.numeric.ts 
+    name: constant.numeric.ts
     match: \b((0(x|X)[0-9a-fA-F]+)|([0-9]+(\.[0-9]+)?))\b
 
   boolean-literal:
@@ -521,7 +521,7 @@ repository:
   access-modifier:
     name: storage.modifier.ts
     match: \b(public|protected|private)\b
-    
+
   static-modifier:
     name: keyword.other.ts
     match: \b(static)\b
@@ -529,8 +529,3 @@ repository:
   property-accessor:
     name: storage.type.property.ts
     match: \b(get|set)\b
-
-
-
-    
-  
