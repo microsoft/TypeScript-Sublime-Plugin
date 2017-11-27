@@ -313,46 +313,49 @@ declare namespace ts {
         JsxSelfClosingElement = 250,
         JsxOpeningElement = 251,
         JsxClosingElement = 252,
-        JsxAttribute = 253,
-        JsxAttributes = 254,
-        JsxSpreadAttribute = 255,
-        JsxExpression = 256,
-        CaseClause = 257,
-        DefaultClause = 258,
-        HeritageClause = 259,
-        CatchClause = 260,
-        PropertyAssignment = 261,
-        ShorthandPropertyAssignment = 262,
-        SpreadAssignment = 263,
-        EnumMember = 264,
-        SourceFile = 265,
-        Bundle = 266,
-        JSDocTypeExpression = 267,
-        JSDocAllType = 268,
-        JSDocUnknownType = 269,
-        JSDocNullableType = 270,
-        JSDocNonNullableType = 271,
-        JSDocOptionalType = 272,
-        JSDocFunctionType = 273,
-        JSDocVariadicType = 274,
-        JSDocComment = 275,
-        JSDocTag = 276,
-        JSDocAugmentsTag = 277,
-        JSDocClassTag = 278,
-        JSDocParameterTag = 279,
-        JSDocReturnTag = 280,
-        JSDocTypeTag = 281,
-        JSDocTemplateTag = 282,
-        JSDocTypedefTag = 283,
-        JSDocPropertyTag = 284,
-        JSDocTypeLiteral = 285,
-        SyntaxList = 286,
-        NotEmittedStatement = 287,
-        PartiallyEmittedExpression = 288,
-        CommaListExpression = 289,
-        MergeDeclarationMarker = 290,
-        EndOfDeclarationMarker = 291,
-        Count = 292,
+        JsxFragment = 253,
+        JsxOpeningFragment = 254,
+        JsxClosingFragment = 255,
+        JsxAttribute = 256,
+        JsxAttributes = 257,
+        JsxSpreadAttribute = 258,
+        JsxExpression = 259,
+        CaseClause = 260,
+        DefaultClause = 261,
+        HeritageClause = 262,
+        CatchClause = 263,
+        PropertyAssignment = 264,
+        ShorthandPropertyAssignment = 265,
+        SpreadAssignment = 266,
+        EnumMember = 267,
+        SourceFile = 268,
+        Bundle = 269,
+        JSDocTypeExpression = 270,
+        JSDocAllType = 271,
+        JSDocUnknownType = 272,
+        JSDocNullableType = 273,
+        JSDocNonNullableType = 274,
+        JSDocOptionalType = 275,
+        JSDocFunctionType = 276,
+        JSDocVariadicType = 277,
+        JSDocComment = 278,
+        JSDocTag = 279,
+        JSDocAugmentsTag = 280,
+        JSDocClassTag = 281,
+        JSDocParameterTag = 282,
+        JSDocReturnTag = 283,
+        JSDocTypeTag = 284,
+        JSDocTemplateTag = 285,
+        JSDocTypedefTag = 286,
+        JSDocPropertyTag = 287,
+        JSDocTypeLiteral = 288,
+        SyntaxList = 289,
+        NotEmittedStatement = 290,
+        PartiallyEmittedExpression = 291,
+        CommaListExpression = 292,
+        MergeDeclarationMarker = 293,
+        EndOfDeclarationMarker = 294,
+        Count = 295,
         FirstAssignment = 58,
         LastAssignment = 70,
         FirstCompoundAssignment = 59,
@@ -378,10 +381,10 @@ declare namespace ts {
         FirstBinaryOperator = 27,
         LastBinaryOperator = 70,
         FirstNode = 143,
-        FirstJSDocNode = 267,
-        LastJSDocNode = 285,
-        FirstJSDocTagNode = 276,
-        LastJSDocTagNode = 285,
+        FirstJSDocNode = 270,
+        LastJSDocNode = 288,
+        FirstJSDocTagNode = 279,
+        LastJSDocTagNode = 288,
     }
     enum NodeFlags {
         None = 0,
@@ -1061,6 +1064,20 @@ declare namespace ts {
         tagName: JsxTagNameExpression;
         attributes: JsxAttributes;
     }
+    interface JsxFragment extends PrimaryExpression {
+        kind: SyntaxKind.JsxFragment;
+        openingFragment: JsxOpeningFragment;
+        children: NodeArray<JsxChild>;
+        closingFragment: JsxClosingFragment;
+    }
+    interface JsxOpeningFragment extends Expression {
+        kind: SyntaxKind.JsxOpeningFragment;
+        parent?: JsxFragment;
+    }
+    interface JsxClosingFragment extends Expression {
+        kind: SyntaxKind.JsxClosingFragment;
+        parent?: JsxFragment;
+    }
     interface JsxAttribute extends ObjectLiteralElement {
         kind: SyntaxKind.JsxAttribute;
         parent?: JsxAttributes;
@@ -1088,7 +1105,7 @@ declare namespace ts {
         containsOnlyWhiteSpaces: boolean;
         parent?: JsxElement;
     }
-    type JsxChild = JsxText | JsxExpression | JsxElement | JsxSelfClosingElement;
+    type JsxChild = JsxText | JsxExpression | JsxElement | JsxSelfClosingElement | JsxFragment;
     interface Statement extends Node {
         _statementBrand: any;
     }
@@ -3001,6 +3018,9 @@ declare namespace ts {
     function isJsxSelfClosingElement(node: Node): node is JsxSelfClosingElement;
     function isJsxOpeningElement(node: Node): node is JsxOpeningElement;
     function isJsxClosingElement(node: Node): node is JsxClosingElement;
+    function isJsxFragment(node: Node): node is JsxFragment;
+    function isJsxOpeningFragment(node: Node): node is JsxOpeningFragment;
+    function isJsxClosingFragment(node: Node): node is JsxClosingFragment;
     function isJsxAttribute(node: Node): node is JsxAttribute;
     function isJsxAttributes(node: Node): node is JsxAttributes;
     function isJsxSpreadAttribute(node: Node): node is JsxSpreadAttribute;
@@ -3500,6 +3520,8 @@ declare namespace ts {
     function updateJsxOpeningElement(node: JsxOpeningElement, tagName: JsxTagNameExpression, attributes: JsxAttributes): JsxOpeningElement;
     function createJsxClosingElement(tagName: JsxTagNameExpression): JsxClosingElement;
     function updateJsxClosingElement(node: JsxClosingElement, tagName: JsxTagNameExpression): JsxClosingElement;
+    function createJsxFragment(openingFragment: JsxOpeningFragment, children: ReadonlyArray<JsxChild>, closingFragment: JsxClosingFragment): JsxFragment;
+    function updateJsxFragment(node: JsxFragment, openingFragment: JsxOpeningFragment, children: ReadonlyArray<JsxChild>, closingFragment: JsxClosingFragment): JsxFragment;
     function createJsxAttribute(name: Identifier, initializer: StringLiteral | JsxExpression): JsxAttribute;
     function updateJsxAttribute(node: JsxAttribute, name: Identifier, initializer: StringLiteral | JsxExpression): JsxAttribute;
     function createJsxAttributes(properties: ReadonlyArray<JsxAttributeLike>): JsxAttributes;
@@ -3914,7 +3936,7 @@ declare namespace ts {
         getSemanticClassifications(fileName: string, span: TextSpan): ClassifiedSpan[];
         getEncodedSyntacticClassifications(fileName: string, span: TextSpan): Classifications;
         getEncodedSemanticClassifications(fileName: string, span: TextSpan): Classifications;
-        getCompletionsAtPosition(fileName: string, position: number): CompletionInfo;
+        getCompletionsAtPosition(fileName: string, position: number, options: GetCompletionsAtPositionOptions | undefined): CompletionInfo;
         getCompletionEntryDetails(fileName: string, position: number, name: string, options: FormatCodeOptions | FormatCodeSettings | undefined, source: string | undefined): CompletionEntryDetails;
         getCompletionEntrySymbol(fileName: string, position: number, name: string, source: string | undefined): Symbol;
         getQuickInfoAtPosition(fileName: string, position: number): QuickInfo;
@@ -3945,12 +3967,23 @@ declare namespace ts {
         isValidBraceCompletionAtPosition(fileName: string, position: number, openingBrace: number): boolean;
         getSpanOfEnclosingComment(fileName: string, position: number, onlyMultiLine: boolean): TextSpan;
         getCodeFixesAtPosition(fileName: string, start: number, end: number, errorCodes: number[], formatOptions: FormatCodeSettings): CodeAction[];
+        applyCodeActionCommand(action: CodeActionCommand): Promise<ApplyCodeActionCommandResult>;
+        applyCodeActionCommand(action: CodeActionCommand[]): Promise<ApplyCodeActionCommandResult[]>;
+        applyCodeActionCommand(action: CodeActionCommand | CodeActionCommand[]): Promise<ApplyCodeActionCommandResult | ApplyCodeActionCommandResult[]>;
+        /** @deprecated `fileName` will be ignored */
         applyCodeActionCommand(fileName: string, action: CodeActionCommand): Promise<ApplyCodeActionCommandResult>;
+        /** @deprecated `fileName` will be ignored */
+        applyCodeActionCommand(fileName: string, action: CodeActionCommand[]): Promise<ApplyCodeActionCommandResult[]>;
+        /** @deprecated `fileName` will be ignored */
+        applyCodeActionCommand(fileName: string, action: CodeActionCommand | CodeActionCommand[]): Promise<ApplyCodeActionCommandResult | ApplyCodeActionCommandResult[]>;
         getApplicableRefactors(fileName: string, positionOrRaneg: number | TextRange): ApplicableRefactorInfo[];
         getEditsForRefactor(fileName: string, formatOptions: FormatCodeSettings, positionOrRange: number | TextRange, refactorName: string, actionName: string): RefactorEditInfo | undefined;
         getEmitOutput(fileName: string, emitOnlyDtsFiles?: boolean): EmitOutput;
         getProgram(): Program;
         dispose(): void;
+    }
+    interface GetCompletionsAtPositionOptions {
+        includeExternalModuleExports: boolean;
     }
     interface ApplyCodeActionCommandResult {
         successMessage: string;
@@ -4598,7 +4631,7 @@ declare namespace ts {
 }
 declare namespace ts {
     /** The version of the language service API */
-    const servicesVersion = "0.6";
+    const servicesVersion = "0.7";
     interface DisplayPartsSymbolWriter extends SymbolWriter {
         displayParts(): SymbolDisplayPart[];
     }
@@ -5235,7 +5268,8 @@ declare namespace ts.server.protocol {
          */
         errorCodes?: number[];
     }
-    interface ApplyCodeActionCommandRequestArgs extends FileRequestArgs {
+    interface ApplyCodeActionCommandRequestArgs {
+        /** May also be an array of commands. */
         command: {};
     }
     /**
@@ -6015,6 +6049,11 @@ declare namespace ts.server.protocol {
          * Optional prefix to apply to possible completions.
          */
         prefix?: string;
+        /**
+         * If enabled, TypeScript will search through all external modules' exports and add them to the completions list.
+         * This affects lone identifier completions but not completions on the right hand side of `obj.`.
+         */
+        includeExternalModuleExports: boolean;
     }
     /**
      * Completions request; value of command field is "completions".
@@ -6961,7 +7000,7 @@ declare namespace ts.server {
         private getFormattingEditsAfterKeystrokeFull(args);
         private getFormattingEditsAfterKeystroke(args);
         private getCompletions(args, simplifiedResult);
-        private getCompletionEntryDetails(args);
+        private getCompletionEntryDetails(args, simplifiedResult);
         private getCompileOnSaveAffectedFileList(args);
         private emitFile(args);
         private getSignatureHelpItems(args, simplifiedResult);
@@ -7023,7 +7062,7 @@ declare namespace ts.server {
         constructor(host: ServerHost, fileName: NormalizedPath, scriptKind: ScriptKind, hasMixedContent: boolean, path: Path);
         isScriptOpen(): boolean;
         open(newText: string): void;
-        close(): void;
+        close(fileExists?: boolean): void;
         getSnapshot(): IScriptSnapshot;
         getFormatCodeSettings(): FormatCodeSettings;
         attachToProject(project: Project): boolean;
@@ -7391,7 +7430,9 @@ declare namespace ts.server {
     }
     interface TypesMapFile {
         typesMap: SafeList;
-        simpleMap: string[];
+        simpleMap: {
+            [libName: string]: string;
+        };
     }
     function convertFormatOptions(protocolOptions: protocol.FormatCodeSettings): FormatCodeSettings;
     function convertCompilerOptions(protocolOptions: protocol.ExternalProjectCompilerOptions): CompilerOptions & protocol.CompileOnSaveMixin;
@@ -7451,6 +7492,10 @@ declare namespace ts.server {
          * list of open files
          */
         readonly openFiles: ScriptInfo[];
+        /**
+         * Map of open files that are opened without complete path but have projectRoot as current directory
+         */
+        private readonly openFilesWithNonRootedDiskPath;
         private compilerOptionsForInferredProjects;
         private compilerOptionsForInferredProjectsPerProjectRoot;
         /**
@@ -7468,6 +7513,7 @@ declare namespace ts.server {
         private readonly throttledOperations;
         private readonly hostConfiguration;
         private safelist;
+        private legacySafelist;
         private changedFiles;
         private pendingProjectUpdates;
         private pendingInferredProjectUpdate;
@@ -7576,7 +7622,7 @@ declare namespace ts.server {
         private findExternalProjectByProjectName(projectFileName);
         private convertConfigFileContentToProjectOptions(configFilename, cachedDirectoryStructureHost);
         private exceededTotalSizeLimitForNonTsFiles<T>(name, options, fileNames, propertyReader);
-        private createExternalProject(projectFileName, files, options, typeAcquisition);
+        private createExternalProject(projectFileName, files, options, typeAcquisition, excludedFiles);
         private sendProjectTelemetry(projectKey, project, projectOptions?);
         private addFilesToNonInferredProjectAndUpdateGraph<T>(project, files, propertyReader, typeAcquisition);
         private createConfiguredProject(configFileName);
@@ -7590,6 +7636,10 @@ declare namespace ts.server {
         private watchClosedScriptInfo(info);
         private stopWatchingScriptInfo(info);
         getOrCreateScriptInfoForNormalizedPath(fileName: NormalizedPath, openedByClient: boolean, fileContent?: string, scriptKind?: ScriptKind, hasMixedContent?: boolean, hostToQueryFileExistsOn?: DirectoryStructureHost): ScriptInfo;
+        private getOrCreateScriptInfoWorker(fileName, currentDirectory, openedByClient, fileContent?, scriptKind?, hasMixedContent?, hostToQueryFileExistsOn?);
+        /**
+         * This gets the script info for the normalized path. If the path is not rooted disk path then the open script info with project root context is preferred
+         */
         getScriptInfoForNormalizedPath(fileName: NormalizedPath): ScriptInfo;
         getScriptInfoForPath(fileName: Path): ScriptInfo;
         setHostConfiguration(args: protocol.ConfigureRequestArguments): void;
