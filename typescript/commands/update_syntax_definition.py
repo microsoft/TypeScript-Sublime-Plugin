@@ -23,7 +23,7 @@ class TypescriptUpdateSyntaxDefinitionCommand(TypeScriptBaseWindowCommand):
                 current_ts_syntax_file.close()
 
                 current_tsx_syntax_file = open(current_tsx_file, "wb")
-                current_tsx_syntax_file.write(urllib.request.urlopen(new_ts_url).read())
+                current_tsx_syntax_file.write(urllib.request.urlopen(new_tsx_url).read())
                 current_tsx_syntax_file.close()
         except Exception as err:
             sublime.error_message("Error: {0}".format(err))
