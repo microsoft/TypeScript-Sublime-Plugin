@@ -3,27 +3,29 @@ import urllib
 from ..libs.reference import *
 from .base_command import TypeScriptBaseWindowCommand
 
+BASE_URL = "https://raw.githubusercontent.com/Microsoft/TypeScript-TmLanguage/master/"
+TS_TMLANGUAGE_URL = BASE_URL + "TypeScript.tmLanguage"
+TSX_TMLANGUAGE_URL = BASE_URL + "TypeScriptReact.tmLanguage"
+
+TS_TMLANGUAGE_PATH = os.path.join(PLUGIN_DIR, "TypeScript.tmLanguage")
+TSX_TMLANGUAGE_PATH = os.path.join(PLUGIN_DIR, "TypeScriptReact.tmLanguage")
+
 class TypescriptUpdateSyntaxDefinitionsCommand(TypeScriptBaseWindowCommand):
 
     def run(self):
-        base_url = "https://raw.githubusercontent.com/Microsoft/TypeScript-TmLanguage/master/"
-        new_ts_url = base_url + "TypeScript.tmLanguage"
-        new_tsx_url = base_url + "TypeScriptReact.tmLanguage"
-        current_ts_file = PLUGIN_DIR + "/TypeScript.tmLanguage"
-        current_tsx_file = PLUGIN_DIR + "/TypeScriptReact.tmLanguage"
-
         try:
             if IS_ST2:
-                urllib.urlretrieve(new_ts_url, current_ts_file)
-                urllib.urlretrieve(new_tsx_url, current_tsx_file)
+                urllib.urlretrieve(TS_TMLANGUAGE_URL, TS_TMLANGUAGE_PATH)
+                urllib.urlretrieve(TSX_TMLANGUAGE_URL, TSX_TMLANGUAGE_PATH)
             else:
-                with open(current_ts_file, "wb") as current_ts_syntax_file:
-                    current_ts_syntax_file.write(urllib.request.urlopen(new_ts_url).read())
+                with open(TS_TMLANGUAGE_PATH, "wb") as ts_syntax_file:
+                    ts_syntax_file.write(urllib.request.urlopen(TS_TMLANGUAGE_URL).read())
 
-                with open(current_tsx_file, "wb") as current_tsx_syntax_file:
-                    current_tsx_syntax_file.write(urllib.request.urlopen(new_tsx_url).read())
+                with open(TSX_TMLANGUAGE_PATH, "wb") as tsx_syntax_file:
+                    tsx_syntax_file.write(urllib.request.urlopen(TSX_TMLANGUAGE_URL).read())
+
+            sublime.message_dialog("TypeScript syntax files have been successfully updated!\nReload Sublime Text for changes to take effect.")
+
         except Exception as err:
             sublime.error_message("Error: {0}".format(err))
-            return
 
-        sublime.message_dialog("TypeScript syntax files are updated successfully!")
