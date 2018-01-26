@@ -1,10 +1,9 @@
-from ..libs.view_helpers import *
+import urllib
+
 from ..libs.reference import *
 from .base_command import TypeScriptBaseWindowCommand
 
-import urllib
-
-class TypescriptUpdateSyntaxDefinitionCommand(TypeScriptBaseWindowCommand):
+class TypescriptUpdateSyntaxDefinitionsCommand(TypeScriptBaseWindowCommand):
 
     def run(self):
         base_url = "https://raw.githubusercontent.com/Microsoft/TypeScript-TmLanguage/master/"
@@ -28,4 +27,3 @@ class TypescriptUpdateSyntaxDefinitionCommand(TypeScriptBaseWindowCommand):
             return
 
         sublime.message_dialog("TypeScript syntax files are updated successfully!")
-        
