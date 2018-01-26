@@ -18,13 +18,11 @@ class TypescriptUpdateSyntaxDefinitionCommand(TypeScriptBaseWindowCommand):
                 urllib.urlretrieve(new_ts_url, current_ts_file)
                 urllib.urlretrieve(new_tsx_url, current_tsx_file)
             else:
-                current_ts_syntax_file = open(current_ts_file, "wb")
-                current_ts_syntax_file.write(urllib.request.urlopen(new_ts_url).read())
-                current_ts_syntax_file.close()
+                with open(current_ts_file, "wb") as current_ts_syntax_file:
+                    current_ts_syntax_file.write(urllib.request.urlopen(new_ts_url).read())
 
-                current_tsx_syntax_file = open(current_tsx_file, "wb")
-                current_tsx_syntax_file.write(urllib.request.urlopen(new_tsx_url).read())
-                current_tsx_syntax_file.close()
+                with open(current_tsx_file, "wb") as current_tsx_syntax_file:
+                    current_tsx_syntax_file.write(urllib.request.urlopen(new_tsx_url).read())
         except Exception as err:
             sublime.error_message("Error: {0}".format(err))
             return
