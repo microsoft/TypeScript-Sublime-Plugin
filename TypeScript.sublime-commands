@@ -1,5 +1,6 @@
 [
  { "caption" : "TypeScript: GoTo Definition", "command": "typescript_go_to_definition" },
+ { "caption" : "TypeScript: GoTo Type Definition", "command": "typescript_go_to_type_definition" },
  { "caption" : "TypeScript: Quick Info Documentation", "command": "typescript_quick_info_doc" },
  { "caption" : "TypeScript: Overloads Panel", "command": "typescript_signature_panel" },
  { "caption" : "TypeScript: Save Tmp", "command": "typescript_save" },

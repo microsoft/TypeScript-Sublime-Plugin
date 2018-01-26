@@ -1,5 +1,6 @@
 ﻿from .error_list import TypescriptProjectErrorList, TypescriptGoToError
 from .go_to_definition import TypescriptGoToDefinitionCommand
+from .go_to_type_definition import TypescriptGoToTypeDefinitionCommand
 from .go_to_type import TypescriptGoToTypeCommand
 from .nav_to import TypescriptNavToCommand
 from .quick_info import TypescriptQuickInfo, TypescriptQuickInfoDoc
@@ -45,13 +46,13 @@ __all__ = [
     "TypescriptFormatSelection",
     "TypescriptPasteAndFormat",
     "TypescriptGoToDefinitionCommand",
+    "TypescriptGoToTypeDefinitionCommand",
     "TypescriptGoToTypeCommand",
     "TypescriptGoToRefCommand",
     "TypescriptNavToCommand",
     "TypescriptQuickInfo",
     "TypescriptQuickInfoDoc",
     "TypescriptFindReferencesCommand",
-    "TypescriptGoToDefinitionCommand",
     "TypescriptNextRefCommand",
     "TypescriptPopulateRefs",
     "TypescriptPrevRefCommand",
