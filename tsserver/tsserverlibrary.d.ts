@@ -59,6 +59,7 @@ declare namespace ts {
         pos: number;
         end: number;
     }
+    type JsDocSyntaxKind = SyntaxKind.EndOfFileToken | SyntaxKind.WhitespaceTrivia | SyntaxKind.AtToken | SyntaxKind.NewLineTrivia | SyntaxKind.AsteriskToken | SyntaxKind.OpenBraceToken | SyntaxKind.CloseBraceToken | SyntaxKind.LessThanToken | SyntaxKind.OpenBracketToken | SyntaxKind.CloseBracketToken | SyntaxKind.EqualsToken | SyntaxKind.CommaToken | SyntaxKind.DotToken | SyntaxKind.Identifier | SyntaxKind.Unknown;
     enum SyntaxKind {
         Unknown = 0,
         EndOfFileToken = 1,
@@ -200,162 +201,163 @@ declare namespace ts {
         SymbolKeyword = 137,
         TypeKeyword = 138,
         UndefinedKeyword = 139,
-        FromKeyword = 140,
-        GlobalKeyword = 141,
-        OfKeyword = 142,
-        QualifiedName = 143,
-        ComputedPropertyName = 144,
-        TypeParameter = 145,
-        Parameter = 146,
-        Decorator = 147,
-        PropertySignature = 148,
-        PropertyDeclaration = 149,
-        MethodSignature = 150,
-        MethodDeclaration = 151,
-        Constructor = 152,
-        GetAccessor = 153,
-        SetAccessor = 154,
-        CallSignature = 155,
-        ConstructSignature = 156,
-        IndexSignature = 157,
-        TypePredicate = 158,
-        TypeReference = 159,
-        FunctionType = 160,
-        ConstructorType = 161,
-        TypeQuery = 162,
-        TypeLiteral = 163,
-        ArrayType = 164,
-        TupleType = 165,
-        UnionType = 166,
-        IntersectionType = 167,
-        ParenthesizedType = 168,
-        ThisType = 169,
-        TypeOperator = 170,
-        IndexedAccessType = 171,
-        MappedType = 172,
-        LiteralType = 173,
-        ObjectBindingPattern = 174,
-        ArrayBindingPattern = 175,
-        BindingElement = 176,
-        ArrayLiteralExpression = 177,
-        ObjectLiteralExpression = 178,
-        PropertyAccessExpression = 179,
-        ElementAccessExpression = 180,
-        CallExpression = 181,
-        NewExpression = 182,
-        TaggedTemplateExpression = 183,
-        TypeAssertionExpression = 184,
-        ParenthesizedExpression = 185,
-        FunctionExpression = 186,
-        ArrowFunction = 187,
-        DeleteExpression = 188,
-        TypeOfExpression = 189,
-        VoidExpression = 190,
-        AwaitExpression = 191,
-        PrefixUnaryExpression = 192,
-        PostfixUnaryExpression = 193,
-        BinaryExpression = 194,
-        ConditionalExpression = 195,
-        TemplateExpression = 196,
-        YieldExpression = 197,
-        SpreadElement = 198,
-        ClassExpression = 199,
-        OmittedExpression = 200,
-        ExpressionWithTypeArguments = 201,
-        AsExpression = 202,
-        NonNullExpression = 203,
-        MetaProperty = 204,
-        TemplateSpan = 205,
-        SemicolonClassElement = 206,
-        Block = 207,
-        VariableStatement = 208,
-        EmptyStatement = 209,
-        ExpressionStatement = 210,
-        IfStatement = 211,
-        DoStatement = 212,
-        WhileStatement = 213,
-        ForStatement = 214,
-        ForInStatement = 215,
-        ForOfStatement = 216,
-        ContinueStatement = 217,
-        BreakStatement = 218,
-        ReturnStatement = 219,
-        WithStatement = 220,
-        SwitchStatement = 221,
-        LabeledStatement = 222,
-        ThrowStatement = 223,
-        TryStatement = 224,
-        DebuggerStatement = 225,
-        VariableDeclaration = 226,
-        VariableDeclarationList = 227,
-        FunctionDeclaration = 228,
-        ClassDeclaration = 229,
-        InterfaceDeclaration = 230,
-        TypeAliasDeclaration = 231,
-        EnumDeclaration = 232,
-        ModuleDeclaration = 233,
-        ModuleBlock = 234,
-        CaseBlock = 235,
-        NamespaceExportDeclaration = 236,
-        ImportEqualsDeclaration = 237,
-        ImportDeclaration = 238,
-        ImportClause = 239,
-        NamespaceImport = 240,
-        NamedImports = 241,
-        ImportSpecifier = 242,
-        ExportAssignment = 243,
-        ExportDeclaration = 244,
-        NamedExports = 245,
-        ExportSpecifier = 246,
-        MissingDeclaration = 247,
-        ExternalModuleReference = 248,
-        JsxElement = 249,
-        JsxSelfClosingElement = 250,
-        JsxOpeningElement = 251,
-        JsxClosingElement = 252,
-        JsxFragment = 253,
-        JsxOpeningFragment = 254,
-        JsxClosingFragment = 255,
-        JsxAttribute = 256,
-        JsxAttributes = 257,
-        JsxSpreadAttribute = 258,
-        JsxExpression = 259,
-        CaseClause = 260,
-        DefaultClause = 261,
-        HeritageClause = 262,
-        CatchClause = 263,
-        PropertyAssignment = 264,
-        ShorthandPropertyAssignment = 265,
-        SpreadAssignment = 266,
-        EnumMember = 267,
-        SourceFile = 268,
-        Bundle = 269,
-        JSDocTypeExpression = 270,
-        JSDocAllType = 271,
-        JSDocUnknownType = 272,
-        JSDocNullableType = 273,
-        JSDocNonNullableType = 274,
-        JSDocOptionalType = 275,
-        JSDocFunctionType = 276,
-        JSDocVariadicType = 277,
-        JSDocComment = 278,
-        JSDocTag = 279,
-        JSDocAugmentsTag = 280,
-        JSDocClassTag = 281,
-        JSDocParameterTag = 282,
-        JSDocReturnTag = 283,
-        JSDocTypeTag = 284,
-        JSDocTemplateTag = 285,
-        JSDocTypedefTag = 286,
-        JSDocPropertyTag = 287,
-        JSDocTypeLiteral = 288,
-        SyntaxList = 289,
-        NotEmittedStatement = 290,
-        PartiallyEmittedExpression = 291,
-        CommaListExpression = 292,
-        MergeDeclarationMarker = 293,
-        EndOfDeclarationMarker = 294,
-        Count = 295,
+        UniqueKeyword = 140,
+        FromKeyword = 141,
+        GlobalKeyword = 142,
+        OfKeyword = 143,
+        QualifiedName = 144,
+        ComputedPropertyName = 145,
+        TypeParameter = 146,
+        Parameter = 147,
+        Decorator = 148,
+        PropertySignature = 149,
+        PropertyDeclaration = 150,
+        MethodSignature = 151,
+        MethodDeclaration = 152,
+        Constructor = 153,
+        GetAccessor = 154,
+        SetAccessor = 155,
+        CallSignature = 156,
+        ConstructSignature = 157,
+        IndexSignature = 158,
+        TypePredicate = 159,
+        TypeReference = 160,
+        FunctionType = 161,
+        ConstructorType = 162,
+        TypeQuery = 163,
+        TypeLiteral = 164,
+        ArrayType = 165,
+        TupleType = 166,
+        UnionType = 167,
+        IntersectionType = 168,
+        ParenthesizedType = 169,
+        ThisType = 170,
+        TypeOperator = 171,
+        IndexedAccessType = 172,
+        MappedType = 173,
+        LiteralType = 174,
+        ObjectBindingPattern = 175,
+        ArrayBindingPattern = 176,
+        BindingElement = 177,
+        ArrayLiteralExpression = 178,
+        ObjectLiteralExpression = 179,
+        PropertyAccessExpression = 180,
+        ElementAccessExpression = 181,
+        CallExpression = 182,
+        NewExpression = 183,
+        TaggedTemplateExpression = 184,
+        TypeAssertionExpression = 185,
+        ParenthesizedExpression = 186,
+        FunctionExpression = 187,
+        ArrowFunction = 188,
+        DeleteExpression = 189,
+        TypeOfExpression = 190,
+        VoidExpression = 191,
+        AwaitExpression = 192,
+        PrefixUnaryExpression = 193,
+        PostfixUnaryExpression = 194,
+        BinaryExpression = 195,
+        ConditionalExpression = 196,
+        TemplateExpression = 197,
+        YieldExpression = 198,
+        SpreadElement = 199,
+        ClassExpression = 200,
+        OmittedExpression = 201,
+        ExpressionWithTypeArguments = 202,
+        AsExpression = 203,
+        NonNullExpression = 204,
+        MetaProperty = 205,
+        TemplateSpan = 206,
+        SemicolonClassElement = 207,
+        Block = 208,
+        VariableStatement = 209,
+        EmptyStatement = 210,
+        ExpressionStatement = 211,
+        IfStatement = 212,
+        DoStatement = 213,
+        WhileStatement = 214,
+        ForStatement = 215,
+        ForInStatement = 216,
+        ForOfStatement = 217,
+        ContinueStatement = 218,
+        BreakStatement = 219,
+        ReturnStatement = 220,
+        WithStatement = 221,
+        SwitchStatement = 222,
+        LabeledStatement = 223,
+        ThrowStatement = 224,
+        TryStatement = 225,
+        DebuggerStatement = 226,
+        VariableDeclaration = 227,
+        VariableDeclarationList = 228,
+        FunctionDeclaration = 229,
+        ClassDeclaration = 230,
+        InterfaceDeclaration = 231,
+        TypeAliasDeclaration = 232,
+        EnumDeclaration = 233,
+        ModuleDeclaration = 234,
+        ModuleBlock = 235,
+        CaseBlock = 236,
+        NamespaceExportDeclaration = 237,
+        ImportEqualsDeclaration = 238,
+        ImportDeclaration = 239,
+        ImportClause = 240,
+        NamespaceImport = 241,
+        NamedImports = 242,
+        ImportSpecifier = 243,
+        ExportAssignment = 244,
+        ExportDeclaration = 245,
+        NamedExports = 246,
+        ExportSpecifier = 247,
+        MissingDeclaration = 248,
+        ExternalModuleReference = 249,
+        JsxElement = 250,
+        JsxSelfClosingElement = 251,
+        JsxOpeningElement = 252,
+        JsxClosingElement = 253,
+        JsxFragment = 254,
+        JsxOpeningFragment = 255,
+        JsxClosingFragment = 256,
+        JsxAttribute = 257,
+        JsxAttributes = 258,
+        JsxSpreadAttribute = 259,
+        JsxExpression = 260,
+        CaseClause = 261,
+        DefaultClause = 262,
+        HeritageClause = 263,
+        CatchClause = 264,
+        PropertyAssignment = 265,
+        ShorthandPropertyAssignment = 266,
+        SpreadAssignment = 267,
+        EnumMember = 268,
+        SourceFile = 269,
+        Bundle = 270,
+        JSDocTypeExpression = 271,
+        JSDocAllType = 272,
+        JSDocUnknownType = 273,
+        JSDocNullableType = 274,
+        JSDocNonNullableType = 275,
+        JSDocOptionalType = 276,
+        JSDocFunctionType = 277,
+        JSDocVariadicType = 278,
+        JSDocComment = 279,
+        JSDocTypeLiteral = 280,
+        JSDocTag = 281,
+        JSDocAugmentsTag = 282,
+        JSDocClassTag = 283,
+        JSDocParameterTag = 284,
+        JSDocReturnTag = 285,
+        JSDocTypeTag = 286,
+        JSDocTemplateTag = 287,
+        JSDocTypedefTag = 288,
+        JSDocPropertyTag = 289,
+        SyntaxList = 290,
+        NotEmittedStatement = 291,
+        PartiallyEmittedExpression = 292,
+        CommaListExpression = 293,
+        MergeDeclarationMarker = 294,
+        EndOfDeclarationMarker = 295,
+        Count = 296,
         FirstAssignment = 58,
         LastAssignment = 70,
         FirstCompoundAssignment = 59,
@@ -363,15 +365,15 @@ declare namespace ts {
         FirstReservedWord = 72,
         LastReservedWord = 107,
         FirstKeyword = 72,
-        LastKeyword = 142,
+        LastKeyword = 143,
         FirstFutureReservedWord = 108,
         LastFutureReservedWord = 116,
-        FirstTypeNode = 158,
-        LastTypeNode = 173,
+        FirstTypeNode = 159,
+        LastTypeNode = 174,
         FirstPunctuation = 17,
         LastPunctuation = 70,
         FirstToken = 0,
-        LastToken = 142,
+        LastToken = 143,
         FirstTriviaToken = 2,
         LastTriviaToken = 7,
         FirstLiteralToken = 8,
@@ -380,11 +382,11 @@ declare namespace ts {
         LastTemplateToken = 16,
         FirstBinaryOperator = 27,
         LastBinaryOperator = 70,
-        FirstNode = 143,
-        FirstJSDocNode = 270,
-        LastJSDocNode = 288,
-        FirstJSDocTagNode = 279,
-        LastJSDocTagNode = 288,
+        FirstNode = 144,
+        FirstJSDocNode = 271,
+        LastJSDocNode = 289,
+        FirstJSDocTagNode = 281,
+        LastJSDocTagNode = 289,
     }
     enum NodeFlags {
         None = 0,
@@ -411,7 +413,7 @@ declare namespace ts {
         BlockScoped = 3,
         ReachabilityCheckFlags = 384,
         ReachabilityAndEmitFlags = 1408,
-        ContextFlags = 96256,
+        ContextFlags = 6387712,
         TypeExcludesFlags = 20480,
     }
     enum ModifierFlags {
@@ -452,6 +454,9 @@ declare namespace ts {
     interface JSDocContainer {
     }
     type HasJSDoc = ParameterDeclaration | CallSignatureDeclaration | ConstructSignatureDeclaration | MethodSignature | PropertySignature | ArrowFunction | ParenthesizedExpression | SpreadAssignment | ShorthandPropertyAssignment | PropertyAssignment | FunctionExpression | LabeledStatement | ExpressionStatement | VariableStatement | FunctionDeclaration | ConstructorDeclaration | MethodDeclaration | PropertyDeclaration | AccessorDeclaration | ClassLikeDeclaration | InterfaceDeclaration | TypeAliasDeclaration | EnumMember | EnumDeclaration | ModuleDeclaration | ImportEqualsDeclaration | IndexSignatureDeclaration | FunctionTypeNode | ConstructorTypeNode | JSDocFunctionType | EndOfFileToken;
+    type HasType = SignatureDeclaration | VariableDeclaration | ParameterDeclaration | PropertySignature | PropertyDeclaration | TypePredicateNode | ParenthesizedTypeNode | TypeOperatorNode | MappedTypeNode | AssertionExpression | TypeAliasDeclaration | JSDocTypeExpression | JSDocNonNullableType | JSDocNullableType | JSDocOptionalType | JSDocVariadicType;
+    type HasInitializer = HasExpressionInitializer | ForStatement | ForInStatement | ForOfStatement | JsxAttribute;
+    type HasExpressionInitializer = VariableDeclaration | ParameterDeclaration | BindingElement | PropertySignature | PropertyDeclaration | PropertyAssignment | EnumMember;
     interface NodeArray<T extends Node> extends ReadonlyArray<T>, TextRange {
         hasTrailingComma?: boolean;
     }
@@ -460,6 +465,7 @@ declare namespace ts {
     }
     type DotDotDotToken = Token<SyntaxKind.DotDotDotToken>;
     type QuestionToken = Token<SyntaxKind.QuestionToken>;
+    type ExclamationToken = Token<SyntaxKind.ExclamationToken>;
     type ColonToken = Token<SyntaxKind.ColonToken>;
     type EqualsToken = Token<SyntaxKind.EqualsToken>;
     type AsteriskToken = Token<SyntaxKind.AsteriskToken>;
@@ -470,7 +476,7 @@ declare namespace ts {
     type AwaitKeywordToken = Token<SyntaxKind.AwaitKeyword>;
     type Modifier = Token<SyntaxKind.AbstractKeyword> | Token<SyntaxKind.AsyncKeyword> | Token<SyntaxKind.ConstKeyword> | Token<SyntaxKind.DeclareKeyword> | Token<SyntaxKind.DefaultKeyword> | Token<SyntaxKind.ExportKeyword> | Token<SyntaxKind.PublicKeyword> | Token<SyntaxKind.PrivateKeyword> | Token<SyntaxKind.ProtectedKeyword> | Token<SyntaxKind.ReadonlyKeyword> | Token<SyntaxKind.StaticKeyword>;
     type ModifiersArray = NodeArray<Modifier>;
-    interface Identifier extends PrimaryExpression {
+    interface Identifier extends PrimaryExpression, Declaration {
         kind: SyntaxKind.Identifier;
         /**
          * Prefer to use `id.unescapedText`. (Note: This is available only in services, not internally to the TypeScript compiler.)
@@ -536,6 +542,7 @@ declare namespace ts {
         kind: SyntaxKind.VariableDeclaration;
         parent?: VariableDeclarationList | CatchClause;
         name: BindingName;
+        exclamationToken?: ExclamationToken;
         type?: TypeNode;
         initializer?: Expression;
     }
@@ -570,8 +577,9 @@ declare namespace ts {
     }
     interface PropertyDeclaration extends ClassElement, JSDocContainer {
         kind: SyntaxKind.PropertyDeclaration;
-        questionToken?: QuestionToken;
         name: PropertyName;
+        questionToken?: QuestionToken;
+        exclamationToken?: ExclamationToken;
         type?: TypeNode;
         initializer?: Expression;
     }
@@ -600,14 +608,7 @@ declare namespace ts {
         kind: SyntaxKind.SpreadAssignment;
         expression: Expression;
     }
-    interface VariableLikeDeclaration extends NamedDeclaration {
-        propertyName?: PropertyName;
-        dotDotDotToken?: DotDotDotToken;
-        name: DeclarationName;
-        questionToken?: QuestionToken;
-        type?: TypeNode;
-        initializer?: Expression;
-    }
+    type VariableLikeDeclaration = VariableDeclaration | ParameterDeclaration | BindingElement | PropertyDeclaration | PropertyAssignment | PropertySignature | JsxAttribute | ShorthandPropertyAssignment | EnumMember | JSDocPropertyTag | JSDocParameterTag;
     interface PropertyLikeDeclaration extends NamedDeclaration {
         name: PropertyName;
     }
@@ -638,7 +639,7 @@ declare namespace ts {
         body?: Block | Expression;
     }
     type FunctionLikeDeclaration = FunctionDeclaration | MethodDeclaration | ConstructorDeclaration | GetAccessorDeclaration | SetAccessorDeclaration | FunctionExpression | ArrowFunction;
-    type FunctionLike = FunctionLikeDeclaration | FunctionTypeNode | ConstructorTypeNode | IndexSignatureDeclaration | MethodSignature | ConstructSignatureDeclaration | CallSignatureDeclaration;
+    type FunctionLike = FunctionLikeDeclaration | FunctionTypeNode | ConstructorTypeNode | IndexSignatureDeclaration | MethodSignature | ConstructSignatureDeclaration | CallSignatureDeclaration | JSDocFunctionType;
     interface FunctionDeclaration extends FunctionLikeDeclarationBase, DeclarationStatement {
         kind: SyntaxKind.FunctionDeclaration;
         name?: Identifier;
@@ -655,30 +656,30 @@ declare namespace ts {
     }
     interface ConstructorDeclaration extends FunctionLikeDeclarationBase, ClassElement, JSDocContainer {
         kind: SyntaxKind.Constructor;
-        parent?: ClassDeclaration | ClassExpression;
+        parent?: ClassLikeDeclaration;
         body?: FunctionBody;
     }
     /** For when we encounter a semicolon in a class declaration. ES6 allows these as class elements. */
     interface SemicolonClassElement extends ClassElement {
         kind: SyntaxKind.SemicolonClassElement;
-        parent?: ClassDeclaration | ClassExpression;
+        parent?: ClassLikeDeclaration;
     }
     interface GetAccessorDeclaration extends FunctionLikeDeclarationBase, ClassElement, ObjectLiteralElement, JSDocContainer {
         kind: SyntaxKind.GetAccessor;
-        parent?: ClassDeclaration | ClassExpression | ObjectLiteralExpression;
+        parent?: ClassLikeDeclaration | ObjectLiteralExpression;
         name: PropertyName;
-        body: FunctionBody;
+        body?: FunctionBody;
     }
     interface SetAccessorDeclaration extends FunctionLikeDeclarationBase, ClassElement, ObjectLiteralElement, JSDocContainer {
         kind: SyntaxKind.SetAccessor;
-        parent?: ClassDeclaration | ClassExpression | ObjectLiteralExpression;
+        parent?: ClassLikeDeclaration | ObjectLiteralExpression;
         name: PropertyName;
-        body: FunctionBody;
+        body?: FunctionBody;
     }
     type AccessorDeclaration = GetAccessorDeclaration | SetAccessorDeclaration;
     interface IndexSignatureDeclaration extends SignatureDeclarationBase, ClassElement, TypeElement {
         kind: SyntaxKind.IndexSignature;
-        parent?: ClassDeclaration | ClassExpression | InterfaceDeclaration | TypeLiteralNode;
+        parent?: ClassLikeDeclaration | InterfaceDeclaration | TypeLiteralNode;
     }
     interface TypeNode extends Node {
         _typeNodeBrand: any;
@@ -739,7 +740,7 @@ declare namespace ts {
     }
     interface TypeOperatorNode extends TypeNode {
         kind: SyntaxKind.TypeOperator;
-        operator: SyntaxKind.KeyOfKeyword;
+        operator: SyntaxKind.KeyOfKeyword | SyntaxKind.UniqueKeyword;
         type: TypeNode;
     }
     interface IndexedAccessTypeNode extends TypeNode {
@@ -876,7 +877,7 @@ declare namespace ts {
     type DestructuringAssignment = ObjectDestructuringAssignment | ArrayDestructuringAssignment;
     type BindingOrAssignmentElement = VariableDeclaration | ParameterDeclaration | BindingElement | PropertyAssignment | ShorthandPropertyAssignment | SpreadAssignment | OmittedExpression | SpreadElement | ArrayLiteralExpression | ObjectLiteralExpression | AssignmentExpression<EqualsToken> | Identifier | PropertyAccessExpression | ElementAccessExpression;
     type BindingOrAssignmentElementRestIndicator = DotDotDotToken | SpreadElement | SpreadAssignment;
-    type BindingOrAssignmentElementTarget = BindingOrAssignmentPattern | Expression;
+    type BindingOrAssignmentElementTarget = BindingOrAssignmentPattern | Identifier | PropertyAccessExpression | ElementAccessExpression | OmittedExpression;
     type ObjectBindingOrAssignmentPattern = ObjectBindingPattern | ObjectLiteralExpression;
     type ArrayBindingOrAssignmentPattern = ArrayBindingPattern | ArrayLiteralExpression;
     type AssignmentPattern = ObjectLiteralExpression | ArrayLiteralExpression;
@@ -900,6 +901,7 @@ declare namespace ts {
         kind: SyntaxKind.ArrowFunction;
         equalsGreaterThanToken: EqualsGreaterThanToken;
         body: ConciseBody;
+        name: never;
     }
     interface LiteralLikeNode extends Node {
         text: string;
@@ -1274,7 +1276,7 @@ declare namespace ts {
     }
     interface HeritageClause extends Node {
         kind: SyntaxKind.HeritageClause;
-        parent?: InterfaceDeclaration | ClassDeclaration | ClassExpression;
+        parent?: InterfaceDeclaration | ClassLikeDeclaration;
         token: SyntaxKind.ExtendsKeyword | SyntaxKind.ImplementsKeyword;
         types: NodeArray<ExpressionWithTypeArguments>;
     }
@@ -1361,6 +1363,7 @@ declare namespace ts {
     interface ExportDeclaration extends DeclarationStatement {
         kind: SyntaxKind.ExportDeclaration;
         parent?: SourceFile | ModuleBlock;
+        /** Will not be assigned in the case of `export * from "foo";` */
         exportClause?: NamedExports;
         /** If this is not a StringLiteral it will be a grammar error. */
         moduleSpecifier?: Expression;
@@ -1609,13 +1612,13 @@ declare namespace ts {
     }
     interface ScriptReferenceHost {
         getCompilerOptions(): CompilerOptions;
-        getSourceFile(fileName: string): SourceFile;
-        getSourceFileByPath(path: Path): SourceFile;
+        getSourceFile(fileName: string): SourceFile | undefined;
+        getSourceFileByPath(path: Path): SourceFile | undefined;
         getCurrentDirectory(): string;
     }
     interface ParseConfigHost {
         useCaseSensitiveFileNames: boolean;
-        readDirectory(rootDir: string, extensions: ReadonlyArray<string>, excludes: ReadonlyArray<string>, includes: ReadonlyArray<string>, depth: number): string[];
+        readDirectory(rootDir: string, extensions: ReadonlyArray<string>, excludes: ReadonlyArray<string> | undefined, includes: ReadonlyArray<string>, depth?: number): string[];
         /**
          * Gets a value indicating whether the specified path exists and is a file.
          * @param path The path to test.
@@ -1623,9 +1626,7 @@ declare namespace ts {
         fileExists(path: string): boolean;
         readFile(path: string): string | undefined;
     }
-    interface WriteFileCallback {
-        (fileName: string, data: string, writeByteOrderMark: boolean, onError: ((message: string) => void) | undefined, sourceFiles: ReadonlyArray<SourceFile>): void;
-    }
+    type WriteFileCallback = (fileName: string, data: string, writeByteOrderMark: boolean, onError: ((message: string) => void) | undefined, sourceFiles: ReadonlyArray<SourceFile>) => void;
     class OperationCanceledException {
     }
     interface CancellationToken {
@@ -1728,6 +1729,16 @@ declare namespace ts {
         signatureToSignatureDeclaration(signature: Signature, kind: SyntaxKind, enclosingDeclaration?: Node, flags?: NodeBuilderFlags): SignatureDeclaration;
         /** Note that the resulting nodes cannot be checked. */
         indexInfoToIndexSignatureDeclaration(indexInfo: IndexInfo, kind: IndexKind, enclosingDeclaration?: Node, flags?: NodeBuilderFlags): IndexSignatureDeclaration;
+        /** Note that the resulting nodes cannot be checked. */
+        symbolToEntityName(symbol: Symbol, meaning: SymbolFlags, enclosingDeclaration?: Node, flags?: NodeBuilderFlags): EntityName;
+        /** Note that the resulting nodes cannot be checked. */
+        symbolToExpression(symbol: Symbol, meaning: SymbolFlags, enclosingDeclaration?: Node, flags?: NodeBuilderFlags): Expression;
+        /** Note that the resulting nodes cannot be checked. */
+        symbolToTypeParameterDeclarations(symbol: Symbol, enclosingDeclaration?: Node, flags?: NodeBuilderFlags): NodeArray<TypeParameterDeclaration> | undefined;
+        /** Note that the resulting nodes cannot be checked. */
+        symbolToParameterDeclaration(symbol: Symbol, enclosingDeclaration?: Node, flags?: NodeBuilderFlags): ParameterDeclaration;
+        /** Note that the resulting nodes cannot be checked. */
+        typeParameterToDeclaration(parameter: TypeParameter, enclosingDeclaration?: Node, flags?: NodeBuilderFlags): TypeParameterDeclaration;
         getSymbolsInScope(location: Node, meaning: SymbolFlags): Symbol[];
         getSymbolAtLocation(node: Node): Symbol | undefined;
         getSymbolsOfParameterPropertyDeclaration(parameter: ParameterDeclaration, parameterName: string): Symbol[];
@@ -1747,7 +1758,8 @@ declare namespace ts {
         getTypeFromTypeNode(node: TypeNode): Type;
         signatureToString(signature: Signature, enclosingDeclaration?: Node, flags?: TypeFormatFlags, kind?: SignatureKind): string;
         typeToString(type: Type, enclosingDeclaration?: Node, flags?: TypeFormatFlags): string;
-        symbolToString(symbol: Symbol, enclosingDeclaration?: Node, meaning?: SymbolFlags): string;
+        symbolToString(symbol: Symbol, enclosingDeclaration?: Node, meaning?: SymbolFlags, flags?: SymbolFormatFlags): string;
+        typePredicateToString(predicate: TypePredicate, enclosingDeclaration?: Node, flags?: TypeFormatFlags): string;
         /**
          * @deprecated Use the createX factory functions or XToY typechecker methods and `createPrinter` or the `xToString` methods instead
          * This will be removed in a future version.
@@ -1780,38 +1792,86 @@ declare namespace ts {
         getApparentType(type: Type): Type;
         getSuggestionForNonexistentProperty(node: Identifier, containingType: Type): string | undefined;
         getSuggestionForNonexistentSymbol(location: Node, name: string, meaning: SymbolFlags): string | undefined;
+        getBaseConstraintOfType(type: Type): Type | undefined;
+        getDefaultFromTypeParameter(type: Type): Type | undefined;
     }
     enum NodeBuilderFlags {
         None = 0,
         NoTruncation = 1,
         WriteArrayAsGenericType = 2,
+        WriteDefaultSymbolWithoutName = 4,
+        UseStructuralFallback = 8,
+        WriteTypeArgumentsOfSignature = 32,
+        UseFullyQualifiedType = 64,
+        UseOnlyExternalAliasing = 128,
+        SuppressAnyReturnType = 256,
+        WriteTypeParametersInQualifiedName = 512,
+        MultilineObjectLiterals = 1024,
+        WriteClassExpressionAsTypeLiteral = 2048,
+        UseTypeOfFunction = 4096,
+        OmitParameterModifiers = 8192,
+        UseAliasDefinedOutsideCurrentScope = 16384,
+        AllowThisInObjectLiteral = 32768,
+        AllowQualifedNameInPlaceOfIdentifier = 65536,
+        AllowAnonymousIdentifier = 131072,
+        AllowEmptyUnionOrIntersection = 262144,
+        AllowEmptyTuple = 524288,
+        AllowUniqueESSymbolType = 1048576,
+        AllowEmptyIndexInfoType = 2097152,
+        IgnoreErrors = 3112960,
+        InObjectTypeLiteral = 4194304,
+        InTypeAlias = 8388608,
+    }
+    enum TypeFormatFlags {
+        None = 0,
+        NoTruncation = 1,
+        WriteArrayAsGenericType = 2,
+        WriteDefaultSymbolWithoutName = 4,
+        UseStructuralFallback = 8,
         WriteTypeArgumentsOfSignature = 32,
         UseFullyQualifiedType = 64,
         SuppressAnyReturnType = 256,
-        WriteTypeParametersInQualifiedName = 512,
-        AllowThisInObjectLiteral = 1024,
-        AllowQualifedNameInPlaceOfIdentifier = 2048,
-        AllowAnonymousIdentifier = 8192,
-        AllowEmptyUnionOrIntersection = 16384,
-        AllowEmptyTuple = 32768,
-        IgnoreErrors = 60416,
-        InObjectTypeLiteral = 1048576,
+        MultilineObjectLiterals = 1024,
+        WriteClassExpressionAsTypeLiteral = 2048,
+        UseTypeOfFunction = 4096,
+        OmitParameterModifiers = 8192,
+        UseAliasDefinedOutsideCurrentScope = 16384,
+        AllowUniqueESSymbolType = 1048576,
+        AddUndefined = 131072,
+        WriteArrowStyleSignature = 262144,
+        InArrayType = 524288,
+        InElementType = 2097152,
+        InFirstTypeArgument = 4194304,
         InTypeAlias = 8388608,
+        /** @deprecated */ WriteOwnNameForAnyLike = 0,
+        NodeBuilderFlagsMask = 9469295,
     }
+    enum SymbolFormatFlags {
+        None = 0,
+        WriteTypeParametersOrArguments = 1,
+        UseOnlyExternalAliasing = 2,
+        AllowAnyNodeKind = 4,
+    }
+    /**
+     * @deprecated
+     */
     interface SymbolDisplayBuilder {
-        buildTypeDisplay(type: Type, writer: SymbolWriter, enclosingDeclaration?: Node, flags?: TypeFormatFlags): void;
-        buildSymbolDisplay(symbol: Symbol, writer: SymbolWriter, enclosingDeclaration?: Node, meaning?: SymbolFlags, flags?: SymbolFormatFlags): void;
-        buildSignatureDisplay(signature: Signature, writer: SymbolWriter, enclosingDeclaration?: Node, flags?: TypeFormatFlags, kind?: SignatureKind): void;
-        buildIndexSignatureDisplay(info: IndexInfo, writer: SymbolWriter, kind: IndexKind, enclosingDeclaration?: Node, globalFlags?: TypeFormatFlags, symbolStack?: Symbol[]): void;
-        buildParameterDisplay(parameter: Symbol, writer: SymbolWriter, enclosingDeclaration?: Node, flags?: TypeFormatFlags): void;
-        buildTypeParameterDisplay(tp: TypeParameter, writer: SymbolWriter, enclosingDeclaration?: Node, flags?: TypeFormatFlags): void;
-        buildTypePredicateDisplay(predicate: TypePredicate, writer: SymbolWriter, enclosingDeclaration?: Node, flags?: TypeFormatFlags): void;
-        buildTypeParameterDisplayFromSymbol(symbol: Symbol, writer: SymbolWriter, enclosingDeclaration?: Node, flags?: TypeFormatFlags): void;
-        buildDisplayForParametersAndDelimiters(thisParameter: Symbol, parameters: Symbol[], writer: SymbolWriter, enclosingDeclaration?: Node, flags?: TypeFormatFlags): void;
-        buildDisplayForTypeParametersAndDelimiters(typeParameters: TypeParameter[], writer: SymbolWriter, enclosingDeclaration?: Node, flags?: TypeFormatFlags): void;
-        buildReturnTypeDisplay(signature: Signature, writer: SymbolWriter, enclosingDeclaration?: Node, flags?: TypeFormatFlags): void;
+        /** @deprecated */ buildTypeDisplay(type: Type, writer: SymbolWriter, enclosingDeclaration?: Node, flags?: TypeFormatFlags): void;
+        /** @deprecated */ buildSymbolDisplay(symbol: Symbol, writer: SymbolWriter, enclosingDeclaration?: Node, meaning?: SymbolFlags, flags?: SymbolFormatFlags): void;
+        /** @deprecated */ buildSignatureDisplay(signature: Signature, writer: SymbolWriter, enclosingDeclaration?: Node, flags?: TypeFormatFlags, kind?: SignatureKind): void;
+        /** @deprecated */ buildIndexSignatureDisplay(info: IndexInfo, writer: SymbolWriter, kind: IndexKind, enclosingDeclaration?: Node, globalFlags?: TypeFormatFlags, symbolStack?: Symbol[]): void;
+        /** @deprecated */ buildParameterDisplay(parameter: Symbol, writer: SymbolWriter, enclosingDeclaration?: Node, flags?: TypeFormatFlags): void;
+        /** @deprecated */ buildTypeParameterDisplay(tp: TypeParameter, writer: SymbolWriter, enclosingDeclaration?: Node, flags?: TypeFormatFlags): void;
+        /** @deprecated */ buildTypePredicateDisplay(predicate: TypePredicate, writer: SymbolWriter, enclosingDeclaration?: Node, flags?: TypeFormatFlags): void;
+        /** @deprecated */ buildTypeParameterDisplayFromSymbol(symbol: Symbol, writer: SymbolWriter, enclosingDeclaration?: Node, flags?: TypeFormatFlags): void;
+        /** @deprecated */ buildDisplayForParametersAndDelimiters(thisParameter: Symbol, parameters: Symbol[], writer: SymbolWriter, enclosingDeclaration?: Node, flags?: TypeFormatFlags): void;
+        /** @deprecated */ buildDisplayForTypeParametersAndDelimiters(typeParameters: TypeParameter[], writer: SymbolWriter, enclosingDeclaration?: Node, flags?: TypeFormatFlags): void;
+        /** @deprecated */ buildReturnTypeDisplay(signature: Signature, writer: SymbolWriter, enclosingDeclaration?: Node, flags?: TypeFormatFlags): void;
     }
-    interface SymbolWriter {
+    /**
+     * @deprecated Migrate to other methods of generating symbol names, ex symbolToEntityName + a printer or symbolToString
+     */
+    interface SymbolWriter extends SymbolTracker {
         writeKeyword(text: string): void;
         writeOperator(text: string): void;
         writePunctuation(text: string): void;
@@ -1824,32 +1884,6 @@ declare namespace ts {
         increaseIndent(): void;
         decreaseIndent(): void;
         clear(): void;
-        trackSymbol(symbol: Symbol, enclosingDeclaration?: Node, meaning?: SymbolFlags): void;
-        reportInaccessibleThisError(): void;
-        reportPrivateInBaseOfClassExpression(propertyName: string): void;
-    }
-    enum TypeFormatFlags {
-        None = 0,
-        WriteArrayAsGenericType = 1,
-        UseTypeOfFunction = 4,
-        NoTruncation = 8,
-        WriteArrowStyleSignature = 16,
-        WriteOwnNameForAnyLike = 32,
-        WriteTypeArgumentsOfSignature = 64,
-        InElementType = 128,
-        UseFullyQualifiedType = 256,
-        InFirstTypeArgument = 512,
-        InTypeAlias = 1024,
-        SuppressAnyReturnType = 4096,
-        AddUndefined = 8192,
-        WriteClassExpressionAsTypeLiteral = 16384,
-        InArrayType = 32768,
-        UseAliasDefinedOutsideCurrentScope = 65536,
-    }
-    enum SymbolFormatFlags {
-        None = 0,
-        WriteTypeParametersOrArguments = 1,
-        UseOnlyExternalAliasing = 2,
     }
     enum TypePredicateKind {
         This = 0,
@@ -1896,6 +1930,7 @@ declare namespace ts {
         ExportStar = 8388608,
         Optional = 16777216,
         Transient = 33554432,
+        JSContainer = 67108864,
         Enum = 384,
         Variable = 3,
         Value = 107455,
@@ -1998,32 +2033,34 @@ declare namespace ts {
         BooleanLiteral = 128,
         EnumLiteral = 256,
         ESSymbol = 512,
-        Void = 1024,
-        Undefined = 2048,
-        Null = 4096,
-        Never = 8192,
-        TypeParameter = 16384,
-        Object = 32768,
-        Union = 65536,
-        Intersection = 131072,
-        Index = 262144,
-        IndexedAccess = 524288,
-        NonPrimitive = 16777216,
-        MarkerType = 67108864,
+        UniqueESSymbol = 1024,
+        Void = 2048,
+        Undefined = 4096,
+        Null = 8192,
+        Never = 16384,
+        TypeParameter = 32768,
+        Object = 65536,
+        Union = 131072,
+        Intersection = 262144,
+        Index = 524288,
+        IndexedAccess = 1048576,
+        NonPrimitive = 33554432,
+        MarkerType = 134217728,
         Literal = 224,
-        Unit = 6368,
+        Unit = 13536,
         StringOrNumberLiteral = 96,
-        PossiblyFalsy = 7406,
-        StringLike = 262178,
+        PossiblyFalsy = 14574,
+        StringLike = 524322,
         NumberLike = 84,
         BooleanLike = 136,
         EnumLike = 272,
-        UnionOrIntersection = 196608,
-        StructuredType = 229376,
-        StructuredOrTypeVariable = 1032192,
-        TypeVariable = 540672,
-        Narrowable = 17810175,
-        NotUnionOrUnit = 16810497,
+        ESSymbolLike = 1536,
+        UnionOrIntersection = 393216,
+        StructuredType = 458752,
+        StructuredOrTypeVariable = 2064384,
+        TypeVariable = 1081344,
+        Narrowable = 35620607,
+        NotUnionOrUnit = 33620481,
     }
     type DestructuringPattern = BindingPattern | ObjectLiteralExpression | ArrayLiteralExpression;
     interface Type {
@@ -2037,6 +2074,9 @@ declare namespace ts {
         value: string | number;
         freshType?: LiteralType;
         regularType?: LiteralType;
+    }
+    interface UniqueESSymbolType extends Type {
+        symbol: Symbol;
     }
     interface StringLiteralType extends LiteralType {
         value: string;
@@ -2057,6 +2097,8 @@ declare namespace ts {
         ObjectLiteral = 128,
         EvolvingArray = 256,
         ObjectLiteralPatternWithComputedProperties = 512,
+        ContainsSpread = 1024,
+        ReverseMapped = 2048,
         ClassOrInterface = 3,
     }
     interface ObjectType extends Type {
@@ -2108,9 +2150,6 @@ declare namespace ts {
     interface TypeVariable extends Type {
     }
     interface TypeParameter extends TypeVariable {
-        /** Retrieve using getConstraintFromTypeParameter */
-        constraint: Type;
-        default?: Type;
     }
     interface IndexedAccessType extends TypeVariable {
         objectType: Type;
@@ -2139,14 +2178,14 @@ declare namespace ts {
         declaration?: SignatureDeclaration;
     }
     enum InferencePriority {
-        Contravariant = 1,
-        NakedTypeVariable = 2,
-        MappedType = 4,
-        ReturnType = 8,
+        NakedTypeVariable = 1,
+        MappedType = 2,
+        ReturnType = 4,
     }
     interface InferenceInfo {
         typeParameter: TypeParameter;
         candidates: Type[];
+        contraCandidates: Type[];
         inferredType: Type;
         priority: InferencePriority;
         topLevel: boolean;
@@ -2279,6 +2318,7 @@ declare namespace ts {
         strict?: boolean;
         strictFunctionTypes?: boolean;
         strictNullChecks?: boolean;
+        strictPropertyInitialization?: boolean;
         suppressExcessPropertyErrors?: boolean;
         suppressImplicitAnyIndexErrors?: boolean;
         target?: ScriptTarget;
@@ -2286,6 +2326,7 @@ declare namespace ts {
         types?: string[];
         /** Paths used to compute primary types search locations */
         typeRoots?: string[];
+        esModuleInterop?: boolean;
         [option: string]: CompilerOptionsValue | JsonSourceFile | undefined;
     }
     interface TypeAcquisition {
@@ -2343,8 +2384,9 @@ declare namespace ts {
         ES2015 = 2,
         ES2016 = 3,
         ES2017 = 4,
-        ESNext = 5,
-        Latest = 5,
+        ES2018 = 5,
+        ESNext = 6,
+        Latest = 6,
     }
     enum LanguageVariant {
         Standard = 0,
@@ -2458,12 +2500,13 @@ declare namespace ts {
         getCanonicalFileName(fileName: string): string;
         useCaseSensitiveFileNames(): boolean;
         getNewLine(): string;
-        resolveModuleNames?(moduleNames: string[], containingFile: string, reusedNames?: string[]): ResolvedModule[];
+        resolveModuleNames?(moduleNames: string[], containingFile: string, reusedNames?: string[]): (ResolvedModule | undefined)[];
         /**
          * This method is a companion for 'resolveModuleNames' and is used to resolve 'types' references to actual type declaration files
          */
-        resolveTypeReferenceDirectives?(typeReferenceDirectiveNames: string[], containingFile: string): ResolvedTypeReferenceDirective[];
+        resolveTypeReferenceDirectives?(typeReferenceDirectiveNames: string[], containingFile: string): (ResolvedTypeReferenceDirective | undefined)[];
         getEnvironmentVariable?(name: string): string;
+        createHash?(data: string): string;
     }
     interface SourceMapRange extends TextRange {
         source?: SourceMapSource;
@@ -2621,6 +2664,10 @@ declare namespace ts {
          */
         printNode(hint: EmitHint, node: Node, sourceFile: SourceFile): string;
         /**
+         * Prints a list of nodes using the given format flags
+         */
+        printList<T extends Node>(format: ListFormat, list: NodeArray<T>, sourceFile: SourceFile): string;
+        /**
          * Prints a source file as-is, without any emit transformations.
          */
         printFile(sourceFile: SourceFile): string;
@@ -2675,6 +2722,13 @@ declare namespace ts {
     interface PrinterOptions {
         removeComments?: boolean;
         newLine?: NewLineKind;
+        omitTrailingSemicolon?: boolean;
+    }
+    interface SymbolTracker {
+        trackSymbol?(symbol: Symbol, enclosingDeclaration?: Node, meaning?: SymbolFlags): void;
+        reportInaccessibleThisError?(): void;
+        reportPrivateInBaseOfClassExpression?(propertyName: string): void;
+        reportInaccessibleUniqueSymbolError?(): void;
     }
     interface TextSpan {
         start: number;
@@ -2687,9 +2741,74 @@ declare namespace ts {
     interface SyntaxList extends Node {
         _children: Node[];
     }
+    enum ListFormat {
+        None = 0,
+        SingleLine = 0,
+        MultiLine = 1,
+        PreserveLines = 2,
+        LinesMask = 3,
+        NotDelimited = 0,
+        BarDelimited = 4,
+        AmpersandDelimited = 8,
+        CommaDelimited = 16,
+        DelimitersMask = 28,
+        AllowTrailingComma = 32,
+        Indented = 64,
+        SpaceBetweenBraces = 128,
+        SpaceBetweenSiblings = 256,
+        Braces = 512,
+        Parenthesis = 1024,
+        AngleBrackets = 2048,
+        SquareBrackets = 4096,
+        BracketsMask = 7680,
+        OptionalIfUndefined = 8192,
+        OptionalIfEmpty = 16384,
+        Optional = 24576,
+        PreferNewLine = 32768,
+        NoTrailingNewLine = 65536,
+        NoInterveningComments = 131072,
+        NoSpaceIfEmpty = 262144,
+        SingleElement = 524288,
+        Modifiers = 131328,
+        HeritageClauses = 256,
+        SingleLineTypeLiteralMembers = 448,
+        MultiLineTypeLiteralMembers = 65,
+        TupleTypeElements = 336,
+        UnionTypeConstituents = 260,
+        IntersectionTypeConstituents = 264,
+        ObjectBindingPatternElements = 262576,
+        ArrayBindingPatternElements = 262448,
+        ObjectLiteralExpressionProperties = 263122,
+        ArrayLiteralExpressionElements = 4466,
+        CommaListElements = 272,
+        CallExpressionArguments = 1296,
+        NewExpressionArguments = 9488,
+        TemplateExpressionSpans = 131072,
+        SingleLineBlockStatements = 384,
+        MultiLineBlockStatements = 65,
+        VariableDeclarationList = 272,
+        SingleLineFunctionBodyStatements = 384,
+        MultiLineFunctionBodyStatements = 1,
+        ClassHeritageClauses = 256,
+        ClassMembers = 65,
+        InterfaceMembers = 65,
+        EnumMembers = 81,
+        CaseBlockClauses = 65,
+        NamedImportsOrExportsElements = 432,
+        JsxElementOrFragmentChildren = 131072,
+        JsxElementAttributes = 131328,
+        CaseOrDefaultClauseStatements = 81985,
+        HeritageClauseTypes = 272,
+        SourceFileStatements = 65537,
+        Decorators = 24577,
+        TypeArguments = 26896,
+        TypeParameters = 26896,
+        Parameters = 1296,
+        IndexSignatureParameters = 4432,
+    }
 }
 declare namespace ts {
-    const versionMajorMinor = "2.6";
+    const versionMajorMinor = "2.7";
     /** The version of the TypeScript compiler release */
     const version: string;
 }
@@ -2711,26 +2830,14 @@ declare namespace ts {
         callback: FileWatcherCallback;
         mtime?: Date;
     }
-    /**
-     * Partial interface of the System thats needed to support the caching of directory structure
-     */
-    interface DirectoryStructureHost {
+    interface System {
+        args: string[];
         newLine: string;
         useCaseSensitiveFileNames: boolean;
         write(s: string): void;
         readFile(path: string, encoding?: string): string | undefined;
-        writeFile(path: string, data: string, writeByteOrderMark?: boolean): void;
-        fileExists(path: string): boolean;
-        directoryExists(path: string): boolean;
-        createDirectory(path: string): void;
-        getCurrentDirectory(): string;
-        getDirectories(path: string): string[];
-        readDirectory(path: string, extensions?: ReadonlyArray<string>, exclude?: ReadonlyArray<string>, include?: ReadonlyArray<string>, depth?: number): string[];
-        exit(exitCode?: number): void;
-    }
-    interface System extends DirectoryStructureHost {
-        args: string[];
         getFileSize?(path: string): number;
+        writeFile(path: string, data: string, writeByteOrderMark?: boolean): void;
         /**
          * @pollingInterval - this parameter is used in polling-based watchers and ignored in watchers that
          * use native OS file watching
@@ -2738,7 +2845,13 @@ declare namespace ts {
         watchFile?(path: string, callback: FileWatcherCallback, pollingInterval?: number): FileWatcher;
         watchDirectory?(path: string, callback: DirectoryWatcherCallback, recursive?: boolean): FileWatcher;
         resolvePath(path: string): string;
+        fileExists(path: string): boolean;
+        directoryExists(path: string): boolean;
+        createDirectory(path: string): void;
         getExecutingFilePath(): string;
+        getCurrentDirectory(): string;
+        getDirectories(path: string): string[];
+        readDirectory(path: string, extensions?: ReadonlyArray<string>, exclude?: ReadonlyArray<string>, include?: ReadonlyArray<string>, depth?: number): string[];
         getModifiedTime?(path: string): Date;
         /**
          * This should be cryptographically secure.
@@ -2746,9 +2859,11 @@ declare namespace ts {
          */
         createHash?(data: string): string;
         getMemoryUsage?(): number;
+        exit(exitCode?: number): void;
         realpath?(path: string): string;
         setTimeout?(callback: (...args: any[]) => void, ms: number, ...args: any[]): any;
         clearTimeout?(timeoutId: any): void;
+        clearScreen?(): void;
     }
     interface FileWatcher {
         close(): void;
@@ -2901,7 +3016,7 @@ declare namespace ts {
     function isStringLiteral(node: Node): node is StringLiteral;
     function isJsxText(node: Node): node is JsxText;
     function isRegularExpressionLiteral(node: Node): node is RegularExpressionLiteral;
-    function isNoSubstitutionTemplateLiteral(node: Node): node is LiteralExpression;
+    function isNoSubstitutionTemplateLiteral(node: Node): node is NoSubstitutionTemplateLiteral;
     function isTemplateHead(node: Node): node is TemplateHead;
     function isTemplateMiddle(node: Node): node is TemplateMiddle;
     function isTemplateTail(node: Node): node is TemplateTail;
@@ -2984,6 +3099,7 @@ declare namespace ts {
     function isForOfStatement(node: Node): node is ForOfStatement;
     function isContinueStatement(node: Node): node is ContinueStatement;
     function isBreakStatement(node: Node): node is BreakStatement;
+    function isBreakOrContinueStatement(node: Node): node is BreakOrContinueStatement;
     function isReturnStatement(node: Node): node is ReturnStatement;
     function isWithStatement(node: Node): node is WithStatement;
     function isSwitchStatement(node: Node): node is SwitchStatement;
@@ -3092,11 +3208,10 @@ declare namespace ts {
     function isJSDocCommentContainingNode(node: Node): boolean;
     function isSetAccessor(node: Node): node is SetAccessorDeclaration;
     function isGetAccessor(node: Node): node is GetAccessorDeclaration;
+    function isObjectLiteralElement(node: Node): node is ObjectLiteralElement;
 }
 declare namespace ts {
-    interface ErrorCallback {
-        (message: DiagnosticMessage, length: number): void;
-    }
+    type ErrorCallback = (message: DiagnosticMessage, length: number) => void;
     interface Scanner {
         getStartPos(): number;
         getToken(): SyntaxKind;
@@ -3116,7 +3231,7 @@ declare namespace ts {
         scanJsxAttributeValue(): SyntaxKind;
         reScanJsxToken(): SyntaxKind;
         scanJsxToken(): SyntaxKind;
-        scanJSDocToken(): SyntaxKind;
+        scanJSDocToken(): JsDocSyntaxKind;
         scan(): SyntaxKind;
         getText(): string;
         setText(text: string, start?: number, length?: number): void;
@@ -3136,8 +3251,10 @@ declare namespace ts {
     function isWhiteSpaceSingleLine(ch: number): boolean;
     function isLineBreak(ch: number): boolean;
     function couldStartTrivia(text: string, pos: number): boolean;
-    function forEachLeadingCommentRange<T, U>(text: string, pos: number, cb: (pos: number, end: number, kind: CommentKind, hasTrailingNewLine: boolean, state: T) => U, state?: T): U | undefined;
-    function forEachTrailingCommentRange<T, U>(text: string, pos: number, cb: (pos: number, end: number, kind: CommentKind, hasTrailingNewLine: boolean, state: T) => U, state?: T): U | undefined;
+    function forEachLeadingCommentRange<U>(text: string, pos: number, cb: (pos: number, end: number, kind: CommentKind, hasTrailingNewLine: boolean) => U): U | undefined;
+    function forEachLeadingCommentRange<T, U>(text: string, pos: number, cb: (pos: number, end: number, kind: CommentKind, hasTrailingNewLine: boolean, state: T) => U, state: T): U | undefined;
+    function forEachTrailingCommentRange<U>(text: string, pos: number, cb: (pos: number, end: number, kind: CommentKind, hasTrailingNewLine: boolean) => U): U | undefined;
+    function forEachTrailingCommentRange<T, U>(text: string, pos: number, cb: (pos: number, end: number, kind: CommentKind, hasTrailingNewLine: boolean, state: T) => U, state: T): U | undefined;
     function reduceEachLeadingCommentRange<T, U>(text: string, pos: number, cb: (pos: number, end: number, kind: CommentKind, hasTrailingNewLine: boolean, state: T, memo: U) => U, state: T, initial: U): U;
     function reduceEachTrailingCommentRange<T, U>(text: string, pos: number, cb: (pos: number, end: number, kind: CommentKind, hasTrailingNewLine: boolean, state: T, memo: U) => U, state: T, initial: U): U;
     function getLeadingCommentRanges(text: string, pos: number): CommentRange[] | undefined;
@@ -3274,15 +3391,14 @@ declare namespace ts {
 }
 declare namespace ts {
     function createNodeArray<T extends Node>(elements?: ReadonlyArray<T>, hasTrailingComma?: boolean): NodeArray<T>;
-    function createLiteral(value: string): StringLiteral;
+    /** If a node is passed, creates a string literal whose source text is read from a source node during emit. */
+    function createLiteral(value: string | StringLiteral | NoSubstitutionTemplateLiteral | NumericLiteral | Identifier): StringLiteral;
     function createLiteral(value: number): NumericLiteral;
     function createLiteral(value: boolean): BooleanLiteral;
-    /** Create a string literal whose source text is read from a source node during emit. */
-    function createLiteral(sourceNode: StringLiteral | NumericLiteral | Identifier): StringLiteral;
     function createLiteral(value: string | number | boolean): PrimaryExpression;
     function createNumericLiteral(value: string): NumericLiteral;
     function createIdentifier(text: string): Identifier;
-    function updateIdentifier(node: Identifier, typeArguments: NodeArray<TypeNode> | undefined): Identifier;
+    function updateIdentifier(node: Identifier): Identifier;
     /** Create a unique temporary variable. */
     function createTempVariable(recordTempVariable: ((node: Identifier) => void) | undefined): Identifier;
     /** Create a unique temporary variable for use in a loop. */
@@ -3353,6 +3469,7 @@ declare namespace ts {
     function updateParenthesizedType(node: ParenthesizedTypeNode, type: TypeNode): ParenthesizedTypeNode;
     function createThisTypeNode(): ThisTypeNode;
     function createTypeOperatorNode(type: TypeNode): TypeOperatorNode;
+    function createTypeOperatorNode(operator: SyntaxKind.KeyOfKeyword | SyntaxKind.UniqueKeyword, type: TypeNode): TypeOperatorNode;
     function updateTypeOperatorNode(node: TypeOperatorNode, type: TypeNode): TypeOperatorNode;
     function createIndexedAccessTypeNode(objectType: TypeNode, indexType: TypeNode): IndexedAccessTypeNode;
     function updateIndexedAccessTypeNode(node: IndexedAccessTypeNode, objectType: TypeNode, indexType: TypeNode): IndexedAccessTypeNode;
@@ -3750,18 +3867,7 @@ declare namespace ts {
     function createPrinter(printerOptions?: PrinterOptions, handlers?: PrintHandlers): Printer;
 }
 declare namespace ts {
-    interface EmitOutput {
-        outputFiles: OutputFile[];
-        emitSkipped: boolean;
-    }
-    interface OutputFile {
-        name: string;
-        writeByteOrderMark: boolean;
-        text: string;
-    }
-}
-declare namespace ts {
-    function findConfigFile(searchPath: string, fileExists: (fileName: string) => boolean, configName?: string): string;
+    function findConfigFile(searchPath: string, fileExists: (fileName: string) => boolean, configName?: string): string | undefined;
     function resolveTripleslashReference(moduleName: string, containingFile: string): string;
     function createCompilerHost(options: CompilerOptions, setParentNodes?: boolean): CompilerHost;
     function getPreEmitDiagnostics(program: Program, sourceFile?: SourceFile, cancellationToken?: CancellationToken): Diagnostic[];
@@ -3816,7 +3922,7 @@ declare namespace ts {
         getEscapedName(): __String;
         getName(): string;
         getDeclarations(): Declaration[] | undefined;
-        getDocumentationComment(): SymbolDisplayPart[];
+        getDocumentationComment(typeChecker: TypeChecker | undefined): SymbolDisplayPart[];
         getJsDocTags(): JSDocTagInfo[];
     }
     interface Type {
@@ -3831,13 +3937,15 @@ declare namespace ts {
         getNumberIndexType(): Type | undefined;
         getBaseTypes(): BaseType[] | undefined;
         getNonNullableType(): Type;
+        getConstraint(): Type | undefined;
+        getDefault(): Type | undefined;
     }
     interface Signature {
         getDeclaration(): SignatureDeclaration;
         getTypeParameters(): TypeParameter[] | undefined;
         getParameters(): Symbol[];
         getReturnType(): Type;
-        getDocumentationComment(): SymbolDisplayPart[];
+        getDocumentationComment(typeChecker: TypeChecker | undefined): SymbolDisplayPart[];
         getJsDocTags(): JSDocTagInfo[];
     }
     interface SourceFile {
@@ -3909,6 +4017,7 @@ declare namespace ts {
         useCaseSensitiveFileNames?(): boolean;
         readDirectory?(path: string, extensions?: ReadonlyArray<string>, exclude?: ReadonlyArray<string>, include?: ReadonlyArray<string>, depth?: number): string[];
         readFile?(path: string, encoding?: string): string | undefined;
+        realpath?(path: string): string;
         fileExists?(path: string): boolean;
         getTypeRootsVersion?(): number;
         resolveModuleNames?(moduleNames: string[], containingFile: string, reusedNames?: string[]): ResolvedModule[];
@@ -3946,6 +4055,7 @@ declare namespace ts {
         getRenameInfo(fileName: string, position: number): RenameInfo;
         findRenameLocations(fileName: string, position: number, findInStrings: boolean, findInComments: boolean): RenameLocation[];
         getDefinitionAtPosition(fileName: string, position: number): DefinitionInfo[];
+        getDefinitionAndBoundSpan(fileName: string, position: number): DefinitionInfoAndBoundSpan;
         getTypeDefinitionAtPosition(fileName: string, position: number): DefinitionInfo[];
         getImplementationAtPosition(fileName: string, position: number): ImplementationLocation[];
         getReferencesAtPosition(fileName: string, position: number): ReferenceEntry[];
@@ -3966,7 +4076,8 @@ declare namespace ts {
         getDocCommentTemplateAtPosition(fileName: string, position: number): TextInsertion;
         isValidBraceCompletionAtPosition(fileName: string, position: number, openingBrace: number): boolean;
         getSpanOfEnclosingComment(fileName: string, position: number, onlyMultiLine: boolean): TextSpan;
-        getCodeFixesAtPosition(fileName: string, start: number, end: number, errorCodes: number[], formatOptions: FormatCodeSettings): CodeAction[];
+        getCodeFixesAtPosition(fileName: string, start: number, end: number, errorCodes: ReadonlyArray<number>, formatOptions: FormatCodeSettings): ReadonlyArray<CodeFixAction>;
+        getCombinedCodeFix(scope: CombinedCodeFixScope, fixId: {}, formatOptions: FormatCodeSettings): CombinedCodeActions;
         applyCodeActionCommand(action: CodeActionCommand): Promise<ApplyCodeActionCommandResult>;
         applyCodeActionCommand(action: CodeActionCommand[]): Promise<ApplyCodeActionCommandResult[]>;
         applyCodeActionCommand(action: CodeActionCommand | CodeActionCommand[]): Promise<ApplyCodeActionCommandResult | ApplyCodeActionCommandResult[]>;
@@ -3982,8 +4093,13 @@ declare namespace ts {
         getProgram(): Program;
         dispose(): void;
     }
+    interface CombinedCodeFixScope {
+        type: "file";
+        fileName: string;
+    }
     interface GetCompletionsAtPositionOptions {
         includeExternalModuleExports: boolean;
+        includeInsertTextCompletions: boolean;
     }
     interface ApplyCodeActionCommandResult {
         successMessage: string;
@@ -4057,6 +4173,17 @@ declare namespace ts {
          * This allows the language service to have side effects (e.g. installing dependencies) upon a code fix.
          */
         commands?: CodeActionCommand[];
+    }
+    interface CodeFixAction extends CodeAction {
+        /**
+         * If present, one may call 'getCombinedCodeFix' with this fixId.
+         * This may be omitted to indicate that the code fix can't be applied in a group.
+         */
+        fixId?: {};
+    }
+    interface CombinedCodeActions {
+        changes: ReadonlyArray<FileTextChanges>;
+        commands: ReadonlyArray<CodeActionCommand> | undefined;
     }
     type CodeActionCommand = InstallPackageAction;
     interface InstallPackageAction {
@@ -4194,6 +4321,7 @@ declare namespace ts {
         InsertSpaceBeforeFunctionParenthesis?: boolean;
         PlaceOpenBraceOnNewLineForFunctions: boolean;
         PlaceOpenBraceOnNewLineForControlBlocks: boolean;
+        insertSpaceBeforeTypeAnnotation?: boolean;
     }
     interface FormatCodeSettings extends EditorSettings {
         insertSpaceAfterCommaDelimiter?: boolean;
@@ -4211,6 +4339,7 @@ declare namespace ts {
         insertSpaceBeforeFunctionParenthesis?: boolean;
         placeOpenBraceOnNewLineForFunctions?: boolean;
         placeOpenBraceOnNewLineForControlBlocks?: boolean;
+        insertSpaceBeforeTypeAnnotation?: boolean;
     }
     interface DefinitionInfo {
         fileName: string;
@@ -4219,6 +4348,10 @@ declare namespace ts {
         name: string;
         containerKind: ScriptElementKind;
         containerName: string;
+    }
+    interface DefinitionInfoAndBoundSpan {
+        definitions: ReadonlyArray<DefinitionInfo>;
+        textSpan: TextSpan;
     }
     interface ReferencedSymbolDefinitionInfo extends DefinitionInfo {
         displayParts: SymbolDisplayPart[];
@@ -4322,14 +4455,16 @@ declare namespace ts {
         kind: ScriptElementKind;
         kindModifiers: string;
         sortText: string;
+        insertText?: string;
         /**
-         * An optional span that indicates the text to be replaced by this completion item. It will be
-         * set if the required span differs from the one generated by the default replacement behavior and should
-         * be used in that case
+         * An optional span that indicates the text to be replaced by this completion item.
+         * If present, this span should be used instead of the default one.
+         * It will be set if the required span differs from the one generated by the default replacement behavior.
          */
         replacementSpan?: TextSpan;
         hasAction?: true;
         source?: string;
+        isRecommended?: true;
     }
     interface CompletionEntryDetails {
         name: string;
@@ -4487,6 +4622,7 @@ declare namespace ts {
         ambientModifier = "declare",
         staticModifier = "static",
         abstractModifier = "abstract",
+        optionalModifier = "optional",
     }
     enum ClassificationTypeNames {
         comment = "comment",
@@ -4569,9 +4705,9 @@ declare namespace ts {
          * @param compilationSettings Some compilation settings like target affects the
          * shape of a the resulting SourceFile. This allows the DocumentRegistry to store
          * multiple copies of the same file for different compilation settings.
-         * @parm scriptSnapshot Text of the file. Only used if the file was not found
+         * @param scriptSnapshot Text of the file. Only used if the file was not found
          * in the registry and a new one was created.
-         * @parm version Current version of the file. Only used if the file was not found
+         * @param version Current version of the file. Only used if the file was not found
          * in the registry and a new one was created.
          */
         acquireDocument(fileName: string, compilationSettings: CompilerOptions, scriptSnapshot: IScriptSnapshot, version: string, scriptKind?: ScriptKind): SourceFile;
@@ -4632,9 +4768,6 @@ declare namespace ts {
 declare namespace ts {
     /** The version of the language service API */
     const servicesVersion = "0.7";
-    interface DisplayPartsSymbolWriter extends SymbolWriter {
-        displayParts(): SymbolDisplayPart[];
-    }
     function toEditorSettings(options: EditorOptions | EditorSettings): EditorSettings;
     function displayPartsToString(displayParts: SymbolDisplayPart[]): string;
     function getDefaultCompilerOptions(): CompilerOptions;
@@ -4667,6 +4800,8 @@ declare namespace ts.server {
         };
     };
     interface ServerHost extends System {
+        watchFile(path: string, callback: FileWatcherCallback, pollingInterval?: number): FileWatcher;
+        watchDirectory(path: string, callback: DirectoryWatcherCallback, recursive?: boolean): FileWatcher;
         setTimeout(callback: (...args: any[]) => void, ms: number, ...args: any[]): any;
         clearTimeout(timeoutId: any): void;
         setImmediate(callback: (...args: any[]) => void, ...args: any[]): any;
@@ -4699,7 +4834,7 @@ declare namespace ts.server {
     interface TypesRegistryRequest {
         readonly kind: "typesRegistry";
     }
-    interface InstallPackageRequest {
+    interface InstallPackageRequest extends TypingInstallerRequestWithProjectName {
         readonly kind: "installPackage";
         readonly fileName: Path;
         readonly packageName: string;
@@ -4707,13 +4842,18 @@ declare namespace ts.server {
     }
     type ActionSet = "action::set";
     type ActionInvalidate = "action::invalidate";
+    type ActionPackageInstalled = "action::packageInstalled";
     type EventTypesRegistry = "event::typesRegistry";
-    type EventPackageInstalled = "event::packageInstalled";
     type EventBeginInstallTypes = "event::beginInstallTypes";
     type EventEndInstallTypes = "event::endInstallTypes";
     type EventInitializationFailed = "event::initializationFailed";
     interface TypingInstallerResponse {
-        readonly kind: ActionSet | ActionInvalidate | EventTypesRegistry | EventPackageInstalled | EventBeginInstallTypes | EventEndInstallTypes | EventInitializationFailed;
+        readonly kind: ActionSet | ActionInvalidate | EventTypesRegistry | ActionPackageInstalled | EventBeginInstallTypes | EventEndInstallTypes | EventInitializationFailed;
+    }
+    interface PackageInstalledResponse extends ProjectResponse {
+        readonly kind: ActionPackageInstalled;
+        readonly success: boolean;
+        readonly message: string;
     }
     interface InitializationFailedResponse extends TypingInstallerResponse {
         readonly kind: EventInitializationFailed;
@@ -4749,8 +4889,8 @@ declare namespace ts.server {
 declare namespace ts.server {
     const ActionSet: ActionSet;
     const ActionInvalidate: ActionInvalidate;
+    const ActionPackageInstalled: ActionPackageInstalled;
     const EventTypesRegistry: EventTypesRegistry;
-    const EventPackageInstalled: EventPackageInstalled;
     const EventBeginInstallTypes: EventBeginInstallTypes;
     const EventEndInstallTypes: EventEndInstallTypes;
     const EventInitializationFailed: EventInitializationFailed;
@@ -4785,17 +4925,17 @@ declare namespace ts.server {
         info(s: string): void;
         startGroup(): void;
         endGroup(): void;
-        msg(s: string, type?: Msg.Types): void;
+        msg(s: string, type?: Msg): void;
         getLogFileName(): string;
     }
+    enum Msg {
+        Err = "Err",
+        Info = "Info",
+        Perf = "Perf",
+    }
     namespace Msg {
-        type Err = "Err";
-        const Err: Err;
-        type Info = "Info";
-        const Info: Info;
-        type Perf = "Perf";
-        const Perf: Perf;
-        type Types = Err | Info | Perf;
+        /** @deprecated Only here for backwards-compatibility. Prefer just `Msg`. */
+        type Types = Msg;
     }
     function createInstallTypingsRequest(project: Project, typeAcquisition: TypeAcquisition, unresolvedImports: SortedReadonlyArray<string>, cachePath?: string): DiscoverTypings;
     namespace Errors {
@@ -4855,6 +4995,7 @@ declare namespace ts.server.protocol {
         CompileOnSaveEmitFile = "compileOnSaveEmitFile",
         Configure = "configure",
         Definition = "definition",
+        DefinitionAndBoundSpan = "definitionAndBoundSpan",
         Implementation = "implementation",
         Exit = "exit",
         Format = "format",
@@ -4876,6 +5017,7 @@ declare namespace ts.server.protocol {
         Rename = "rename",
         Saveto = "saveto",
         SignatureHelp = "signatureHelp",
+        Status = "status",
         TypeDefinition = "typeDefinition",
         ProjectInfo = "projectInfo",
         ReloadProjects = "reloadProjects",
@@ -4888,6 +5030,7 @@ declare namespace ts.server.protocol {
         DocCommentTemplate = "docCommentTemplate",
         CompilerOptionsForInferredProjects = "compilerOptionsForInferredProjects",
         GetCodeFixes = "getCodeFixes",
+        GetCombinedCodeFix = "getCombinedCodeFix",
         ApplyCodeActionCommand = "applyCodeActionCommand",
         GetSupportedCodeFixes = "getSupportedCodeFixes",
         GetApplicableRefactors = "getApplicableRefactors",
@@ -4976,6 +5119,21 @@ declare namespace ts.server.protocol {
          */
         file: string;
         projectFileName?: string;
+    }
+    interface StatusRequest extends Request {
+        command: CommandTypes.Status;
+    }
+    interface StatusResponseBody {
+        /**
+         * The TypeScript version (`ts.version`).
+         */
+        version: string;
+    }
+    /**
+     * Response to StatusRequest
+     */
+    interface StatusResponse extends Response {
+        body: StatusResponseBody;
     }
     /**
      * Requests a JS Doc comment template for a given position
@@ -5235,6 +5393,13 @@ declare namespace ts.server.protocol {
         command: CommandTypes.GetCodeFixes;
         arguments: CodeFixRequestArgs;
     }
+    interface GetCombinedCodeFixRequest extends Request {
+        command: CommandTypes.GetCombinedCodeFix;
+        arguments: GetCombinedCodeFixRequestArgs;
+    }
+    interface GetCombinedCodeFixResponse extends Response {
+        body: CombinedCodeActions;
+    }
     interface ApplyCodeActionCommandRequest extends Request {
         command: CommandTypes.ApplyCodeActionCommand;
         arguments: ApplyCodeActionCommandRequestArgs;
@@ -5266,7 +5431,15 @@ declare namespace ts.server.protocol {
         /**
          * Errorcodes we want to get the fixes for.
          */
-        errorCodes?: number[];
+        errorCodes?: ReadonlyArray<number>;
+    }
+    interface GetCombinedCodeFixRequestArgs {
+        scope: GetCombinedCodeFixScope;
+        fixId: {};
+    }
+    interface GetCombinedCodeFixScope {
+        type: "file";
+        args: FileRequestArgs;
     }
     interface ApplyCodeActionCommandRequestArgs {
         /** May also be an array of commands. */
@@ -5375,11 +5548,18 @@ declare namespace ts.server.protocol {
          */
         file: string;
     }
+    interface DefinitionInfoAndBoundSpan {
+        definitions: ReadonlyArray<FileSpan>;
+        textSpan: TextSpan;
+    }
     /**
      * Definition response message.  Gives text range for definition.
      */
     interface DefinitionResponse extends Response {
         body?: FileSpan[];
+    }
+    interface DefinitionInfoAndBoundSpanReponse extends Response {
+        body?: DefinitionInfoAndBoundSpan;
     }
     /**
      * Definition response message.  Gives text range for definition.
@@ -6003,7 +6183,7 @@ declare namespace ts.server.protocol {
     }
     interface CodeFixResponse extends Response {
         /** The code actions that are available */
-        body?: CodeAction[];
+        body?: CodeFixAction[];
     }
     interface CodeAction {
         /** Description of the code action to display in the UI of the editor */
@@ -6012,6 +6192,17 @@ declare namespace ts.server.protocol {
         changes: FileCodeEdits[];
         /** A command is an opaque object that should be passed to `ApplyCodeActionCommandRequestArgs` without modification.  */
         commands?: {}[];
+    }
+    interface CombinedCodeActions {
+        changes: ReadonlyArray<FileCodeEdits>;
+        commands?: ReadonlyArray<{}>;
+    }
+    interface CodeFixAction extends CodeAction {
+        /**
+         * If present, one may call 'getCombinedCodeFix' with this fixId.
+         * This may be omitted to indicate that the code fix can't be applied in a group.
+         */
+        fixId?: {};
     }
     /**
      * Format and format on key response message.
@@ -6054,6 +6245,11 @@ declare namespace ts.server.protocol {
          * This affects lone identifier completions but not completions on the right hand side of `obj.`.
          */
         includeExternalModuleExports: boolean;
+        /**
+         * If enabled, the completion list will include completions with invalid identifier names.
+         * For those entries, The `insertText` and `replacementSpan` properties will be set to change from `.x` property access to `["x"]`.
+         */
+        includeInsertTextCompletions: boolean;
     }
     /**
      * Completions request; value of command field is "completions".
@@ -6123,8 +6319,15 @@ declare namespace ts.server.protocol {
          */
         sortText: string;
         /**
-         * An optional span that indicates the text to be replaced by this completion item. If present,
-         * this span should be used instead of the default one.
+         * Text to insert instead of `name`.
+         * This is used to support bracketed completions; If `name` might be "a-b" but `insertText` would be `["a-b"]`,
+         * coupled with `replacementSpan` to replace a dotted access with a bracket access.
+         */
+        insertText?: string;
+        /**
+         * An optional span that indicates the text to be replaced by this completion item.
+         * If present, this span should be used instead of the default one.
+         * It will be set if the required span differs from the one generated by the default replacement behavior.
          */
         replacementSpan?: TextSpan;
         /**
@@ -6136,6 +6339,12 @@ declare namespace ts.server.protocol {
          * Identifier (not necessarily human-readable) identifying where this completion came from.
          */
         source?: string;
+        /**
+         * If true, this completion should be highlighted as recommended. There will only be one of these.
+         * This will be set when we know the user should write an expression with a certain type and that type is an enum or constructable class.
+         * Then either that enum/class or a namespace containing it will be the recommended symbol.
+         */
+        isRecommended?: true;
     }
     /**
      * Additional completion entry details, available on demand
@@ -6788,6 +6997,7 @@ declare namespace ts.server.protocol {
         insertSpaceBeforeFunctionParenthesis?: boolean;
         placeOpenBraceOnNewLineForFunctions?: boolean;
         placeOpenBraceOnNewLineForControlBlocks?: boolean;
+        insertSpaceBeforeTypeAnnotation?: boolean;
     }
     interface CompilerOptions {
         allowJs?: boolean;
@@ -6902,12 +7112,13 @@ declare namespace ts.server {
         fileName: NormalizedPath;
         project: Project;
     }
-    interface EventSender {
-        event<T>(payload: T, eventName: string): void;
-    }
     type CommandNames = protocol.CommandTypes;
     const CommandNames: any;
     function formatMessage<T extends protocol.Message>(msg: T, logger: server.Logger, byteLength: (s: string, encoding: string) => number, newLine: string): string;
+    type Event = <T extends object>(body: T, eventName: string) => void;
+    interface EventSender {
+        event: Event;
+    }
     interface SessionOptions {
         host: ServerHost;
         cancellationToken: ServerCancellationToken;
@@ -6917,6 +7128,9 @@ declare namespace ts.server {
         byteLength: (buf: string, encoding?: string) => number;
         hrtime: (start?: number[]) => number[];
         logger: Logger;
+        /**
+         * If falsy, all events are suppressed.
+         */
         canUseEvents: boolean;
         eventHandler?: ProjectServiceEventHandler;
         throttleWaitMilliseconds?: number;
@@ -6930,21 +7144,22 @@ declare namespace ts.server {
         private changeSeq;
         private currentRequestId;
         private errorCheck;
-        private eventHandler;
-        private host;
+        protected host: ServerHost;
         private readonly cancellationToken;
         protected readonly typingsInstaller: ITypingsInstaller;
-        private byteLength;
+        protected byteLength: (buf: string, encoding?: string) => number;
         private hrtime;
         protected logger: Logger;
-        private canUseEvents;
+        protected canUseEvents: boolean;
+        private eventHandler;
         constructor(opts: SessionOptions);
         private sendRequestCompletedEvent(requestId);
         private defaultEventHandler(event);
         private projectsUpdatedInBackgroundEvent(openFiles);
         logError(err: Error, cmd: string): void;
         send(msg: protocol.Message): void;
-        event<T>(info: T, eventName: string): void;
+        event<T extends object>(body: T, eventName: string): void;
+        /** @deprecated */
         output(info: any, cmdName: string, reqSeq?: number, errorMsg?: string): void;
         private doOutput(info, cmdName, reqSeq, success, message?);
         private semanticCheck(file, project);
@@ -6961,6 +7176,9 @@ declare namespace ts.server {
         private convertToDiagnosticsWithLinePosition(diagnostics, scriptInfo);
         private getDiagnosticsWorker(args, isSemantic, selector, includeLinePosition);
         private getDefinition(args, simplifiedResult);
+        private getDefinitionAndBoundSpan(args, simplifiedResult);
+        private mapDefinitionInfo(definitions, project);
+        private toFileSpan(fileName, textSpan, project);
         private getTypeDefinition(args);
         private getImplementation(args, simplifiedResult);
         private getOccurrences(args);
@@ -7010,10 +7228,10 @@ declare namespace ts.server {
         private reload(args, reqSeq);
         private saveToTmp(fileName, tempFileName);
         private closeClientFile(fileName);
-        private decorateNavigationBarItems(items, scriptInfo);
+        private mapLocationNavigationBarItems(items, scriptInfo);
         private getNavigationBarItems(args, simplifiedResult);
-        private decorateNavigationTree(tree, scriptInfo);
-        private decorateSpan(span, scriptInfo);
+        private toLocationNavigationTree(tree, scriptInfo);
+        private toLocationTextSpan(span, scriptInfo);
         private getNavigationTree(args, simplifiedResult);
         private getNavigateToItems(args, simplifiedResult);
         private getSupportedCodeFixes();
@@ -7022,10 +7240,12 @@ declare namespace ts.server {
         private getApplicableRefactors(args);
         private getEditsForRefactor(args, simplifiedResult);
         private getCodeFixes(args, simplifiedResult);
-        private applyCodeActionCommand(commandName, requestSeq, args);
+        private getCombinedCodeFix({scope, fixId}, simplifiedResult);
+        private applyCodeActionCommand(args);
         private getStartAndEndPosition(args, scriptInfo);
-        private mapCodeAction({description, changes: unmappedChanges, commands}, scriptInfo);
+        private mapCodeAction(project, {description, changes: unmappedChanges, commands, fixId});
         private mapTextChangesToCodeEdits(project, textChanges);
+        private mapTextChangesToCodeEditsUsingScriptinfo(textChanges, scriptInfo);
         private convertTextChangeToCodeEdit(change, scriptInfo);
         private getBraceMatching(args, simplifiedResult);
         private getDiagnosticsForProject(next, delay, fileName);
@@ -7064,6 +7284,7 @@ declare namespace ts.server {
         open(newText: string): void;
         close(fileExists?: boolean): void;
         getSnapshot(): IScriptSnapshot;
+        private ensureRealPath();
         getFormatCodeSettings(): FormatCodeSettings;
         attachToProject(project: Project): boolean;
         isAttached(project: Project): boolean;
@@ -7092,12 +7313,13 @@ declare namespace ts.server {
     }
 }
 declare namespace ts.server {
-    interface InstallPackageOptionsWithProjectRootPath extends InstallPackageOptions {
+    interface InstallPackageOptionsWithProject extends InstallPackageOptions {
+        projectName: string;
         projectRootPath: Path;
     }
     interface ITypingsInstaller {
         isKnownTypesPackageName(name: string): boolean;
-        installPackage(options: InstallPackageOptionsWithProjectRootPath): Promise<ApplyCodeActionCommandResult>;
+        installPackage(options: InstallPackageOptionsWithProject): Promise<ApplyCodeActionCommandResult>;
         enqueueInstallTypingsRequest(p: Project, typeAcquisition: TypeAcquisition, unresolvedImports: SortedReadonlyArray<string>): void;
         attach(projectService: ProjectService): void;
         onProjectClosed(p: Project): void;
@@ -7109,11 +7331,22 @@ declare namespace ts.server {
         private readonly perProjectCache;
         constructor(installer: ITypingsInstaller);
         isKnownTypesPackageName(name: string): boolean;
-        installPackage(options: InstallPackageOptionsWithProjectRootPath): Promise<ApplyCodeActionCommandResult>;
+        installPackage(options: InstallPackageOptionsWithProject): Promise<ApplyCodeActionCommandResult>;
         getTypingsForProject(project: Project, unresolvedImports: SortedReadonlyArray<string>, forceRefresh: boolean): SortedReadonlyArray<string>;
         updateTypingsForProject(projectName: string, compilerOptions: CompilerOptions, typeAcquisition: TypeAcquisition, unresolvedImports: SortedReadonlyArray<string>, newTypings: string[]): void;
         deleteTypingsForProject(projectName: string): void;
         onProjectClosed(project: Project): void;
+    }
+}
+declare namespace ts {
+    interface EmitOutput {
+        outputFiles: OutputFile[];
+        emitSkipped: boolean;
+    }
+    interface OutputFile {
+        name: string;
+        writeByteOrderMark: boolean;
+        text: string;
     }
 }
 declare namespace ts.server {
@@ -7144,11 +7377,9 @@ declare namespace ts.server {
         create(createInfo: PluginCreateInfo): LanguageService;
         getExternalFiles?(proj: Project): string[];
     }
-    interface PluginModuleFactory {
-        (mod: {
-            typescript: typeof ts;
-        }): PluginModule;
-    }
+    type PluginModuleFactory = (mod: {
+        typescript: typeof ts;
+    }) => PluginModule;
     /**
      * The project root can be script info - if root is present,
      * or it could be just normalized path if root wasnt present on the host(only for non inferred project)
@@ -7161,19 +7392,19 @@ declare namespace ts.server {
         private documentRegistry;
         private compilerOptions;
         compileOnSaveEnabled: boolean;
-        directoryStructureHost: DirectoryStructureHost;
         private rootFiles;
         private rootFilesMap;
         private program;
         private externalFiles;
         private missingFilesMap;
+        private plugins;
         private cachedUnresolvedImportsPerFile;
         private lastCachedUnresolvedImportsList;
         protected languageService: LanguageService;
         languageServiceEnabled: boolean;
         readonly trace?: (s: string) => void;
         readonly realpath?: (path: string) => string;
-        private builder;
+        private builderState;
         /**
          * Set of files names that were updated since the last call to getChangesSinceVersion.
          */
@@ -7234,7 +7465,6 @@ declare namespace ts.server {
         getGlobalProjectErrors(): ReadonlyArray<Diagnostic>;
         getAllProjectErrors(): ReadonlyArray<Diagnostic>;
         getLanguageService(ensureSynchronized?: boolean): LanguageService;
-        private ensureBuilder();
         private shouldEmitFile(scriptInfo);
         getCompileOnSaveAffectedFileList(scriptInfo: ScriptInfo): string[];
         /**
@@ -7245,6 +7475,7 @@ declare namespace ts.server {
         disableLanguageService(): void;
         getProjectName(): string;
         abstract getTypeAcquisition(): TypeAcquisition;
+        protected removeLocalTypingsFromTypeAcquisition(newTypeAcquisition: TypeAcquisition): TypeAcquisition;
         getExternalFiles(): SortedReadonlyArray<string>;
         getSourceFile(path: Path): SourceFile;
         close(): void;
@@ -7265,12 +7496,12 @@ declare namespace ts.server {
         removeFile(info: ScriptInfo, fileExists: boolean, detachFromProject: boolean): void;
         registerFileUpdate(fileName: string): void;
         markAsDirty(): void;
-        private extractUnresolvedImportsFromSourceFile(file, result);
         /**
          * Updates set of files that contribute to this project
          * @returns: true if set of files in the project stays the same and false - otherwise.
          */
         updateGraph(): boolean;
+        protected removeExistingTypings(include: string[]): string[];
         private setTypings(typings);
         private updateGraphWorker();
         private detachScriptInfoFromProject(uncheckedFileName);
@@ -7281,6 +7512,9 @@ declare namespace ts.server {
         filesToString(writeProjectFileNames: boolean): string;
         setCompilerOptions(compilerOptions: CompilerOptions): void;
         protected removeRoot(info: ScriptInfo): void;
+        protected enableGlobalPlugins(): void;
+        protected enablePlugin(pluginConfigEntry: PluginImport, searchPaths: string[]): void;
+        private enableProxy(pluginModuleFactory, configEntry);
     }
     /**
      * If a file is opened and no tsconfig (or jsconfig) is found,
@@ -7309,7 +7543,6 @@ declare namespace ts.server {
         private typeAcquisition;
         private directoriesWatchedForWildcards;
         readonly canonicalConfigFilePath: NormalizedPath;
-        private plugins;
         /** Ref count to the project when opened from external project */
         private externalProjectRefCount;
         private projectErrors;
@@ -7320,8 +7553,6 @@ declare namespace ts.server {
         updateGraph(): boolean;
         getConfigFilePath(): NormalizedPath;
         enablePlugins(): void;
-        private enablePlugin(pluginConfigEntry, searchPaths);
-        private enableProxy(pluginModuleFactory, configEntry);
         /**
          * Get the errors that dont have any file name associated
          */
@@ -7333,7 +7564,6 @@ declare namespace ts.server {
         setProjectErrors(projectErrors: Diagnostic[]): void;
         setTypeAcquisition(newTypeAcquisition: TypeAcquisition): void;
         getTypeAcquisition(): TypeAcquisition;
-        getExternalFiles(): SortedReadonlyArray<string>;
         close(): void;
         getEffectiveTypeRoots(): string[];
     }
@@ -7418,9 +7648,7 @@ declare namespace ts.server {
         readonly dts: number;
     }
     type ProjectServiceEvent = ProjectsUpdatedInBackgroundEvent | ConfigFileDiagEvent | ProjectLanguageServiceStateEvent | ProjectInfoTelemetryEvent;
-    interface ProjectServiceEventHandler {
-        (event: ProjectServiceEvent): void;
-    }
+    type ProjectServiceEventHandler = (event: ProjectServiceEvent) => void;
     interface SafeList {
         [name: string]: {
             match: RegExp;
@@ -7438,10 +7666,6 @@ declare namespace ts.server {
     function convertCompilerOptions(protocolOptions: protocol.ExternalProjectCompilerOptions): CompilerOptions & protocol.CompileOnSaveMixin;
     function tryConvertScriptKindName(scriptKindName: protocol.ScriptKindName | ScriptKind): ScriptKind;
     function convertScriptKindName(scriptKindName: protocol.ScriptKindName): ScriptKind.Unknown | ScriptKind.JS | ScriptKind.JSX | ScriptKind.TS | ScriptKind.TSX;
-    /**
-     * This helper function processes a list of projects and return the concatenated, sortd and deduplicated output of processing each project.
-     */
-    function combineProjectOutput<T>(projects: ReadonlyArray<Project>, action: (project: Project) => ReadonlyArray<T>, comparer?: (a: T, b: T) => number, areEqual?: (a: T, b: T) => boolean): T[];
     interface HostConfiguration {
         formatCodeOptions: FormatCodeSettings;
         hostInfo: string;
@@ -7489,9 +7713,9 @@ declare namespace ts.server {
          */
         readonly configuredProjects: Map<ConfiguredProject>;
         /**
-         * list of open files
+         * Open files: with value being project root path, and key being Path of the file that is open
          */
-        readonly openFiles: ScriptInfo[];
+        readonly openFiles: Map<NormalizedPath>;
         /**
          * Map of open files that are opened without complete path but have projectRoot as current directory
          */
@@ -7537,7 +7761,7 @@ declare namespace ts.server {
         private createWatcherLog(watchType, project);
         toPath(fileName: string): Path;
         private loadTypesMap();
-        updateTypingsForProject(response: SetTypings | InvalidateCachedTypings): void;
+        updateTypingsForProject(response: SetTypings | InvalidateCachedTypings | PackageInstalledResponse): void;
         private delayInferredProjectsRefresh();
         private delayUpdateProjectGraph(project);
         private sendProjectsUpdatedInBackgroundEvent();
@@ -7558,7 +7782,6 @@ declare namespace ts.server {
          * @param forceInferredProjectsRefresh when true updates the inferred projects even if there is no pending work to update the files/project structures
          */
         private ensureProjectStructuresUptoDate(forceInferredProjectsRefresh?);
-        private findContainingExternalProject(fileName);
         getFormatCodeOptions(file?: NormalizedPath): FormatCodeSettings;
         private updateProjectGraphs(projects);
         private onSourceFileChanged(fileName, eventKind);
@@ -7577,6 +7800,7 @@ declare namespace ts.server {
          */
         private closeOpenFile(info);
         private deleteOrphanScriptInfoNotInAnyProject();
+        private deleteScriptInfo(info);
         private configFileExists(configFileName, canonicalConfigFilePath, info);
         private setConfigFileExistenceByNewConfiguredProject(project);
         /**
@@ -7615,7 +7839,7 @@ declare namespace ts.server {
          * The server must start searching from the directory containing
          * the newly opened file.
          */
-        private getConfigFileNameForFile(info, projectRootPath?);
+        private getConfigFileNameForFile(info, projectRootPath);
         private printProjects();
         private findConfiguredProjectByProjectName(configFileName);
         private getConfiguredProjectByCanonicalConfigFilePath(canonicalConfigFilePath);
@@ -7635,7 +7859,9 @@ declare namespace ts.server {
         getScriptInfo(uncheckedFileName: string): ScriptInfo;
         private watchClosedScriptInfo(info);
         private stopWatchingScriptInfo(info);
-        getOrCreateScriptInfoForNormalizedPath(fileName: NormalizedPath, openedByClient: boolean, fileContent?: string, scriptKind?: ScriptKind, hasMixedContent?: boolean, hostToQueryFileExistsOn?: DirectoryStructureHost): ScriptInfo;
+        getOrCreateScriptInfoForNormalizedPath(fileName: NormalizedPath, openedByClient: boolean, fileContent?: string, scriptKind?: ScriptKind, hasMixedContent?: boolean, hostToQueryFileExistsOn?: {
+            fileExists(path: string): boolean;
+        }): ScriptInfo;
         private getOrCreateScriptInfoWorker(fileName, currentDirectory, openedByClient, fileContent?, scriptKind?, hasMixedContent?, hostToQueryFileExistsOn?);
         /**
          * This gets the script info for the normalized path. If the path is not rooted disk path then the open script info with project root context is preferred
@@ -7655,8 +7881,9 @@ declare namespace ts.server {
          * If the config file is found and it refers to existing project, it reloads it either immediately
          * or schedules it for reload depending on delayReload option
          * If the there is no existing project it just opens the configured project for the config file
+         * reloadForInfo provides a way to filter out files to reload configured project for
          */
-        private reloadConfiguredProjectForFiles(openFiles, delayReload);
+        private reloadConfiguredProjectForFiles<T>(openFiles, delayReload, shouldReloadProjectFor);
         /**
          * Remove the root of inferred project if script info is part of another project
          */
@@ -7675,6 +7902,7 @@ declare namespace ts.server {
          * @param fileContent is a known version of the file content that is more up to date than the one on disk
          */
         openClientFile(fileName: string, fileContent?: string, scriptKind?: ScriptKind, projectRootPath?: string): OpenConfiguredProjectResult;
+        private findExternalProjetContainingOpenScriptInfo(info);
         openClientFileWithNormalizedPath(fileName: NormalizedPath, fileContent?: string, scriptKind?: ScriptKind, hasMixedContent?: boolean, projectRootPath?: NormalizedPath): OpenConfiguredProjectResult;
         /**
          * Close file whose contents is managed by the client

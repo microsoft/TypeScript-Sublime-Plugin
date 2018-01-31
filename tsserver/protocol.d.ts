@@ -14,6 +14,7 @@ declare namespace ts.server.protocol {
         CompileOnSaveEmitFile = "compileOnSaveEmitFile",
         Configure = "configure",
         Definition = "definition",
+        DefinitionAndBoundSpan = "definitionAndBoundSpan",
         Implementation = "implementation",
         Exit = "exit",
         Format = "format",
@@ -35,6 +36,7 @@ declare namespace ts.server.protocol {
         Rename = "rename",
         Saveto = "saveto",
         SignatureHelp = "signatureHelp",
+        Status = "status",
         TypeDefinition = "typeDefinition",
         ProjectInfo = "projectInfo",
         ReloadProjects = "reloadProjects",
@@ -47,6 +49,7 @@ declare namespace ts.server.protocol {
         DocCommentTemplate = "docCommentTemplate",
         CompilerOptionsForInferredProjects = "compilerOptionsForInferredProjects",
         GetCodeFixes = "getCodeFixes",
+        GetCombinedCodeFix = "getCombinedCodeFix",
         ApplyCodeActionCommand = "applyCodeActionCommand",
         GetSupportedCodeFixes = "getSupportedCodeFixes",
         GetApplicableRefactors = "getApplicableRefactors",
@@ -135,6 +138,21 @@ declare namespace ts.server.protocol {
          */
         file: string;
         projectFileName?: string;
+    }
+    interface StatusRequest extends Request {
+        command: CommandTypes.Status;
+    }
+    interface StatusResponseBody {
+        /**
+         * The TypeScript version (`ts.version`).
+         */
+        version: string;
+    }
+    /**
+     * Response to StatusRequest
+     */
+    interface StatusResponse extends Response {
+        body: StatusResponseBody;
     }
     /**
      * Requests a JS Doc comment template for a given position
@@ -394,6 +412,13 @@ declare namespace ts.server.protocol {
         command: CommandTypes.GetCodeFixes;
         arguments: CodeFixRequestArgs;
     }
+    interface GetCombinedCodeFixRequest extends Request {
+        command: CommandTypes.GetCombinedCodeFix;
+        arguments: GetCombinedCodeFixRequestArgs;
+    }
+    interface GetCombinedCodeFixResponse extends Response {
+        body: CombinedCodeActions;
+    }
     interface ApplyCodeActionCommandRequest extends Request {
         command: CommandTypes.ApplyCodeActionCommand;
         arguments: ApplyCodeActionCommandRequestArgs;
@@ -425,7 +450,15 @@ declare namespace ts.server.protocol {
         /**
          * Errorcodes we want to get the fixes for.
          */
-        errorCodes?: number[];
+        errorCodes?: ReadonlyArray<number>;
+    }
+    interface GetCombinedCodeFixRequestArgs {
+        scope: GetCombinedCodeFixScope;
+        fixId: {};
+    }
+    interface GetCombinedCodeFixScope {
+        type: "file";
+        args: FileRequestArgs;
     }
     interface ApplyCodeActionCommandRequestArgs {
         /** May also be an array of commands. */
@@ -534,11 +567,18 @@ declare namespace ts.server.protocol {
          */
         file: string;
     }
+    interface DefinitionInfoAndBoundSpan {
+        definitions: ReadonlyArray<FileSpan>;
+        textSpan: TextSpan;
+    }
     /**
      * Definition response message.  Gives text range for definition.
      */
     interface DefinitionResponse extends Response {
         body?: FileSpan[];
+    }
+    interface DefinitionInfoAndBoundSpanReponse extends Response {
+        body?: DefinitionInfoAndBoundSpan;
     }
     /**
      * Definition response message.  Gives text range for definition.
@@ -1162,7 +1202,7 @@ declare namespace ts.server.protocol {
     }
     interface CodeFixResponse extends Response {
         /** The code actions that are available */
-        body?: CodeAction[];
+        body?: CodeFixAction[];
     }
     interface CodeAction {
         /** Description of the code action to display in the UI of the editor */
@@ -1171,6 +1211,17 @@ declare namespace ts.server.protocol {
         changes: FileCodeEdits[];
         /** A command is an opaque object that should be passed to `ApplyCodeActionCommandRequestArgs` without modification.  */
         commands?: {}[];
+    }
+    interface CombinedCodeActions {
+        changes: ReadonlyArray<FileCodeEdits>;
+        commands?: ReadonlyArray<{}>;
+    }
+    interface CodeFixAction extends CodeAction {
+        /**
+         * If present, one may call 'getCombinedCodeFix' with this fixId.
+         * This may be omitted to indicate that the code fix can't be applied in a group.
+         */
+        fixId?: {};
     }
     /**
      * Format and format on key response message.
@@ -1213,6 +1264,11 @@ declare namespace ts.server.protocol {
          * This affects lone identifier completions but not completions on the right hand side of `obj.`.
          */
         includeExternalModuleExports: boolean;
+        /**
+         * If enabled, the completion list will include completions with invalid identifier names.
+         * For those entries, The `insertText` and `replacementSpan` properties will be set to change from `.x` property access to `["x"]`.
+         */
+        includeInsertTextCompletions: boolean;
     }
     /**
      * Completions request; value of command field is "completions".
@@ -1282,8 +1338,15 @@ declare namespace ts.server.protocol {
          */
         sortText: string;
         /**
-         * An optional span that indicates the text to be replaced by this completion item. If present,
-         * this span should be used instead of the default one.
+         * Text to insert instead of `name`.
+         * This is used to support bracketed completions; If `name` might be "a-b" but `insertText` would be `["a-b"]`,
+         * coupled with `replacementSpan` to replace a dotted access with a bracket access.
+         */
+        insertText?: string;
+        /**
+         * An optional span that indicates the text to be replaced by this completion item.
+         * If present, this span should be used instead of the default one.
+         * It will be set if the required span differs from the one generated by the default replacement behavior.
          */
         replacementSpan?: TextSpan;
         /**
@@ -1295,6 +1358,12 @@ declare namespace ts.server.protocol {
          * Identifier (not necessarily human-readable) identifying where this completion came from.
          */
         source?: string;
+        /**
+         * If true, this completion should be highlighted as recommended. There will only be one of these.
+         * This will be set when we know the user should write an expression with a certain type and that type is an enum or constructable class.
+         * Then either that enum/class or a namespace containing it will be the recommended symbol.
+         */
+        isRecommended?: true;
     }
     /**
      * Additional completion entry details, available on demand
@@ -1947,6 +2016,7 @@ declare namespace ts.server.protocol {
         insertSpaceBeforeFunctionParenthesis?: boolean;
         placeOpenBraceOnNewLineForFunctions?: boolean;
         placeOpenBraceOnNewLineForControlBlocks?: boolean;
+        insertSpaceBeforeTypeAnnotation?: boolean;
     }
     interface CompilerOptions {
         allowJs?: boolean;
