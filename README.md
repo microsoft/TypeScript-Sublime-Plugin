@@ -30,12 +30,12 @@ If using [Package Control](https://packagecontrol.io/) for Sublime Text, simply 
 Alternatively, you can clone the repo directly into your Sublime plugin folder.  For example, for Sublime Text 3 on a Mac this would look something like:
 ```
 cd ~/"Library/Application Support/Sublime Text 3/Packages"
-git clone --depth 1 https://github.com/Microsoft/TypeScript-Sublime-Plugin.git TypeScript
+git clone --depth 1 https://github.com/Microsoft/TypeScript-Sublime-Plugin TypeScript
 ```
 And on Windows:
 ```
 cd "%APPDATA%\Sublime Text 3\Packages"
-git clone --depth 1 https://github.com/Microsoft/TypeScript-Sublime-Plugin.git TypeScript
+git clone --depth 1 https://github.com/Microsoft/TypeScript-Sublime-Plugin TypeScript TypeScript
 ```
 (`--depth 1` downloads only the current version to reduce the clone size.)
 Note if you are using the portable version of Sublime Text, the location will be different.  (See http://docs.sublimetext.info/en/latest/basic_concepts.html#the-data-directory for more info).
