@@ -117,8 +117,9 @@ def is_special_view(view):
     in that they cannot be the active_view of their windows, therefore their ids
     shouldn't be equal to the current view id.
     """
-    active_view = view.window().active_view()
-    return view and active_view and view.window() and view.id() != active_view.id()
+    window = view.window()
+    active_view = window.active_view() if window else None
+    return view and active_view and window and view.id() != active_view.id()
 
 
 def get_location_from_view(view):
