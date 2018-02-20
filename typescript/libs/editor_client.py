@@ -1,6 +1,7 @@
 ﻿from .reference import RefInfo
 from .node_client import ServerClient, WorkerClient
 from .service_proxy import ServiceProxy
+from .logger import log
 from .global_vars import *
 from . import global_vars
 
@@ -59,8 +60,8 @@ class EditorClient:
             # otherwise, get tsserver.js from package directory
             proc_file = os.path.join(PLUGIN_DIR, "tsserver", "tsserver.js")
             global_vars._tsc_path = os.path.join(PLUGIN_DIR, "tsserver", "tsc.js")
-        print("Path of tsserver.js: " + proc_file)
-        print("Path of tsc.js: " + get_tsc_path())
+        log.debug("Path of tsserver.js: " + proc_file)
+        log.debug("Path of tsc.js: " + get_tsc_path())
 
         self.node_client = ServerClient(proc_file)
         self.worker_client = WorkerClient(proc_file)

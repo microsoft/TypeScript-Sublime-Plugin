@@ -62,7 +62,7 @@ def plugin_loaded():
     log.debug("plugin_loaded started")
     settings = sublime.load_settings('Preferences.sublime-settings')
     global_vars._language_service_enabled = settings.get('enable_typescript_language_service', True)
-    print ("lang_service_enabled: " + str(global_vars.get_language_service_enabled()))
+    log.debug ("lang_service_enabled: " + str(global_vars.get_language_service_enabled()))
     if not global_vars.get_language_service_enabled():
         return
 
@@ -72,7 +72,7 @@ def plugin_loaded():
         settings = ref_view.settings()
         ref_info_view = settings.get('refinfo')
         if ref_info_view:
-            print("got refinfo from settings")
+            log.debug("got refinfo from settings")
             ref_info = build_ref_info(ref_info_view)
             cli.update_ref_info(ref_info)
             ref_view.set_scratch(True)
@@ -81,14 +81,14 @@ def plugin_loaded():
             if cur_line:
                 update_ref_line(ref_info, int(cur_line), ref_view)
             else:
-                print("no current ref line")
+                log.debug("no current ref line")
         else:
             window = sublime.active_window()
             if window:
                 window.focus_view(ref_view)
                 window.run_command('close')
     else:
-        print("ref view not found")
+        log.debug("ref view not found")
     log.debug("plugin_loaded ended")
 
 
