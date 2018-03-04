@@ -139,7 +139,7 @@ class NodeCommClient(CommClient):
         while True:
             cmd = self.postq.get(True) + "\n"
             if not self.server_proc:
-                log.error("can not send request; node process not running")
+                log.debug("can not send request; node process not running")
             else:
                 st = time.time()
                 self.server_proc.stdin.write(cmd.encode())
@@ -152,7 +152,7 @@ class NodeCommClient(CommClient):
         """
         log.debug('Posting command: {0}'.format(cmd))
         if not self.server_proc:
-            log.error("can not send request; node process not running")
+            log.debug("can not send request; node process not running")
             return False
         self.postq.put_nowait(cmd)
         return True
