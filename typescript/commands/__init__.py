@@ -34,6 +34,9 @@ from .settings import (
     TypescriptOpenTsDefaultSettingFile,
     TypescriptOpenTsreactDefaultSettingFile
 )
+from .organize_imports import (
+    TypescriptOrganizeImportsCommand
+)
 
 __all__ = [
     "TypescriptAutoIndentOnEnterBetweenCurlyBrackets",
@@ -59,6 +62,7 @@ __all__ = [
     "TypescriptDelayedRenameFile",
     "TypescriptFinishRenameCommand",
     "TypescriptRenameCommand",
+    "TypescriptOrganizeImportsCommand",
     "TypescriptSave",
     "TypescriptShowDoc",
     "TypescriptSignaturePanel",

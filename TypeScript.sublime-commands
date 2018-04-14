@@ -3,6 +3,7 @@
  { "caption" : "TypeScript: GoTo Type Definition", "command": "typescript_go_to_type_definition" },
  { "caption" : "TypeScript: Quick Info Documentation", "command": "typescript_quick_info_doc" },
  { "caption" : "TypeScript: Overloads Panel", "command": "typescript_signature_panel" },
+ { "caption" : "TypeScript: Organize Imports", "command": "typescript_organize_imports" },
  { "caption" : "TypeScript: Save Tmp", "command": "typescript_save" },
  { "caption" : "TypeScript: Format Selection", "command": "typescript_format_selection" },
  { "caption" : "TypeScript: Format Document", "command": "typescript_format_document" },
