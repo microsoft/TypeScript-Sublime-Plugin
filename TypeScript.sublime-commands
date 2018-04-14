@@ -9,6 +9,7 @@
  { "caption" : "TypeScript: Find References", "command": "typescript_find_references" },
  { "caption" : "TypeScript: Navigate To Symbol", "command": "typescript_nav_to" },
  { "caption" : "TypeScript: Rename", "command": "typescript_rename" },
+ { "caption" : "TypeScript: Refactor", "command": "typescript_get_applicable_refactors" },
  { "caption" : "TypeScript: Paste And Format", "command": "typescript_paste_and_format" },
  { "caption" : "TypeScript: Format Line", "command": "typescript_format_line" },
  { "caption" : "TypeScript: Format Block", "command": "typescript_format_brackets" },
