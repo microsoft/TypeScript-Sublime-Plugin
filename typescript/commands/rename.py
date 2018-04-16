@@ -31,7 +31,7 @@ class TypescriptRenameCommand(TypeScriptBaseTextCommand):
 
         if len(outer_locations) > 0:
             sublime.active_window().show_input_panel(
-                'New name : ',
+                'New name: ',
                 info['displayName'],  # initial text
                 on_done,
                 None,                 # on_change
