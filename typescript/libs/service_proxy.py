@@ -272,3 +272,40 @@ class ServiceProxy:
         if args:
             req_dict["arguments"] = args
         return req_dict
+
+    def get_errors_in_file(self, path):
+        args = {
+            "file": path
+        }
+        req_dict = self.create_req_dict("semanticDiagnosticsSync", args)
+        json_str = json_helpers.encode(req_dict)
+        response_dict = self.__comm.sendCmdSync(json_str, req_dict["seq"])
+        return response_dict
+
+
+    def get_errors_at_cursor(self, path, cursor):
+      errors_in_file = self.get_errors_in_file(path)
+      line = cursor[0] + 1
+      column = cursor[1] + 1
+      if errors_in_file['success']:
+          errors_at_cursor = list(filter(lambda error:
+              error['start']['line'] == line  and
+              error['end']['line'] == line and
+              error['start']['offset'] <= column and
+              error['end']['offset'] >= column , errors_in_file['body']))
+          return errors_at_cursor
+
+
+    def get_code_fixes(self, path, startLine, startOffset, endLine, endOffset, errorCodes):
+        args = {
+            "file": path,
+            "startLine": startLine,
+            "startOffset": startOffset,
+            "endLine": endLine,
+            "endOffset": endOffset,
+            "errorCodes": errorCodes
+        }
+        req_dict = self.create_req_dict("getCodeFixes", args)
+        json_str = json_helpers.encode(req_dict)
+        response_dict = self.__comm.sendCmdSync(json_str, req_dict["seq"])
+        return response_dict
