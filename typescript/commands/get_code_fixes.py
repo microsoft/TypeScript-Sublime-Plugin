@@ -24,7 +24,7 @@ class ReplaceTextCommand(TypeScriptBaseTextCommand):
         self.view.replace(edit, region, text)
 
 
-class TypescriptGetCodeFixesCommand(TypeScriptBaseTextCommand):
+class TypescriptRequestCodeFixesCommand(TypeScriptBaseTextCommand):
     """
     Code Fixes command
         Get all errors in the current view
@@ -56,7 +56,7 @@ class TypescriptGetCodeFixesCommand(TypeScriptBaseTextCommand):
             'replace_text', {'start': start, 'end': end, 'text': text})
 
     def run(self, text):
-        log.debug("running TypescriptGetCodeFixesCommand")
+        log.debug("running TypescriptRequestCodeFixesCommand")
         if not is_typescript(self.view):
             print("To run this command, please first assign a file name to the view")
             return
