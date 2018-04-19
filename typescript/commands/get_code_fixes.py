@@ -21,6 +21,7 @@ class ReplaceTextCommand(TypeScriptBaseTextCommand):
         """
         visible_region = self.view.visible_region()
         region = sublime.Region(start, end)
+        text = text.replace('\r\n', '\n').replace('\r', '\n')
         self.view.replace(edit, region, text)
 
 
