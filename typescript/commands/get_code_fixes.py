@@ -47,14 +47,21 @@ class TypescriptRequestCodeFixesCommand(TypeScriptBaseTextCommand):
     def handle_selection(self, idx):
         if idx == -1:
             return
-        current_code_fix = self.all_code_fixes['body'][idx]['changes'][0]['textChanges']
-        start = self.view.text_point(
-            current_code_fix[0]['start']['line'] - 1, current_code_fix[0]['start']['offset'] - 1)
-        end = self.view.text_point(
-            current_code_fix[0]['end']['line'] - 1, current_code_fix[0]['end']['offset'] - 1)
-        text = current_code_fix[0]['newText']
-        self.view.run_command(
-            'replace_text', {'start': start, 'end': end, 'text': text})
+        all_changes = self.all_code_fixes['body'][idx]['changes'][0]['textChanges']
+        for change in all_changes:
+            text = change['newText']
+            if text[:1] == '\n':
+                start = self.view.text_point(
+                    change['start']['line'] - 1, change['start']['offset'])
+                end = self.view.text_point(
+                    change['end']['line'] - 1, change['end']['offset'])
+            else:
+                start = self.view.text_point(
+                    change['start']['line'] - 1, change['start']['offset'] - 1)
+                end = self.view.text_point(
+                    change['end']['line'] - 1, change['end']['offset'] - 1)
+            self.view.run_command(
+                'replace_text', {'start': start, 'end': end, 'text': text})
 
     def run(self, text):
         log.debug("running TypescriptRequestCodeFixesCommand")
