@@ -94,6 +94,16 @@ declare function escape(string: string): string;
   */
 declare function unescape(string: string): string;
 
+interface Symbol {
+  /** Returns a string representation of an object. */
+  toString(): string;
+
+  /** Returns the primitive value of the specified object. */
+  valueOf(): symbol;
+}
+
+declare type PropertyKey = string | number | symbol;
+
 interface PropertyDescriptor {
     configurable?: boolean;
     enumerable?: boolean;
@@ -124,7 +134,7 @@ interface Object {
       * Determines whether an object has a property with the specified name.
       * @param v A property name.
       */
-    hasOwnProperty(v: string): boolean;
+    hasOwnProperty(v: PropertyKey): boolean;
 
     /**
       * Determines whether an object exists in another object's prototype chain.
@@ -136,7 +146,7 @@ interface Object {
       * Determines whether a specified property is enumerable.
       * @param v A property name.
       */
-    propertyIsEnumerable(v: string): boolean;
+    propertyIsEnumerable(v: PropertyKey): boolean;
 }
 
 interface ObjectConstructor {
@@ -159,7 +169,7 @@ interface ObjectConstructor {
       * @param o Object that contains the property.
       * @param p Name of the property.
     */
-    getOwnPropertyDescriptor(o: any, p: string): PropertyDescriptor | undefined;
+    getOwnPropertyDescriptor(o: any, p: PropertyKey): PropertyDescriptor | undefined;
 
     /**
       * Returns the names of the own properties of an object. The own properties of an object are those that are defined directly
@@ -187,7 +197,7 @@ interface ObjectConstructor {
       * @param p The property name.
       * @param attributes Descriptor for the property. It can be for a data property or an accessor property.
       */
-    defineProperty(o: any, p: string, attributes: PropertyDescriptor & ThisType<any>): any;
+    defineProperty(o: any, p: PropertyKey, attributes: PropertyDescriptor & ThisType<any>): any;
 
     /**
       * Adds one or more properties to an object, and/or modifies attributes of existing properties.
@@ -525,6 +535,15 @@ interface TemplateStringsArray extends ReadonlyArray<string> {
     readonly raw: ReadonlyArray<string>;
 }
 
+/**
+ * The type of `import.meta`.
+ * 
+ * If you need to declare that a given property exists on `import.meta`,
+ * this type may be augmented via interface merging.
+ */
+interface ImportMeta {
+}
+
 interface Math {
     /** The mathematical constant e. This is Euler's number, the base of natural logarithms. */
     readonly E: number;
@@ -792,8 +811,7 @@ interface Date {
 
 interface DateConstructor {
     new(): Date;
-    new(value: number): Date;
-    new(value: string): Date;
+    new(value: number | string): Date;
     new(year: number, month: number, date?: number, hours?: number, minutes?: number, seconds?: number, ms?: number): Date;
     (): string;
     readonly prototype: Date;
@@ -1361,7 +1379,7 @@ type Pick<T, K extends keyof T> = {
 /**
  * Construct a type with a set of properties K of type T
  */
-type Record<K extends string, T> = {
+type Record<K extends keyof any, T> = {
     [P in K]: T;
 };
 
@@ -4155,8 +4173,6 @@ interface Date {
 }
 
 
-declare type PropertyKey = string | number | symbol;
-
 interface Array<T> {
     /**
      * Returns the value of the first element in the array where predicate is true, and undefined
@@ -4415,20 +4431,6 @@ interface NumberConstructor {
     parseInt(string: string, radix?: number): number;
 }
 
-interface Object {
-    /**
-     * Determines whether an object has a property with the specified name.
-     * @param v A property name.
-     */
-    hasOwnProperty(v: PropertyKey): boolean;
-
-    /**
-     * Determines whether a specified property is enumerable.
-     * @param v A property name.
-     */
-    propertyIsEnumerable(v: PropertyKey): boolean;
-}
-
 interface ObjectConstructor {
     /**
      * Copy the values of all of the enumerable own properties from one or more source objects to a
@@ -4484,25 +4486,6 @@ interface ObjectConstructor {
      * @param proto The value of the new prototype or null.
      */
     setPrototypeOf(o: any, proto: object | null): any;
-
-    /**
-     * Gets the own property descriptor of the specified object.
-     * An own property descriptor is one that is defined directly on the object and is not
-     * inherited from the object's prototype.
-     * @param o Object that contains the property.
-     * @param p Name of the property.
-     */
-    getOwnPropertyDescriptor(o: any, propertyKey: PropertyKey): PropertyDescriptor | undefined;
-
-    /**
-     * Adds a property to an object, or modifies attributes of an existing property.
-     * @param o Object on which to add or modify the property. This can be a native JavaScript
-     * object (that is, a user-defined object or a built in object) or a DOM object.
-     * @param p The property name.
-     * @param attributes Descriptor for the property. It can be for a data property or an accessor
-     *  property.
-     */
-    defineProperty(o: any, propertyKey: PropertyKey, attributes: PropertyDescriptor): any;
 }
 
 interface ReadonlyArray<T> {
@@ -4695,7 +4678,7 @@ interface Map<K, V> {
 
 interface MapConstructor {
     new (): Map<any, any>;
-    new <K, V>(entries?: ReadonlyArray<[K, V]>): Map<K, V>;
+    new <K, V>(entries?: ReadonlyArray<[K, V]> | null): Map<K, V>;
     readonly prototype: Map<any, any>;
 }
 declare var Map: MapConstructor;
@@ -4716,7 +4699,7 @@ interface WeakMap<K extends object, V> {
 
 interface WeakMapConstructor {
     new (): WeakMap<object, any>;
-    new <K extends object, V>(entries?: ReadonlyArray<[K, V]>): WeakMap<K, V>;
+    new <K extends object, V>(entries?: ReadonlyArray<[K, V]> | null): WeakMap<K, V>;
     readonly prototype: WeakMap<object, any>;
 }
 declare var WeakMap: WeakMapConstructor;
@@ -4732,7 +4715,7 @@ interface Set<T> {
 
 interface SetConstructor {
     new (): Set<any>;
-    new <T>(values?: ReadonlyArray<T>): Set<T>;
+    new <T>(values?: ReadonlyArray<T> | null): Set<T>;
     readonly prototype: Set<any>;
 }
 declare var Set: SetConstructor;
@@ -4751,7 +4734,7 @@ interface WeakSet<T extends object> {
 
 interface WeakSetConstructor {
     new (): WeakSet<object>;
-    new <T extends object>(values?: ReadonlyArray<T>): WeakSet<T>;
+    new <T extends object>(values?: ReadonlyArray<T> | null): WeakSet<T>;
     readonly prototype: WeakSet<object>;
 }
 declare var WeakSet: WeakSetConstructor;
@@ -5464,14 +5447,7 @@ interface PromiseConstructor {
      * @param reason The reason the promise was rejected.
      * @returns A new rejected Promise.
      */
-    reject(reason: any): Promise<never>;
-
-    /**
-     * Creates a new rejected promise for the provided reason.
-     * @param reason The reason the promise was rejected.
-     * @returns A new rejected Promise.
-     */
-    reject<T>(reason: any): Promise<T>;
+    reject<T = never>(reason?: any): Promise<T>;
 
     /**
      * Creates a new resolved promise for the provided value.
@@ -5529,14 +5505,6 @@ declare namespace Reflect {
     function setPrototypeOf(target: object, proto: any): boolean;
 }
 
-
-interface Symbol {
-    /** Returns a string representation of an object. */
-    toString(): string;
-
-    /** Returns the primitive value of the specified object. */
-    valueOf(): symbol;
-}
 
 interface SymbolConstructor {
     /**
@@ -9153,6 +9121,7 @@ interface DOMTokenList {
     contains(token: string): boolean;
     item(index: number): string | null;
     remove(...tokens: string[]): void;
+    replace(oldToken: string, newToken: string): void;
     toString(): string;
     toggle(token: string, force?: boolean): boolean;
     [index: number]: string;
@@ -9400,10 +9369,10 @@ interface DocumentEventMap extends GlobalEventHandlersEventMap {
     "submit": Event;
     "suspend": Event;
     "timeupdate": Event;
-    "touchcancel": Event;
-    "touchend": Event;
-    "touchmove": Event;
-    "touchstart": Event;
+    "touchcancel": TouchEvent;
+    "touchend": TouchEvent;
+    "touchmove": TouchEvent;
+    "touchstart": TouchEvent;
     "volumechange": Event;
     "waiting": Event;
     "webkitfullscreenchange": Event;
@@ -9817,10 +9786,10 @@ interface Document extends Node, GlobalEventHandlers, ParentNode, DocumentEvent 
      * @param ev The event.
      */
     ontimeupdate: ((this: Document, ev: Event) => any) | null;
-    ontouchcancel: ((this: Document, ev: Event) => any) | null;
-    ontouchend: ((this: Document, ev: Event) => any) | null;
-    ontouchmove: ((this: Document, ev: Event) => any) | null;
-    ontouchstart: ((this: Document, ev: Event) => any) | null;
+    ontouchcancel: ((this: Document, ev: TouchEvent) => any) | null;
+    ontouchend: ((this: Document, ev: TouchEvent) => any) | null;
+    ontouchmove: ((this: Document, ev: TouchEvent) => any) | null;
+    ontouchstart: ((this: Document, ev: TouchEvent) => any) | null;
     onvisibilitychange: (this: Document, ev: Event) => any;
     /**
      * Occurs when the volume is changed, or playback is muted or unmuted.
@@ -9839,7 +9808,7 @@ interface Document extends Node, GlobalEventHandlers, ParentNode, DocumentEvent 
     /**
      * Retrieves a value that indicates the current state of the object.
      */
-    readonly readyState: string;
+    readonly readyState: DocumentReadyState;
     /**
      * Gets the URL of the location that referred the user to the current page.
      */
@@ -10006,6 +9975,7 @@ interface Document extends Node, GlobalEventHandlers, ParentNode, DocumentEvent 
      * @param y The y-offset
      */
     elementFromPoint(x: number, y: number): Element;
+    elementsFromPoint(x: number, y: number): Element[];
     evaluate(expression: string, contextNode: Node, resolver: XPathNSResolver | null, type: number, result: XPathResult | null): XPathResult;
     /**
      * Executes a command on the current document, current selection, or the given range.
@@ -10097,6 +10067,7 @@ interface Document extends Node, GlobalEventHandlers, ParentNode, DocumentEvent 
      */
     queryCommandValue(commandId: string): string;
     releaseEvents(): void;
+    updateSettings(): void;
     webkitCancelFullScreen(): void;
     webkitExitFullscreen(): void;
     /**
@@ -10180,6 +10151,7 @@ interface DocumentEvent {
     createEvent(eventInterface: "SpeechSynthesisEvent"): SpeechSynthesisEvent;
     createEvent(eventInterface: "StorageEvent"): StorageEvent;
     createEvent(eventInterface: "TextEvent"): TextEvent;
+    createEvent(eventInterface: "TouchEvent"): TouchEvent;
     createEvent(eventInterface: "TrackEvent"): TrackEvent;
     createEvent(eventInterface: "TransitionEvent"): TransitionEvent;
     createEvent(eventInterface: "UIEvent"): UIEvent;
@@ -10299,10 +10271,10 @@ interface ElementEventMap extends GlobalEventHandlersEventMap {
     "MSPointerOut": Event;
     "MSPointerOver": Event;
     "MSPointerUp": Event;
-    "touchcancel": Event;
-    "touchend": Event;
-    "touchmove": Event;
-    "touchstart": Event;
+    "touchcancel": TouchEvent;
+    "touchend": TouchEvent;
+    "touchmove": TouchEvent;
+    "touchstart": TouchEvent;
     "webkitfullscreenchange": Event;
     "webkitfullscreenerror": Event;
 }
@@ -10341,10 +10313,10 @@ interface Element extends Node, GlobalEventHandlers, ElementTraversal, ParentNod
     onmspointerout: ((this: Element, ev: Event) => any) | null;
     onmspointerover: ((this: Element, ev: Event) => any) | null;
     onmspointerup: ((this: Element, ev: Event) => any) | null;
-    ontouchcancel: ((this: Element, ev: Event) => any) | null;
-    ontouchend: ((this: Element, ev: Event) => any) | null;
-    ontouchmove: ((this: Element, ev: Event) => any) | null;
-    ontouchstart: ((this: Element, ev: Event) => any) | null;
+    ontouchcancel: ((this: Element, ev: TouchEvent) => any) | null;
+    ontouchend: ((this: Element, ev: TouchEvent) => any) | null;
+    ontouchmove: ((this: Element, ev: TouchEvent) => any) | null;
+    ontouchstart: ((this: Element, ev: TouchEvent) => any) | null;
     onwebkitfullscreenchange: ((this: Element, ev: Event) => any) | null;
     onwebkitfullscreenerror: ((this: Element, ev: Event) => any) | null;
     outerHTML: string;
@@ -10587,12 +10559,12 @@ interface FileReaderEventMap {
 
 interface FileReader extends EventTarget {
     readonly error: DOMException | null;
-    onabort: ((this: FileReader, ev: ProgressEvent) => any) | null;
-    onerror: ((this: FileReader, ev: ProgressEvent) => any) | null;
-    onload: ((this: FileReader, ev: ProgressEvent) => any) | null;
-    onloadend: ((this: FileReader, ev: ProgressEvent) => any) | null;
-    onloadstart: ((this: FileReader, ev: ProgressEvent) => any) | null;
-    onprogress: ((this: FileReader, ev: ProgressEvent) => any) | null;
+    onabort: ((this: FileReader, ev: FileReaderProgressEvent) => any) | null;
+    onerror: ((this: FileReader, ev: FileReaderProgressEvent) => any) | null;
+    onload: ((this: FileReader, ev: FileReaderProgressEvent) => any) | null;
+    onloadend: ((this: FileReader, ev: FileReaderProgressEvent) => any) | null;
+    onloadstart: ((this: FileReader, ev: FileReaderProgressEvent) => any) | null;
+    onprogress: ((this: FileReader, ev: FileReaderProgressEvent) => any) | null;
     readonly readyState: number;
     readonly result: any;
     abort(): void;
@@ -10616,6 +10588,10 @@ declare var FileReader: {
     readonly EMPTY: number;
     readonly LOADING: number;
 };
+
+interface FileReaderProgressEvent extends ProgressEvent {
+    readonly target: FileReader | null;
+}
 
 interface FocusEvent extends UIEvent {
     readonly relatedTarget: EventTarget;
@@ -11999,6 +11975,7 @@ interface HTMLImageElement extends HTMLElement {
     readonly complete: boolean;
     crossOrigin: string | null;
     readonly currentSrc: string;
+    decoding: "async" | "sync" | "auto";
     /**
      * Sets or retrieves the height of the object.
      */
@@ -12115,7 +12092,7 @@ interface HTMLInputElement extends HTMLElement {
     /**
      * Returns a FileList object on a file type input object.
      */
-    readonly files: FileList | null;
+    files: FileList | null;
     /**
      * Retrieves a reference to the form that the object is embedded in.
      */
@@ -14736,6 +14713,7 @@ declare var MediaEncryptedEvent: {
 
 interface MediaError {
     readonly code: number;
+    readonly message: string;
     readonly msExtendedCode: number;
     readonly MEDIA_ERR_ABORTED: number;
     readonly MEDIA_ERR_DECODE: number;
@@ -15218,6 +15196,7 @@ interface Node extends EventTarget {
     readonly baseURI: string | null;
     readonly childNodes: NodeListOf<Node & ChildNode>;
     readonly firstChild: Node | null;
+    readonly isConnected: boolean;
     readonly lastChild: Node | null;
     readonly localName: string | null;
     readonly namespaceURI: string | null;
@@ -15546,6 +15525,12 @@ declare var PannerNode: {
 };
 
 interface ParentNode {
+    readonly childElementCount: number;
+    readonly firstElementChild: Element | null;
+    readonly lastElementChild: Element | null;
+}
+
+interface ParentNode {
     readonly children: HTMLCollection;
     querySelector<K extends keyof HTMLElementTagNameMap>(selectors: K): HTMLElementTagNameMap[K] | null;
     querySelector<K extends keyof SVGElementTagNameMap>(selectors: K): SVGElementTagNameMap[K] | null;
@@ -15553,12 +15538,6 @@ interface ParentNode {
     querySelectorAll<K extends keyof HTMLElementTagNameMap>(selectors: K): NodeListOf<HTMLElementTagNameMap[K]>;
     querySelectorAll<K extends keyof SVGElementTagNameMap>(selectors: K): NodeListOf<SVGElementTagNameMap[K]>;
     querySelectorAll<E extends Element = Element>(selectors: string): NodeListOf<E>;
-}
-
-interface ParentNode {
-    readonly childElementCount: number;
-    readonly firstElementChild: Element | null;
-    readonly lastElementChild: Element | null;
 }
 
 interface Path2D extends CanvasPathMethods {
@@ -18715,6 +18694,7 @@ interface SourceBuffer extends EventTarget {
     readonly audioTracks: AudioTrackList;
     readonly buffered: TimeRanges;
     mode: AppendMode;
+    readonly textTracks: TextTrackList;
     timestampOffset: number;
     readonly updating: boolean;
     readonly videoTracks: VideoTrackList;
@@ -19822,24 +19802,24 @@ interface WebGLRenderingContext {
     texSubImage2D(target: number, level: number, xoffset: number, yoffset: number, width: number, height: number, format: number, type: number, pixels: ArrayBufferView | null): void;
     texSubImage2D(target: number, level: number, xoffset: number, yoffset: number, format: number, type: number, pixels: ImageBitmap | ImageData | HTMLVideoElement | HTMLImageElement | HTMLCanvasElement): void;
     uniform1f(location: WebGLUniformLocation | null, x: number): void;
-    uniform1fv(location: WebGLUniformLocation, v: Float32Array | ArrayLike<number>): void;
+    uniform1fv(location: WebGLUniformLocation | null, v: Float32Array | ArrayLike<number>): void;
     uniform1i(location: WebGLUniformLocation | null, x: number): void;
-    uniform1iv(location: WebGLUniformLocation, v: Int32Array | ArrayLike<number>): void;
+    uniform1iv(location: WebGLUniformLocation | null, v: Int32Array | ArrayLike<number>): void;
     uniform2f(location: WebGLUniformLocation | null, x: number, y: number): void;
-    uniform2fv(location: WebGLUniformLocation, v: Float32Array | ArrayLike<number>): void;
+    uniform2fv(location: WebGLUniformLocation | null, v: Float32Array | ArrayLike<number>): void;
     uniform2i(location: WebGLUniformLocation | null, x: number, y: number): void;
-    uniform2iv(location: WebGLUniformLocation, v: Int32Array | ArrayLike<number>): void;
+    uniform2iv(location: WebGLUniformLocation | null, v: Int32Array | ArrayLike<number>): void;
     uniform3f(location: WebGLUniformLocation | null, x: number, y: number, z: number): void;
-    uniform3fv(location: WebGLUniformLocation, v: Float32Array | ArrayLike<number>): void;
+    uniform3fv(location: WebGLUniformLocation | null, v: Float32Array | ArrayLike<number>): void;
     uniform3i(location: WebGLUniformLocation | null, x: number, y: number, z: number): void;
-    uniform3iv(location: WebGLUniformLocation, v: Int32Array | ArrayLike<number>): void;
+    uniform3iv(location: WebGLUniformLocation | null, v: Int32Array | ArrayLike<number>): void;
     uniform4f(location: WebGLUniformLocation | null, x: number, y: number, z: number, w: number): void;
-    uniform4fv(location: WebGLUniformLocation, v: Float32Array | ArrayLike<number>): void;
+    uniform4fv(location: WebGLUniformLocation | null, v: Float32Array | ArrayLike<number>): void;
     uniform4i(location: WebGLUniformLocation | null, x: number, y: number, z: number, w: number): void;
-    uniform4iv(location: WebGLUniformLocation, v: Int32Array | ArrayLike<number>): void;
-    uniformMatrix2fv(location: WebGLUniformLocation, transpose: boolean, value: Float32Array | ArrayLike<number>): void;
-    uniformMatrix3fv(location: WebGLUniformLocation, transpose: boolean, value: Float32Array | ArrayLike<number>): void;
-    uniformMatrix4fv(location: WebGLUniformLocation, transpose: boolean, value: Float32Array | ArrayLike<number>): void;
+    uniform4iv(location: WebGLUniformLocation | null, v: Int32Array | ArrayLike<number>): void;
+    uniformMatrix2fv(location: WebGLUniformLocation | null, transpose: boolean, value: Float32Array | ArrayLike<number>): void;
+    uniformMatrix3fv(location: WebGLUniformLocation | null, transpose: boolean, value: Float32Array | ArrayLike<number>): void;
+    uniformMatrix4fv(location: WebGLUniformLocation | null, transpose: boolean, value: Float32Array | ArrayLike<number>): void;
     useProgram(program: WebGLProgram | null): void;
     validateProgram(program: WebGLProgram | null): void;
     vertexAttrib1f(indx: number, x: number): void;
@@ -20610,7 +20590,7 @@ interface WebSocket extends EventTarget {
     readonly readyState: number;
     readonly url: string;
     close(code?: number, reason?: string): void;
-    send(data: string | ArrayBuffer | Blob | ArrayBufferView): void;
+    send(data: string | ArrayBufferLike | Blob | ArrayBufferView): void;
     readonly CLOSED: number;
     readonly CLOSING: number;
     readonly CONNECTING: number;
@@ -20655,6 +20635,8 @@ declare var WheelEvent: {
 
 interface WindowEventMap extends GlobalEventHandlersEventMap {
     "abort": UIEvent;
+    "afterprint": Event;
+    "beforeprint": Event;
     "beforeunload": BeforeUnloadEvent;
     "blur": FocusEvent;
     "canplay": Event;
@@ -20736,10 +20718,10 @@ interface WindowEventMap extends GlobalEventHandlersEventMap {
     "submit": Event;
     "suspend": Event;
     "timeupdate": Event;
-    "touchcancel": Event;
-    "touchend": Event;
-    "touchmove": Event;
-    "touchstart": Event;
+    "touchcancel": TouchEvent;
+    "touchend": TouchEvent;
+    "touchmove": TouchEvent;
+    "touchstart": TouchEvent;
     "unload": Event;
     "volumechange": Event;
     "vrdisplayactivate": Event;
@@ -20786,6 +20768,8 @@ interface Window extends EventTarget, WindowTimers, WindowSessionStorage, Window
     readonly navigator: Navigator;
     offscreenBuffering: string | boolean;
     onabort: ((this: Window, ev: UIEvent) => any) | null;
+    onafterprint: ((this: Window, ev: Event) => any) | null;
+    onbeforeprint: ((this: Window, ev: Event) => any) | null;
     onbeforeunload: ((this: Window, ev: BeforeUnloadEvent) => any) | null;
     onblur: ((this: Window, ev: FocusEvent) => any) | null;
     oncanplay: ((this: Window, ev: Event) => any) | null;
@@ -20883,7 +20867,7 @@ interface Window extends EventTarget, WindowTimers, WindowSessionStorage, Window
     onvrdisplaypointerunrestricted: ((this: Window, ev: Event) => any) | null;
     onvrdisplaypresentchange: ((this: Window, ev: Event) => any) | null;
     onwaiting: ((this: Window, ev: Event) => any) | null;
-    readonly opener: any;
+    opener: any;
     readonly orientation: string | number;
     readonly outerHeight: number;
     readonly outerWidth: number;
@@ -20927,6 +20911,7 @@ interface Window extends EventTarget, WindowTimers, WindowSessionStorage, Window
     msWriteProfilerMark(profilerMarkName: string): void;
     open(url?: string, target?: string, features?: string, replace?: boolean): Window | null;
     postMessage(message: any, targetOrigin: string, transfer?: any[]): void;
+    print(): void;
     prompt(message?: string, _default?: string): string | null;
     releaseEvents(): void;
     requestAnimationFrame(callback: FrameRequestCallback): number;
@@ -21595,6 +21580,8 @@ declare const name: never;
 declare var navigator: Navigator;
 declare var offscreenBuffering: string | boolean;
 declare var onabort: ((this: Window, ev: UIEvent) => any) | null;
+declare var onafterprint: ((this: Window, ev: Event) => any) | null;
+declare var onbeforeprint: ((this: Window, ev: Event) => any) | null;
 declare var onbeforeunload: ((this: Window, ev: BeforeUnloadEvent) => any) | null;
 declare var onblur: ((this: Window, ev: FocusEvent) => any) | null;
 declare var oncanplay: ((this: Window, ev: Event) => any) | null;
@@ -21736,6 +21723,7 @@ declare function moveTo(x?: number, y?: number): void;
 declare function msWriteProfilerMark(profilerMarkName: string): void;
 declare function open(url?: string, target?: string, features?: string, replace?: boolean): Window | null;
 declare function postMessage(message: any, targetOrigin: string, transfer?: any[]): void;
+declare function print(): void;
 declare function prompt(message?: string, _default?: string): string | null;
 declare function releaseEvents(): void;
 declare function requestAnimationFrame(callback: FrameRequestCallback): number;
@@ -21838,6 +21826,7 @@ type ChannelCountMode = "max" | "clamped-max" | "explicit";
 type ChannelInterpretation = "speakers" | "discrete";
 type DisplayCaptureSurfaceType = "monitor" | "window" | "application" | "browser";
 type DistanceModelType = "linear" | "inverse" | "exponential";
+type DocumentReadyState = "loading" | "interactive" | "complete";
 type EndOfStreamError = "network" | "decode";
 type ExpandGranularity = "character" | "word" | "sentence" | "textedit";
 type GamepadHand = "" | "left" | "right";
@@ -22125,6 +22114,11 @@ declare var WScript: {
      */
     Sleep(intTime: number): void;
 };
+
+/**
+ * WSH is an alias for WScript under Windows Script Host
+ */
+declare var WSH: typeof WScript;
 
 /**
  * Represents an Automation SAFEARRAY
