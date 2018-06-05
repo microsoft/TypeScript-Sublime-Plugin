@@ -47,7 +47,8 @@ class ServiceProxy:
             "module": "CommonJS",
             "allowSyntheticDefaultImports": True,
             "allowJs": True,
-            "jsx": "Preserve"
+            "jsx": "Preserve",
+            "noEmit": True
         }
         args = { "options": compiler_options }
         req_dict = self.create_req_dict("compilerOptionsForInferredProjects", args)
