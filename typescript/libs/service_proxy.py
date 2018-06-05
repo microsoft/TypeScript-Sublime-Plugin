@@ -46,7 +46,6 @@ class ServiceProxy:
             "target": "ESNext",
             "module": "CommonJS",
             "allowSyntheticDefaultImports": True,
-            "allowNonTsExtensions": True,
             "allowJs": True,
             "jsx": "Preserve"
         }
