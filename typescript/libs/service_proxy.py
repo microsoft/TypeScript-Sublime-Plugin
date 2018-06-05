@@ -44,7 +44,6 @@ class ServiceProxy:
         """ Add full type support for compilers running in file scope mode """
         compiler_options = {
             "target": "ESNext",
-            "module": "CommonJS",
             "allowSyntheticDefaultImports": True,
             "allowJs": True,
             "jsx": "Preserve",
