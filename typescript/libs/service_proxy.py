@@ -38,9 +38,9 @@ class ServiceProxy:
         if self.__worker_comm.started():
             self.__worker_comm.postCmd(json_str)
 
-        self.set_compiler_options()
+        self.set_inferred_project_compiler_options()
 
-    def set_compiler_options(self):
+    def set_inferred_project_compiler_options(self):
         """ Add full type support for compilers running in file scope mode """
         compiler_options = {
             "target": "ESNext", # enable all es-next features
