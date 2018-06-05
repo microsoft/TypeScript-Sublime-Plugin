@@ -43,10 +43,10 @@ class ServiceProxy:
     def set_compiler_options(self):
         """ Add full type support for compilers running in file scope mode """
         compiler_options = {
-            "target": "ESNext",
-            "allowJs": True,
-            "jsx": "Preserve",
-            "noEmit": True
+            "target": "ESNext", # enable all es-next features
+            "allowJs": True,    # enable javascript support
+            "jsx": "Preserve",  # enable jsx support
+            "noEmit": True      # do not emit outputs
         }
         args = { "options": compiler_options }
         req_dict = self.create_req_dict("compilerOptionsForInferredProjects", args)
