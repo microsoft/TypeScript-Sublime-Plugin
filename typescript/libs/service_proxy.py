@@ -123,6 +123,22 @@ class ServiceProxy:
             self.__worker_comm.sendCmdSync(json_str, req_dict["seq"])
         return response_dict
 
+    def organize_imports(self, path):
+        args = {
+            "scope": {
+                "type": "file",
+                "args": {
+                    "file": path
+                }
+            },
+        }
+        req_dict = self.create_req_dict("organizeImports", args)
+        json_str = json_helpers.encode(req_dict)
+        response_dict = self.__comm.sendCmdSync(json_str, req_dict["seq"])
+        if self.__worker_comm.started():
+            self.__worker_comm.sendCmdSync(json_str, req_dict["seq"])
+        return response_dict
+
     def open(self, path):
         args = {"file": path}
         req_dict = self.create_req_dict("open", args)
