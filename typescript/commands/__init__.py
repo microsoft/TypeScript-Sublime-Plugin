@@ -28,6 +28,10 @@ from .rename import (
     TypescriptFinishRenameCommand,
     TypescriptRenameCommand
 )
+from .refactor import (
+    TypescriptGetApplicableRefactorsCommand,
+    TypescriptApplyRefactorCommand
+)
 from .build import TypescriptBuildCommand
 from .settings import (
     TypescriptOpenPluginDefaultSettingFile,
@@ -63,6 +67,8 @@ __all__ = [
     "TypescriptFinishRenameCommand",
     "TypescriptRenameCommand",
     "TypescriptOrganizeImportsCommand",
+    "TypescriptGetApplicableRefactorsCommand",
+    "TypescriptApplyRefactorCommand",
     "TypescriptSave",
     "TypescriptShowDoc",
     "TypescriptSignaturePanel",

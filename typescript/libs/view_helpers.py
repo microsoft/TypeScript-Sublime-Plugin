@@ -123,16 +123,19 @@ def is_special_view(view):
 
 
 def get_location_from_view(view):
-    """Returns the Location tuple of the beginning of the first selected region in the view"""
+    """Returns a Location representing the beginning of the first selected region in the view"""
     region = view.sel()[0]
     return get_location_from_region(view, region)
-
 
 def get_location_from_region(view, region):
     """Returns the Location tuple of the beginning of the given region"""
     position = region.begin()
     return get_location_from_position(view, position)
 
+def get_start_and_end_from_view(view):
+    """Returns a tuple of Location objects representing the (start, end) of a region."""
+    region = view.sel()[0]
+    return map(lambda p: get_location_from_position(view, p), (region.begin(), region.end()))
 
 def get_location_from_position(view, position):
     """Returns the LineOffset object of the given text position"""
