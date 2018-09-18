@@ -17,8 +17,16 @@ class TypescriptGetApplicableRefactorsCommand(TypeScriptBaseTextCommand):
         check_update_view(self.view)
         file_name = self.view.file_name()
         (start_loc, end_loc) = get_start_and_end_from_view(self.view)
-        refactors_resp = cli.service.get_applicable_refactors(file_name, start_loc, end_loc)
 
+        def choose(actions, index):
+            self.choose_refactor(file_name, start_loc, end_loc, actions, index)
+
+        def receive(response):
+            self.receive_refactors(response, choose)
+
+        cli.service.get_applicable_refactors_async(file_name, start_loc, end_loc, receive)
+
+    def receive_refactors(self, refactors_resp, choose):
         if not refactors_resp["success"]:
             return
 
@@ -32,15 +40,12 @@ class TypescriptGetApplicableRefactorsCommand(TypeScriptBaseTextCommand):
 
         refactoring_names = list(map(lambda action: action.description, actions))
 
-        def choose(index):
-            self.choose_refactor(file_name, start_loc, end_loc, actions, index)
-
         # Somehow there's a blocking bug with `show_popup_menu`
         # that leads to issues on certain platforms.
         # https://github.com/SublimeTextIssues/Core/issues/1282
         #   self.view.show_popup_menu(refactoring_names, delayed_choose)
         # So instead we can use `show_quick_panel` which looks great anyway.
-        active_window().show_quick_panel(refactoring_names, choose)
+        active_window().show_quick_panel(refactoring_names, lambda i: choose(actions, i))
 
     def choose_refactor(self, file_name, start_loc, end_loc, actions, index):
         if index < 0:
