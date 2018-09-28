@@ -5,12 +5,12 @@ repository at https://github.com/Microsoft/TypeScript-Sublime-Plugin.
 
 # Fundamental Updates
 
-v3.1.0 introduces brings and update to TypeScript v3.1.1, and
+v3.1.1 introduces brings and update to TypeScript v3.1.1, and
 fixes various syntax highlighting issues.
 
 # Refactoring
 
-v3.1.0 also introduces refactoring functionality! This can be triggered by
+v3.1.1 also introduces refactoring functionality! This can be triggered by
 
 1. selecting a range of text, or placing the cursor on a location that can be refactored
 2. invoking the Sublime Quick Panel,
