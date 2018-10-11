@@ -19,7 +19,7 @@ This plugin can be configured to load an alternate version of TypeScript.
 This is typically useful for trying out nightly builds, or prototyping with custom builds.
 To do that, update the `Settings - User` file with the following:
 
-```json
+```json5
 "typescript_tsdk": "<path to your folder>/node_modules/typescript/lib"
 ```
 
