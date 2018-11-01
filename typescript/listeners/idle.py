@@ -158,10 +158,10 @@ class IdleListener:
 
         # Highlight error regions in view
         if IS_ST2:
-            view.add_regions(region_key, error_regions, "keyword", "",
+            view.add_regions(region_key, error_regions, "invalid", "",
                              sublime.DRAW_OUTLINED)
         else:
-            view.add_regions(region_key, error_regions, "keyword", "",
+            view.add_regions(region_key, error_regions, "invalid.illegal", "",
                              sublime.DRAW_NO_FILL +
                              sublime.DRAW_NO_OUTLINE +
                              sublime.DRAW_SQUIGGLY_UNDERLINE)
