@@ -58,7 +58,7 @@ class TypescriptGoToError(sublime_plugin.TextCommand):
         self.view.add_regions(
             "cur_error",
             [sublime.Region(caret_pos, caret_pos + 1)],
-            "keyword",
+            "invalid.illegal",
             icon,
             sublime.HIDDEN
         )
