@@ -2050,7 +2050,7 @@
           </dict>
         </dict>
         <key>end</key>
-        <string>(?=$|^|;)|(?&lt;=\})</string>
+        <string>(?=;|(?:^\s*(?:abstract|async|class|const|declare|enum|export|function|import|interface|let|module|namespace|return|type|var)\b))|(?&lt;=\})</string>
         <key>patterns</key>
         <array>
           <dict>
@@ -2510,6 +2510,10 @@
                 <key>include</key>
                 <string>#arrow-return-type</string>
               </dict>
+              <dict>
+                <key>include</key>
+                <string>#possibly-arrow-return-type</string>
+              </dict>
             </array>
           </dict>
           <dict>
@@ -2526,9 +2530,13 @@
               </dict>
             </dict>
             <key>end</key>
-            <string>(?&lt;=\}|\S)(?&lt;!=&gt;)|((?!\{)(?=\S))</string>
+            <string>((?&lt;=\}|\S)(?&lt;!=&gt;)|((?!\{)(?=\S)))(?!\/[\/\*])</string>
             <key>patterns</key>
             <array>
+              <dict>
+                <key>include</key>
+                <string>#single-line-comment-consuming-line-ending</string>
+              </dict>
               <dict>
                 <key>include</key>
                 <string>#decl-block</string>
@@ -4472,7 +4480,7 @@
           </dict>
         </dict>
         <key>end</key>
-        <string>(?&lt;=\))|(?=[;),}\]:]|\|\||\&amp;\&amp;|$|((?&lt;![_$[:alnum:]])(?:(?&lt;=\.\.\.)|(?&lt;!\.))new(?![_$[:alnum:]])(?:(?=\.\.\.)|(?!\.)))|((?&lt;![_$[:alnum:]])(?:(?&lt;=\.\.\.)|(?&lt;!\.))function((\s+[_$[:alpha:]][_$[:alnum:]]*)|(\s*[\(]))))</string>
+        <string>(?&lt;=\))|(?=[;),}\]:\-\+]|\|\||\&amp;\&amp;|$|((?&lt;![_$[:alnum:]])(?:(?&lt;=\.\.\.)|(?&lt;!\.))new(?![_$[:alnum:]])(?:(?=\.\.\.)|(?!\.)))|((?&lt;![_$[:alnum:]])(?:(?&lt;=\.\.\.)|(?&lt;!\.))function((\s+[_$[:alpha:]][_$[:alnum:]]*)|(\s*[\(]))))</string>
         <key>patterns</key>
         <array>
           <dict>
@@ -4538,7 +4546,7 @@
           </dict>
           <dict>
             <key>begin</key>
-            <string>(?&lt;=[(=,]|=&gt;)\s*(async)?(?=\s*((((&lt;\s*([_$[:alpha:]]|(\{([^\{\}]|(\{[^\{\}]*\}))*\})|(\(([^\(\)]|(\([^\(\)]*\)))*\))|(\[([^\[\]]|(\[[^\[\]]*\]))*\]))([^=&lt;&gt;]|=[^&lt;]|\&lt;\s*([_$[:alpha:]]|(\{([^\{\}]|(\{[^\{\}]*\}))*\})|(\(([^\(\)]|(\([^\(\)]*\)))*\))|(\[([^\[\]]|(\[[^\[\]]*\]))*\]))([^=&lt;&gt;]|=[^&lt;])*\&gt;)*&gt;\s*))?\()|(&lt;))\s*$)</string>
+            <string>(?&lt;=[(=,]|=&gt;|^return|[^\._$[:alnum:]]return)\s*(async)?(?=\s*((((&lt;\s*([_$[:alpha:]]|(\{([^\{\}]|(\{[^\{\}]*\}))*\})|(\(([^\(\)]|(\([^\(\)]*\)))*\))|(\[([^\[\]]|(\[[^\[\]]*\]))*\]))([^=&lt;&gt;]|=[^&lt;]|\&lt;\s*([_$[:alpha:]]|(\{([^\{\}]|(\{[^\{\}]*\}))*\})|(\(([^\(\)]|(\([^\(\)]*\)))*\))|(\[([^\[\]]|(\[[^\[\]]*\]))*\]))([^=&lt;&gt;]|=[^&lt;])*\&gt;)*&gt;\s*))?\()|(&lt;))\s*$)</string>
             <key>beginCaptures</key>
             <dict>
               <key>1</key>
@@ -6033,7 +6041,7 @@
       <key>possibly-arrow-return-type</key>
       <dict>
         <key>begin</key>
-        <string>(?&lt;=\))\s*(:)(?=\s*([^&lt;&gt;\(\)\{\}]|\&lt;[^&lt;&gt;]+\&gt;|\([^\(\)]+\)|\{[^\{\}]+\})+\s*=&gt;)</string>
+        <string>(?&lt;=\)|^)\s*(:)(?=\s*([^&lt;&gt;\(\)\{\}]|\&lt;[^&lt;&gt;]+\&gt;|\([^\(\)]+\)|\{[^\{\}]+\})+\s*=&gt;)</string>
         <key>beginCaptures</key>
         <dict>
           <key>1</key>
@@ -6448,10 +6456,6 @@
         </dict>
         <key>patterns</key>
         <array>
-          <dict>
-            <key>include</key>
-            <string>#destructuring-parameter</string>
-          </dict>
           <dict>
             <key>match</key>
             <string>(?x)(?:(?&lt;![_$[:alnum:]])(?:(?&lt;=\.\.\.)|(?&lt;!\.))(public|private|protected|readonly)\s+)?(?:(\.\.\.)\s*)?(?&lt;!=|:)(?&lt;![_$[:alnum:]])(?:(?&lt;=\.\.\.)|(?&lt;!\.))(?:(this)|([_$[:alpha:]][_$[:alnum:]]*))\s*(\??)(?=\s*(:\s*(
