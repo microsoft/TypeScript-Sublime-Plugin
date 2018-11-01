@@ -69,7 +69,8 @@ declare namespace ts {
         pos: number;
         end: number;
     }
-    type JsDocSyntaxKind = SyntaxKind.EndOfFileToken | SyntaxKind.WhitespaceTrivia | SyntaxKind.AtToken | SyntaxKind.NewLineTrivia | SyntaxKind.AsteriskToken | SyntaxKind.OpenBraceToken | SyntaxKind.CloseBraceToken | SyntaxKind.LessThanToken | SyntaxKind.OpenBracketToken | SyntaxKind.CloseBracketToken | SyntaxKind.EqualsToken | SyntaxKind.CommaToken | SyntaxKind.DotToken | SyntaxKind.Identifier | SyntaxKind.NoSubstitutionTemplateLiteral | SyntaxKind.Unknown;
+    type JsDocSyntaxKind = SyntaxKind.EndOfFileToken | SyntaxKind.WhitespaceTrivia | SyntaxKind.AtToken | SyntaxKind.NewLineTrivia | SyntaxKind.AsteriskToken | SyntaxKind.OpenBraceToken | SyntaxKind.CloseBraceToken | SyntaxKind.LessThanToken | SyntaxKind.OpenBracketToken | SyntaxKind.CloseBracketToken | SyntaxKind.EqualsToken | SyntaxKind.CommaToken | SyntaxKind.DotToken | SyntaxKind.Identifier | SyntaxKind.NoSubstitutionTemplateLiteral | SyntaxKind.Unknown | KeywordSyntaxKind;
+    type KeywordSyntaxKind = SyntaxKind.AbstractKeyword | SyntaxKind.AnyKeyword | SyntaxKind.AsKeyword | SyntaxKind.BooleanKeyword | SyntaxKind.BreakKeyword | SyntaxKind.CaseKeyword | SyntaxKind.CatchKeyword | SyntaxKind.ClassKeyword | SyntaxKind.ContinueKeyword | SyntaxKind.ConstKeyword | SyntaxKind.ConstructorKeyword | SyntaxKind.DebuggerKeyword | SyntaxKind.DeclareKeyword | SyntaxKind.DefaultKeyword | SyntaxKind.DeleteKeyword | SyntaxKind.DoKeyword | SyntaxKind.ElseKeyword | SyntaxKind.EnumKeyword | SyntaxKind.ExportKeyword | SyntaxKind.ExtendsKeyword | SyntaxKind.FalseKeyword | SyntaxKind.FinallyKeyword | SyntaxKind.ForKeyword | SyntaxKind.FromKeyword | SyntaxKind.FunctionKeyword | SyntaxKind.GetKeyword | SyntaxKind.IfKeyword | SyntaxKind.ImplementsKeyword | SyntaxKind.ImportKeyword | SyntaxKind.InKeyword | SyntaxKind.InferKeyword | SyntaxKind.InstanceOfKeyword | SyntaxKind.InterfaceKeyword | SyntaxKind.IsKeyword | SyntaxKind.KeyOfKeyword | SyntaxKind.LetKeyword | SyntaxKind.ModuleKeyword | SyntaxKind.NamespaceKeyword | SyntaxKind.NeverKeyword | SyntaxKind.NewKeyword | SyntaxKind.NullKeyword | SyntaxKind.NumberKeyword | SyntaxKind.ObjectKeyword | SyntaxKind.PackageKeyword | SyntaxKind.PrivateKeyword | SyntaxKind.ProtectedKeyword | SyntaxKind.PublicKeyword | SyntaxKind.ReadonlyKeyword | SyntaxKind.RequireKeyword | SyntaxKind.GlobalKeyword | SyntaxKind.ReturnKeyword | SyntaxKind.SetKeyword | SyntaxKind.StaticKeyword | SyntaxKind.StringKeyword | SyntaxKind.SuperKeyword | SyntaxKind.SwitchKeyword | SyntaxKind.SymbolKeyword | SyntaxKind.ThisKeyword | SyntaxKind.ThrowKeyword | SyntaxKind.TrueKeyword | SyntaxKind.TryKeyword | SyntaxKind.TypeKeyword | SyntaxKind.TypeOfKeyword | SyntaxKind.UndefinedKeyword | SyntaxKind.UniqueKeyword | SyntaxKind.UnknownKeyword | SyntaxKind.VarKeyword | SyntaxKind.VoidKeyword | SyntaxKind.WhileKeyword | SyntaxKind.WithKeyword | SyntaxKind.YieldKeyword | SyntaxKind.AsyncKeyword | SyntaxKind.AwaitKeyword | SyntaxKind.OfKeyword;
     type JsxTokenSyntaxKind = SyntaxKind.LessThanSlashToken | SyntaxKind.EndOfFileToken | SyntaxKind.ConflictMarkerTrivia | SyntaxKind.JsxText | SyntaxKind.JsxTextAllWhiteSpaces | SyntaxKind.OpenBraceToken | SyntaxKind.LessThanToken;
     enum SyntaxKind {
         Unknown = 0,
@@ -5111,19 +5112,23 @@ declare namespace ts {
         documentation?: SymbolDisplayPart[];
         tags?: JSDocTagInfo[];
     }
-    interface RenameInfo {
-        canRename: boolean;
+    type RenameInfo = RenameInfoSuccess | RenameInfoFailure;
+    interface RenameInfoSuccess {
+        canRename: true;
         /**
          * File or directory to rename.
          * If set, `getEditsForFileRename` should be called instead of `findRenameLocations`.
          */
         fileToRename?: string;
-        localizedErrorMessage?: string;
         displayName: string;
         fullDisplayName: string;
         kind: ScriptElementKind;
         kindModifiers: string;
         triggerSpan: TextSpan;
+    }
+    interface RenameInfoFailure {
+        canRename: false;
+        localizedErrorMessage: string;
     }
     interface SignatureHelpParameter {
         name: string;
@@ -5668,7 +5673,8 @@ declare namespace ts.server.protocol {
         GetApplicableRefactors = "getApplicableRefactors",
         GetEditsForRefactor = "getEditsForRefactor",
         OrganizeImports = "organizeImports",
-        GetEditsForFileRename = "getEditsForFileRename"
+        GetEditsForFileRename = "getEditsForFileRename",
+        ConfigurePlugin = "configurePlugin"
     }
     /**
      * A TypeScript Server message
@@ -6434,20 +6440,17 @@ declare namespace ts.server.protocol {
     /**
      * Information about the item to be renamed.
      */
-    interface RenameInfo {
+    type RenameInfo = RenameInfoSuccess | RenameInfoFailure;
+    interface RenameInfoSuccess {
         /**
          * True if item can be renamed.
          */
-        canRename: boolean;
+        canRename: true;
         /**
          * File or directory to rename.
          * If set, `getEditsForFileRename` should be called instead of `findRenameLocations`.
          */
         fileToRename?: string;
-        /**
-         * Error message if item can not be renamed.
-         */
-        localizedErrorMessage?: string;
         /**
          * Display name of the item to be renamed.
          */
@@ -6466,6 +6469,13 @@ declare namespace ts.server.protocol {
         kindModifiers: string;
         /** Span of text to rename. */
         triggerSpan: TextSpan;
+    }
+    interface RenameInfoFailure {
+        canRename: false;
+        /**
+         * Error message if item can not be renamed.
+         */
+        localizedErrorMessage: string;
     }
     /**
      *  A group of text spans, all in 'file'.
@@ -6608,6 +6618,14 @@ declare namespace ts.server.protocol {
      * no body field is required.
      */
     interface ConfigureResponse extends Response {
+    }
+    interface ConfigurePluginRequestArguments {
+        pluginName: string;
+        configuration: any;
+    }
+    interface ConfigurePluginRequest extends Request {
+        command: CommandTypes.ConfigurePlugin;
+        arguments: ConfigurePluginRequestArguments;
     }
     /**
      *  Information found in an "open" request.
@@ -8035,6 +8053,11 @@ declare namespace ts.server {
     interface PluginModule {
         create(createInfo: PluginCreateInfo): LanguageService;
         getExternalFiles?(proj: Project): string[];
+        onConfigurationChanged?(config: any): void;
+    }
+    interface PluginModuleWithName {
+        name: string;
+        module: PluginModule;
     }
     type PluginModuleFactory = (mod: {
         typescript: typeof ts;
@@ -8173,11 +8196,11 @@ declare namespace ts.server {
         filesToString(writeProjectFileNames: boolean): string;
         setCompilerOptions(compilerOptions: CompilerOptions): void;
         protected removeRoot(info: ScriptInfo): void;
-        protected enableGlobalPlugins(options: CompilerOptions): void;
-        protected enablePlugin(pluginConfigEntry: PluginImport, searchPaths: string[]): void;
+        protected enableGlobalPlugins(options: CompilerOptions, pluginConfigOverrides: Map<any> | undefined): void;
+        protected enablePlugin(pluginConfigEntry: PluginImport, searchPaths: string[], pluginConfigOverrides: Map<any> | undefined): void;
+        private enableProxy;
         /** Starts a new check for diagnostics. Call this if some file has updated that would cause diagnostics to be changed. */
         refreshDiagnostics(): void;
-        private enableProxy;
     }
     /**
      * If a file is opened and no tsconfig (or jsconfig) is found,
@@ -8218,7 +8241,6 @@ declare namespace ts.server {
         getConfigFilePath(): NormalizedPath;
         getProjectReferences(): ReadonlyArray<ProjectReference>;
         updateReferences(refs: ReadonlyArray<ProjectReference> | undefined): void;
-        enablePlugins(): void;
         /**
          * Get the errors that dont have any file name associated
          */
@@ -8463,6 +8485,7 @@ declare namespace ts.server {
         readonly globalPlugins: ReadonlyArray<string>;
         readonly pluginProbeLocations: ReadonlyArray<string>;
         readonly allowLocalPluginLoads: boolean;
+        private currentPluginConfigOverrides;
         readonly typesMapLocation: string | undefined;
         readonly syntaxOnly?: boolean;
         /** Tracks projects that we have already sent telemetry for. */
@@ -8638,6 +8661,7 @@ declare namespace ts.server {
         applySafeList(proj: protocol.ExternalProject): NormalizedPath[];
         openExternalProject(proj: protocol.ExternalProject): void;
         hasDeferredExtension(): boolean;
+        configurePlugin(args: protocol.ConfigurePluginRequestArguments): void;
     }
 }
 declare namespace ts.server {
@@ -8808,6 +8832,7 @@ declare namespace ts.server {
         private convertTextChangeToCodeEdit;
         private getBraceMatching;
         private getDiagnosticsForProject;
+        private configurePlugin;
         getCanonicalFileName(fileName: string): string;
         exit(): void;
         private notRequired;
