@@ -38,6 +38,23 @@ class ServiceProxy:
         if self.__worker_comm.started():
             self.__worker_comm.postCmd(json_str)
 
+        self.set_inferred_project_compiler_options()
+
+    def set_inferred_project_compiler_options(self):
+        """ Add full type support for compilers running in file scope mode """
+        compiler_options = {
+            "target": "ESNext", # enable all es-next features
+            "allowJs": True,    # enable javascript support
+            "jsx": "Preserve",  # enable jsx support
+            "noEmit": True      # do not emit outputs
+        }
+        args = { "options": compiler_options }
+        req_dict = self.create_req_dict("compilerOptionsForInferredProjects", args)
+        json_str = json_helpers.encode(req_dict)
+        self.__comm.postCmd(json_str)
+        if self.__worker_comm.started():
+            self.__worker_comm.postCmd(json_str)
+
     def change(self, path, begin_location=Location(1, 1), end_location=Location(1, 1), insertString=""):
         args = {
             "file": path,
