@@ -1,0 +1,5 @@
+{
+    "auto_complete_triggers" : [ {"selector": "source.js", "characters": "."} ],
+    "use_tab_stops": false,
+    "word_separators": "./\\()\"'-:,.;<>~!@#%^&*|+=[]{}`~?"
+}
