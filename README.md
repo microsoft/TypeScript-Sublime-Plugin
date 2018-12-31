@@ -10,7 +10,7 @@ Requirements
 
 The plug-in uses **Node.js** to run the TypeScript server.  The plug-in looks for node in the PATH environment variable (which is inherited from Sublime).
 
-If the `node_path` setting is present, this will override the PATH environment variable and the plug-in will use the value of the `node_path` setting as the node executable to run.
+If the `node_path` setting is present, this will override the PATH environment variable and the plug-in will use the value of the `node_path` setting as the node executable to run. Additionally, you can specify your own node arguments if the `node_args` setting is present. `node_args` _MUST_ be an array type where each array element is an argument to pass to the node executable.
 See more information in [our Tips and Known Issues](https://github.com/Microsoft/TypeScript-Sublime-Plugin/wiki/Tips-and-Known-Issues) wiki page.
 
 Note: Using different versions of TypeScript
