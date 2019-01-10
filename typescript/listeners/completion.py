@@ -132,9 +132,6 @@ class CompletionEventListener:
             raw_completions = completions_resp["body"]
             if raw_completions:
                 for raw_completion in raw_completions:
-                    # strip unrelated items
-                    if raw_completion["kind"] == "warning":
-                        continue
                     name = raw_completion["name"]
                     completion = (name + "\t" + raw_completion["kind"], name.replace("$", "\\$"))
                     completions.append(completion)
