@@ -63,7 +63,7 @@ class TypescriptFinishRenameCommand(TypeScriptBaseTextCommand):
                     rename_view.run_command('typescript_delayed_rename_file',
                                            {"locs_name": {"locs": inner_locations, "name": new_name}})
                 else:
-                    for inner_location in inner_locations:
+                    for inner_location in inner_locations[::-1]:
                         start_line, start_offset = extract_line_offset(inner_location["start"])
                         end_line, end_offset = extract_line_offset(inner_location["end"])
                         apply_edit(text, self.view, start_line, start_offset, end_line,
