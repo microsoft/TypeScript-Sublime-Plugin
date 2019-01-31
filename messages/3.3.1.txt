@@ -1,0 +1,19 @@
+Welcome to the TypeScript plugin for Sublime Text!
+
+Details about this package and its feature can be found on its GitHub
+repository at https://github.com/Microsoft/TypeScript-Sublime-Plugin.
+
+This release ships with TypeScript 3.3.1, and also supports editing in
+JavaScript files thanks to work done by GitHub users @zhengbli and @idiotWu.
+
+With this mode, users will receive TypeScript-powered features like
+more accurate completions, renaming capabilities, refactoring, go-to-definition,
+and find-all-references. Users can also get error checking in JavaScript files in
+the presence of `checkJs` in a `tsconfig.json` file, or a `// @ts-check` comment
+at the top of your file. This functionality can be disabled by explicitly setting
+the `enable_language_service_for_javascript` setting in your preferences to `false`.
+
+This release also sets error regions to `invalid.illegal` so that themes can leverage
+them appropriately - courtesy of work done by @rgant.
+
+Finally, this release includes a fix for renaming issues when renamed entities occur on the same line.
