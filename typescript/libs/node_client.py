@@ -240,13 +240,13 @@ class ServerClient(NodeCommClient):
         pref_settings = sublime.load_settings('Preferences.sublime-settings')
         node_path = pref_settings.get('node_path')
         if node_path:
-            print("Path of node executable is configured as: " + node_path)
+            log.debug("Path of node executable is configured as: %s", node_path)
             configured_node_path = os.path.expandvars(node_path)
             if NodeCommClient.is_executable(configured_node_path):
                 node_path = configured_node_path
             else:
                 node_path = None
-                print("Configured node path is not a valid executable.")
+                log.debug("Configured node path is not a valid executable.")
         if not node_path:
             if os.name == "nt":
                 node_path = "node"
@@ -254,8 +254,8 @@ class ServerClient(NodeCommClient):
                 node_path = NodeCommClient.which("node")
         if not node_path:
             path_list = os.environ["PATH"] + os.pathsep + "/usr/local/bin" + os.pathsep + "$NVM_BIN"
-            print("Unable to find executable file for node on path list: " + path_list)
-            print("To specify the node executable file name, use the 'node_path' setting")
+            log.debug("Unable to find executable file for node on path list: %s", path_list)
+            log.debug("To specify the node executable file name, use the 'node_path' setting")
             self.server_proc = None
         else:
             global_vars._node_path = node_path
