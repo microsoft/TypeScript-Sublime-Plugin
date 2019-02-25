@@ -95,23 +95,28 @@ def active_window():
     """Return currently active window"""
     return sublime.active_window()
 
+def selector_matches_whole_file(view, selector):
+    regions = view.find_by_selector(selector)
+    return len(regions) == 1 and regions[0].size() == view.size()
 
 def is_typescript(view):
     """Test if the outer syntactic scope is 'source.ts' or 'source.tsx' """
     if not view.file_name():
         return False
 
-    try:
-        location = view.sel()[0].begin()
-    except:
-        return False
-
-    is_ts_file = view.match_selector(location, 'source.ts, source.tsx')
+    # Check if the *entire file* is one contiguous TypeScript/JavaScript region.
+    #
+    # Why am I writing this note? We used to test for the *current selection*.
+    # This meant that as soon as a user clicked into an html `<script>` tag,
+    # (whose scope was something like source.js), then this function
+    # would suddenly return True. The entire file would then be
+    # treated as a `.ts` or `.js` file and the user would be given red squiggles!
+    # Clearly we shouldn't try to parse a `.html` file as TypeScript.
+    is_ts_file = selector_matches_whole_file(view, "source.ts, source.tsx")
     is_js_file = cli.enable_language_service_for_js \
-        and view.match_selector(location, 'source.js, source.jsx')
+        and selector_matches_whole_file(view, "source.js, source.jsx")
 
     return is_ts_file or is_js_file
-
 
 def is_special_view(view):
     """Determine if the current view is a special view.
