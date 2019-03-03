@@ -269,7 +269,19 @@ class PopupManager():
                 "index": "{0}/{1}".format(self.signature_index + 1,
                                           len(self.signature_help["items"])),
                 "link": "link",
-                "fontSize": PopupManager.font_size}
+                "fontSize": PopupManager.font_size,
+                "typeColor": theme_styles["type"]["foreground"],
+                "nameColor": theme_styles["name"]["foreground"],
+                "paramColor": theme_styles["param"]["foreground"],
+                "textColor": theme_styles["text"]["foreground"]}
+
+    def get_theme_styles(self):
+        return {
+            "type": self.current_view.style_for_scope("entity.name.type.class.ts"),
+            "name": self.current_view.style_for_scope("entity.name.function"),
+            "param": self.current_view.style_for_scope("variable.language.arguments.ts"),
+            "text": self.current_view.style_for_scope("source.ts")
+        }
 
 _popup_manager = None
 
