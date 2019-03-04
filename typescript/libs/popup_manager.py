@@ -262,6 +262,8 @@ class PopupManager():
                     if param["documentation"] else "")
         else:
             activeParam = ''
+           
+        theme_styles = self.get_theme_styles()
 
         return {"signature": signature,
                 "description": description,
