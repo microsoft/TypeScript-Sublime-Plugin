@@ -202,8 +202,10 @@ class PopupManager():
         def normalize_style(name):
             if name in ['methodName']:
                 return 'name'
-            elif name in ['keyword', 'interfaceName']:
+            elif name in ['interfaceName']:
                 return 'type'
+            elif name in ['keyword']:
+                return 'keyword'
             elif name in ['parameterName', 'propertyName']:
                 return 'param'
             return 'text'
@@ -273,6 +275,7 @@ class PopupManager():
                 "link": "link",
                 "fontSize": PopupManager.font_size,
                 "typeColor": theme_styles["type"]["foreground"],
+                "keywordColor": theme_styles["keyword"]["foreground"],
                 "nameColor": theme_styles["name"]["foreground"],
                 "paramColor": theme_styles["param"]["foreground"],
                 "textColor": theme_styles["text"]["foreground"]}
@@ -280,6 +283,7 @@ class PopupManager():
     def get_theme_styles(self):
         return {
             "type": self.current_view.style_for_scope("entity.name.type.class.ts"),
+            "keyword": self.current_view.style_for_scope("keyword.control.flow.ts"),
             "name": self.current_view.style_for_scope("entity.name.function"),
             "param": self.current_view.style_for_scope("variable.language.arguments.ts"),
             "text": self.current_view.style_for_scope("source.ts")
