@@ -53,7 +53,7 @@ class TypescriptQuickInfoDoc(TypeScriptBaseTextCommand):
                         'typescript_show_doc',
                         {'infoStr': info_str, 'docStr': doc_str}
                     )
-                    # doc_panel.settings().set('color_scheme', "Packages/Color Scheme - Default/Blackboard.tmTheme")
+                    doc_panel.settings().set('color_scheme', "Packages/Color Scheme - Default/Blackboard.tmTheme")
                     sublime.active_window().run_command('show_panel', {'panel': 'output.doc'})
                 status_info_str = info_str + " (^T^Q for more)"
             self.view.set_status("typescript_info", status_info_str)
