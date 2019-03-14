@@ -202,10 +202,8 @@ class PopupManager():
         def normalize_style(name):
             if name in ['methodName']:
                 return 'name'
-            elif name in ['interfaceName']:
+            elif name in ['keyword', 'interfaceName']:
                 return 'type'
-            elif name in ['keyword']:
-                return 'keyword'
             elif name in ['parameterName', 'propertyName']:
                 return 'param'
             return 'text'
@@ -264,7 +262,7 @@ class PopupManager():
                     if param["documentation"] else "")
         else:
             activeParam = ''
-           
+
         theme_styles = self.get_theme_styles()
 
         return {"signature": signature,
@@ -274,19 +272,33 @@ class PopupManager():
                                           len(self.signature_help["items"])),
                 "link": "link",
                 "fontSize": PopupManager.font_size,
-                "typeColor": theme_styles["type"]["foreground"],
-                "keywordColor": theme_styles["keyword"]["foreground"],
-                "nameColor": theme_styles["name"]["foreground"],
-                "paramColor": theme_styles["param"]["foreground"],
-                "textColor": theme_styles["text"]["foreground"]}
+                "typeStyles": theme_styles["type"],
+                "keywordStyles": theme_styles["keyword"],
+                "nameStyles": theme_styles["name"],
+                "paramStyles": theme_styles["param"],
+                "textStyles": theme_styles["text"]}
+
+    def format_css(self, style):
+        result = ""
+
+        if (style["foreground"]):
+            result += "color: {0};".format(style["foreground"])
+
+        if (style["bold"]):
+            result += "font-weight: bold;"
+
+        if (style["italic"]):
+            result += "font-style: italic;"
+
+        return result
 
     def get_theme_styles(self):
         return {
-            "type": self.current_view.style_for_scope("entity.name.type.class.ts"),
-            "keyword": self.current_view.style_for_scope("keyword.control.flow.ts"),
-            "name": self.current_view.style_for_scope("entity.name.function"),
-            "param": self.current_view.style_for_scope("variable.language.arguments.ts"),
-            "text": self.current_view.style_for_scope("source.ts")
+            "type": self.format_css(self.current_view.style_for_scope("entity.name.type.class.ts")),
+            "keyword": self.format_css(self.current_view.style_for_scope("keyword.control.flow.ts")),
+            "name": self.format_css(self.current_view.style_for_scope("entity.name.function")),
+            "param": self.format_css(self.current_view.style_for_scope("variable.language.arguments.ts")),
+            "text": self.format_css(self.current_view.style_for_scope("source.ts"))
         }
 
 _popup_manager = None
