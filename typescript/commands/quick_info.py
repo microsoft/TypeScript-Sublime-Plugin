@@ -43,7 +43,9 @@ class TypescriptQuickInfoDoc(TypeScriptBaseTextCommand):
         if quick_info_resp_dict["success"]:
             info_str = self.format_display_parts_html(quick_info_resp_dict["body"]["displayParts"])
             status_info_str = self.format_display_parts_plain(quick_info_resp_dict["body"]["displayParts"])
-            doc_str = self.format_display_parts_html(quick_info_resp_dict["body"]["documentation"])
+
+            if "documentation" in quick_info_resp_dict["body"]:
+                doc_str = self.format_display_parts_html(quick_info_resp_dict["body"]["documentation"])
 
             # process documentation
             if len(doc_str) > 0:
