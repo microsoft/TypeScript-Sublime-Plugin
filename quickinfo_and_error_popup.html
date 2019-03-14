@@ -1,14 +1,47 @@
 <style>
-body {
+div.wrapper {
     margin: 5px;
 }
 div.error {
     color: red;
     margin-bottom: 5px;
 }
+span.punctuation {
+	${punctuationStyles}
+}
+span.text {
+	${textStyles}
+}
+span.className {
+	${typeStyles}
+}
+span.propertyName {
+	${propertyStyles}
+}
+span.keyword {
+	${keywordStyles}
+}
+span.localName {
+	${variableStyles}
+}
+span.stringLiteral {
+	${stringStyles}
+}
+span.numericLiteral {
+	${numberStyles}
+}
+span.aliasName {
+	${typeStyles}
+}
+span.interfaceName {
+	${interfaceStyles}
+}
+span.parameterName {
+	${paramStyles}
+}
 </style>
-<body>
-<div class="error">${error}</div>
-<div>${info_str}</div>
-<div>${doc_str}</div>
-</body>
+<div class="wrapper">
+	<div class="error">${error}</div>
+	<div class="info">${info_str}</div>
+	<div class="doc">${doc_str}</div>
+</div>
