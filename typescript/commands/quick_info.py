@@ -68,9 +68,6 @@ class TypescriptQuickInfoDoc(TypeScriptBaseTextCommand):
                 self.template = Template(load_quickinfo_and_error_popup_template())
                 
             html = self.get_popup_html(error_html, info_str, doc_str)
-
-            print(html)
-
             self.view.show_popup(html, flags=sublime.HIDE_ON_MOUSE_MOVE_AWAY, location=display_point, max_height=300, max_width=1500)
 
     def get_popup_html(self, error, info, doc):
@@ -155,8 +152,6 @@ class TypescriptQuickInfoDoc(TypeScriptBaseTextCommand):
         return result
 
     def get_theme_styles(self):
-        print(self.view.style_for_scope("keyword.control.flow.ts"))
-
         return {
             "type": self.format_css(self.view.style_for_scope("entity.name.type.class.ts")),
             "keyword": self.format_css(self.view.style_for_scope("keyword.control.flow.ts")),
