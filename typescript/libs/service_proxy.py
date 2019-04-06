@@ -294,6 +294,24 @@ class ServiceProxy:
                 req_dict["seq"]
             )
 
+    def quick_info_full(self, path, location=Location(1, 1), on_completed=None):
+        args = {"file": path, "line": location.line, "offset": location.offset}
+        req_dict = self.create_req_dict("quickinfo-full", args)
+        json_str = json_helpers.encode(req_dict)
+        callback = on_completed or (lambda: None)
+        if not IS_ST2:
+            self.__comm.sendCmdAsync(
+                json_str,
+                callback,
+                req_dict["seq"]
+            )
+        else:
+            self.__comm.sendCmd(
+                json_str,
+                callback,
+                req_dict["seq"]
+            )
+
     def save_to(self, path, alternatePath):
         args = {"file": path, "tmpfile": alternatePath}
         req_dict = self.create_req_dict("saveto", args)
