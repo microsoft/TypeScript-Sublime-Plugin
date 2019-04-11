@@ -2,6 +2,7 @@ from ..libs.view_helpers import *
 from ..libs.text_helpers import escape_html
 from .base_command import TypeScriptBaseTextCommand
 from ..libs.popup_manager import load_html_template
+from ..libs.popup_formatter import get_theme_styles
 from string import Template
 
 def load_quickinfo_and_error_popup_template():
@@ -73,7 +74,7 @@ class TypescriptQuickInfoDoc(TypeScriptBaseTextCommand):
             self.view.show_popup(html, flags=sublime.HIDE_ON_MOUSE_MOVE_AWAY, location=display_point, max_height=300, max_width=1500)
 
     def get_popup_html(self, error, info, doc):
-        theme_styles = self.get_theme_styles()
+        theme_styles = get_theme_styles(self.view)
 
         parameters = {
             "error": error,
@@ -138,33 +139,3 @@ class TypescriptQuickInfoDoc(TypeScriptBaseTextCommand):
             result += part["text"]
 
         return result
-
-    def format_css(self, style):
-        result = ""
-
-        if (style["foreground"]):
-            result += "color: {0};".format(style["foreground"])
-
-        if (style["bold"]):
-            result += "font-weight: bold;"
-
-        if (style["italic"]):
-            result += "font-style: italic;"
-
-        return result
-
-    def get_theme_styles(self):
-        return {
-            "type": self.format_css(self.view.style_for_scope("entity.name.type.class.ts")),
-            "keyword": self.format_css(self.view.style_for_scope("keyword.control.flow.ts")),
-            "name": self.format_css(self.view.style_for_scope("entity.name.function")),
-            "param": self.format_css(self.view.style_for_scope("variable.language.arguments.ts")),
-            "property": self.format_css(self.view.style_for_scope("variable.other.property.ts")),
-            "punctuation": self.format_css(self.view.style_for_scope("punctuation.definition.block.ts")),
-            "variable": self.format_css(self.view.style_for_scope("meta.var.expr.ts")),
-            "function": self.format_css(self.view.style_for_scope("entity.name.function.ts")),
-            "interface": self.format_css(self.view.style_for_scope("entity.name.type.interface.ts")),
-            "string": self.format_css(self.view.style_for_scope("string.quoted.single.ts")),
-            "number": self.format_css(self.view.style_for_scope("constant.numeric.decimal.ts")),
-            "text": self.format_css(self.view.style_for_scope("source.ts"))
-        }

@@ -7,6 +7,7 @@ from .global_vars import *
 from .work_scheduler import work_scheduler
 from .text_helpers import Location
 from .editor_client import cli
+from .popup_formatter import get_theme_styles
 from ..libs.view_helpers import reload_buffer
 
 _POPUP_DEFAULT_FONT_SIZE = 12
@@ -263,7 +264,7 @@ class PopupManager():
         else:
             activeParam = ''
 
-        theme_styles = self.get_theme_styles()
+        theme_styles = get_theme_styles(self.view)
 
         return {"signature": signature,
                 "description": description,
@@ -277,29 +278,6 @@ class PopupManager():
                 "nameStyles": theme_styles["name"],
                 "paramStyles": theme_styles["param"],
                 "textStyles": theme_styles["text"]}
-
-    def format_css(self, style):
-        result = ""
-
-        if (style["foreground"]):
-            result += "color: {0};".format(style["foreground"])
-
-        if (style["bold"]):
-            result += "font-weight: bold;"
-
-        if (style["italic"]):
-            result += "font-style: italic;"
-
-        return result
-
-    def get_theme_styles(self):
-        return {
-            "type": self.format_css(self.current_view.style_for_scope("entity.name.type.class.ts")),
-            "keyword": self.format_css(self.current_view.style_for_scope("keyword.control.flow.ts")),
-            "name": self.format_css(self.current_view.style_for_scope("entity.name.function")),
-            "param": self.format_css(self.current_view.style_for_scope("variable.language.arguments.ts")),
-            "text": self.format_css(self.current_view.style_for_scope("source.ts"))
-        }
 
 _popup_manager = None
 
