@@ -1,9 +1,9 @@
 
-"""
-Given a style object from view.style_for_scope, converts the styles into
-a CSS string
-"""
 def format_css(style):
+    """
+    Given a style object from view.style_for_scope, converts the styles into
+    a CSS string
+    """
     result = ""
 
     if (style["foreground"]):
@@ -17,11 +17,11 @@ def format_css(style):
 
     return result
 
-"""
-Given a view object, pulls styling information from the current theme for
-syntax highlighting popups
-"""
 def get_theme_styles(view):
+    """
+    Given a view object, pulls styling information from the current theme for
+    syntax highlighting popups
+    """
     return {
         "type": format_css(view.style_for_scope("entity.name.type.class.ts")),
         "keyword": format_css(view.style_for_scope("keyword.control.flow.ts")),
