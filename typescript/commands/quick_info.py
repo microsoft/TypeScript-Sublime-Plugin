@@ -66,7 +66,7 @@ class TypescriptQuickInfoDoc(TypeScriptBaseTextCommand):
                 self.template = Template(load_quickinfo_and_error_popup_template())
             text_parts = { "error": error_html, "info_str": escape_html(info_str), "doc_str": escape_html(doc_str) }
             html = self.template.substitute(text_parts)
-            self.view.show_popup(html, flags=sublime.HIDE_ON_MOUSE_MOVE_AWAY, location=display_point, max_height=300, max_width=1500)
+            self.view.show_popup(html, flags=sublime.HIDE_ON_MOUSE_MOVE_AWAY, location=display_point, max_height=300, max_width=1024)
 
     def get_error_text_html(self, pt):
         client_info = cli.get_or_add_file(self.view.file_name())
