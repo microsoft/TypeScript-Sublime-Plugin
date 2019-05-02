@@ -264,7 +264,7 @@ class PopupManager():
         else:
             activeParam = ''
 
-        theme_styles = get_theme_styles(self.view)
+        theme_styles = get_theme_styles(self.current_view)
 
         return {"signature": signature,
                 "description": description,
