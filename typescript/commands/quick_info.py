@@ -68,7 +68,7 @@ class TypescriptQuickInfoDoc(TypeScriptBaseTextCommand):
             html = self.template.substitute(text_parts)
 
             settings = sublime.load_settings("TypeScript.sublime-settings")
-            self.view.show_popup(html, flags=sublime.HIDE_ON_MOUSE_MOVE_AWAY, location=display_point, max_height=300, max_width=settings.get("quick_info_popup_max_width") or 1024)
+            self.view.show_popup(html, flags=sublime.HIDE_ON_MOUSE_MOVE_AWAY, location=display_point, max_height=300, max_width=settings.get("quick_info_popup_max_width") or self.view.viewport_extent()[0])
 
     def get_error_text_html(self, pt):
         client_info = cli.get_or_add_file(self.view.file_name())
