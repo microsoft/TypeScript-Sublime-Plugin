@@ -7,6 +7,7 @@ from .global_vars import *
 from .work_scheduler import work_scheduler
 from .text_helpers import Location
 from .editor_client import cli
+from .popup_formatter import get_theme_styles
 from ..libs.view_helpers import reload_buffer
 
 _POPUP_DEFAULT_FONT_SIZE = 12
@@ -263,13 +264,20 @@ class PopupManager():
         else:
             activeParam = ''
 
+        theme_styles = get_theme_styles(self.current_view)
+
         return {"signature": signature,
                 "description": description,
                 "activeParam": activeParam,
                 "index": "{0}/{1}".format(self.signature_index + 1,
                                           len(self.signature_help["items"])),
                 "link": "link",
-                "fontSize": PopupManager.font_size}
+                "fontSize": PopupManager.font_size,
+                "typeStyles": theme_styles["type"],
+                "keywordStyles": theme_styles["keyword"],
+                "nameStyles": theme_styles["name"],
+                "paramStyles": theme_styles["param"],
+                "textStyles": theme_styles["text"]}
 
 _popup_manager = None
 
