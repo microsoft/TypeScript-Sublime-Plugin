@@ -1,4 +1,4 @@
-﻿import os
+import os
 import subprocess
 import threading
 import time
@@ -183,6 +183,7 @@ class NodeCommClient(CommClient):
             data = stream.read(body_length)
             log.debug('Read body of length: {0}'.format(body_length))
             data_json = data.decode("utf-8")
+
             data_dict = json_helpers.decode(data_json)
             if data_dict['type'] == "response":
                 request_seq = data_dict['request_seq']
