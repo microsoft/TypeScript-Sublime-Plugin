@@ -4046,7 +4046,7 @@
             <key>begin</key>
             <string>(?&lt;![_$[:alnum:]])(?:(?&lt;=\.\.\.)|(?&lt;!\.))(?=\bif\s*(\(([^\(\)]|(\([^\(\)]*\)))*\))\s*(?!\{))</string>
             <key>end</key>
-            <string>(?=;|$)</string>
+            <string>(?=;|$|\})</string>
             <key>patterns</key>
             <array>
               <dict>
@@ -6731,10 +6731,16 @@
             <string>#type-function-return-type</string>
           </dict>
           <dict>
-            <key>name</key>
-            <string>storage.modifier.tsx</string>
             <key>match</key>
-            <string>(?&lt;![_$[:alnum:]])(?:(?&lt;=\.\.\.)|(?&lt;!\.))(readonly)(?![_$[:alnum:]])(?:(?=\.\.\.)|(?!\.))</string>
+            <string>(?&lt;![_$[:alnum:]])(?:(?&lt;=\.\.\.)|(?&lt;!\.))(readonly)(?![_$[:alnum:]])(?:(?=\.\.\.)|(?!\.))\s*</string>
+            <key>captures</key>
+            <dict>
+              <key>1</key>
+              <dict>
+                <key>name</key>
+                <string>storage.modifier.tsx</string>
+              </dict>
+            </dict>
           </dict>
           <dict>
             <key>include</key>
@@ -7717,7 +7723,7 @@
             <key>name</key>
             <string>string.regexp.tsx</string>
             <key>begin</key>
-            <string>(?&lt;![_$[:alnum:])\]]|\+\+|--|}|\*\/)\/(?![\/*])(?=(?:[^\/\\\[]|\\.|\[([^\]\\]|\\.)+\])+\/[gimsuy]*(?!\s*[a-zA-Z0-9_$]))</string>
+            <string>((?&lt;![_$[:alnum:])\]]|\+\+|--|}|\*\/)|((?&lt;=^return|[^\._$[:alnum:]]return|^case|[^\._$[:alnum:]]case))\s*)\/(?![\/*])(?=(?:[^\/\\\[]|\\.|\[([^\]\\]|\\.)+\])+\/[gimsuy]*(?!\s*[a-zA-Z0-9_$]))</string>
             <key>beginCaptures</key>
             <dict>
               <key>0</key>
