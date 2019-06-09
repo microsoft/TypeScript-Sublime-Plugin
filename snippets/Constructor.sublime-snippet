@@ -1,9 +1,0 @@
-<snippet>
-	<content><![CDATA[constructor(${1}) {
-	${2:// code...}
-}
-]]></content>
-	<tabTrigger>ctor</tabTrigger>
-	<scope>source.ts, source.tsx</scope>
-    <description>constructor …</description>
-</snippet>
