@@ -65,7 +65,7 @@ class PopupManager():
             if last_command == "insert":
                 if len(args['characters']) > 1 and '\n' in args['characters']:
                     reload_buffer(view)
-            
+
             # Send a signagure_help request to server
             self.proxy.async_signature_help(filename, point, '', on_done)
 
@@ -240,7 +240,7 @@ class PopupManager():
     def get_current_signature_parts(self):
         def encode(str, kind):
             return '<br />' if kind == "lineBreak" else str
-    
+
         if self.signature_index == -1:
             return ""
         if self.signature_index >= len(self.signature_help["items"]):
@@ -259,7 +259,7 @@ class PopupManager():
             param = item["parameters"][self.current_parameter]
             activeParam = '<span class="param">{0}:</span> <i>{1}</i>'.format(
                 param["name"],
-                ''.join([encode(doc["text"], doc["kind"]) for doc in param["documentation"]]) 
+                ''.join([encode(doc["text"], doc["kind"]) for doc in param["documentation"]])
                     if param["documentation"] else "")
         else:
             activeParam = ''

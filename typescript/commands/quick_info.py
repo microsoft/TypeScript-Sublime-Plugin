@@ -1,3 +1,5 @@
+import sublime
+
 from ..libs.view_helpers import *
 from ..libs.text_helpers import escape_html
 from .base_command import TypeScriptBaseTextCommand
@@ -40,6 +42,7 @@ class TypescriptQuickInfoDoc(TypeScriptBaseTextCommand):
     def handle_quick_info(self, quick_info_resp_dict, display_point):
         info_str = ""
         doc_str = ""
+        status_info_str = ""
 
         if quick_info_resp_dict["success"]:
             info_str = self.format_display_parts_html(quick_info_resp_dict["body"]["displayParts"])
@@ -65,14 +68,28 @@ class TypescriptQuickInfoDoc(TypeScriptBaseTextCommand):
             self.view.erase_status("typescript_info")
 
         # process tooltips
-        error_html = self.get_error_text_html(display_point)
+        error_str = self.get_error_text_html(display_point)
+        error_html = escape_html(error_str)
         if TOOLTIP_SUPPORT and (info_str != "" or doc_str != "" or error_html != ""):
             if self.template is None:
                 self.template = Template(load_quickinfo_and_error_popup_template())
             html = self.get_popup_html(error_html, info_str, doc_str)
 
+            def on_navigate(href: str) -> None:
+                if href == "copy":
+                    sublime.set_clipboard("\n\n".join(s for s in [error_str, status_info_str] if s))
+                    sublime.active_window().status_message("TypeScript: info copied to clipboard")
+                    self.view.hide_popup()
+
             settings = sublime.load_settings("TypeScript.sublime-settings")
-            self.view.show_popup(html, flags=sublime.HIDE_ON_MOUSE_MOVE_AWAY, location=display_point, max_height=300, max_width=settings.get("quick_info_popup_max_width") or self.view.viewport_extent()[0])
+            self.view.show_popup(
+                html + "<a href=\"copy\">Copy</a>",
+                flags=sublime.HIDE_ON_MOUSE_MOVE_AWAY,
+                location=display_point,
+                max_height=300,
+                max_width=settings.get("quick_info_popup_max_width") or self.view.viewport_extent()[0],
+                on_navigate=on_navigate,
+            )
 
     def get_popup_html(self, error, info, doc):
         theme_styles = get_theme_styles(self.view)
@@ -108,7 +125,7 @@ class TypescriptQuickInfoDoc(TypeScriptBaseTextCommand):
             if region.contains(pt):
                 error_text = text
                 break
-        return escape_html(error_text)
+        return error_text
 
     def run(self, text, hover_point=None):
         check_update_view(self.view)
