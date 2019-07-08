@@ -226,7 +226,6 @@ class TypeScriptEventListener(sublime_plugin.EventListener):
              "typescript_format_selection",
              "typescript_format_line",
              "typescript_paste_and_format"]:
-            print(command_name)
             # give up and send whole buffer to server (do this eagerly
             # to avoid lag on next request to server)
             reload_buffer(view, info.client_info)
