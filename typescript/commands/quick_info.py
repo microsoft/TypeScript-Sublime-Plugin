@@ -69,9 +69,10 @@ class TypescriptQuickInfoDoc(TypeScriptBaseTextCommand):
         if TOOLTIP_SUPPORT and (info_str != "" or doc_str != "" or error_html != ""):
             if self.template is None:
                 self.template = Template(load_quickinfo_and_error_popup_template())
-                
             html = self.get_popup_html(error_html, info_str, doc_str)
-            self.view.show_popup(html, flags=sublime.HIDE_ON_MOUSE_MOVE_AWAY, location=display_point, max_height=300, max_width=1500)
+
+            settings = sublime.load_settings("TypeScript.sublime-settings")
+            self.view.show_popup(html, flags=sublime.HIDE_ON_MOUSE_MOVE_AWAY, location=display_point, max_height=300, max_width=settings.get("quick_info_popup_max_width") or self.view.viewport_extent()[0])
 
     def get_popup_html(self, error, info, doc):
         theme_styles = get_theme_styles(self.view)

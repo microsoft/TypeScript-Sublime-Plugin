@@ -161,7 +161,8 @@ class IdleListener:
             view.add_regions(region_key, error_regions, "invalid", "",
                              sublime.DRAW_OUTLINED)
         else:
-            view.add_regions(region_key, error_regions, "invalid.illegal", "",
+            settings = sublime.load_settings("TypeScript.sublime-settings")
+            view.add_regions(region_key, error_regions, settings.get("error_color") or "invalid.illegal", "",
                              sublime.DRAW_NO_FILL +
                              sublime.DRAW_NO_OUTLINE +
                              sublime.DRAW_SQUIGGLY_UNDERLINE)
