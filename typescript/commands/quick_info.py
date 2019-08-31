@@ -64,23 +64,21 @@ class TypescriptQuickInfoDoc(TypeScriptBaseTextCommand):
         else:
             self.view.erase_status("typescript_info")
 
-        # process tooltips
-        error_html = self.get_error_text_html(display_point)
-        if TOOLTIP_SUPPORT and (info_str != "" or doc_str != "" or error_html != ""):
-            if self.template is None:
-                self.template = Template(load_quickinfo_and_error_popup_template())
-            html = self.get_popup_html(error_html, info_str, doc_str)
+        # Fetch any errors and show tooltips if available
+        error_html = self.get_error_text_html(sublime.Region(display_point, display_point))
+        if info_str != "" or doc_str != "" or error_html != "":
+            self.show_tooltip_popup(display_point, error_html, info_str, doc_str)
 
-            settings = sublime.load_settings("TypeScript.sublime-settings")
-            self.view.show_popup(html, flags=sublime.HIDE_ON_MOUSE_MOVE_AWAY, location=display_point, max_height=300, max_width=settings.get("quick_info_popup_max_width") or self.view.viewport_extent()[0])
+    def show_tooltip_popup(self, display_point, error, info, doc):
+        if not TOOLTIP_SUPPORT:
+            return
 
-    def get_popup_html(self, error, info, doc):
         theme_styles = get_theme_styles(self.view)
 
         parameters = {
-            "error": error,
-            "info_str": info,
-            "doc_str": doc,
+            "error": error or '',
+            "info_str": info or '',
+            "doc_str": doc or '',
             "typeStyles": theme_styles["type"],
             "keywordStyles": theme_styles["keyword"],
             "nameStyles": theme_styles["name"],
@@ -95,26 +93,40 @@ class TypescriptQuickInfoDoc(TypeScriptBaseTextCommand):
             "textStyles": theme_styles["text"]
         }
 
-        return self.template.substitute(parameters)
+        if self.template is None:
+            self.template = Template(load_quickinfo_and_error_popup_template())
+        html = self.template.substitute(parameters)
 
-    def get_error_text_html(self, pt):
+        settings = sublime.load_settings("TypeScript.sublime-settings")
+        self.view.show_popup(
+            html,
+            flags=sublime.HIDE_ON_MOUSE_MOVE_AWAY,
+            location=display_point,
+            max_height=300,
+            max_width=settings.get("quick_info_popup_max_width") or self.view.viewport_extent()[0]
+        )
+
+    def get_error_text_html(self, span):
         client_info = cli.get_or_add_file(self.view.file_name())
-        error_text = ""
-        for (region, text) in client_info.errors['syntacticDiag']:
-            if region.contains(pt):
-                error_text = text
-                break
-        for (region, text) in client_info.errors['semanticDiag']:
-            if region.contains(pt):
-                error_text = text
-                break
-        return escape_html(error_text)
+        all_errors = client_info.errors['syntacticDiag'] + client_info.errors['semanticDiag']
 
-    def run(self, text, hover_point=None):
+        errors = []
+        for (region, text) in all_errors:
+            if region.intersects(span):
+                errors.append(escape_html(text))
+
+        return '<br/>'.join(errors)
+
+    def run(self, text, hover_point=None, hover_zone=None):
         check_update_view(self.view)
         display_point = self.view.sel()[0].begin() if hover_point is None else hover_point
         word_at_sel = self.view.classify(display_point)
-        if word_at_sel & SUBLIME_WORD_MASK:
+        if hover_zone == sublime.HOVER_GUTTER:
+            line_span = self.view.full_line(display_point)
+            error_html = self.get_error_text_html(line_span)
+            if error_html:
+                self.show_tooltip_popup(display_point, error_html, None, None)
+        elif word_at_sel & SUBLIME_WORD_MASK:
             cli.service.quick_info_full(self.view.file_name(), get_location_from_position(self.view, display_point), lambda response: self.handle_quick_info(response, display_point))
         else:
             self.view.erase_status("typescript_info")

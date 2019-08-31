@@ -98,7 +98,9 @@ for OS-specific shortcuts.
 
 These settings can be overridden in `Packages/User/TypeScript.sublime-settings`, which you can open by going to `Preferences` -> `Package Settings` -> `TypeScript` -> `TypeScript Settings - User`.
 
-- `error_color`: the color of the squiggly lines drawn underneath type errors; either an empty string for the default color, or one of `"region.redish"`, `"region.orangish"`, `"region.yellowish"`, `"region.greenish"`, `"region.bluish"`, `"region.purplish"`, `"region.pinkish"`
+- `error_color`: the color of the lines drawn underneath/around type errors; either an empty string for the default color, or one of `"region.redish"`, `"region.orangish"`, `"region.yellowish"`, `"region.greenish"`, `"region.bluish"`, `"region.purplish"`, `"region.pinkish"`
+- `error_icon`: specifies a gutter icon, defaults to nothing cab be set to `"dot"`, `"circle"`, `"bookmark"` or any other value accepted by Sublime Text
+- `error_outlined`: will draw type errors with a solid outline instead of the default which is a squiggly line underneath
 - `quick_info_popup_max_width`: the max width of the quick info popup, default 1024
 
 Project System
