@@ -240,6 +240,9 @@ class ServerClient(NodeCommClient):
         # start node process
         pref_settings = sublime.load_settings('Preferences.sublime-settings')
         node_path = pref_settings.get('node_path')
+        node_args = pref_settings.get('node_args', [])
+        tsserver_args = pref_settings.get('tsserver_args', [])
+        tsserver_env = dict(os.environ, **pref_settings.get('tsserver_env', {}))
         if node_path:
             print("Path of node executable is configured as: " + node_path)
             configured_node_path = os.path.expandvars(node_path)
@@ -262,17 +265,18 @@ class ServerClient(NodeCommClient):
             global_vars._node_path = node_path
             print("Trying to spawn node executable from: " + node_path)
             try:
+                node_process_cmd = [node_path] + node_args + [script_path, "--disableAutomaticTypingAcquisition"] + tsserver_args
                 if os.name == "nt":
                     # linux subprocess module does not have STARTUPINFO
                     # so only use it if on Windows
                     si = subprocess.STARTUPINFO()
                     si.dwFlags |= subprocess.SW_HIDE | subprocess.STARTF_USESHOWWINDOW
-                    self.server_proc = subprocess.Popen([node_path, script_path, "--disableAutomaticTypingAcquisition"],
-                                                         stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL, startupinfo=si, bufsize=-1)
+                    self.server_proc = subprocess.Popen(node_process_cmd,
+                                                         stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL, env=tsserver_env, startupinfo=si, bufsize=-1)
                 else:
                     log.debug("opening " + node_path + " " + script_path)
-                    self.server_proc = subprocess.Popen([node_path, script_path, "--disableAutomaticTypingAcquisition"],
-                                                         stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL, bufsize=-1)
+                    self.server_proc = subprocess.Popen(node_process_cmd,
+                                                         stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL, env=tsserver_env, bufsize=-1)
             except:
                 self.server_proc = None
         # start reader thread
@@ -303,15 +307,20 @@ class WorkerClient(NodeCommClient):
         WorkerClient.stop_worker = False
 
         node_path = global_vars.get_node_path()
+        node_args = pref_settings.get('node_args', [])
+        tsserver_args = pref_settings.get('tsserver_args', [])
+        tsserver_env = dict(os.environ, **pref_settings.get('tsserver_env', {}))
+        node_process_cmd = [node_path] + node_args + [self.script_path, "--disableAutomaticTypingAcquisition"] + tsserver_args
+
         if os.name == "nt":
             si = subprocess.STARTUPINFO()
             si.dwFlags |= subprocess.SW_HIDE | subprocess.STARTF_USESHOWWINDOW
             self.server_proc = subprocess.Popen(
-                [node_path, self.script_path, "--disableAutomaticTypingAcquisition"], stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL, startupinfo=si, bufsize=-1
+                node_process_cmd, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL, env=tsserver_env, startupinfo=si, bufsize=-1
             )
         else:
             self.server_proc = subprocess.Popen(
-                [node_path, self.script_path, "--disableAutomaticTypingAcquisition"], stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL, bufsize=-1)
+                node_process_cmd, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL, env=tsserver_env, bufsize=-1)
 
         # start reader thread
         if self.server_proc and (not self.server_proc.poll()):

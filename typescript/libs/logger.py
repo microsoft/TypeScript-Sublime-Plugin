@@ -17,7 +17,7 @@ _pluginRoot = path.dirname(path.dirname(path.abspath(__file__)))
 filePath = path.join(_pluginRoot, 'TS.log')
 
 log = logging.getLogger('TS')
-log.setLevel(logging.WARN)
+log.setLevel(logging.DEBUG)
 
 _logFormat = logging.Formatter('%(asctime)s: %(thread)d: %(levelname)s: %(message)s')
 
