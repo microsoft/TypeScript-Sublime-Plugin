@@ -106,7 +106,7 @@ class CompletionEventListener:
             info.last_completion_loc = locations[0]
             self.pending_completions = []
             self.completions_ready = False
-            return completions, sublime.INHIBIT_WORD_COMPLETIONS | sublime.INHIBIT_EXPLICIT_COMPLETIONS
+            return completions, sublime.INHIBIT_EXPLICIT_COMPLETIONS
 
     def handle_completion_info(self, completions_resp):
         """Helper callback when completion info received from server"""
