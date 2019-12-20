@@ -162,10 +162,16 @@ class IdleListener:
                              sublime.DRAW_OUTLINED)
         else:
             settings = sublime.load_settings("TypeScript.sublime-settings")
-            view.add_regions(region_key, error_regions, settings.get("error_color") or "invalid.illegal", "",
-                             sublime.DRAW_NO_FILL +
-                             sublime.DRAW_NO_OUTLINE +
-                             sublime.DRAW_SQUIGGLY_UNDERLINE)
+            error_color = settings.get("error_color") or "invalid.illegal"
+            error_icon = settings.get("error_icon") or ""
+            error_draw_style = \
+                sublime.DRAW_OUTLINED if settings.get("error_outlined") \
+                else sublime.DRAW_NO_FILL | sublime.DRAW_NO_OUTLINE | sublime.DRAW_SQUIGGLY_UNDERLINE
+            view.add_regions(region_key,
+                             error_regions,
+                             error_color,
+                             error_icon,
+                             error_draw_style)
 
     def update_status(self, view, info):
         """Update the status line with error info and quick info if no error info"""

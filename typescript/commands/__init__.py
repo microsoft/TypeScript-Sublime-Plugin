@@ -7,6 +7,10 @@ from .quick_info import TypescriptQuickInfo, TypescriptQuickInfoDoc
 from .save import TypescriptSave
 from .show_doc import TypescriptShowDoc
 from .signature import TypescriptSignaturePanel, TypescriptSignaturePopup
+from .get_code_fixes import (
+    TypescriptRequestCodeFixesCommand,
+    ReplaceTextCommand
+)
 from .format import (
     TypescriptFormatBrackets,
     TypescriptFormatDocument,
@@ -47,6 +51,8 @@ __all__ = [
     "TypescriptProjectErrorList",
     "TypescriptGoToError",
     "TypescriptFormatBrackets",
+    "TypescriptRequestCodeFixesCommand",
+    "ReplaceTextCommand",
     "TypescriptFormatDocument",
     "TypescriptFormatLine",
     "TypescriptFormatOnKey",

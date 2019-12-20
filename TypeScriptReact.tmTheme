@@ -19,7 +19,7 @@
       </dict>
       <dict>
         <key>scope</key>
-        <string>support.type, constant.language, variable.language</string>
+        <string>support.type, constant.language, variable.language, variable.language variable.parameter</string>
         <key>settings</key>
         <dict>
           <key>vsclassificationtype</key>

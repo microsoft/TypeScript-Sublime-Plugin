@@ -8,6 +8,7 @@
  { "caption" : "TypeScript: Format Selection", "command": "typescript_format_selection" },
  { "caption" : "TypeScript: Format Document", "command": "typescript_format_document" },
  { "caption" : "TypeScript: Find References", "command": "typescript_find_references" },
+ { "caption" : "TypeScript: Request Code Fixes", "command": "typescript_request_code_fixes" },
  { "caption" : "TypeScript: Navigate To Symbol", "command": "typescript_nav_to" },
  { "caption" : "TypeScript: Rename", "command": "typescript_rename" },
  { "caption" : "TypeScript: Refactor", "command": "typescript_get_applicable_refactors" },
