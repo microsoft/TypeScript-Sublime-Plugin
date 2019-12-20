@@ -1,0 +1,8 @@
+<snippet>
+    <content><![CDATA[function ${1:function_name}(${2:argument}) {
+	${0:// body...}
+}]]></content>
+    <tabTrigger>func</tabTrigger>
+    <scope>source.ts, source.tsx</scope>
+    <description>Function</description>
+</snippet>
