@@ -1,3 +1,5 @@
+import sublime
+
 from ..libs.view_helpers import *
 from ..libs.text_helpers import escape_html
 from .base_command import TypeScriptBaseTextCommand
@@ -40,10 +42,11 @@ class TypescriptQuickInfoDoc(TypeScriptBaseTextCommand):
     def handle_quick_info(self, quick_info_resp_dict, display_point):
         info_str = ""
         doc_str = ""
+        info_text = ""
 
         if quick_info_resp_dict["success"]:
             info_str = self.format_display_parts_html(quick_info_resp_dict["body"]["displayParts"])
-            status_info_str = self.format_display_parts_plain(quick_info_resp_dict["body"]["displayParts"])
+            info_text = self.format_display_parts_plain(quick_info_resp_dict["body"]["displayParts"])
 
             if "documentation" in quick_info_resp_dict["body"]:
                 doc_str = self.format_display_parts_html(quick_info_resp_dict["body"]["documentation"])
@@ -58,26 +61,27 @@ class TypescriptQuickInfoDoc(TypeScriptBaseTextCommand):
                     )
                     doc_panel.settings().set('color_scheme', "Packages/Color Scheme - Default/Blackboard.tmTheme")
                     sublime.active_window().run_command('show_panel', {'panel': 'output.doc'})
-                status_info_str = info_str + " (^T^Q for more)"
-            self.view.set_status("typescript_info", status_info_str)
+                info_text = info_str + " (^T^Q for more)"
+            self.view.set_status("typescript_info", info_text)
 
         else:
             self.view.erase_status("typescript_info")
 
         # Fetch any errors and show tooltips if available
+        errors = self.get_errors(sublime.Region(display_point, display_point))
         error_html = self.get_error_text_html(sublime.Region(display_point, display_point))
         if info_str != "" or doc_str != "" or error_html != "":
-            self.show_tooltip_popup(display_point, error_html, info_str, doc_str)
+            self.show_tooltip_popup(display_point, errors, error_html, info_text, info_str, doc_str)
 
-    def show_tooltip_popup(self, display_point, error, info, doc):
+    def show_tooltip_popup(self, display_point, errors, error_html: str, info_text: str, info_html: str, doc):
         if not TOOLTIP_SUPPORT:
             return
 
         theme_styles = get_theme_styles(self.view)
 
         parameters = {
-            "error": error or '',
-            "info_str": info or '',
+            "error": error_html or '',
+            "info_str": info_html or '',
             "doc_str": doc or '',
             "typeStyles": theme_styles["type"],
             "keywordStyles": theme_styles["keyword"],
@@ -97,25 +101,39 @@ class TypescriptQuickInfoDoc(TypeScriptBaseTextCommand):
             self.template = Template(load_quickinfo_and_error_popup_template())
         html = self.template.substitute(parameters)
 
+        def on_navigate(href: str) -> None:
+            if href == "copy":
+                copy_text = "\n\n".join(s for s in errors if s)
+                if info_text:
+                    copy_text = copy_text + "\n\n" + info_text
+                sublime.set_clipboard(copy_text)
+                sublime.active_window().status_message("TypeScript: info copied to clipboard")
+                self.view.hide_popup()
+
         settings = sublime.load_settings("TypeScript.sublime-settings")
         self.view.show_popup(
-            html,
+            html + "<a href=\"copy\">Copy</a>",
             flags=sublime.HIDE_ON_MOUSE_MOVE_AWAY,
             location=display_point,
             max_height=300,
-            max_width=settings.get("quick_info_popup_max_width") or self.view.viewport_extent()[0]
+            max_width=settings.get("quick_info_popup_max_width") or self.view.viewport_extent()[0],
+            on_navigate=on_navigate,
         )
 
-    def get_error_text_html(self, span):
+    def get_errors(self, span):
         client_info = cli.get_or_add_file(self.view.file_name())
         all_errors = client_info.errors['syntacticDiag'] + client_info.errors['semanticDiag']
 
         errors = []
         for (region, text) in all_errors:
             if region.intersects(span):
-                errors.append(escape_html(text))
+                errors.append(text)
 
-        return '<br/>'.join(errors)
+        return errors
+
+    def get_error_text_html(self, span):
+        errors = self.get_errors(span)
+        return '<br/>'.join(escape_html(error) for error in errors)
 
     def run(self, text, hover_point=None, hover_zone=None):
         check_update_view(self.view)
