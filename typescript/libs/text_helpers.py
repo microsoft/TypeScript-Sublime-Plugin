@@ -92,7 +92,7 @@ def escape_html(raw_string):
 
     Note: only use for short strings
     """
-    return raw_string.replace('&', '&amp;').replace('<', '&lt;').replace('>', "&gt;")
+    return raw_string.replace('&', '&amp;').replace('<', '&lt;').replace('>', '&gt;').replace('\n', '<br>').replace(' ', '&nbsp;')
 
 
 def left_expand_empty_region(regions, number=1):
@@ -126,3 +126,4 @@ def build_replace_regions(empty_regions_a, empty_regions_b):
     for i in range(len(empty_regions_a)):
         rr.append(sublime.Region(empty_regions_a[i].begin(), empty_regions_b[i].begin()))
     return rr
+    

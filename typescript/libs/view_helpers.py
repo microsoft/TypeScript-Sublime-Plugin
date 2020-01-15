@@ -3,6 +3,7 @@ import codecs
 from .global_vars import *
 from .editor_client import cli
 from .text_helpers import *
+from .panel_manager import get_panel_manager
 
 
 class FileInfo:
@@ -10,6 +11,7 @@ class FileInfo:
 
     def __init__(self, filename, cc):
         self.filename = filename
+        self.is_open = False
         # 'pre_change_sent' means the change to this file is already sent to the server
         # used between 'on_text_command' and 'on_modified'
         self.pre_change_sent = False
@@ -32,34 +34,51 @@ class FileInfo:
 
 
 _file_map = dict()
+_file_map_on_worker = dict()
 
 
-def get_info(view):
+def get_info(view, open_if_not_cached=True):
     """Find the file info on the server that matches the given view"""
+    if not get_language_service_enabled():
+        return
+
     if not cli.initialized:
         cli.initialize()
 
     info = None
-    if view.file_name() is not None:
+    if view is not None and view.file_name() is not None:
         file_name = view.file_name()
         if is_typescript(view):
             info = _file_map.get(file_name)
-            if not info:
-                info = FileInfo(file_name, None)
-                info.view = view
-                info.client_info = cli.get_or_add_file(file_name)
-                set_file_prefs(view)
-                _file_map[file_name] = info
-                # Open the file on the server
-                open_file(view)
-                if view.is_dirty():
-                    if not view.is_loading():
-                        reload_buffer(view, info.client_info)
+            if open_if_not_cached:
+                if not info or info.is_open is False:
+                    info = FileInfo(file_name, None)
+                    info.view = view
+                    info.client_info = cli.get_or_add_file(file_name)
+                    set_file_prefs(view)
+                    _file_map[file_name] = info
+                    # Open the file on the server
+                    open_file(view)
+                    info.is_open = True
+                    if view.is_dirty():
+                        if not view.is_loading():
+                            reload_buffer(view, info.client_info)
+                        else:
+                            info.client_info.pending_changes = True
+
+                # This is for the case when a file is opened on server but not
+                # on the worker, which could be caused by starting the worker
+                # for the first time
+                if not IS_ST2:
+                    if get_panel_manager().is_panel_active("errorlist"):
+                        info_on_worker = _file_map_on_worker.get(file_name)
+                        if not info_on_worker:
+                            _file_map_on_worker[file_name] = info
+                            open_file_on_worker(view)
+                            if view.is_dirty() and not view.is_loading():
+                                reload_buffer_on_worker(view)
                     else:
-                        info.client_info.pending_changes = True
-                # if info in most_recent_used_file_list:
-                #     most_recent_used_file_list.remove(info)
-                # most_recent_used_file_list.append(info)
+                        _file_map_on_worker.clear()
     return info
 
 
@@ -76,50 +95,55 @@ def active_window():
     """Return currently active window"""
     return sublime.active_window()
 
+def selector_matches_whole_file(view, selector):
+    regions = view.find_by_selector(selector)
+    return len(regions) == 1 and regions[0].size() == view.size()
 
 def is_typescript(view):
-    """Test if the outer syntactic scope is 'source.ts' """
+    """Test if the outer syntactic scope is 'source.ts' or 'source.tsx' """
     if not view.file_name():
         return False
-    try:
-        location = view.sel()[0].begin()
-    except:
-        return False
 
-    return view.match_selector(location, 'source.ts')
+    # Check if the *entire file* is one contiguous TypeScript/JavaScript region.
+    #
+    # Why am I writing this note? We used to test for the *current selection*.
+    # This meant that as soon as a user clicked into an html `<script>` tag,
+    # (whose scope was something like source.js), then this function
+    # would suddenly return True. The entire file would then be
+    # treated as a `.ts` or `.js` file and the user would be given red squiggles!
+    # Clearly we shouldn't try to parse a `.html` file as TypeScript.
+    is_ts_file = selector_matches_whole_file(view, "source.ts, source.tsx")
+    is_js_file = cli.enable_language_service_for_js \
+        and selector_matches_whole_file(view, "source.js, source.jsx")
 
-
-def is_typescript_scope(view, scope_sel):
-    """Test if the cursor is in a syntactic scope specified by selector scopeSel"""
-    try:
-        location = view.sel()[0].begin()
-    except:
-        return False
-
-    return view.match_selector(location, scope_sel)
-
+    return is_ts_file or is_js_file
 
 def is_special_view(view):
     """Determine if the current view is a special view.
 
     Special views are mostly referring to panels. They are different from normal views
-    in that they cannot be the active_view of their windows, therefore their ids 
+    in that they cannot be the active_view of their windows, therefore their ids
     shouldn't be equal to the current view id.
     """
-    return view.window() and view.id() != view.window().active_view().id()
+    window = view.window()
+    active_view = window.active_view() if window else None
+    return view and active_view and window and view.id() != active_view.id()
 
 
 def get_location_from_view(view):
-    """Returns the Location tuple of the beginning of the first selected region in the view"""
+    """Returns a Location representing the beginning of the first selected region in the view"""
     region = view.sel()[0]
     return get_location_from_region(view, region)
-
 
 def get_location_from_region(view, region):
     """Returns the Location tuple of the beginning of the given region"""
     position = region.begin()
     return get_location_from_position(view, position)
 
+def get_start_and_end_from_view(view):
+    """Returns a tuple of Location objects representing the (start, end) of a region."""
+    region = view.sel()[0]
+    return map(lambda p: get_location_from_position(view, p), (region.begin(), region.end()))
 
 def get_location_from_position(view, position):
     """Returns the LineOffset object of the given text position"""
@@ -133,36 +157,52 @@ def open_file(view):
     """Open the file on the server"""
     cli.service.open(view.file_name())
 
+def open_file_on_worker(view):
+    """Open the file on the worker process"""
+    cli.service.open_on_worker(view.file_name())
 
 def reconfig_file(view):
+    """Reconfigure indentation settings for the current view
+
+    Returns True if the settings were configured in the TS service
+    Returns False if the settings did not need to be configured
+    """
     host_info = "Sublime Text version " + str(sublime.version())
     # Preferences Settings
     view_settings = view.settings()
     tab_size = view_settings.get('tab_size', 4)
     indent_size = view_settings.get('indent_size', tab_size)
-    translate_tab_to_spaces = view_settings.get('translate_tabs_to_spaces', True)
-    format_options = {
-        "tabSize": tab_size,
-        "indentSize": indent_size,
-        "convertTabsToSpaces": translate_tab_to_spaces
-    }
-    cli.service.configure(host_info, view.file_name(), format_options)
+    translate_tabs_to_spaces = view_settings.get('translate_tabs_to_spaces', True)
+
+    prev_format_options = view_settings.get('typescript_plugin_format_options')
+    if prev_format_options == None \
+        or prev_format_options['tabSize'] != tab_size \
+        or prev_format_options['indentSize'] != indent_size \
+        or prev_format_options['convertTabsToSpaces'] != translate_tabs_to_spaces:
+        format_options = {
+            "tabSize": tab_size,
+            "indentSize": indent_size,
+            "convertTabsToSpaces": translate_tabs_to_spaces
+        }
+        view_settings.set('typescript_plugin_format_options', format_options)
+        cli.service.configure(host_info, view.file_name(), format_options)
+        return True
+    return False
 
 
 def set_file_prefs(view):
     settings = view.settings()
     settings.set('use_tab_stops', False)
-    settings.add_on_change('tab_size', tab_size_changed)
-    settings.add_on_change('indent_size', tab_size_changed)
-    settings.add_on_change('translate_tabs_to_spaces', tab_size_changed)
-    reconfig_file(view)
+    settings.add_on_change('typescript_plugin_settings_changed', settings_changed)
 
 
-def tab_size_changed():
+def settings_changed():
     view = active_view()
-    reconfig_file(view)
-    client_info = cli.get_or_add_file(view.file_name())
-    client_info.pending_changes = True
+    if view is None:
+        return
+    if reconfig_file(view):
+        client_info = cli.get_or_add_file(view.file_name())
+        client_info.pending_changes = True
 
 
 def set_caret_pos(view, pos):
@@ -213,14 +253,32 @@ def reload_buffer(view, client_info=None):
             client_info.change_count = info.modify_count
         client_info.pending_changes = False
 
+def reload_buffer_on_worker(view):
+    """Reload the buffer content on the worker process
+
+    Note: the worker process won't change the client_info object to avoid synchronization issues
+    """
+    if not view.is_loading():
+        tmpfile_name = get_tempfile_name()
+        tmpfile = codecs.open(tmpfile_name, "w", "utf-8")
+        text = view.substr(sublime.Region(0, view.size()))
+        tmpfile.write(text)
+        tmpfile.flush()
+        if not IS_ST2:
+            cli.service.reload_async_on_worker(view.file_name(), tmpfile_name, recv_reload_response)
+        else:
+            reload_response = cli.service.reload_on_worker(view.file_name(), tmpfile_name)
+            recv_reload_response(reload_response)
+
 def reload_required(view):
     client_info = cli.get_or_add_file(view.file_name())
     return client_info.pending_changes or client_info.change_count < change_count(view)
 
+
 def check_update_view(view):
     """Check if the buffer in the view needs to be reloaded
 
-    If we have changes to the view not accounted for by change messages, 
+    If we have changes to the view not accounted for by change messages,
     send the whole buffer through a temporary file
     """
     if is_typescript(view):
@@ -231,7 +289,7 @@ def check_update_view(view):
 
 def send_replace_changes_for_regions(view, regions, insert_string):
     """
-    Given a list of regions and a (possibly zero-length) string to insert, 
+    Given a list of regions and a (possibly zero-length) string to insert,
     send the appropriate change information to the server.
     """
     if not is_typescript(view):
@@ -252,7 +310,7 @@ def apply_edit(text, view, start_line, start_offset, end_line, end_offset, new_t
     if region.size() > 0:
         view.erase(text, region)
     if len(new_text) > 0:
-        view.insert(text, begin, new_text)
+        view.insert(text, begin, new_text.replace('\r\n', '\n'))
 
 
 def apply_formatting_changes(text, view, code_edits):
@@ -316,3 +374,23 @@ def change_count(view):
             return info.modify_count
         else:
             return view.change_count()
+
+def last_non_whitespace_position(view):
+    """
+    Returns the position of the last non-whitespace character of <view>.
+    Returns -1 if <view> only contains non-whitespace characters.
+    """
+    pos = view.size() - 1
+    while pos >= 0 and view.substr(pos).isspace():
+        pos -= 1
+    return pos
+
+def last_visible_character_region(view):
+    """Returns a <sublime.Region> for the last non whitespace character"""
+    pos = last_non_whitespace_position(view)
+    return sublime.Region(pos, pos + 1)
+
+def is_view_visible(view):
+    """The only way to tell a view is visible seems to be to test if it has an attached window"""
+    return view.window() is not None
+

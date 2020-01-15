@@ -29,6 +29,16 @@ else:
         PLUGIN_DIR = dirname(dirname(dirname(os.path.abspath(__file__))))
 PLUGIN_NAME = os.path.basename(PLUGIN_DIR)
 
+# The node path will be initialized in the node_client.py module
+_node_path = None
+def get_node_path():
+    return _node_path
+
+# The tsc.js path will be initialized in the editor_client.py module
+_tsc_path = None
+def get_tsc_path():
+    return _tsc_path
+
 # only Sublime Text 3 build after 3072 support tooltip
 TOOLTIP_SUPPORT = int(sublime.version()) >= 3072
 
@@ -44,3 +54,7 @@ VALID_COMPLETION_ID_PATTERN = re.compile("[a-zA-Z_$\.][\w$\.]*\Z")
 
 # idle time length in millisecond
 IDLE_TIME_LENGTH = 200
+
+_language_service_enabled = True
+def get_language_service_enabled():
+        return _language_service_enabled

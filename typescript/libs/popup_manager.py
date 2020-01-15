@@ -7,16 +7,26 @@ from .global_vars import *
 from .work_scheduler import work_scheduler
 from .text_helpers import Location
 from .editor_client import cli
+from .popup_formatter import get_theme_styles
+from ..libs.view_helpers import reload_buffer
 
+_POPUP_DEFAULT_FONT_SIZE = 12
 
 class PopupManager():
     """ PopupManager manages the state and interaction with the popup window
 
     It uses the WorkScheduler class to handle sending requests to the server to
     ensure good performance.
+
+    The main challenge is that certain activities, such as cursor movement, can
+    automatically dismiss the popup - even though the cursor may still be in the
+    argument list. Therefore the class listens to the on_hidden event, and will
+    redisplay if necessary (i.e. if the cursor is still in the argument list).
+    If the popup is explicitly dismissed, on_close_popup is called.
     """
 
     html_template = ''
+    font_size = _POPUP_DEFAULT_FONT_SIZE
 
     def __init__(self, proxy):
         self.scheduler = work_scheduler()
@@ -30,6 +40,9 @@ class PopupManager():
         self.signature_index = 0
         self.current_parameter = 0
 
+        # Track current popup location to see if we only need to update the text
+        self.current_location = None
+
     def queue_signature_popup(self, view):
         cursor = view.rowcol(view.sel()[0].begin())
         point = Location(cursor[0] + 1, cursor[1] + 1)
@@ -37,6 +50,23 @@ class PopupManager():
 
         # Define a function to do the request and notify on completion
         def get_signature_data(on_done):
+            # Issue 233: In the middle of an argument list, the popup
+            # disappears after user enters a line-break then immediately types
+            # one (or more) character.
+            # This is because we only send one reload request after the
+            # line-break and never send reload request after the other
+            # character.
+            # We fix this issue by making sure a reload request is always sent
+            # before every signature help request.
+
+            # Check if user has just quickly typed a line-break followed
+            # with one (or more) character. If yes, send a reload request.
+            last_command, args, repeat_times = view.command_history(0)
+            if last_command == "insert":
+                if len(args['characters']) > 1 and '\n' in args['characters']:
+                    reload_buffer(view)
+
+            # Send a signagure_help request to server
             self.proxy.async_signature_help(filename, point, '', on_done)
 
         # Schedule the request
@@ -58,14 +88,15 @@ class PopupManager():
         self.current_parameter = responseJson["body"]["argumentIndex"]
 
         # Add a region to track the arg list as the user types
-        # Needs to be ajusted to 0-based indexing
+        # Needs to be adjusted to 0-based indexing
         arg_span = self.signature_help["applicableSpan"]
         span_start = view.text_point(
             arg_span["start"]["line"] - 1,
             arg_span["start"]["offset"] - 2)
         span_end = view.text_point(
             arg_span["end"]["line"] - 1,
-            arg_span["end"]["offset"] - 1)
+            arg_span["end"]["offset"])
+
         arg_region = sublime.Region(span_start, span_end)
         view.add_regions('argSpan', [arg_region],
                          flags=sublime.HIDDEN)
@@ -78,15 +109,36 @@ class PopupManager():
         popup_text = PopupManager.html_template.substitute(popup_parts)
 
         log.debug('Displaying signature popup')
-        if not self.current_view.is_popup_visible():
+
+        arg_region = self.current_view.get_regions('argSpan')[0]
+        location = arg_region.begin()  # Default to start of arg list
+
+        # If the cursor is not in the first line of the arg list, set the popup
+        # location to first non-whitespace, or EOL, of the current line
+        cursor_point = self.current_view.sel()[0].begin()
+        opening_line = self.current_view.line(arg_region.begin())
+        if(not opening_line.contains(cursor_point)):
+            cursor_line_start = self.current_view.line(cursor_point).begin()
+            location = self.current_view.find(
+                r'\s*?(?=[\S\n\r]|$)',
+                cursor_line_start
+            ).end()
+
+        # If the popup is currently visible and at the right location, then
+        # call 'update' instead of 'show', else this can get in a loop when show
+        # causes the old popup to be hidden (and on_hidden is called), as well
+        # as causing some unnecessary UI flickering.
+        if self.current_view.is_popup_visible() and self.current_location == location:
+            self.current_view.update_popup(popup_text)
+        else:
+            self.current_location = location
             self.current_view.show_popup(
                 popup_text,
                 sublime.COOPERATE_WITH_AUTO_COMPLETE,
                 on_navigate=self.on_navigate,
                 on_hide=self.on_hidden,
+                location=location,
                 max_width=800)
-        else:
-            self.current_view.update_popup(popup_text)
 
     def move_next(self):
         if not self.signature_help:
@@ -113,15 +165,17 @@ class PopupManager():
     def on_hidden(self):
         log.debug('In popup on_hidden handler')
         if not self.current_view:
+            log.debug('No current view for popup session. Hiding popup')
             return
 
+        # If we're still in the arg list, then redisplay
         cursor_region = self.current_view.sel()[0]
         arg_regions = self.current_view.get_regions('argSpan')
         if len(arg_regions):
             argSpan = self.current_view.get_regions('argSpan')[0]
             if argSpan.contains(cursor_region):
                 log.debug('Was hidden while in region.  Redisplaying')
-                # Occurs on left/right movement.  Rerun to redisplay popup.
+                # Occurs on cursor movement.  Rerun to redisplay popup.
                 self.display()
         else:
             # Cleanup
@@ -151,7 +205,7 @@ class PopupManager():
                 return 'name'
             elif name in ['keyword', 'interfaceName']:
                 return 'type'
-            elif name in ['parameterName']:
+            elif name in ['parameterName', 'propertyName']:
                 return 'param'
             return 'text'
 
@@ -184,6 +238,9 @@ class PopupManager():
         return result
 
     def get_current_signature_parts(self):
+        def encode(str, kind):
+            return '<br />' if kind == "lineBreak" else str
+
         if self.signature_index == -1:
             return ""
         if self.signature_index >= len(self.signature_help["items"]):
@@ -192,7 +249,7 @@ class PopupManager():
         item = self.signature_help["items"][self.signature_index]
         signature = self.signature_to_html(item)
         if item["documentation"]:
-            description = item["documentation"][0]["text"]
+            description = ''.join([encode(doc["text"], doc["kind"]) for doc in item["documentation"]])
         else:
             description = ""
 
@@ -202,19 +259,45 @@ class PopupManager():
             param = item["parameters"][self.current_parameter]
             activeParam = '<span class="param">{0}:</span> <i>{1}</i>'.format(
                 param["name"],
-                param["documentation"][0]["text"] if param["documentation"] else "")
+                ''.join([encode(doc["text"], doc["kind"]) for doc in param["documentation"]])
+                    if param["documentation"] else "")
         else:
             activeParam = ''
+
+        theme_styles = get_theme_styles(self.current_view)
 
         return {"signature": signature,
                 "description": description,
                 "activeParam": activeParam,
                 "index": "{0}/{1}".format(self.signature_index + 1,
                                           len(self.signature_help["items"])),
-                "link": "link"}
+                "link": "link",
+                "fontSize": PopupManager.font_size,
+                "typeStyles": theme_styles["type"],
+                "keywordStyles": theme_styles["keyword"],
+                "nameStyles": theme_styles["name"],
+                "paramStyles": theme_styles["param"],
+                "textStyles": theme_styles["text"]}
 
 _popup_manager = None
 
+def load_html_template(html_file_name):
+    # Full path to template file
+    html_path = os.path.join(PLUGIN_DIR, html_file_name)
+
+    # Needs to be in format such as: 'Packages/TypeScript/signature_popup.html'
+    rel_path = os.path.relpath(html_path, os.path.normpath(os.path.join(sublime.packages_path(), '..')))
+    rel_path = rel_path.replace('\\', '/')  # Yes, even on Windows
+
+    log.info('Loaded html template from {0}'.format(rel_path))
+    log.info('Html resource path: {0}'.format(rel_path))
+    html_text = sublime.load_resource(rel_path)
+    re_remove = re.compile("[\n\t\r]")
+    html_text = re_remove.sub("", html_text)
+    return html_text
+
+def load_signature_popup_template():
+    return load_html_template("signature_popup.html")
 
 def get_popup_manager():
     """Return the globally accessible popup_manager
@@ -227,24 +310,20 @@ def get_popup_manager():
 
     if TOOLTIP_SUPPORT:
         if _popup_manager is None:
-            # Full path to template file
-            html_path = os.path.join(PLUGIN_DIR, 'popup.html')
-
-            # Needs to be in format such as: 'Packages/TypeScript/popup.html'
-            rel_path = html_path[len(sublime.packages_path()) - len('Packages'):]
-            rel_path = rel_path.replace('\\', '/')  # Yes, even on Windows
-
-            print(rel_path)
-
-            log.info('Popup resource path: {0}'.format(rel_path))
-            popup_text = sublime.load_resource(rel_path)
-            re_remove = re.compile("[\n\t\r]")
-            popup_text = re_remove.sub("", popup_text)
-            log.info('Loaded tooltip template from {0}'.format(rel_path))
-
+            popup_text = load_signature_popup_template()
+            _set_up_popup_style()
             PopupManager.html_template = Template(popup_text)
             _popup_manager = PopupManager(cli.service)
     else:
         _popup_manager = None
 
     return _popup_manager
+
+def _set_up_popup_style():
+    settings = sublime.load_settings('Preferences.sublime-settings')
+    settings.add_on_change('typescript_popup_font_size', _reload_popup_style)
+    _reload_popup_style()
+
+def _reload_popup_style():
+    settings = sublime.load_settings('Preferences.sublime-settings')
+    PopupManager.font_size = settings.get('typescript_popup_font_size', _POPUP_DEFAULT_FONT_SIZE)

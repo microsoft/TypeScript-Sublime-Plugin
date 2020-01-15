@@ -5,9 +5,11 @@ import time
 import json
 import sublime
 import sublime_plugin
+import time
 
 from .logger import log
 from . import json_helpers
+from . import global_vars
 
 # queue module name changed from Python 2 to 3
 if int(sublime.version()) < 3000:
@@ -16,88 +18,40 @@ else:
     import queue
 
 
-class CommClient:
-    def getEvent(self): pass
+class CommClient(object):
+
+    def started(self): pass
 
     def postCmd(self, cmd): pass
 
-    def sendCmd(self, cb, cmd): pass
+    def sendCmd(self, cmd, cb): pass
 
     def sendCmdSync(self, cmd): pass
 
-    def sendCmdAsync(self, cmd): pass
+    def sendCmdAsync(self, cmd, cb): pass
 
 
 class NodeCommClient(CommClient):
     __CONTENT_LENGTH_HEADER = b"Content-Length: "
 
-    def __init__(self, scriptPath):
-        """
-        Starts a node client (if not already started) and communicate with it. 
-        The script file to run is passed to the constructor.
-        """
+    def __init__(self, script_path):
+        self.server_proc = None
+        self.script_path = script_path
 
-        self.asyncReq = {}
-        self.__serverProc = None
+        # create event handler maps
+        self.event_handlers = dict()
 
         # create response and event queues
-        self.__msgq = queue.Queue()
-        self.__eventq = queue.Queue()
+        self.msgq = queue.Queue()
+        self.postq = queue.Queue()
+        self.asyncReq = {}
 
-        # start node process
-        pref_settings = sublime.load_settings('Preferences.sublime-settings')
-        node_path = pref_settings.get('node_path')
-        if node_path:
-            node_path = os.path.expandvars(node_path)
-        if not node_path:
-            if os.name == "nt":
-                node_path = "node"
-            else:
-                node_path = NodeCommClient.__which("node")
-        if not node_path:
-            path_list = os.environ["PATH"] + os.pathsep + "/usr/local/bin" + os.pathsep + "$NVM_BIN"
-            print("Unable to find executable file for node on path list: " + path_list)
-            print("To specify the node executable file name, use the 'node_path' setting")
-            self.__serverProc = None
-        else:
-            print("Found node executable at " + node_path)
-            try:
-                if os.name == "nt":
-                    # linux subprocess module does not have STARTUPINFO
-                    # so only use it if on Windows
-                    si = subprocess.STARTUPINFO()
-                    si.dwFlags |= subprocess.SW_HIDE | subprocess.STARTF_USESHOWWINDOW
-                    self.__serverProc = subprocess.Popen([node_path, scriptPath],
-                                                         stdin=subprocess.PIPE, stdout=subprocess.PIPE, startupinfo=si)
-                else:
-                    log.debug("opening " + node_path + " " + scriptPath)
-                    self.__serverProc = subprocess.Popen([node_path, scriptPath],
-                                                         stdin=subprocess.PIPE, stdout=subprocess.PIPE)
-            except:
-                self.__serverProc = None
-        # start reader thread
-        if self.__serverProc and (not self.__serverProc.poll()):
-            log.debug("server proc " + str(self.__serverProc))
-            log.debug("starting reader thread")
-            readerThread = threading.Thread(target=NodeCommClient.__reader, args=(
-                self.__serverProc.stdout, self.__msgq, self.__eventq, self.asyncReq, self.__serverProc))
-            readerThread.daemon = True
-            readerThread.start()
-        self.__debugProc = None
-        self.__breakpoints = []
+        self.debug_proc = None
+        self.breakpoints = []
 
-    def serverStarted(self):
-        return self.__serverProc is not None
-
-    # work in progress
-    def addBreakpoint(self, file, line):
-        self.__breakpoints.append((file, line))
-
-    # work in progress
-    def debug(self, file):
-        # TODO: msg if already debugging
-        self.__debugProc = subprocess.Popen(["node", "--debug", file],
-                                            stdin=subprocess.PIPE, stdout=subprocess.PIPE)
+        post_thread = threading.Thread(target=NodeCommClient.monitorPostQueue, args=(self,))
+        post_thread.daemon = True
+        post_thread.start()
 
     def makeTimeoutMsg(self, cmd, seq):
         jsonDict = json_helpers.decode(cmd)
@@ -111,7 +65,27 @@ class NodeCommClient(CommClient):
         }
         return timeoutMsg
 
-    def sendCmd(self, cb, cmd, seq):
+    def add_event_handler(self, event_name, cb):
+        event_handlers = self.event_handlers
+        if event_name not in event_handlers:
+            event_handlers[event_name] = []
+        if cb not in event_handlers[event_name]:
+            event_handlers[event_name].append(cb)
+
+    def started(self):
+        return self.server_proc is not None
+
+    # work in progress
+    def addBreakpoint(self, file, line):
+        self.breakpoints.append((file, line))
+
+    # work in progress
+    def debug(self, file):
+        # TODO: msg if already debugging
+        self.debug_proc = subprocess.Popen(["node", "--debug", file],
+                                            stdin=subprocess.PIPE, stdout=subprocess.PIPE)
+
+    def sendCmd(self, cmd, cb, seq):
         """
         send single-line command string; no sequence number; wait for response
         this assumes stdin/stdout; for TCP, need to add correlation with sequence numbers
@@ -120,7 +94,7 @@ class NodeCommClient(CommClient):
             reqSeq = -1
             try:
                 while reqSeq < seq:
-                    data = self.__msgq.get(True, 1)
+                    data = self.msgq.get(True, 1)
                     dict = json_helpers.decode(data)
                     reqSeq = dict['request_seq']
                 if cb:
@@ -133,7 +107,7 @@ class NodeCommClient(CommClient):
             if (cb):
                 cb(self.makeTimeoutMsg(cmd, seq))
 
-    def sendCmdAsync(self, cmd, seq, cb):
+    def sendCmdAsync(self, cmd, cb, seq):
         """
         Sends the command and registers a callback
         """
@@ -148,7 +122,7 @@ class NodeCommClient(CommClient):
             reqSeq = -1
             try:
                 while reqSeq < seq:
-                    data = self.__msgq.get(True, 1)
+                    data = self.msgq.get(True, 2)
                     dict = json_helpers.decode(data)
                     reqSeq = dict['request_seq']
                 return dict
@@ -158,46 +132,41 @@ class NodeCommClient(CommClient):
         else:
             return self.makeTimeoutMsg(cmd, seq)
 
+    def monitorPostQueue(self):
+        """
+        Monitor queue and post commands asynchronously
+        """
+        while True:
+            cmd = self.postq.get(True) + "\n"
+            if not self.server_proc:
+                log.error("can not send request; node process not running")
+            else:
+                st = time.time()
+                self.server_proc.stdin.write(cmd.encode())
+                self.server_proc.stdin.flush()
+                log.debug("command posted, elapsed %.3f sec" % (time.time() - st))
+
     def postCmd(self, cmd):
         """
         Post command to server; no response needed
         """
         log.debug('Posting command: {0}'.format(cmd))
-        if not self.__serverProc:
+        if not self.server_proc:
             log.error("can not send request; node process not running")
             return False
-        else:
-            cmd = cmd + "\n"
-            self.__serverProc.stdin.write(cmd.encode())
-            self.__serverProc.stdin.flush()
-            return True
-
-    def getEvent(self):
-        """
-        Try to get event from event queue
-        """
-        try:
-            ev = self.__eventq.get(False)
-        except:
-            return None
-        return ev
+        self.postq.put_nowait(cmd)
+        return True
 
     @staticmethod
-    def __readMsg(stream, msgq, eventq, asyncReq, proc):
+    def read_msg(stream, msgq, asyncReq, proc, asyncEventHandlers):
         """
-        Reader thread helper
+        Reader thread helper.
+        Return True to indicate the wish to stop reading the next message.
         """
         state = "init"
         body_length = 0
         while state != "body":
             header = stream.readline().strip()
-            # log.debug(
-            #     'Stream state: "{0}".  Read header: "{1}"'.format(
-            #         state,
-            #         header if header else 'None'
-            #     )
-            # )
-
             if len(header) == 0:
                 if state == 'init':
                     # log.info('0 byte line in stream when expecting header')
@@ -214,6 +183,7 @@ class NodeCommClient(CommClient):
             data = stream.read(body_length)
             log.debug('Read body of length: {0}'.format(body_length))
             data_json = data.decode("utf-8")
+
             data_dict = json_helpers.decode(data_json)
             if data_dict['type'] == "response":
                 request_seq = data_dict['request_seq']
@@ -222,41 +192,154 @@ class NodeCommClient(CommClient):
                     callback = asyncReq.pop(request_seq, None)
                     if callback:
                         callback(data_dict)
-                        return False
                 else:
                     # Only put in the queue if wasn't an async request
                     msgq.put(data_json)
-            else:
-                eventq.put(data_json)
+            elif data_dict["type"] == "event":
+                event_name = data_dict["event"]
+                if event_name in asyncEventHandlers:
+                    for cb in asyncEventHandlers[event_name]:
+                        # Run <cb> asynchronously to keep read_msg as small as possible
+                        sublime.set_timeout(lambda: cb(data_dict), 0)
         else:
             log.info('Body length of 0 in server stream')
-            return False
+
+        return False
 
     @staticmethod
-    def __reader(stream, msgq, eventq, asyncReq, proc):
-        """
-        Main function for reader thread
-        """
-        while True:
-            if NodeCommClient.__readMsg(stream, msgq, eventq, asyncReq, proc):
-                return
+    def is_executable(fpath):
+        return os.path.isfile(fpath) and os.access(fpath, os.X_OK)
 
     @staticmethod
-    def __which(program):
-        def is_executable(fpath):
-            return os.path.isfile(fpath) and os.access(fpath, os.X_OK)
-
+    def which(program):
         fpath, fname = os.path.split(program)
         if fpath:
-            if is_executable(program):
+            if NodeCommClient.is_executable(program):
                 return program
         else:
             # /usr/local/bin is not on mac default path
             # but is where node is typically installed on mac
-            path_list = os.environ["PATH"] + os.pathsep + "/usr/local/bin" + os.pathsep + "$NVM_BIN"
+            path_list = os.path.expandvars(os.environ["PATH"]) + os.pathsep + "/usr/local/bin" + os.pathsep + os.path.expandvars("$NVM_BIN")
             for path in path_list.split(os.pathsep):
                 path = path.strip('"')
                 programPath = os.path.join(path, program)
-                if is_executable(programPath):
+                if NodeCommClient.is_executable(programPath):
                     return programPath
         return None
+
+
+class ServerClient(NodeCommClient):
+
+    def __init__(self, script_path):
+        """
+        Starts a node client (if not already started) and communicate with it.
+        The script file to run is passed to the constructor.
+        """
+        super(ServerClient, self).__init__(script_path)
+
+        # start node process
+        pref_settings = sublime.load_settings('Preferences.sublime-settings')
+        node_path = pref_settings.get('node_path')
+        node_args = pref_settings.get('node_args', [])
+        tsserver_args = pref_settings.get('tsserver_args', [])
+        tsserver_env = dict(os.environ, **pref_settings.get('tsserver_env', {}))
+        if node_path:
+            print("Path of node executable is configured as: " + node_path)
+            configured_node_path = os.path.expandvars(node_path)
+            if NodeCommClient.is_executable(configured_node_path):
+                node_path = configured_node_path
+            else:
+                node_path = None
+                print("Configured node path is not a valid executable.")
+        if not node_path:
+            if os.name == "nt":
+                node_path = "node"
+            else:
+                node_path = NodeCommClient.which("node")
+        if not node_path:
+            path_list = os.environ["PATH"] + os.pathsep + "/usr/local/bin" + os.pathsep + "$NVM_BIN"
+            print("Unable to find executable file for node on path list: " + path_list)
+            print("To specify the node executable file name, use the 'node_path' setting")
+            self.server_proc = None
+        else:
+            global_vars._node_path = node_path
+            print("Trying to spawn node executable from: " + node_path)
+            try:
+                node_process_cmd = [node_path] + node_args + [script_path, "--disableAutomaticTypingAcquisition"] + tsserver_args
+                if os.name == "nt":
+                    # linux subprocess module does not have STARTUPINFO
+                    # so only use it if on Windows
+                    si = subprocess.STARTUPINFO()
+                    si.dwFlags |= subprocess.SW_HIDE | subprocess.STARTF_USESHOWWINDOW
+                    self.server_proc = subprocess.Popen(node_process_cmd,
+                                                         stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL, env=tsserver_env, startupinfo=si, bufsize=-1)
+                else:
+                    log.debug("opening " + node_path + " " + script_path)
+                    self.server_proc = subprocess.Popen(node_process_cmd,
+                                                         stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL, env=tsserver_env, bufsize=-1)
+            except:
+                self.server_proc = None
+        # start reader thread
+        if self.server_proc and (not self.server_proc.poll()):
+            log.debug("server proc " + str(self.server_proc))
+            log.debug("starting reader thread")
+            readerThread = threading.Thread(target=ServerClient.__reader, args=(
+                self.server_proc.stdout, self.msgq, self.asyncReq, self.server_proc, self.event_handlers))
+            readerThread.daemon = True
+            readerThread.start()
+
+    @staticmethod
+    def __reader(stream, msgq, asyncReq, proc, eventHandlers):
+        """ Main function for reader thread """
+        while True:
+            if NodeCommClient.read_msg(stream, msgq, asyncReq, proc, eventHandlers):
+                log.debug("server exited")
+                return
+
+
+class WorkerClient(NodeCommClient):
+    stop_worker = False
+
+    def __init__(self, script_path):
+        super(WorkerClient, self).__init__(script_path)
+
+    def start(self):
+        WorkerClient.stop_worker = False
+
+        node_path = global_vars.get_node_path()
+        node_args = pref_settings.get('node_args', [])
+        tsserver_args = pref_settings.get('tsserver_args', [])
+        tsserver_env = dict(os.environ, **pref_settings.get('tsserver_env', {}))
+        node_process_cmd = [node_path] + node_args + [self.script_path, "--disableAutomaticTypingAcquisition"] + tsserver_args
+
+        if os.name == "nt":
+            si = subprocess.STARTUPINFO()
+            si.dwFlags |= subprocess.SW_HIDE | subprocess.STARTF_USESHOWWINDOW
+            self.server_proc = subprocess.Popen(
+                node_process_cmd, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL, env=tsserver_env, startupinfo=si, bufsize=-1
+            )
+        else:
+            self.server_proc = subprocess.Popen(
+                node_process_cmd, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL, env=tsserver_env, bufsize=-1)
+
+        # start reader thread
+        if self.server_proc and (not self.server_proc.poll()):
+            log.debug("worker proc " + str(self.server_proc))
+            log.debug("starting worker thread")
+            workerThread = threading.Thread(target=WorkerClient.__reader, args=(
+                self.server_proc.stdout, self.msgq, self.asyncReq, self.server_proc, self.event_handlers))
+            workerThread.daemon = True
+            workerThread.start()
+
+    def stop(self):
+        WorkerClient.stop_worker = True
+        self.server_proc.kill()
+        self.server_proc = None
+
+    @staticmethod
+    def __reader(stream, msgq, asyncReq, proc, eventHandlers):
+        """ Main function for worker thread """
+        while True:
+            if NodeCommClient.read_msg(stream, msgq, asyncReq, proc, eventHandlers) or WorkerClient.stop_worker:
+                log.debug("worker exited")
+                return

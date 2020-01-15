@@ -1,154 +1,171 @@
 TypeScript Plugin for Sublime Text
 ==================================
 
-The plugin uses an IO wrapper around the TypeScript language services to provide
-an enhanced Sublime Text experience when working with TypeScript code.
+[![Join the chat at https://gitter.im/Microsoft/TypeScript-Sublime-Plugin](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/Microsoft/TypeScript-Sublime-Plugin?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
+
+The plugin uses an IO wrapper around the TypeScript language services to provide an enhanced Sublime Text experience when working with TypeScript code.
+
+Requirements
+--------------
+
+The plug-in uses **Node.js** to run the TypeScript server.  The plug-in looks for node in the PATH environment variable (which is inherited from Sublime).
+
+If the `node_path` setting is present, this will override the PATH environment variable and the plug-in will use the value of the `node_path` setting as the node executable to run.
+See more information in [our Tips and Known Issues](https://github.com/Microsoft/TypeScript-Sublime-Plugin/wiki/Tips-and-Known-Issues) wiki page.
+
+Note: Using different versions of TypeScript
+--------------
+This plugin can be configured to load an alternate version of TypeScript.
+This is typically useful for trying out nightly builds, or prototyping with custom builds.
+To do that, update the `Settings - User` file with the following:
+
+```json5
+"typescript_tsdk": "<path to your folder>/node_modules/typescript/lib"
+```
 
 Installation
 ------------
-If using [Package Control](https://packagecontrol.io/) for Sublime Text, simply 
-install the `TypeScript` package.
+If using [Package Control](https://packagecontrol.io/) for Sublime Text, simply install the `TypeScript` package.
 
-Alternatively, you can clone the repo directly into
-your Sublime plugin folder.  For example, for Sublime Text 3 on a Mac this would 
-look something like:
+Alternatively, you can clone the repo directly into your Sublime plugin folder.  For example, for Sublime Text 3 on a Mac this would look something like:
 
 ```
 cd ~/"Library/Application Support/Sublime Text 3/Packages"
 git clone --depth 1 https://github.com/Microsoft/TypeScript-Sublime-Plugin.git TypeScript
 ```
 
-And on Windows something like:
+And on Windows:
 
 ```
 cd "%APPDATA%\Sublime Text 3\Packages"
 git clone --depth 1 https://github.com/Microsoft/TypeScript-Sublime-Plugin.git TypeScript
 ```
 
-(`--depth 1` downloads only the current version to reduce the clone size.)  
-Note if you are using the portable version of Sublime Text, the location will be
-different.  (See http://docs.sublimetext.info/en/latest/basic_concepts.html#the-data-directory
-for more info).
+(`--depth 1` downloads only the current version to reduce the clone size.)
+Note if you are using the portable version of Sublime Text, the location will be different.  (See http://docs.sublimetext.info/en/latest/basic_concepts.html#the-data-directory for more info).
 
 **IMPORTANT** If you already have a package called `TypeScript` installed, either remove this first, or clone this repo to a different folder, else module name resolution can break the plugin.
 
 Platform support
 ----------------
-The plugin has identical behavior across Windows, Mac, and Linux
-platforms.  On Windows with ST2, you may see a "plugin delay" message
-upon startup.  This happens because ST2 does not call "plugin_loaded()",
-so the TypeScript server process is started from within an event handler.
-Where possible, the use of a [Sublime Text 3](http://www.sublimetext.com/3) 
-build >= 3070 is recommended, as this provides a popup API used for tool tips.
+#### OS:
+The plugin has identical behavior across Windows, Mac, and Linux;
+
+#### Sublime Text version:
+The plugin supports both ST2 and ST3. However, some features are only available in ST3:
++ Tool tips
++ Error list
+
+On Windows with ST2, you may see a "plugin delay" message upon startup.  This happens because ST2 does not call "plugin_loaded()", so the TypeScript server process is started from within an event handler.
+
+Where possible, the use of a [Sublime Text 3](http://www.sublimetext.com/3) build >= 3070 is recommended, as this provides a popup API used for tool tips.
 
 Features
 --------
-The below features are available via the keyboard shortcuts shown, or via the 
-Command Palette (^ means the `ctrl` key):
+The below features are available via the keyboard shortcuts shown, or via the Command Palette (^ means the `ctrl` key):
 
-|Feature           | Shortcut        |
-|------------------|-----------------|
-|Rename            | `^T` `^M`       |
-|Find references   | `^T` `^R`       |
-|Next reference    | `^T` `^N`       |
-|Prev reference    | `^T` `^P`       |
-|Format document   | `^T` `^F`       |
-|Format selection  | `^T` `^F`       |
-|Format line       | `^;`            |
-|Format braces     | `^ Shift ]`     |
-|Navigate to symbol| `^ Alt R`       |
-|Go to definition  | `^T^D` or `F12` |
-|Paste and format  | `^V` or <code>&#8984;V</code> |
-|Quick info        | `^T` `^Q`       |
+|Feature                | Shortcut        |
+|-----------------------|-----------------|
+|Rename                 | `^T` `^M`       |
+|Find references        | `^T` `^R`       |
+|Next reference         | `^T` `^N`       |
+|Prev reference         | `^T` `^P`       |
+|Format document        | `^T` `^F`       |
+|Format selection       | `^T` `^F`       |
+|Format line            | `^;`            |
+|Format braces          | `^ Shift ]`     |
+|Navigate to symbol     | `^ Alt R`       |
+|Go to definition       | `^T^D` or `F12` |
+|Trigger completion     | `^Space`        |
+|Trigger signature help | `Alt+,`         |
+|See previous signature in the tooltip | `Alt + up`   |
+|See next signature in the tooltip | `Alt + down` |
+|Paste and format       | `^V` or <code>&#8984;V</code> |
+|Quick info             | `^T` `^Q`       |
+|Build		        | (Win)`^B` or `F7`, (OSX) `⌘B` or `F7`   |
+|Error list             | (via Command Palette) |
 
-The plugin supports representing a TypeScript project via a 
-[tsconfig.json](https://github.com/Microsoft/TypeScript/pull/1692) file. If a 
-file of this name is detected in a parent directory, then its settings will be 
-used by the plugin.
+The "format on key" feature is disabled by default, which formats the current line after typing `;`, `}` or `enter`.
+To enable it, go to `Preferences` -> `Package Settings` -> `TypeScript` -> `Plugin Settings - User`, and add `"typescript_auto_format": true` to the json file.
 
-Issues
+For further information about the keyboard shortcuts, please refer to the [`Default.sublime-keymap`](https://github.com/Microsoft/TypeScript-Sublime-Plugin/blob/master/Default.sublime-keymap) file for common shortcuts and
+[`Default (OSX).sublime-keymap`](https://github.com/Microsoft/TypeScript-Sublime-Plugin/blob/master/Default%20(OSX).sublime-keymap),
+[`Default (Windows).sublime-keymap`](https://github.com/Microsoft/TypeScript-Sublime-Plugin/blob/master/Default%20(Windows).sublime-keymap),
+[`Default (Linux).sublime-keymap`](https://github.com/Microsoft/TypeScript-Sublime-Plugin/blob/master/Default%20(Linux).sublime-keymap)
+for OS-specific shortcuts.
+
+#### Other settings
+
+These settings can be overridden in `Packages/User/TypeScript.sublime-settings`, which you can open by going to `Preferences` -> `Package Settings` -> `TypeScript` -> `TypeScript Settings - User`.
+
+- `error_color`: the color of the lines drawn underneath/around type errors; either an empty string for the default color, or one of `"region.redish"`, `"region.orangish"`, `"region.yellowish"`, `"region.greenish"`, `"region.bluish"`, `"region.purplish"`, `"region.pinkish"`
+- `error_icon`: specifies a gutter icon, defaults to nothing can be set to `"dot"`, `"circle"`, `"bookmark"` or any other value accepted by Sublime Text
+- `error_outlined`: will draw type errors with a solid outline instead of the default which is a squiggly line underneath
+- `quick_info_popup_max_width`: the max width of the quick info popup, default 1024
+- `node_args`: array of command line arguments sent to the tsserver Node.js process before the tsserver script path (useful for e.g. changing max heap size or attaching debugger to the tsserver process)
+- `tsserver_args`: array of command line arguments sent to tsserver Node.js process after the tsserver script path (useful for e.g. overriding tsserver error message locale)
+- `tsserver_env`: environment variables to set for the tsserver Node.js process (useful for e.g. setting `TSS_LOG`). These variables are merged with the environment variables available to Sublime.
+
+Project System
+------
+The plugin supports two kinds of projects:
+
+#### Inferred project
+
+For loose TS files opened in Sublime, the plugin will create an inferred project and include every file that the current file refers to.
+
+#### Configured project
+
+The plugin also supports representing a TypeScript project via a [tsconfig.json](http://www.typescriptlang.org/docs/handbook/tsconfig-json.html) file. If a file of this name is detected in a parent directory, then its settings will be used by the plugin.
+
+Screenshots
+------
+- Project error list
+
+![](https://raw.githubusercontent.com/Microsoft/TypeScript-Sublime-Plugin/master/screenshots/errorlist.gif)
+
+- Signature popup (Requires [Sublime Text 3](http://www.sublimetext.com/3) build >= 3070)
+
+![](https://raw.githubusercontent.com/Microsoft/TypeScript-Sublime-Plugin/master/screenshots/signature.gif)
+
+- Navigate to symbol
+
+![](https://raw.githubusercontent.com/Microsoft/TypeScript-Sublime-Plugin/master/screenshots/navigateToSymbol.gif)
+
+- Format
+
+![](https://raw.githubusercontent.com/Microsoft/TypeScript-Sublime-Plugin/master/screenshots/format.gif)
+
+- Rename
+
+![](https://raw.githubusercontent.com/Microsoft/TypeScript-Sublime-Plugin/master/screenshots/rename.gif)
+
+- Find all references
+
+![](https://raw.githubusercontent.com/Microsoft/TypeScript-Sublime-Plugin/master/screenshots/find_ref.gif)
+
+- Quick info
+
+![](https://raw.githubusercontent.com/Microsoft/TypeScript-Sublime-Plugin/master/screenshots/quickinfo.gif)
+
+- Build configured project
+
+![](https://raw.githubusercontent.com/Microsoft/TypeScript-Sublime-Plugin/master/screenshots/build_tsconfig.gif)
+
+- Build loose file
+
+![](https://raw.githubusercontent.com/Microsoft/TypeScript-Sublime-Plugin/master/screenshots/build_loose_file.gif)
+
+Reporting Issues
 -------
-The plugin is currently an Alpha, and as such there are many enhancements to 
-implement, and many bugs to be fixed.  These are being tracked via the 
-[GitHub Issues](https://github.com/Microsoft/TypeScript-Sublime-Plugin/issues) 
-page for the project, and tagged with the appropriate issue type.
+Issues are being tracked via the [GitHub Issues](https://github.com/Microsoft/TypeScript-Sublime-Plugin/issues) page for the project, and tagged with the appropriate issue type. Please do log issues for any bugs you find or enhancements you would like to see (after searching to see if such as issue already exists).  We are excited to get your feedback and work with the community to make this plugin as awesome as possible.
 
-Please do log issues for any bugs you find or enhancements you would like to see 
-(after searching to see if such as issue already exists).  We are excited to 
-get your feedback and work with the community to make this plugin as awesome as 
-possible.
-
-Requirements
+Note about `.tmLanguage` related issues
 --------------
+As the TypeScript and TypeScriptReact `.tmLanguage` definition files are shared across multiple editors including Sublime Text, Atom-TypeScript, and Visual Studio Code, we decided to create a dedicated repo for these files to combine the efforts for improvement.
+The new repo is at https://github.com/Microsoft/TypeScript-TmLanguage, and all future tmLanguage-related issues will be tracked there and ported back to this repo.
 
-The plug-in uses node to run the TypeScript server.  The plug-in looks
-for node in the PATH environment variable (which is inherited from
-Sublime).  If the 'node\_path' setting is present, this will override
-the PATH environment variable and the plug-in will use the value of
-the 'node\_path' setting as the node executable to run.  See more
-information in the tips.
-
-Tips
+Tips and Known Issues
 ----
-1. Sublime Text 3 does not inform plug-ins of all buffer changes.  We
-   are still learning how to detect changes in all cases.  If the view
-   contents is out-of-sync with the server, you can re-sync by running
-   the Undo command once.  The usual way to notice out-of-sync content
-   is to see a surprising error message.
-2. Snippets may contain text fields, which are placeholders within the
-   snippet. The presence of text fields changes the key binding
-   context and may temporarily turn off some of the TypeScript key
-   bindings.  You can exit all snippet text fields by hitting the
-   escape key.  You can tab from one text field to the next until you
-   have exhausted the text fields (possibly filling them in along the way).
-3. The server does not yet have file watch support for tsconfig.json
-   projects.  This means that if your tsconfig.json file does not have
-   a "files" property, and you add a new file to a directory
-   configured by that tsconfig.json file, you will need to restart
-   Sublime to get that file noticed.  The same applies to changes in
-   the options properties of the tsconfig.json file.
-4. Sublime Text 2 will be slow for files of about 2K lines or more.
-   This happens because Sublime Text 2 does not reliably inform
-   plug-ins of buffer changes and therefore the plug-in has to
-   frequently send the entire view contents to the server.
-5. By default, the plug-in retains the Sublime native behavior for
-   auto indent (such as when typing the Enter key).  To have the
-   TypeScript server supply auto indent, set the
-   'typescript\_auto\_indent' setting to true in your
-   Preferences.sublime-settings file.  The plug-in does by default
-   request TypeScript formatting upon typing ';' or '}'.  You can turn
-   off TypeScript formatting on these characters by setting
-   'typescript\_auto\_format' to false.  The size of the indentation
-   is controlled by the 'indent\_size' setting.  If this setting is
-   not present, then indentation size will be set to 'tab\_size'.
-6. You can get TypeScript formatting for a line by typing 'ctrl+;'.
-   You can get TypeScript formatting for a document by typing 'ctrl+t,
-   ctrl+f'.  If a selection is present that same key sequence will
-   format only the selection.  You can get TypeScript formatting for a
-   block by typing 'ctrl+}' from within that block.  After formatting,
-   the cursor will be placed outside the block, so that you can
-   continue to type 'ctrl+}' to format the next outer block.
-7. The plug-in looks for the installed node executable using the PATH
-   environment variable of the Sublime process and also in the
-   directory '/usr/local/bin'.  If your node installation placed the
-   node executable elsewhere, then add the 'node\_path' setting to
-   your Preferences.sublime-settings file.  The value of the
-   'node\_path' setting should be the pathname of the node executable
-   as in '/usr/myinstalldir/node'.  You can look for the message
-   'spawning node module ...' in the Sublime console view (ctrl + ` or
-   View -> Show Console).  The line of text after this will indicate
-   whether the plug-in was able to find the node executable.
-8. When you open a file f.ts, the server will first check if f.ts is
-   configured by a tsconfig.json project.  If so, f.ts becomes part of
-   that project.  If not, then the server checks to see if f.ts is
-   referenced by any open projects.  If not, a new inferred project is
-   created for f.ts and the files in the inferred project are those
-   transitively referenced by comments in f.ts.  Coming in a future
-   release will be a way to list the files in each configured or
-   inferred project.  Also coming will be a way to see the current set
-   of compiler diagnostics for each project.
-9. The plug-in tries to avoid remapping existing Sublime key bindings
-   or context menu entries.  For example, goto definition in the
-   context menu refers to the Sublime goto definition, which is based
-   on syntactically finding declarations and which has its own rules
-   for choosing a set of files to search.
+See tips and known issues in the [wiki page](https://github.com/Microsoft/TypeScript-Sublime-Plugin/wiki/Tips-and-Known-Issues).
+

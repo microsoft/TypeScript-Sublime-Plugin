@@ -1,7 +1,8 @@
-from .reference import RefInfo
-from .node_client import NodeCommClient
+﻿from .reference import RefInfo
+from .node_client import ServerClient, WorkerClient
 from .service_proxy import ServiceProxy
 from .global_vars import *
+from . import global_vars
 
 
 class ClientFileInfo:
@@ -28,15 +29,17 @@ class EditorClient:
         self.available_tempfile_list = []
         self.tmpseq = 0
         self.node_client = None
+        self.worker_client = None
         self.service = None
         self.initialized = False
 
         self.tab_size = 4
-        self.indent_size = 4
+        self.indent_size = self.tab_size
         self.translate_tab_to_spaces = False
         self.ts_auto_format_enabled = True
         self.ts_auto_indent_enabled = True
         self.auto_match_enabled = True
+        self.enable_language_service_for_js = True
 
     def initialize(self):
         """
@@ -47,15 +50,24 @@ class EditorClient:
 
         # retrieve the path to tsserver.js
         # first see if user set the path to the file
-        settings = sublime.load_settings('Preferences.sublime-settings')
-        proc_file = settings.get('typescript_proc_file')
-        if not proc_file:
+        settings = sublime.load_settings("Preferences.sublime-settings")
+        tsdk_location = settings.get("typescript_tsdk")
+        if tsdk_location:
+            proc_file = os.path.join(tsdk_location, "tsserver.js")
+            global_vars._tsc_path = os.path.join(tsdk_location, "tsc.js")
+        else:
             # otherwise, get tsserver.js from package directory
             proc_file = os.path.join(PLUGIN_DIR, "tsserver", "tsserver.js")
-        print("spawning node module: " + proc_file)
+            global_vars._tsc_path = os.path.join(PLUGIN_DIR, "tsserver", "tsc.js")
+        print("Path of tsserver.js: " + proc_file)
+        print("Path of tsc.js: " + get_tsc_path())
 
-        self.node_client = NodeCommClient(proc_file)
-        self.service = ServiceProxy(self.node_client)
+        self.node_client = ServerClient(proc_file)
+        self.worker_client = WorkerClient(proc_file)
+        self.service = ServiceProxy(self.worker_client, self.node_client)
+
+        settings.add_on_change("enable_language_service_for_javascript", self.load_language_service_setting_for_js)
+        self.load_language_service_setting_for_js()
 
         # load formatting settings and set callbacks for setting changes
         for setting_name in [
@@ -71,10 +83,14 @@ class EditorClient:
 
         self.initialized = True
 
+    def load_language_service_setting_for_js(self):
+        settings = sublime.load_settings('Preferences.sublime-settings')
+        self.enable_language_service_for_js = settings.get("enable_language_service_for_javascript", True)
+
     def load_format_settings(self):
         settings = sublime.load_settings('Preferences.sublime-settings')
         self.tab_size = settings.get('tab_size', 4)
-        self.indent_size = settings.get('indent_size', 4)
+        self.indent_size = settings.get('indent_size', self.tab_size)
         self.translate_tab_to_spaces = settings.get('translate_tabs_to_spaces', False)
         self.ts_auto_format_enabled = settings.get("typescript_auto_format")
         self.ts_auto_indent_enabled = settings.get("typescript_auto_indent")
@@ -109,7 +125,7 @@ class EditorClient:
 
     def get_or_add_file(self, filename):
         """Get or add per-file information that must be globally accessible """
-        if (os.name == "nt") and filename:
+        if os.name == "nt" and filename:
             filename = filename.replace('/', '\\')
         if filename not in self.file_map:
             client_info = ClientFileInfo(filename)

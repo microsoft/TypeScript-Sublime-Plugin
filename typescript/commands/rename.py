@@ -5,31 +5,38 @@ from .base_command import TypeScriptBaseTextCommand
 
 
 class TypescriptRenameCommand(TypeScriptBaseTextCommand):
-    """Rename command"""
+    """
+    Command to rename identifier
+    """
     def run(self, text):
         check_update_view(self.view)
+
         rename_response = cli.service.rename(self.view.file_name(), get_location_from_view(self.view))
-        if rename_response["success"]:
-            info_locations = rename_response["body"]
-            # Todo: handle error when the symbol cannot be renamed (with 'localizedErrorMessage' property)
-            log.debug(info_locations["info"])
-            display_name = info_locations["info"]["fullDisplayName"]
-            outer_locations = info_locations["locs"]
+        if not rename_response['success']:
+            return
 
-            def on_cancel():
-                return
+        body = rename_response['body']
 
-            def on_done(new_name):
-                args = {"newName": new_name, "outerLocs": outer_locations}
-                args_json_str = json_helpers.encode(args)
-                self.view.run_command('typescript_finish_rename', {"args_json": args_json_str})
+        info = body['info']
+        if not info['canRename']:
+            self.view.set_status('typescript_error', info['localizedErrorMessage'])
+            return
 
-            if len(outer_locations) > 0:
-                sublime.active_window().show_input_panel(
-                    "New name for {0}: ".format(display_name),
-                    info_locations["info"]["displayName"],
-                    on_done, None, on_cancel
-                )
+        outer_locations = body['locs']
+
+        def on_done(new_name):
+            args = {'newName': new_name, 'outerLocs': outer_locations}
+            args_json_str = json_helpers.encode(args)
+            self.view.run_command('typescript_finish_rename', {'args_json': args_json_str})
+
+        if len(outer_locations) > 0:
+            sublime.active_window().show_input_panel(
+                'New name: ',
+                info['displayName'],  # initial text
+                on_done,
+                None,                 # on_change
+                None                  # on_cancel
+            )
 
 
 class TypescriptFinishRenameCommand(TypeScriptBaseTextCommand):
@@ -56,7 +63,7 @@ class TypescriptFinishRenameCommand(TypeScriptBaseTextCommand):
                     rename_view.run_command('typescript_delayed_rename_file',
                                            {"locs_name": {"locs": inner_locations, "name": new_name}})
                 else:
-                    for inner_location in inner_locations:
+                    for inner_location in inner_locations[::-1]:
                         start_line, start_offset = extract_line_offset(inner_location["start"])
                         end_line, end_offset = extract_line_offset(inner_location["end"])
                         apply_edit(text, self.view, start_line, start_offset, end_line,

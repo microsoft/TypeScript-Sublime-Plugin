@@ -3,14 +3,14 @@
         "keys": [ "ctrl+t", "ctrl+d" ],
         "command": "typescript_go_to_definition",
         "context": [
-            { "key": "selector", "operator": "equal", "operand": "source.ts" }
+            { "key": "selector", "operator": "equal", "operand": "source.ts, source.tsx, source.js, source.jsx" }
         ]
     },
     {
         "keys": [ "f12" ],
         "command": "typescript_go_to_definition",
         "context": [
-            { "key": "selector", "operator": "equal", "operand": "source.ts" }
+            { "key": "selector", "operator": "equal", "operand": "source.ts, source.tsx, source.js, source.jsx" }
         ]
     },
     {
@@ -19,14 +19,14 @@
         "context": [
             { "key": "selection_empty", "operator": "equal", "operand": false, "match_all": true },
             { "key": "num_selections", "operator": "equal", "operand": 1, "match_all": true },
-            { "key": "selector", "operator": "equal", "operand": "source.ts" }
+            { "key": "selector", "operator": "equal", "operand": "source.ts, source.tsx, source.js, source.jsx" }
         ]
     },
     {
         "keys": [ "ctrl+alt+r"],
         "command": "typescript_nav_to",
         "context": [
-            { "key": "selector", "operator": "equal", "operand": "source.ts" }
+            { "key": "selector", "operator": "equal", "operand": "source.ts, source.tsx, source.js, source.jsx" }
         ]
     },
     {
@@ -35,21 +35,21 @@
         "context": [
             { "key": "selection_empty", "operator": "equal", "operand": true, "match_all": true },
             { "key": "num_selections", "operator": "equal", "operand": 1, "match_all": true },
-            { "key": "selector", "operator": "equal", "operand": "source.ts" }
+            { "key": "selector", "operator": "equal", "operand": "source.ts, source.tsx, source.js, source.jsx" }
         ]
     },
     {
         "keys": [ "ctrl+t", "ctrl+m" ],
         "command": "typescript_rename",
         "context": [
-            { "key": "selector", "operator": "equal", "operand": "source.ts" }
+            { "key": "selector", "operator": "equal", "operand": "source.ts, source.tsx, source.js, source.jsx" }
         ]
     },
     {
         "keys": [ "ctrl+t", "ctrl+n" ],
         "command": "typescript_next_ref",
         "context": [
-            { "key": "selector", "operator": "equal", "operand": "source.ts" }
+            { "key": "selector", "operator": "equal", "operand": "source.ts, source.tsx, source.js, source.jsx" }
         ]
     },
     {
@@ -63,7 +63,7 @@
         "keys": [ "ctrl+t", "ctrl+p" ],
         "command": "typescript_prev_ref",
         "context": [
-            { "key": "selector", "operator": "equal", "operand": "source.ts" }
+            { "key": "selector", "operator": "equal", "operand": "source.ts, source.tsx, source.js, source.jsx" }
         ]
     },
     {
@@ -71,50 +71,41 @@
         "command": "typescript_prev_ref",
         "context": [
             { "key": "selector", "operator": "equal", "operand": "text.find-refs" }
-        ]
-    },
-    {
-        "keys": [ "alt+,"],
-        "command": "typescript_signature_popup",
-        "context": [
-            { "key": "selector", "operator": "equal", "operand": "source.ts" },
-            { "key": "tooltip_supported", "operator": "equal", "operand": true}
-
         ]
     },
     {
         "keys": [ "ctrl+t", "ctrl+q" ],
         "command": "typescript_quick_info_doc",
         "context": [
-            { "key": "selector", "operator": "equal", "operand": "source.ts" }
+            { "key": "selector", "operator": "equal", "operand": "source.ts, source.tsx, source.js, source.jsx" }
         ]
     },
     {
         "keys": [ "ctrl+t", "ctrl+r" ],
         "command": "typescript_find_references",
         "context": [
-            { "key": "selector", "operator": "equal", "operand": "source.ts" }
+            { "key": "selector", "operator": "equal", "operand": "source.ts, source.tsx, source.js, source.jsx" }
         ]
     },
     {
         "keys": [ "ctrl+t", "ctrl+s" ],
         "command": "typescript_save",
         "context": [
-            { "key": "selector", "operator": "equal", "operand": "source.ts" }
+            { "key": "selector", "operator": "equal", "operand": "source.ts, source.tsx, source.js, source.jsx" }
         ]
     },
     {
         "keys": [ "ctrl+t", "ctrl+o" ],
         "command": "typescript_signature_panel",
         "context": [
-            { "key": "selector", "operator": "equal", "operand": "source.ts" }
+            { "key": "selector", "operator": "equal", "operand": "source.ts, source.tsx, source.js, source.jsx" }
         ]
     },
     {
         "keys": ["("],
         "command": "typescript_signature_popup",
         "context": [
-            { "key": "selector", "operator": "equal", "operand": "source.ts" },
+            { "key": "selector", "operator": "equal", "operand": "source.ts, source.tsx, source.js, source.jsx" },
             { "key": "paren_pressed"}
         ]
     },
@@ -123,7 +114,7 @@
         "command": "typescript_signature_popup",
         "args": {"move": "next"},
         "context": [
-            { "key": "selector", "operator": "equal", "operand": "source.ts" },
+            { "key": "selector", "operator": "equal", "operand": "source.ts, source.tsx, source.js, source.jsx" },
             { "key": "is_popup_visible"}
         ]
     },
@@ -132,8 +123,17 @@
         "command": "typescript_signature_popup",
         "args": {"move": "prev"},
         "context": [
-            { "key": "selector", "operator": "equal", "operand": "source.ts" },
+            { "key": "selector", "operator": "equal", "operand": "source.ts, source.tsx, source.js, source.jsx" },
             { "key": "is_popup_visible"}
+        ]
+    },    // In case when auto match is enabled, only format if not within {}
+    {
+        "keys": [ "alt+,"],
+        "command": "typescript_signature_popup",
+        "context": [
+            { "key": "selector", "operator": "equal", "operand": "source.ts, source.tsx, source.js, source.jsx" },
+            { "key": "tooltip_supported", "operator": "equal", "operand": true}
+
         ]
     },
     {
@@ -145,9 +145,9 @@
     },
     {
         "keys": [ "enter" ],
-        "command": "commit_completion",
+        "command": "typescript_go_to_error",
         "context": [
-            { "key": "auto_complete_visible", "operator": "equal", "operand": true }
+            { "key": "selector", "operator": "equal", "operand": "text.error-list" }
         ]
     },
     {
@@ -159,29 +159,21 @@
             { "key": "selection_empty", "operator": "equal", "operand": true },
             { "key": "preceding_text", "operator": "regex_contains", "operand": "\\{$" },
             { "key": "following_text", "operator": "regex_contains", "operand": "^\\}" },
-            { "key": "selector", "operator": "equal", "operand": "source.ts" }
+            { "key": "selector", "operator": "equal", "operand": "source.ts, source.tsx, source.js, source.jsx" }
         ]
     },
     {
         "keys": [ "ctrl+;" ],
         "command": "typescript_format_line",
         "context": [
-            { "key": "selector", "operator": "equal", "operand": "source.ts" }
+            { "key": "selector", "operator": "equal", "operand": "source.ts, source.tsx, source.js, source.jsx" }
         ]
     },
     {
         "keys": [ "ctrl+shift+]" ],
         "command": "typescript_format_brackets",
         "context": [
-            { "key": "selector", "operator": "equal", "operand": "source.ts" }
-        ]
-    },
-    {
-        "keys": [ "super+v" ],
-        "command": "typescript_paste_and_format",
-        "context": [
-            { "key": "setting.typescript_auto_format", "operator": "equal", "operand": true },
-            { "key": "selector", "operator": "equal", "operand": "source.ts" }
+            { "key": "selector", "operator": "equal", "operand": "source.ts, source.tsx, source.js, source.jsx" }
         ]
     }
 ]

@@ -1,0 +1,9 @@
+[
+    {
+        "button": "button1",
+        "count": 2,
+        "modifiers": ["ctrl", "alt"],
+        "command": "typescript_go_to_ref",
+        "press_command": "drag_select"
+    }
+]

@@ -1,5 +1,6 @@
 import sys
 import os
+import subprocess
 
 if sys.version_info < (3, 0):
     from typescript.libs import *
@@ -59,6 +60,12 @@ def plugin_loaded():
     from on_activated or on_close if necessary.
     """
     log.debug("plugin_loaded started")
+    settings = sublime.load_settings('Preferences.sublime-settings')
+    global_vars._language_service_enabled = settings.get('enable_typescript_language_service', True)
+    print ("lang_service_enabled: " + str(global_vars.get_language_service_enabled()))
+    if not global_vars.get_language_service_enabled():
+        return
+
     cli.initialize()
     ref_view = get_ref_view(False)
     if ref_view:

@@ -1,4 +1,4 @@
-import sublime
+﻿import sublime
 
 from ..libs.view_helpers import *
 from ..libs.text_helpers import *
@@ -106,7 +106,7 @@ class CompletionEventListener:
             info.last_completion_loc = locations[0]
             self.pending_completions = []
             self.completions_ready = False
-            return completions, sublime.INHIBIT_WORD_COMPLETIONS | sublime.INHIBIT_EXPLICIT_COMPLETIONS
+            return completions, sublime.INHIBIT_EXPLICIT_COMPLETIONS
 
     def handle_completion_info(self, completions_resp):
         """Helper callback when completion info received from server"""
@@ -144,7 +144,7 @@ class CompletionEventListener:
     def run_auto_complete(self):
         active_view().run_command("auto_complete", {
             'disable_auto_insert': True,
-            'api_completions_only': True,
+            'api_completions_only': False,
             'next_completion_if_showing': False,
             'auto_complete_commit_on_tab': True,
         })

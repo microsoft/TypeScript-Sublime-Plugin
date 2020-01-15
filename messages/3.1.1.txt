@@ -1,0 +1,18 @@
+Welcome to the TypeScript plugin for Sublime Text!
+
+Details about this package and its feature can be found on its GitHub
+repository at https://github.com/Microsoft/TypeScript-Sublime-Plugin.
+
+# Fundamental Updates
+
+v3.1.1 introduces brings and update to TypeScript v3.1.1, and
+fixes various syntax highlighting issues.
+
+# Refactoring
+
+v3.1.1 also introduces refactoring functionality! This can be triggered by
+
+1. selecting a range of text, or placing the cursor on a location that can be refactored
+2. invoking the Sublime Quick Panel,
+3. requesting 'TypeScript: Refactor' and finally
+4. selecting any refactor that is available.

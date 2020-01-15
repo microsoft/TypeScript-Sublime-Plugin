@@ -1,0 +1,65 @@
+[
+  {
+    "id": "goto",
+    "children": [
+      {
+        "command": "typescript_nav_to",
+        "caption": "Navigate to TypeScript Symbol..."
+      }
+    ]
+  },
+  {
+    "id": "preferences",
+    "children": [
+      {
+        "id": "package-settings",
+        "children": [
+          {
+            "caption": "TypeScript",
+            "children": [
+              {
+                "command": "typescript_open_plugin_default_setting_file",
+                "caption": "Plugin Settings – Default"
+              },
+              {
+                "command": "open_file",
+                "args": {
+                  "file": "${packages}/User/Preferences.sublime-settings"
+                },
+                "caption": "Plugin Settings – User"
+              },
+              {
+                "caption": "-"
+              },
+              {
+                "command":"typescript_open_ts_default_setting_file",
+                "caption": "TypeScript Settings – Default"
+              },
+              {
+                "command": "open_file",
+                "args": {
+                  "file": "${packages}/User/TypeScript.sublime-settings"
+                },
+                "caption": "TypeScript Settings – User"
+              },
+              {
+                "caption": "-"
+              },
+              {
+                "command":"typescript_open_tsreact_default_setting_file",
+                "caption": "TypeScriptReact Settings – Default"
+              },
+              {
+                "command": "open_file",
+                "args": {
+                  "file": "${packages}/User/TypeScriptReact.sublime-settings"
+                },
+                "caption": "TypeScriptReact Settings – User"
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  }
+]

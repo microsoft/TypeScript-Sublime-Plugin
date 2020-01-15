@@ -1,4 +1,11 @@
 {
     "auto_complete_triggers" : [ {"selector": "source.ts", "characters": "."} ],
-    "use_tab_stops": false
+    "use_tab_stops": false,
+    "word_separators": "./\\()\"'-:,.;<>~!@#%^&*|+=[]{}`~?",
+
+    // empty string, or one of "region.redish", "region.orangish", "region.yellowish", "region.greenish", "region.bluish", "region.purplish", "region.pinkish"
+    "error_color": "",
+    "error_icon": "",
+    "error_outlined": false,
+    "quick_info_popup_max_width": 1024
 }

@@ -71,7 +71,17 @@ class TypescriptFormatBrackets(TypeScriptBaseTextCommand):
 
 
 class TypescriptPasteAndFormat(TypeScriptBaseTextCommand):
+    def is_enabled(self):
+        return True
+
     def run(self, text):
+        if is_typescript(self.view) and get_language_service_enabled():
+            self._run(text)
+        else:
+            # fall back to default paste command
+            self.view.run_command('paste')
+
+    def _run(self, text):
         log.debug("running TypescriptPasteAndFormat")
         view = self.view
         check_update_view(view)
