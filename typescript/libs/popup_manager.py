@@ -286,7 +286,7 @@ def load_html_template(html_file_name):
     html_path = os.path.join(PLUGIN_DIR, html_file_name)
 
     # Needs to be in format such as: 'Packages/TypeScript/signature_popup.html'
-    rel_path = html_path[len(sublime.packages_path()) - len('Packages'):]
+    rel_path = os.path.relpath(html_path, os.path.normpath(os.path.join(sublime.packages_path(), '..')))
     rel_path = rel_path.replace('\\', '/')  # Yes, even on Windows
 
     log.info('Loaded html template from {0}'.format(rel_path))
