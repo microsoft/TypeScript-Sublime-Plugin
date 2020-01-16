@@ -5,11 +5,11 @@
   <key>name</key>
   <string>Symbol List</string>
   <key>scope</key>
-  <string>meta.decorator.ts, meta.var.expr.ts, meta.block.ts, meta.field.declaration.ts</string>
+  <string>entity.name.type.class.ts, meta.definition.property.ts</string>
   <key>settings</key>
   <dict>
     <key>showInSymbolList</key>
-    <integer>0</integer>
+    <integer>1</integer>
   </dict>
 </dict>
 </plist>
