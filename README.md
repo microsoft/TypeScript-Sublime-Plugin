@@ -102,6 +102,9 @@ These settings can be overridden in `Packages/User/TypeScript.sublime-settings`,
 - `error_icon`: specifies a gutter icon, defaults to nothing can be set to `"dot"`, `"circle"`, `"bookmark"` or any other value accepted by Sublime Text
 - `error_outlined`: will draw type errors with a solid outline instead of the default which is a squiggly line underneath
 - `quick_info_popup_max_width`: the max width of the quick info popup, default 1024
+- `node_args`: array of command line arguments sent to the tsserver Node.js process before the tsserver script path (useful for e.g. changing max heap size or attaching debugger to the tsserver process)
+- `tsserver_args`: array of command line arguments sent to tsserver Node.js process after the tsserver script path (useful for e.g. overriding tsserver error message locale)
+- `tsserver_env`: environment variables to set for the tsserver Node.js process (useful for e.g. setting `TSS_LOG`). These variables are merged with the environment variables available to Sublime.
 
 Project System
 ------
