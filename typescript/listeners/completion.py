@@ -142,9 +142,10 @@ class CompletionEventListener:
                 self.run_auto_complete()
 
     def run_auto_complete(self):
+        settings = sublime.load_settings("TypeScript.sublime-settings")
         active_view().run_command("auto_complete", {
             'disable_auto_insert': True,
-            'api_completions_only': False,
+            'api_completions_only': settings.get('auto_complete_api_completions_only', False),
             'next_completion_if_showing': False,
             'auto_complete_commit_on_tab': True,
         })
