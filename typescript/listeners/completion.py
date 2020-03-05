@@ -106,15 +106,7 @@ class CompletionEventListener:
             info.last_completion_loc = locations[0]
             self.pending_completions = []
             self.completions_ready = False
-
-            flags = None
-            settings = sublime.load_settings("TypeScript.sublime-settings")
-            if settings.get('auto_complete_inhibit_word_completions', 'false'):
-                flags = sublime.INHIBIT_WORD_COMPLETIONS | sublime.INHIBIT_EXPLICIT_COMPLETIONS
-            else:
-                flags = sublime.INHIBIT_EXPLICIT_COMPLETIONS
-
-            return completions, flags
+            return completions, sublime.INHIBIT_EXPLICIT_COMPLETIONS
 
     def handle_completion_info(self, completions_resp):
         """Helper callback when completion info received from server"""
