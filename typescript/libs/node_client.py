@@ -307,6 +307,7 @@ class WorkerClient(NodeCommClient):
         WorkerClient.stop_worker = False
 
         node_path = global_vars.get_node_path()
+        pref_settings = sublime.load_settings('Preferences.sublime-settings')
         node_args = pref_settings.get('node_args', [])
         tsserver_args = pref_settings.get('tsserver_args', [])
         tsserver_env = dict(os.environ, **pref_settings.get('tsserver_env', {}))
