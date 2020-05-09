@@ -131,7 +131,10 @@ class CompletionEventListener:
             completions = []
             raw_completions = completions_resp["body"]
             if raw_completions:
+                settings = sublime.load_settings("Preferences.sublime-settings")
                 for raw_completion in raw_completions:
+                    if self.should_exclude_completion_entry(settings, raw_completion):
+                        continue
                     name = raw_completion["name"]
                     completion = (name + "\t" + raw_completion["kind"], name.replace("$", "\\$"))
                     completions.append(completion)
@@ -140,6 +143,10 @@ class CompletionEventListener:
                 self.completions_ready = True
                 active_view().run_command('hide_auto_complete')
                 self.run_auto_complete()
+
+    def should_exclude_completion_entry(self, settings, completion_entry):
+        return ((not settings.get("auto_complete_suggest_names", True) and completion_entry["kind"] == "warning")
+            or (not settings.get("auto_complete_suggest_paths", True) and completion_entry["kind"] in ["directory", "script", "module"]))
 
     def run_auto_complete(self):
         active_view().run_command("auto_complete", {
