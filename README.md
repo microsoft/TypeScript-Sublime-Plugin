@@ -13,15 +13,31 @@ The plug-in uses **Node.js** to run the TypeScript server.  The plug-in looks fo
 If the `node_path` setting is present, this will override the PATH environment variable and the plug-in will use the value of the `node_path` setting as the node executable to run.
 See more information in [our Tips and Known Issues](https://github.com/Microsoft/TypeScript-Sublime-Plugin/wiki/Tips-and-Known-Issues) wiki page.
 
-Note: Using different versions of TypeScript
+Using different versions of TypeScript
 --------------
-This plugin can be configured to load an alternate version of TypeScript.
-This is typically useful for trying out nightly builds, or prototyping with custom builds.
-To do that, update the `Settings - User` file with the following:
+
+This plugin can be configured to load an alternate version of TypeScript. This is typically useful for trying out nightly builds, prototyping with custom builds, or compatibility with node_modules-free package managers like Yarn 2. To do that, update the `Settings - User` file or your project settings with the following:
 
 ```json5
 "typescript_tsdk": "<path to your folder>/node_modules/typescript/lib"
 ```
+
+The path may be relative. In such case the plugin will look in the following locations in this order:
+
+```
+/foo/project_folder_1/<typescript_tsdk>
+/foo/<typescript_tsdk>
+/<typescript_tsdk>
+/bar/project_folder_2/<typescript_tsdk>
+/bar/<typescript_tsdk>
+/baz/open_file_1_folder/<typescript_tsdk>
+/baz/<typescript_tsdk>
+/baz/open_file_2_folder/<typescript_tsdk>
+```
+
+In case of Yarn 2, just [install its editor SDK](https://yarnpkg.com/advanced/editor-sdks) and set `typescript_tsdk` to `.vscode/pnpify/typescript/lib`.
+
+**Note.** The plugin isn't reloaded when switching projects or updating settings at the moment, so you must restart Sublime Text when doing so, unfortunately. When in doubt, check the console for "Path of tsserver.js" and "Path of tsc.js", and see if they point where you expect them to point.
 
 Installation
 ------------
