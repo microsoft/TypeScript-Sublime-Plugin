@@ -141,9 +141,10 @@ class TypescriptQuickInfoDoc(TypeScriptBaseTextCommand):
         word_at_sel = self.view.classify(display_point)
         if hover_zone == sublime.HOVER_GUTTER:
             line_span = self.view.full_line(display_point)
+            errors = self.get_errors(line_span)
             error_html = self.get_error_text_html(line_span)
             if error_html:
-                self.show_tooltip_popup(display_point, error_html, None, None)
+                self.show_tooltip_popup(display_point, errors, error_html, None, None, None)
         elif word_at_sel & SUBLIME_WORD_MASK:
             cli.service.quick_info_full(self.view.file_name(), get_location_from_position(self.view, display_point), lambda response: self.handle_quick_info(response, display_point))
         else:
