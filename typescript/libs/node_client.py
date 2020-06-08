@@ -170,6 +170,9 @@ class NodeCommClient(CommClient):
             if len(header) == 0:
                 if state == 'init':
                     # log.info('0 byte line in stream when expecting header')
+                    stderr = proc.stderr.read()
+                    if stderr:
+                        print('typescript error', stderr)
                     return proc.poll() is not None
                 else:
                     # Done reading header
@@ -272,11 +275,11 @@ class ServerClient(NodeCommClient):
                     si = subprocess.STARTUPINFO()
                     si.dwFlags |= subprocess.SW_HIDE | subprocess.STARTF_USESHOWWINDOW
                     self.server_proc = subprocess.Popen(node_process_cmd,
-                                                         stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL, env=tsserver_env, startupinfo=si, bufsize=-1)
+                                                         stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE, env=tsserver_env, startupinfo=si, bufsize=-1)
                 else:
                     log.debug("opening " + node_path + " " + script_path)
                     self.server_proc = subprocess.Popen(node_process_cmd,
-                                                         stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL, env=tsserver_env, bufsize=-1)
+                                                         stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE, env=tsserver_env, bufsize=-1)
             except:
                 self.server_proc = None
         # start reader thread
@@ -317,11 +320,11 @@ class WorkerClient(NodeCommClient):
             si = subprocess.STARTUPINFO()
             si.dwFlags |= subprocess.SW_HIDE | subprocess.STARTF_USESHOWWINDOW
             self.server_proc = subprocess.Popen(
-                node_process_cmd, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL, env=tsserver_env, startupinfo=si, bufsize=-1
+                node_process_cmd, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE, env=tsserver_env, startupinfo=si, bufsize=-1
             )
         else:
             self.server_proc = subprocess.Popen(
-                node_process_cmd, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL, env=tsserver_env, bufsize=-1)
+                node_process_cmd, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE, env=tsserver_env, bufsize=-1)
 
         # start reader thread
         if self.server_proc and (not self.server_proc.poll()):
