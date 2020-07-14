@@ -35,7 +35,7 @@ The path may be relative. In such case the plugin will look in the following loc
 /baz/open_file_2_folder/<typescript_tsdk>
 ```
 
-In case of Yarn 2, just [install its editor SDK](https://yarnpkg.com/advanced/editor-sdks) and set `typescript_tsdk` to `.vscode/pnpify/typescript/lib`.
+In case of Yarn 2, just [install its editor SDK](https://yarnpkg.com/advanced/editor-sdks) using `yarn dlx @yarnpkg/pnpify --sdk base` and set `typescript_tsdk` to `.yarn/sdks/typescript/lib`.
 
 **Note.** The plugin isn't reloaded when switching projects or updating settings at the moment, so you must restart Sublime Text when doing so, unfortunately. When in doubt, check the console for "Path of tsserver.js" and "Path of tsc.js", and see if they point where you expect them to point.
 
