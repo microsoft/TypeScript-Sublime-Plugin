@@ -6991,6 +6991,34 @@
         <key>patterns</key>
         <array>
           <dict>
+            <key>name</key>
+            <string>keyword.operator.rest.tsx</string>
+            <key>match</key>
+            <string>\.\.\.</string>
+          </dict>
+          <dict>
+            <key>match</key>
+            <string>(?&lt;![_$[:alnum:]])(?:(?&lt;=\.\.\.)|(?&lt;!\.))([_$[:alpha:]][_$[:alnum:]]*)\s*(\?)?\s*(:)</string>
+            <key>captures</key>
+            <dict>
+              <key>1</key>
+              <dict>
+                <key>name</key>
+                <string>entity.name.label.tsx</string>
+              </dict>
+              <key>2</key>
+              <dict>
+                <key>name</key>
+                <string>keyword.operator.optional.tsx</string>
+              </dict>
+              <key>3</key>
+              <dict>
+                <key>name</key>
+                <string>punctuation.separator.label.tsx</string>
+              </dict>
+            </dict>
+          </dict>
+          <dict>
             <key>include</key>
             <string>#type</string>
           </dict>

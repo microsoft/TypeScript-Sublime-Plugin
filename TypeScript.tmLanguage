@@ -7043,6 +7043,34 @@
         <key>patterns</key>
         <array>
           <dict>
+            <key>name</key>
+            <string>keyword.operator.rest.ts</string>
+            <key>match</key>
+            <string>\.\.\.</string>
+          </dict>
+          <dict>
+            <key>match</key>
+            <string>(?&lt;![_$[:alnum:]])(?:(?&lt;=\.\.\.)|(?&lt;!\.))([_$[:alpha:]][_$[:alnum:]]*)\s*(\?)?\s*(:)</string>
+            <key>captures</key>
+            <dict>
+              <key>1</key>
+              <dict>
+                <key>name</key>
+                <string>entity.name.label.ts</string>
+              </dict>
+              <key>2</key>
+              <dict>
+                <key>name</key>
+                <string>keyword.operator.optional.ts</string>
+              </dict>
+              <key>3</key>
+              <dict>
+                <key>name</key>
+                <string>punctuation.separator.label.ts</string>
+              </dict>
+            </dict>
+          </dict>
+          <dict>
             <key>include</key>
             <string>#type</string>
           </dict>
