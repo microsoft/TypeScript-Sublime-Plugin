@@ -6,13 +6,13 @@ def format_css(style):
     """
     result = ""
 
-    if (style["foreground"]):
+    if ("foreground" in style and style["foreground"]):
         result += "color: {0};".format(style["foreground"])
 
-    if (style["bold"]):
+    if ("bold" in style and style["bold"]):
         result += "font-weight: bold;"
 
-    if (style["italic"]):
+    if ("italic" in style and style["italic"]):
         result += "font-style: italic;"
 
     return result
