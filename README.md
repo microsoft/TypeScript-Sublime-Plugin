@@ -105,7 +105,7 @@ These settings can be overridden in `Packages/User/TypeScript.sublime-settings`,
 - `node_args`: array of command line arguments sent to the tsserver Node.js process before the tsserver script path (useful for e.g. changing max heap size or attaching debugger to the tsserver process)
 - `tsserver_args`: array of command line arguments sent to tsserver Node.js process after the tsserver script path (useful for e.g. overriding tsserver error message locale)
 - `tsserver_env`: environment variables to set for the tsserver Node.js process (useful for e.g. setting `TSS_LOG`). These variables are merged with the environment variables available to Sublime.
-- `auto_complete_api_completions_only`: boolean to make the autocompletion only provides typescript suggestions and hides the standard completions (aka, all the words of the pages). (Default value: `false`). 
+- `auto_complete_api_completions_only`: boolean to make the autocompletion only provides typescript suggestions and hides the standard completions (aka, all the words of the page). (Default value: `false`). 
 
 Project System
 ------
