@@ -1,5 +1,6 @@
 {
     "auto_complete_triggers" : [ {"selector": "source.ts", "characters": "."} ],
+    "auto_complete_api_completions_only": false,
     "use_tab_stops": false,
     "word_separators": "./\\()\"'-:,.;<>~!@#%^&*|+=[]{}`~?",
 
