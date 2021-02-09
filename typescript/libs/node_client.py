@@ -185,6 +185,15 @@ class NodeCommClient(CommClient):
         if body_length > 0:
             data = stream.read(body_length)
             log.debug('Read body of length: {0}'.format(body_length))
+
+            # TypeScript adds a newline at the end of the response message and counts
+            # it as one character (LF) towards the content length. However, newlines
+            # are two characters on Windows (CR LF), so we need to take care of that.
+            # See issue: https://github.com/Microsoft/TypeScript/issues/3403
+            # The fix is based on: https://github.com/ycm-core/ycmd/pull/503
+            if global_vars.IS_WINDOWS and data.endswith(b'\r'):
+                data += stream.read(1)
+
             data_json = data.decode("utf-8")
 
             data_dict = json_helpers.decode(data_json)

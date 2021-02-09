@@ -4,6 +4,8 @@ import logging
 import sublime
 from os.path import dirname
 
+IS_WINDOWS = sublime.platform() == "windows"
+
 # determine if the host is sublime text 2
 IS_ST2 = int(sublime.version()) < 3000
 
