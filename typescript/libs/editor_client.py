@@ -52,53 +52,19 @@ class EditorClient:
         initialized during loading time
         """
 
-        # Default to and fall back to the bundled SDK
-        tsdk_location_default = os.path.join(PLUGIN_DIR, "tsserver")
-        tsdk_location = tsdk_location_default
-
-        is_tsdk_location_good = lambda x: (
-            os.path.isfile(os.path.join(x, "tsserver.js"))
-            and os.path.isfile(os.path.join(x, "tsc.js"))
-        )
-
-        active_window = sublime.active_window()
-        settings = active_window.active_view().settings()
-        typescript_tsdk_setting = settings.get("typescript_tsdk")
-        if typescript_tsdk_setting:
-            if os.path.isabs(typescript_tsdk_setting):
-                if is_tsdk_location_good(typescript_tsdk_setting):
-                    tsdk_location = typescript_tsdk_setting
-            else:
-                def look_for_tsdk(x):
-                    x_appended = os.path.join(x, typescript_tsdk_setting)
-                    if is_tsdk_location_good(x_appended):
-                        return x_appended
-                    parent = os.path.dirname(x)
-                    if parent == x:
-                        return None  # We have reached the root
-                    return look_for_tsdk(parent)
-
-                # list(OrderedDict.fromkeys(x)) = deduped x, order preserved
-                folders = active_window.folders() + list(
-                    collections.OrderedDict.fromkeys(
-                        [
-                            os.path.dirname(x.file_name())
-                            for x in active_window.views()
-                            if x.file_name()  # It's None for unsaved files
-                        ]
-                    )
-                )
-                for folder in folders:
-                    x = look_for_tsdk(folder)
-                    if x != None:
-                        tsdk_location = x
-                        break
-
-        proc_file = os.path.join(tsdk_location, "tsserver.js")
-        global_vars._tsc_path = os.path.join(tsdk_location, "tsc.js")
-
-        log.warn("Path of tsserver.js: " + proc_file)
-        log.warn("Path of tsc.js: " + get_tsc_path())
+        # retrieve the path to tsserver.js
+        # first see if user set the path to the file
+        settings = sublime.load_settings("Preferences.sublime-settings")
+        tsdk_location = settings.get("typescript_tsdk")
+        if tsdk_location:
+            proc_file = os.path.join(tsdk_location, "tsserver.js")
+            global_vars._tsc_path = os.path.join(tsdk_location, "tsc.js")
+        else:
+            # otherwise, get tsserver.js from package directory
+            proc_file = os.path.join(PLUGIN_DIR, "tsserver", "tsserver.js")
+            global_vars._tsc_path = os.path.join(PLUGIN_DIR, "tsserver", "tsc.js")
+        log.debug("Path of tsserver.js: " + proc_file)
+        log.debug("Path of tsc.js: " + get_tsc_path())
 
         self.node_client = ServerClient(proc_file)
         self.worker_client = WorkerClient(proc_file)
