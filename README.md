@@ -22,23 +22,6 @@ This plugin can be configured to load an alternate version of TypeScript. This i
 "typescript_tsdk": "<path to your folder>/node_modules/typescript/lib"
 ```
 
-The path may be relative. In such case the plugin will look in the following locations in this order:
-
-```
-/foo/project_folder_1/<typescript_tsdk>
-/foo/<typescript_tsdk>
-/<typescript_tsdk>
-/bar/project_folder_2/<typescript_tsdk>
-/bar/<typescript_tsdk>
-/baz/open_file_1_folder/<typescript_tsdk>
-/baz/<typescript_tsdk>
-/baz/open_file_2_folder/<typescript_tsdk>
-```
-
-In case of Yarn 2, just [install its editor SDK](https://yarnpkg.com/advanced/editor-sdks) using `yarn dlx @yarnpkg/pnpify --sdk base` and set `typescript_tsdk` to `.yarn/sdks/typescript/lib`.
-
-**Note.** The plugin isn't reloaded when switching projects or updating settings at the moment, so you must restart Sublime Text when doing so, unfortunately. When in doubt, check the console for "Path of tsserver.js" and "Path of tsc.js", and see if they point where you expect them to point.
-
 Installation
 ------------
 If using [Package Control](https://packagecontrol.io/) for Sublime Text, simply install the `TypeScript` package.
