@@ -1456,7 +1456,7 @@
         <array>
           <dict>
             <key>match</key>
-            <string>(?&lt;![_$[:alnum:]])(?:(?&lt;=\.\.\.)|(?&lt;!\.))(public|protected|private|readonly)\s+(?=(public|protected|private|readonly)\s+)</string>
+            <string>(?&lt;![_$[:alnum:]])(?:(?&lt;=\.\.\.)|(?&lt;!\.))(override|public|protected|private|readonly)\s+(?=(override|public|protected|private|readonly)\s+)</string>
             <key>captures</key>
             <dict>
               <key>1</key>
@@ -1468,7 +1468,7 @@
           </dict>
           <dict>
             <key>match</key>
-            <string>(?x)(?:(?&lt;![_$[:alnum:]])(?:(?&lt;=\.\.\.)|(?&lt;!\.))(public|private|protected|readonly)\s+)?(?:(\.\.\.)\s*)?(?&lt;!=|:)(?&lt;![_$[:alnum:]])(?:(?&lt;=\.\.\.)|(?&lt;!\.))(?:(this)|([_$[:alpha:]][_$[:alnum:]]*))(?![_$[:alnum:]])(?:(?=\.\.\.)|(?!\.))\s*(\??)(?=\s*
+            <string>(?x)(?:(?&lt;![_$[:alnum:]])(?:(?&lt;=\.\.\.)|(?&lt;!\.))(override|public|private|protected|readonly)\s+)?(?:(\.\.\.)\s*)?(?&lt;!=|:)(?&lt;![_$[:alnum:]])(?:(?&lt;=\.\.\.)|(?&lt;!\.))(?:(this)|([_$[:alpha:]][_$[:alnum:]]*))(?![_$[:alnum:]])(?:(?=\.\.\.)|(?!\.))\s*(\??)(?=\s*
 # function assignment |
 (=\s*(
   ((async\s+)?(
@@ -1573,7 +1573,7 @@
           </dict>
           <dict>
             <key>match</key>
-            <string>(?x)(?:(?&lt;![_$[:alnum:]])(?:(?&lt;=\.\.\.)|(?&lt;!\.))(public|private|protected|readonly)\s+)?(?:(\.\.\.)\s*)?(?&lt;!=|:)(?&lt;![_$[:alnum:]])(?:(?&lt;=\.\.\.)|(?&lt;!\.))(?:(this)|([_$[:alpha:]][_$[:alnum:]]*))(?![_$[:alnum:]])(?:(?=\.\.\.)|(?!\.))\s*(\??)</string>
+            <string>(?x)(?:(?&lt;![_$[:alnum:]])(?:(?&lt;=\.\.\.)|(?&lt;!\.))(override|public|private|protected|readonly)\s+)?(?:(\.\.\.)\s*)?(?&lt;!=|:)(?&lt;![_$[:alnum:]])(?:(?&lt;=\.\.\.)|(?&lt;!\.))(?:(this)|([_$[:alpha:]][_$[:alnum:]]*))(?![_$[:alnum:]])(?:(?=\.\.\.)|(?!\.))\s*(\??)</string>
             <key>captures</key>
             <dict>
               <key>1</key>
@@ -2243,7 +2243,7 @@
             <key>name</key>
             <string>meta.method.declaration.tsx</string>
             <key>begin</key>
-            <string>(?x)(?&lt;![_$[:alnum:]])(?:(?&lt;=\.\.\.)|(?&lt;!\.))(?:\b(public|private|protected)\s+)?(?:\b(abstract)\s+)?(?:\b(async)\s+)?\s*\b(constructor)\b(?!:)(?![_$[:alnum:]])(?:(?=\.\.\.)|(?!\.))</string>
+            <string>(?x)(?&lt;![_$[:alnum:]])(?:(?&lt;=\.\.\.)|(?&lt;!\.))(?:\b(override)\s+)?(?:\b(public|private|protected)\s+)?(?:\b(abstract)\s+)?(?:\b(async)\s+)?\s*\b(constructor)\b(?!:)(?![_$[:alnum:]])(?:(?=\.\.\.)|(?!\.))</string>
             <key>beginCaptures</key>
             <dict>
               <key>1</key>
@@ -2259,9 +2259,14 @@
               <key>3</key>
               <dict>
                 <key>name</key>
-                <string>storage.modifier.async.tsx</string>
+                <string>storage.modifier.tsx</string>
               </dict>
               <key>4</key>
+              <dict>
+                <key>name</key>
+                <string>storage.modifier.async.tsx</string>
+              </dict>
+              <key>5</key>
               <dict>
                 <key>name</key>
                 <string>storage.type.tsx</string>
@@ -2285,7 +2290,7 @@
             <key>name</key>
             <string>meta.method.declaration.tsx</string>
             <key>begin</key>
-            <string>(?x)(?&lt;![_$[:alnum:]])(?:(?&lt;=\.\.\.)|(?&lt;!\.))(?:\b(public|private|protected)\s+)?(?:\b(abstract)\s+)?(?:\b(async)\s+)?(?:(?:\s*\b(new)\b(?!:)(?![_$[:alnum:]])(?:(?=\.\.\.)|(?!\.)))|(?:(\*)\s*)?)(?=\s*((&lt;\s*([_$[:alpha:]]|(\{([^\{\}]|(\{([^\{\}]|\{[^\{\}]*\})*\}))*\})|(\(([^\(\)]|(\(([^\(\)]|\([^\(\)]*\))*\)))*\))|(\[([^\[\]]|(\[([^\[\]]|\[[^\[\]]*\])*\]))*\]))([^=&lt;&gt;]|=[^&lt;]|\&lt;\s*([_$[:alpha:]]|(\{([^\{\}]|(\{([^\{\}]|\{[^\{\}]*\})*\}))*\})|(\(([^\(\)]|(\(([^\(\)]|\([^\(\)]*\))*\)))*\))|(\[([^\[\]]|(\[([^\[\]]|\[[^\[\]]*\])*\]))*\]))([^=&lt;&gt;]|=[^&lt;]|\&lt;\s*([_$[:alpha:]]|(\{([^\{\}]|(\{([^\{\}]|\{[^\{\}]*\})*\}))*\})|(\(([^\(\)]|(\(([^\(\)]|\([^\(\)]*\))*\)))*\))|(\[([^\[\]]|(\[([^\[\]]|\[[^\[\]]*\])*\]))*\]))([^=&lt;&gt;]|=[^&lt;])*\&gt;)*\&gt;)*&gt;\s*))?[\(])</string>
+            <string>(?x)(?&lt;![_$[:alnum:]])(?:(?&lt;=\.\.\.)|(?&lt;!\.))(?:\b(override)\s+)?(?:\b(public|private|protected)\s+)?(?:\b(abstract)\s+)?(?:\b(async)\s+)?(?:(?:\s*\b(new)\b(?!:)(?![_$[:alnum:]])(?:(?=\.\.\.)|(?!\.)))|(?:(\*)\s*)?)(?=\s*((&lt;\s*([_$[:alpha:]]|(\{([^\{\}]|(\{([^\{\}]|\{[^\{\}]*\})*\}))*\})|(\(([^\(\)]|(\(([^\(\)]|\([^\(\)]*\))*\)))*\))|(\[([^\[\]]|(\[([^\[\]]|\[[^\[\]]*\])*\]))*\]))([^=&lt;&gt;]|=[^&lt;]|\&lt;\s*([_$[:alpha:]]|(\{([^\{\}]|(\{([^\{\}]|\{[^\{\}]*\})*\}))*\})|(\(([^\(\)]|(\(([^\(\)]|\([^\(\)]*\))*\)))*\))|(\[([^\[\]]|(\[([^\[\]]|\[[^\[\]]*\])*\]))*\]))([^=&lt;&gt;]|=[^&lt;]|\&lt;\s*([_$[:alpha:]]|(\{([^\{\}]|(\{([^\{\}]|\{[^\{\}]*\})*\}))*\})|(\(([^\(\)]|(\(([^\(\)]|\([^\(\)]*\))*\)))*\))|(\[([^\[\]]|(\[([^\[\]]|\[[^\[\]]*\])*\]))*\]))([^=&lt;&gt;]|=[^&lt;])*\&gt;)*\&gt;)*&gt;\s*))?[\(])</string>
             <key>beginCaptures</key>
             <dict>
               <key>1</key>
@@ -2301,14 +2306,19 @@
               <key>3</key>
               <dict>
                 <key>name</key>
-                <string>storage.modifier.async.tsx</string>
+                <string>storage.modifier.tsx</string>
               </dict>
               <key>4</key>
               <dict>
                 <key>name</key>
-                <string>keyword.operator.new.tsx</string>
+                <string>storage.modifier.async.tsx</string>
               </dict>
               <key>5</key>
+              <dict>
+                <key>name</key>
+                <string>keyword.operator.new.tsx</string>
+              </dict>
+              <key>6</key>
               <dict>
                 <key>name</key>
                 <string>keyword.generator.asterisk.tsx</string>
@@ -2332,7 +2342,7 @@
             <key>name</key>
             <string>meta.method.declaration.tsx</string>
             <key>begin</key>
-            <string>(?x)(?&lt;![_$[:alnum:]])(?:(?&lt;=\.\.\.)|(?&lt;!\.))(?:\b(public|private|protected)\s+)?(?:\b(abstract)\s+)?(?:\b(async)\s+)?(?:\b(get|set)\s+)?(?:(\*)\s*)?(?=\s*(((\b(?&lt;!\$)0(?:x|X)[0-9a-fA-F][0-9a-fA-F_]*(n)?\b(?!\$))|(\b(?&lt;!\$)0(?:b|B)[01][01_]*(n)?\b(?!\$))|(\b(?&lt;!\$)0(?:o|O)?[0-7][0-7_]*(n)?\b(?!\$))|((?&lt;!\$)(?:
+            <string>(?x)(?&lt;![_$[:alnum:]])(?:(?&lt;=\.\.\.)|(?&lt;!\.))(?:\b(override)\s+)?(?:\b(public|private|protected)\s+)?(?:\b(abstract)\s+)?(?:\b(async)\s+)?(?:\b(get|set)\s+)?(?:(\*)\s*)?(?=\s*(((\b(?&lt;!\$)0(?:x|X)[0-9a-fA-F][0-9a-fA-F_]*(n)?\b(?!\$))|(\b(?&lt;!\$)0(?:b|B)[01][01_]*(n)?\b(?!\$))|(\b(?&lt;!\$)0(?:o|O)?[0-7][0-7_]*(n)?\b(?!\$))|((?&lt;!\$)(?:
   (?:\b[0-9][0-9_]*(\.)[0-9][0-9_]*[eE][+-]?[0-9][0-9_]*(n)?\b)| # 1.1E+3
   (?:\b[0-9][0-9_]*(\.)[eE][+-]?[0-9][0-9_]*(n)?\b)|             # 1.E+3
   (?:\B(\.)[0-9][0-9_]*[eE][+-]?[0-9][0-9_]*(n)?\b)|             # .1E+3
@@ -2357,14 +2367,19 @@
               <key>3</key>
               <dict>
                 <key>name</key>
-                <string>storage.modifier.async.tsx</string>
+                <string>storage.modifier.tsx</string>
               </dict>
               <key>4</key>
               <dict>
                 <key>name</key>
-                <string>storage.type.property.tsx</string>
+                <string>storage.modifier.async.tsx</string>
               </dict>
               <key>5</key>
+              <dict>
+                <key>name</key>
+                <string>storage.type.property.tsx</string>
+              </dict>
+              <key>6</key>
               <dict>
                 <key>name</key>
                 <string>keyword.generator.asterisk.tsx</string>
@@ -3173,7 +3188,7 @@
         <key>name</key>
         <string>storage.modifier.tsx</string>
         <key>match</key>
-        <string>(?&lt;![_$[:alnum:]])(?:(?&lt;=\.\.\.)|(?&lt;!\.))(abstract|public|protected|private|readonly|static|declare)(?![_$[:alnum:]])(?:(?=\.\.\.)|(?!\.))</string>
+        <string>(?&lt;![_$[:alnum:]])(?:(?&lt;=\.\.\.)|(?&lt;!\.))(abstract|declare|override|public|protected|private|readonly|static)(?![_$[:alnum:]])(?:(?=\.\.\.)|(?!\.))</string>
       </dict>
       <key>property-accessor</key>
       <dict>
@@ -4190,7 +4205,7 @@
                 <key>name</key>
                 <string>string.regexp.tsx</string>
                 <key>begin</key>
-                <string>(?&lt;=\))\s*\/(?![\/*])(?=(?:[^\/\\\[]|\\.|\[([^\]\\]|\\.)*\])+\/([gimsuy]+|(?![\/\*])|(?=\/\*))(?!\s*[a-zA-Z0-9_$]))</string>
+                <string>(?&lt;=\))\s*\/(?![\/*])(?=(?:[^\/\\\[]|\\.|\[([^\]\\]|\\.)*\])+\/([dgimsuy]+|(?![\/\*])|(?=\/\*))(?!\s*[a-zA-Z0-9_$]))</string>
                 <key>beginCaptures</key>
                 <dict>
                   <key>0</key>
@@ -4200,7 +4215,7 @@
                   </dict>
                 </dict>
                 <key>end</key>
-                <string>(/)([gimsuy]*)</string>
+                <string>(/)([dgimsuy]*)</string>
                 <key>endCaptures</key>
                 <dict>
                   <key>1</key>
@@ -5097,7 +5112,7 @@
           </dict>
           <dict>
             <key>match</key>
-            <string>(?&lt;![_$[:alnum:]])(?:(?&lt;=\.\.\.)|(?&lt;!\.))(public|protected|private|readonly)\s+(?=(public|protected|private|readonly)\s+)</string>
+            <string>(?&lt;![_$[:alnum:]])(?:(?&lt;=\.\.\.)|(?&lt;!\.))(override|public|protected|private|readonly)\s+(?=(override|public|protected|private|readonly)\s+)</string>
             <key>captures</key>
             <dict>
               <key>1</key>
@@ -5109,7 +5124,7 @@
           </dict>
           <dict>
             <key>match</key>
-            <string>(?x)(?:(?&lt;![_$[:alnum:]])(?:(?&lt;=\.\.\.)|(?&lt;!\.))(public|private|protected|readonly)\s+)?(?:(\.\.\.)\s*)?(?&lt;!=|:)(?&lt;![_$[:alnum:]])(?:(?&lt;=\.\.\.)|(?&lt;!\.))(?:(this)|([_$[:alpha:]][_$[:alnum:]]*))(?![_$[:alnum:]])(?:(?=\.\.\.)|(?!\.))\s*(\??)(?=\s*
+            <string>(?x)(?:(?&lt;![_$[:alnum:]])(?:(?&lt;=\.\.\.)|(?&lt;!\.))(override|public|private|protected|readonly)\s+)?(?:(\.\.\.)\s*)?(?&lt;!=|:)(?&lt;![_$[:alnum:]])(?:(?&lt;=\.\.\.)|(?&lt;!\.))(?:(this)|([_$[:alpha:]][_$[:alnum:]]*))(?![_$[:alnum:]])(?:(?=\.\.\.)|(?!\.))\s*(\??)(?=\s*
 # function assignment |
 (=\s*(
   ((async\s+)?(
@@ -5214,7 +5229,7 @@
           </dict>
           <dict>
             <key>match</key>
-            <string>(?x)(?:(?&lt;![_$[:alnum:]])(?:(?&lt;=\.\.\.)|(?&lt;!\.))(public|private|protected|readonly)\s+)?(?:(\.\.\.)\s*)?(?&lt;!=|:)(?&lt;![_$[:alnum:]])(?:(?&lt;=\.\.\.)|(?&lt;!\.))(?:(this)|([_$[:alpha:]][_$[:alnum:]]*))(?![_$[:alnum:]])(?:(?=\.\.\.)|(?!\.))\s*(\??)(?=\s*[:,]|$)</string>
+            <string>(?x)(?:(?&lt;![_$[:alnum:]])(?:(?&lt;=\.\.\.)|(?&lt;!\.))(override|public|private|protected|readonly)\s+)?(?:(\.\.\.)\s*)?(?&lt;!=|:)(?&lt;![_$[:alnum:]])(?:(?&lt;=\.\.\.)|(?&lt;!\.))(?:(this)|([_$[:alpha:]][_$[:alnum:]]*))(?![_$[:alnum:]])(?:(?=\.\.\.)|(?!\.))\s*(\??)(?=\s*[:,]|$)</string>
             <key>captures</key>
             <dict>
               <key>1</key>
@@ -5594,7 +5609,7 @@
           </dict>
         </dict>
         <key>end</key>
-        <string>(?=[,);}\]=&gt;]|$|;|^\s*$|(?:^\s*(?:abstract|async|class|const|declare|enum|export|function|import|interface|let|module|namespace|return|type|var)\b))</string>
+        <string>(?=[,);}\]=&gt;:&amp;|{\?]|$|;|^\s*$|(?:^\s*(?:abstract|async|class|const|declare|enum|export|function|import|interface|let|module|namespace|return|type|var)\b))</string>
         <key>patterns</key>
         <array>
           <dict>
@@ -7372,10 +7387,15 @@
         <array>
           <dict>
             <key>begin</key>
-            <string>(?&lt;![_$[:alnum:]])(?:(?&lt;=\.\.\.)|(?&lt;!\.))(new)\b(?=\s*\&lt;)</string>
+            <string>(?&lt;![_$[:alnum:]])(?:(?&lt;=\.\.\.)|(?&lt;!\.))(?:(abstract)\s+)?(new)\b(?=\s*\&lt;)</string>
             <key>beginCaptures</key>
             <dict>
               <key>1</key>
+              <dict>
+                <key>name</key>
+                <string>meta.type.constructor.tsx storage.modifier.tsx</string>
+              </dict>
+              <key>2</key>
               <dict>
                 <key>name</key>
                 <string>meta.type.constructor.tsx keyword.control.new.tsx</string>
@@ -7399,10 +7419,15 @@
             <key>name</key>
             <string>meta.type.constructor.tsx</string>
             <key>begin</key>
-            <string>(?&lt;![_$[:alnum:]])(?:(?&lt;=\.\.\.)|(?&lt;!\.))(new)\b\s*(?=\()</string>
+            <string>(?&lt;![_$[:alnum:]])(?:(?&lt;=\.\.\.)|(?&lt;!\.))(?:(abstract)\s+)?(new)\b\s*(?=\()</string>
             <key>beginCaptures</key>
             <dict>
               <key>1</key>
+              <dict>
+                <key>name</key>
+                <string>storage.modifier.tsx</string>
+              </dict>
+              <key>2</key>
               <dict>
                 <key>name</key>
                 <string>keyword.control.new.tsx</string>
@@ -8175,7 +8200,7 @@
             <key>name</key>
             <string>string.regexp.tsx</string>
             <key>begin</key>
-            <string>(?&lt;!\+\+|--|})(?&lt;=[=(:,\[?+!]|^return|[^\._$[:alnum:]]return|^case|[^\._$[:alnum:]]case|=&gt;|&amp;&amp;|\|\||\*\/)\s*(\/)(?![\/*])(?=(?:[^\/\\\[\()]|\\.|\[([^\]\\]|\\.)+\]|\(([^\)\\]|\\.)+\))+\/([gimsuy]+|(?![\/\*])|(?=\/\*))(?!\s*[a-zA-Z0-9_$]))</string>
+            <string>(?&lt;!\+\+|--|})(?&lt;=[=(:,\[?+!]|^return|[^\._$[:alnum:]]return|^case|[^\._$[:alnum:]]case|=&gt;|&amp;&amp;|\|\||\*\/)\s*(\/)(?![\/*])(?=(?:[^\/\\\[\()]|\\.|\[([^\]\\]|\\.)+\]|\(([^\)\\]|\\.)+\))+\/([dgimsuy]+|(?![\/\*])|(?=\/\*))(?!\s*[a-zA-Z0-9_$]))</string>
             <key>beginCaptures</key>
             <dict>
               <key>1</key>
@@ -8185,7 +8210,7 @@
               </dict>
             </dict>
             <key>end</key>
-            <string>(/)([gimsuy]*)</string>
+            <string>(/)([dgimsuy]*)</string>
             <key>endCaptures</key>
             <dict>
               <key>1</key>
@@ -8211,7 +8236,7 @@
             <key>name</key>
             <string>string.regexp.tsx</string>
             <key>begin</key>
-            <string>((?&lt;![_$[:alnum:])\]]|\+\+|--|}|\*\/)|((?&lt;=^return|[^\._$[:alnum:]]return|^case|[^\._$[:alnum:]]case))\s*)\/(?![\/*])(?=(?:[^\/\\\[]|\\.|\[([^\]\\]|\\.)*\])+\/([gimsuy]+|(?![\/\*])|(?=\/\*))(?!\s*[a-zA-Z0-9_$]))</string>
+            <string>((?&lt;![_$[:alnum:])\]]|\+\+|--|}|\*\/)|((?&lt;=^return|[^\._$[:alnum:]]return|^case|[^\._$[:alnum:]]case))\s*)\/(?![\/*])(?=(?:[^\/\\\[]|\\.|\[([^\]\\]|\\.)*\])+\/([dgimsuy]+|(?![\/\*])|(?=\/\*))(?!\s*[a-zA-Z0-9_$]))</string>
             <key>beginCaptures</key>
             <dict>
               <key>0</key>
@@ -8221,7 +8246,7 @@
               </dict>
             </dict>
             <key>end</key>
-            <string>(/)([gimsuy]*)</string>
+            <string>(/)([dgimsuy]*)</string>
             <key>endCaptures</key>
             <dict>
               <key>1</key>
