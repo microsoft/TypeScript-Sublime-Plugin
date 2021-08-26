@@ -1647,7 +1647,7 @@
           </dict>
           <dict>
             <key>name</key>
-            <string>meta.paramter.array-binding-pattern.tsx</string>
+            <string>meta.parameter.array-binding-pattern.tsx</string>
             <key>begin</key>
             <string>(?&lt;!=|:)\s*(?:(\.\.\.)\s*)?(\[)</string>
             <key>beginCaptures</key>
