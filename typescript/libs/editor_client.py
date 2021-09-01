@@ -59,6 +59,13 @@ class EditorClient:
         if tsdk_location:
             proc_file = os.path.join(tsdk_location, "tsserver.js")
             global_vars._tsc_path = os.path.join(tsdk_location, "tsc.js")
+
+        # else check for local tsserver inside of node_modules
+        elif len(sublime.active_window().folders()) > 0:
+            if os.path.exists(os.path.join(sublime.active_window().folders()[0], 'node_modules/typescript/lib')):
+                local_tsdk_location = os.path.join(sublime.active_window().folders()[0], 'node_modules/typescript/lib')
+                proc_file = os.path.join(local_tsdk_location, "tsserver.js")
+                global_vars._tsc_path = os.path.join(local_tsdk_location, "tsc.js")
         else:
             # otherwise, get tsserver.js from package directory
             proc_file = os.path.join(PLUGIN_DIR, "tsserver", "tsserver.js")
