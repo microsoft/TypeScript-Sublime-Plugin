@@ -21,7 +21,7 @@ class WorkScheduler():
     This class makes the assumption only one popup will be active at a time,
     with the latest set of signature data received.  It provides a design where
     only one request may be sent but awaiting a response at a time, and that
-    only one request may be waiting to send at a time - these are refered to as
+    only one request may be waiting to send at a time - these are referred to as
     the 'current', and 'queued' requests below.
 
     A current request has been sent, but may not have received a response yet.

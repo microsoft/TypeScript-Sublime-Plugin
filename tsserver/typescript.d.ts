@@ -5013,7 +5013,7 @@ declare namespace ts {
          */
         getOptionsDiagnostics(cancellationToken?: CancellationToken): readonly Diagnostic[];
         /**
-         * Get the diagnostics that dont belong to any file
+         * Get the diagnostics that don't belong to any file
          */
         getGlobalDiagnostics(cancellationToken?: CancellationToken): readonly Diagnostic[];
         /**
@@ -5092,7 +5092,7 @@ declare namespace ts {
     function createEmitAndSemanticDiagnosticsBuilderProgram(newProgram: Program, host: BuilderProgramHost, oldProgram?: EmitAndSemanticDiagnosticsBuilderProgram, configFileParsingDiagnostics?: readonly Diagnostic[]): EmitAndSemanticDiagnosticsBuilderProgram;
     function createEmitAndSemanticDiagnosticsBuilderProgram(rootNames: readonly string[] | undefined, options: CompilerOptions | undefined, host?: CompilerHost, oldProgram?: EmitAndSemanticDiagnosticsBuilderProgram, configFileParsingDiagnostics?: readonly Diagnostic[], projectReferences?: readonly ProjectReference[]): EmitAndSemanticDiagnosticsBuilderProgram;
     /**
-     * Creates a builder thats just abstraction over program and can be used with watch
+     * Creates a builder that's just abstraction over program and can be used with watch
      */
     function createAbstractBuilder(newProgram: Program, host: BuilderProgramHost, oldProgram?: BuilderProgram, configFileParsingDiagnostics?: readonly Diagnostic[]): BuilderProgram;
     function createAbstractBuilder(rootNames: readonly string[] | undefined, options: CompilerOptions | undefined, host?: CompilerHost, oldProgram?: BuilderProgram, configFileParsingDiagnostics?: readonly Diagnostic[], projectReferences?: readonly ProjectReference[]): BuilderProgram;
@@ -5143,12 +5143,12 @@ declare namespace ts {
         createHash?(data: string): string;
         /**
          * Use to check file presence for source files and
-         * if resolveModuleNames is not provided (complier is in charge of module resolution) then module files as well
+         * if resolveModuleNames is not provided (compiler is in charge of module resolution) then module files as well
          */
         fileExists(path: string): boolean;
         /**
          * Use to read file text for source files and
-         * if resolveModuleNames is not provided (complier is in charge of module resolution) then module files as well
+         * if resolveModuleNames is not provided (compiler is in charge of module resolution) then module files as well
          */
         readFile(path: string, encoding?: string): string | undefined;
         /** If provided, used for module resolution as well as to handle directory structure */
@@ -5200,7 +5200,7 @@ declare namespace ts {
         extraFileExtensions?: readonly FileExtensionInfo[];
         /**
          * Used to generate source file names from the config file and its include, exclude, files rules
-         * and also to cache the directory stucture
+         * and also to cache the directory structure
          */
         readDirectory(path: string, extensions?: readonly string[], exclude?: readonly string[], include?: readonly string[], depth?: number): string[];
     }
@@ -5276,7 +5276,7 @@ declare namespace ts {
         getNextInvalidatedProject(cancellationToken?: CancellationToken): InvalidatedProject<T> | undefined;
     }
     /**
-     * Create a function that reports watch status by writing to the system and handles the formating of the diagnostic
+     * Create a function that reports watch status by writing to the system and handles the formatting of the diagnostic
      */
     function createBuilderStatusReporter(system: System, pretty?: boolean): DiagnosticReporter;
     function createSolutionBuilderHost<T extends BuilderProgram = EmitAndSemanticDiagnosticsBuilderProgram>(system?: System, createProgram?: CreateProgram<T>, reportDiagnostic?: DiagnosticReporter, reportSolutionBuilderStatus?: DiagnosticReporter, reportErrorSummary?: ReportEmitErrorSummary): SolutionBuilderHost<T>;
@@ -5580,7 +5580,7 @@ declare namespace ts {
         /**
          * Gets errors indicating invalid syntax in a file.
          *
-         * In English, "this cdeo have, erorrs" is syntactically invalid because it has typos,
+         * In English, "this cdeo have, errors" is syntactically invalid because it has typos,
          * grammatical errors, and misplaced punctuation. Likewise, examples of syntax
          * errors in TypeScript are missing parentheses in an `if` statement, mismatched
          * curly braces, and using a reserved keyword as a variable name.

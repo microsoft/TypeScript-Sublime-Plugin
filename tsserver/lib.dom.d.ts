@@ -5075,7 +5075,7 @@ interface Event {
      */
     readonly currentTarget: EventTarget | null;
     /**
-     * Returns true if preventDefault() was invoked successfully to indicate cancelation, and false otherwise.
+     * Returns true if preventDefault() was invoked successfully to indicate cancellation, and false otherwise.
      */
     readonly defaultPrevented: boolean;
     /**
@@ -6937,7 +6937,7 @@ interface HTMLIFrameElement extends HTMLElement {
      */
     src: string;
     /**
-     * Sets or retrives the content of the page that is to contain.
+     * Sets or retrieves the content of the page that is to contain.
      */
     srcdoc: string;
     /**

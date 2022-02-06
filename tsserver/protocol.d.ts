@@ -1711,7 +1711,7 @@ declare namespace ts.server.protocol {
          */
         replacementSpan?: TextSpan;
         /**
-         * Indicates whether commiting this completion entry will require additional code actions to be
+         * Indicates whether committing this completion entry will require additional code actions to be
          * made to avoid errors. The CompletionEntryDetails will have these actions.
          */
         hasAction?: true;
@@ -1990,7 +1990,7 @@ declare namespace ts.server.protocol {
         includeLinePosition?: boolean;
     }
     /**
-     * Response object for synchronous sematic diagnostics request.
+     * Response object for synchronous semantic diagnostics request.
      */
     interface SemanticDiagnosticsSyncResponse extends Response {
         body?: Diagnostic[] | DiagnosticWithLinePosition[];
