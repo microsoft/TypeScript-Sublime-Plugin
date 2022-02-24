@@ -3874,35 +3874,40 @@
           </dict>
           <dict>
             <key>match</key>
-            <string>(?&lt;![_$[:alnum:]])(?:(?&lt;=\.\.\.)|(?&lt;!\.))(?:(\bdefault)|(\*)|(\b[_$[:alpha:]][_$[:alnum:]]*))\s+(as)\s+(?:(default(?![_$[:alnum:]])(?:(?=\.\.\.)|(?!\.)))|([_$[:alpha:]][_$[:alnum:]]*))</string>
+            <string>(?&lt;![_$[:alnum:]])(?:(?&lt;=\.\.\.)|(?&lt;!\.))(?:(?:(\btype)\s+)?(?:(\bdefault)|(\*)|(\b[_$[:alpha:]][_$[:alnum:]]*)))\s+(as)\s+(?:(default(?![_$[:alnum:]])(?:(?=\.\.\.)|(?!\.)))|([_$[:alpha:]][_$[:alnum:]]*))</string>
             <key>captures</key>
             <dict>
               <key>1</key>
               <dict>
                 <key>name</key>
-                <string>keyword.control.default.tsx</string>
+                <string>keyword.control.type.tsx</string>
               </dict>
               <key>2</key>
               <dict>
                 <key>name</key>
-                <string>constant.language.import-export-all.tsx</string>
+                <string>keyword.control.default.tsx</string>
               </dict>
               <key>3</key>
               <dict>
                 <key>name</key>
-                <string>variable.other.readwrite.tsx</string>
+                <string>constant.language.import-export-all.tsx</string>
               </dict>
               <key>4</key>
               <dict>
                 <key>name</key>
-                <string>keyword.control.as.tsx</string>
+                <string>variable.other.readwrite.tsx</string>
               </dict>
               <key>5</key>
               <dict>
                 <key>name</key>
-                <string>keyword.control.default.tsx</string>
+                <string>keyword.control.as.tsx</string>
               </dict>
               <key>6</key>
+              <dict>
+                <key>name</key>
+                <string>keyword.control.default.tsx</string>
+              </dict>
+              <key>7</key>
               <dict>
                 <key>name</key>
                 <string>variable.other.readwrite.alias.tsx</string>
@@ -3926,10 +3931,21 @@
             <string>\b(default)\b</string>
           </dict>
           <dict>
-            <key>name</key>
-            <string>variable.other.readwrite.alias.tsx</string>
             <key>match</key>
-            <string>([_$[:alpha:]][_$[:alnum:]]*)</string>
+            <string>(?:(\btype)\s+)?([_$[:alpha:]][_$[:alnum:]]*)</string>
+            <key>captures</key>
+            <dict>
+              <key>1</key>
+              <dict>
+                <key>name</key>
+                <string>keyword.control.type.tsx</string>
+              </dict>
+              <key>2</key>
+              <dict>
+                <key>name</key>
+                <string>variable.other.readwrite.alias.tsx</string>
+              </dict>
+            </dict>
           </dict>
         </array>
       </dict>
@@ -9027,6 +9043,38 @@
                 <string>variable.other.jsdoc</string>
               </dict>
             </dict>
+          </dict>
+          <dict>
+            <key>begin</key>
+            <string>(?x)((@)template)\s+(?={)</string>
+            <key>beginCaptures</key>
+            <dict>
+              <key>1</key>
+              <dict>
+                <key>name</key>
+                <string>storage.type.class.jsdoc</string>
+              </dict>
+              <key>2</key>
+              <dict>
+                <key>name</key>
+                <string>punctuation.definition.block.tag.jsdoc</string>
+              </dict>
+            </dict>
+            <key>end</key>
+            <string>(?=\s|\*/|[^{}\[\]A-Za-z_$])</string>
+            <key>patterns</key>
+            <array>
+              <dict>
+                <key>include</key>
+                <string>#jsdoctype</string>
+              </dict>
+              <dict>
+                <key>name</key>
+                <string>variable.other.jsdoc</string>
+                <key>match</key>
+                <string>([A-Za-z_$][\w$.\[\]]*)</string>
+              </dict>
+            </array>
           </dict>
           <dict>
             <key>match</key>
