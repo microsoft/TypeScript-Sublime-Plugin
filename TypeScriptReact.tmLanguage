@@ -3828,7 +3828,62 @@
           </dict>
           <dict>
             <key>include</key>
+            <string>#import-export-assert-clause</string>
+          </dict>
+          <dict>
+            <key>include</key>
             <string>#import-export-clause</string>
+          </dict>
+        </array>
+      </dict>
+      <key>import-export-assert-clause</key>
+      <dict>
+        <key>begin</key>
+        <string>(?&lt;![_$[:alnum:]])(?:(?&lt;=\.\.\.)|(?&lt;!\.))(assert)\s*(\{)</string>
+        <key>beginCaptures</key>
+        <dict>
+          <key>1</key>
+          <dict>
+            <key>name</key>
+            <string>keyword.control.assert.tsx</string>
+          </dict>
+          <key>2</key>
+          <dict>
+            <key>name</key>
+            <string>punctuation.definition.block.tsx</string>
+          </dict>
+        </dict>
+        <key>end</key>
+        <string>\}</string>
+        <key>endCaptures</key>
+        <dict>
+          <key>0</key>
+          <dict>
+            <key>name</key>
+            <string>punctuation.definition.block.tsx</string>
+          </dict>
+        </dict>
+        <key>patterns</key>
+        <array>
+          <dict>
+            <key>include</key>
+            <string>#comment</string>
+          </dict>
+          <dict>
+            <key>include</key>
+            <string>#string</string>
+          </dict>
+          <dict>
+            <key>name</key>
+            <string>meta.object-literal.key.tsx</string>
+            <key>match</key>
+            <string>(?:[_$[:alpha:]][_$[:alnum:]]*)\s*(?=(\/\*([^\*]|(\*[^\/]))*\*\/\s*)*:)</string>
+          </dict>
+          <dict>
+            <key>name</key>
+            <string>punctuation.separator.key-value.tsx</string>
+            <key>match</key>
+            <string>:</string>
           </dict>
         </array>
       </dict>
@@ -6910,7 +6965,7 @@
             <key>name</key>
             <string>storage.modifier.tsx</string>
             <key>match</key>
-            <string>(?&lt;![_$[:alnum:]])(?:(?&lt;=\.\.\.)|(?&lt;!\.))(extends)(?![_$[:alnum:]])(?:(?=\.\.\.)|(?!\.))</string>
+            <string>(?&lt;![_$[:alnum:]])(?:(?&lt;=\.\.\.)|(?&lt;!\.))(extends|in|out)(?![_$[:alnum:]])(?:(?=\.\.\.)|(?!\.))</string>
           </dict>
           <dict>
             <key>include</key>
@@ -7024,11 +7079,11 @@
           </dict>
           <dict>
             <key>include</key>
-            <string>#type-conditional</string>
+            <string>#type-operators</string>
           </dict>
           <dict>
             <key>include</key>
-            <string>#type-operators</string>
+            <string>#type-conditional</string>
           </dict>
           <dict>
             <key>include</key>
@@ -7579,6 +7634,10 @@
             <string>#typeof-operator</string>
           </dict>
           <dict>
+            <key>include</key>
+            <string>#type-infer</string>
+          </dict>
+          <dict>
             <key>begin</key>
             <string>([&amp;|])(?=\s*\{)</string>
             <key>beginCaptures</key>
@@ -7627,15 +7686,39 @@
           </dict>
           <dict>
             <key>name</key>
-            <string>keyword.operator.expression.infer.tsx</string>
-            <key>match</key>
-            <string>(?&lt;![_$[:alnum:]])(?:(?&lt;=\.\.\.)|(?&lt;!\.))infer(?=\s+[_$[:alpha:]])</string>
-          </dict>
-          <dict>
-            <key>name</key>
             <string>keyword.operator.expression.import.tsx</string>
             <key>match</key>
             <string>(?&lt;![_$[:alnum:]])(?:(?&lt;=\.\.\.)|(?&lt;!\.))import(?=\s*\()</string>
+          </dict>
+        </array>
+      </dict>
+      <key>type-infer</key>
+      <dict>
+        <key>patterns</key>
+        <array>
+          <dict>
+            <key>match</key>
+            <string>(?&lt;![_$[:alnum:]])(?:(?&lt;=\.\.\.)|(?&lt;!\.))(infer)\s+([_$[:alpha:]][_$[:alnum:]]*)(?![_$[:alnum:]])(?:(?=\.\.\.)|(?!\.))(?:\s+(extends)(?![_$[:alnum:]])(?:(?=\.\.\.)|(?!\.)))?</string>
+            <key>name</key>
+            <string>meta.type.infer.tsx</string>
+            <key>captures</key>
+            <dict>
+              <key>1</key>
+              <dict>
+                <key>name</key>
+                <string>keyword.operator.expression.infer.tsx</string>
+              </dict>
+              <key>2</key>
+              <dict>
+                <key>name</key>
+                <string>entity.name.type.tsx</string>
+              </dict>
+              <key>3</key>
+              <dict>
+                <key>name</key>
+                <string>keyword.operator.expression.extends.tsx</string>
+              </dict>
+            </dict>
           </dict>
         </array>
       </dict>
@@ -8676,7 +8759,7 @@
         <key>name</key>
         <string>comment.line.triple-slash.directive.tsx</string>
         <key>begin</key>
-        <string>^(///)\s*(?=&lt;(reference|amd-dependency|amd-module)(\s+(path|types|no-default-lib|lib|name)\s*=\s*((\'([^\'\\]|\\.)*\')|(\"([^\"\\]|\\.)*\")|(\`([^\`\\]|\\.)*\`)))+\s*/&gt;\s*$)</string>
+        <string>^(///)\s*(?=&lt;(reference|amd-dependency|amd-module)(\s+(path|types|no-default-lib|lib|name|resolution-mode)\s*=\s*((\'([^\'\\]|\\.)*\')|(\"([^\"\\]|\\.)*\")|(\`([^\`\\]|\\.)*\`)))+\s*/&gt;\s*$)</string>
         <key>beginCaptures</key>
         <dict>
           <key>1</key>
@@ -8723,7 +8806,7 @@
                 <key>name</key>
                 <string>entity.other.attribute-name.directive.tsx</string>
                 <key>match</key>
-                <string>path|types|no-default-lib|lib|name</string>
+                <string>path|types|no-default-lib|lib|name|resolution-mode</string>
               </dict>
               <dict>
                 <key>name</key>
