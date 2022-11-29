@@ -2,8 +2,3 @@ name : CodeQL Configuration
 
 paths:
   - './typescript' 
-
-strategy:
-  fail-fast: false
-  matrix:
-    language: ['python']

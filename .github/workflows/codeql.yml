@@ -10,11 +10,6 @@ on:
 
 jobs:
   CodeQL-Build:
-    strategy:
-      fail-fast: false
-      matrix:
-        language: ['python']
-
 
     runs-on: ubuntu-latest
 
@@ -29,7 +24,6 @@ jobs:
     - name: Initialize CodeQL
       uses: github/codeql-action/init@v2
       with:
-        languages: ${{ matrix.language }}
         config-file: ./.github/codeql/codeql-configuration.yml
 
     - name: Autobuild
