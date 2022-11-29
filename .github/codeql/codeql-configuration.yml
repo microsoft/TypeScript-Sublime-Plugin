@@ -1,7 +1,7 @@
 name : CodeQL Configuration
 
 paths:
-  - './src' 
+  - './typescript' 
 
 strategy:
   fail-fast: false
