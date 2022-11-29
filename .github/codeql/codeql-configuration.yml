@@ -2,3 +2,8 @@ name : CodeQL Configuration
 
 paths:
   - './src' 
+
+strategy:
+  fail-fast: false
+  matrix:
+    language: ['python']
