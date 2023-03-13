@@ -10,7 +10,7 @@
     <array>
       <dict>
         <key>scope</key>
-        <string>storage.modifier, storage.type, keyword.control, keyword.other, keyword.operator.expression, keyword.operator.new, keyword.generator.asterisk, punctuation.definition.template-expression</string>
+        <string>storage.modifier, storage.type, keyword.other, keyword.operator.expression, keyword.operator.new, keyword.generator.asterisk, punctuation.definition.template-expression</string>
         <key>settings</key>
         <dict>
           <key>vsclassificationtype</key>
@@ -19,11 +19,29 @@
       </dict>
       <dict>
         <key>scope</key>
-        <string>support.type, constant.language, variable.language, variable.language variable.parameter</string>
+        <string>constant.language, variable.language</string>
         <key>settings</key>
         <dict>
           <key>vsclassificationtype</key>
           <string>keyword</string>
+        </dict>
+      </dict>
+      <dict>
+        <key>scope</key>
+        <string>keyword.control, keyword.operator.expression.delete, keyword.other.using, keyword.other.operator, entity.name.operator</string>
+        <key>settings</key>
+        <dict>
+          <key>vsclassificationtype</key>
+          <string>keyword - control</string>
+        </dict>
+      </dict>
+      <dict>
+        <key>scope</key>
+        <string>support.class, support.type, entity.name.type, entity.name.namespace, entity.other.attribute, entity.name.scope-resolution, entity.name.class</string>
+        <key>settings</key>
+        <dict>
+          <key>vsclassificationtype</key>
+          <string>type</string>
         </dict>
       </dict>
       <dict>
@@ -91,20 +109,11 @@
       </dict>
       <dict>
         <key>scope</key>
-        <string>entity.name.type.instance.jsdoc, variable.other.jsdoc</string>
+        <string>entity.name.type.instance.jsdoc</string>
         <key>settings</key>
         <dict>
           <key>vsclassificationtype</key>
           <string>identifier</string>
-        </dict>
-      </dict>
-      <dict>
-        <key>scope</key>
-        <string>storage.type.class.jsdoc</string>
-        <key>settings</key>
-        <dict>
-          <key>vsclassificationtype</key>
-          <string>xml doc comment - name</string>
         </dict>
       </dict>
       <dict>
@@ -136,11 +145,29 @@
       </dict>
       <dict>
         <key>scope</key>
-        <string>entity.name.function, entity.name.type, meta.template.expression.tsx, variable, entity.other.inherited-class.tsx</string>
+        <string>meta.template.expression.tsx, entity.other.inherited-class.tsx</string>
         <key>settings</key>
         <dict>
           <key>vsclassificationtype</key>
           <string>identifier</string>
+        </dict>
+      </dict>
+      <dict>
+        <key>scope</key>
+        <string>variable, meta.definition.variable.name, support.variable, entity.name.variable, constant.other.placeholder</string>
+        <key>settings</key>
+        <dict>
+          <key>vsclassificationtype</key>
+          <string>local name</string>
+        </dict>
+      </dict>
+      <dict>
+        <key>scope</key>
+        <string>entity.name.function, support.function, support.constant.handlebars, source.powershell variable.other.member, entity.name.operator.custom-literal</string>
+        <key>settings</key>
+        <dict>
+          <key>vsclassificationtype</key>
+          <string>method name</string>
         </dict>
       </dict>
       <dict>
@@ -154,7 +181,7 @@
       </dict>
       <dict>
         <key>scope</key>
-        <string>entity.name.tag</string>
+        <string>entity.name.tag.inline, entity.name.tag.directive</string>
         <key>settings</key>
         <dict>
           <key>vsclassificationtype</key>
@@ -172,11 +199,38 @@
       </dict>
       <dict>
         <key>scope</key>
-        <string>meta.tag string.quoted, meta.tag string.quoted punctuation.definition.string, meta.tag string.quoted constant.character.escape</string>
+        <string>meta.tag string.quoted, meta.tag string.quoted punctuation.definition.string, meta.tag string.quoted</string>
         <key>settings</key>
         <dict>
           <key>vsclassificationtype</key>
-          <string>HTML Attribute Value</string>
+          <string>string</string>
+        </dict>
+      </dict>
+      <dict>
+        <key>scope</key>
+        <string>meta.object-literal.key</string>
+        <key>settings</key>
+        <dict>
+          <key>vsclassificationtype</key>
+          <string>parameter name</string>
+        </dict>
+      </dict>
+      <dict>
+        <key>scope</key>
+        <string>constant.character.escape</string>
+        <key>settings</key>
+        <dict>
+          <key>vsclassificationtype</key>
+          <string>string - escape character</string>
+        </dict>
+      </dict>
+      <dict>
+        <key>scope</key>
+        <string>entity.name.label</string>
+        <key>settings</key>
+        <dict>
+          <key>vsclassificationtype</key>
+          <string>label name</string>
         </dict>
       </dict>
       <dict>
@@ -199,11 +253,29 @@
       </dict>
       <dict>
         <key>scope</key>
-        <string>invalid.illegal.attribute.tsx, meta.embedded.expression.tsx</string>
+        <string>invalid.illegal.attribute.tsx</string>
         <key>settings</key>
         <dict>
           <key>vsclassificationtype</key>
           <string>identifier</string>
+        </dict>
+      </dict>
+      <dict>
+        <key>scope</key>
+        <string>punctuation.definition.tag</string>
+        <key>settings</key>
+        <dict>
+          <key>vsclassificationtype</key>
+          <string>html operator</string>
+        </dict>
+      </dict>
+      <dict>
+        <key>scope</key>
+        <string>meta.tag</string>
+        <key>settings</key>
+        <dict>
+          <key>vsclassificationtype</key>
+          <string>HTML Element Name</string>
         </dict>
       </dict>
     </array>
